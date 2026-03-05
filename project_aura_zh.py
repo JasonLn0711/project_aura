@@ -940,7 +940,7 @@ class MainWindow(QMainWindow):
         self.initSystemTray()
 
     def initUI(self):
-        self.setWindowTitle(f"Ultimate Audio Assistant v{__version__} | 全方位錄音助理")
+        self.setWindowTitle(f"Project Aura (Aura Audio Assistant) v{__version__} | 全方位錄音助理")
         self.resize(1000, 800)
         
         # 建立 Tab Widget
