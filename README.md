@@ -19,24 +19,6 @@ Designed for professional environments, this project features prompt-guided punc
 
 ---
 
-It is **highly recommended** to include a "What's New" or "Changelog" section. It helps users understand new features, informs them of bug fixes, and provides a clear history of the project's evolution.
-
-Below is the updated `README.md` with a new **Release Notes (v2.1.0)** section that captures all your recent technical improvements and UI updates.
-
----
-
-# Project AURA: Ultimate Audio Assistant (全方位錄音助理)
-
-## Executive Summary & Project Metadata
-
-**Project AURA** is a dual-core desktop assistant designed for professional meeting transcription and audio management. It leverages state-of-the-art AI to provide real-time speech-to-text and intelligent audio file segmentation.
-
-* **Project Lead**: Jason Chia-Sheng Lin (PhD. Student, NYCU)
-* **Current Version**: `2.1.0`
-* **Primary Affiliation**: National Yang Ming Chiao Tung University (NYCU)
-
----
-
 ## 🆕 What's New in v2.1.0
 
 This version introduces significant stability improvements, batch processing capabilities, and advanced audio pre-processing.
