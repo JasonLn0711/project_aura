@@ -2,6 +2,7 @@
 
 ![CI Status](https://img.shields.io/badge/Status-Prototype-informational?logo=github) ![Python Version](https://img.shields.io/badge/Python-3.12.3-blue?logo=python) ![ASR Engine](https://img.shields.io/badge/ASR-faster--whisper-orange) ![UI](https://img.shields.io/badge/UI-PyQt6-9cf) ![VAD](https://img.shields.io/badge/VAD-WebRTC_VAD-success) ![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
 
+![alt text](./img/image.png)
 ## Executive Summary & Project Metadata
 
 **Project AURA** is a dual-core desktop assistant that integrates:
@@ -16,7 +17,6 @@ Designed for professional environments, this project features prompt-guided punc
 - **Project Lead**: Jason Chia-Sheng Lin (PhD. Student)
 - **Release Version**: `2.1.0` (Major Update)
 - **Versioning Strategy**: Semantic Versioning (MAJOR / MINOR / PATCH)
-![alt text](./img/image.png)
 
 ---
 
