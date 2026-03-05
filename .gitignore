@@ -10,7 +10,10 @@
 !requirements.txt
 !README.md
 !LICENSE
+
+# Allow the img directory AND all its contents
 !img/
+!img/**
 
 # Keep .gitignore itself
 !.gitignore
