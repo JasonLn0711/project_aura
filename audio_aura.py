@@ -1,12 +1,12 @@
 """
-Ultimate Audio Assistant - 全方位錄音助理
+Ultimate Audio Assistant
 ====================================
-整合「即時語音/音檔轉逐字稿」與「智慧音軌切割」的雙核心工具。
+A dual-core tool integrating "Real-time Voice/Audio-to-Transcript" and "Intelligent Track Splitting." (Comprehensive Audio Assistant)
 
-版本管理策略 (Semantic Versioning):
-- MAJOR: 重大架構改變或不相容的修改
-- MINOR: 新增向下相容的功能
-- PATCH: 向下相容的錯誤修正 (Bug fixes)
+Version Management Strategy (Semantic Versioning):
+- MAJOR: Significant architectural changes or incompatible modifications.
+- MINOR: New backward-compatible features.
+- PATCH: Backward-compatible bug fixes.
 """
 
 __version__ = "2.1.0"
@@ -30,14 +30,14 @@ from concurrent.futures import ThreadPoolExecutor
 from ctypes import *
 from contextlib import contextmanager
 
-# 影音處理
+# Video & Audio Processing
 from pydub import AudioSegment
 from pydub.silence import detect_silence
 import noisereduce as nr
 from pydub.utils import mediainfo
 from faster_whisper import WhisperModel
 
-# PyQt6 UI & 視覺化
+# PyQt6 UI & Visualization
 from PyQt6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, 
                              QHBoxLayout, QPushButton, QLabel, QTextEdit, 
                              QLineEdit, QMessageBox, QFileDialog, QTabWidget,
@@ -49,7 +49,7 @@ import pyqtgraph as pg
 from qt_material import apply_stylesheet
 
 # ==========================================
-# 系統設定與 ALSA 錯誤遮蔽 (針對 Linux 環境)
+# System Settings & ALSA Error Masking (For Linux Environments)
 # ==========================================
 SAMPLE_RATE = 16000
 CHUNK_MS = 30
@@ -76,7 +76,7 @@ def no_alsa_err():
 
 
 # ==========================================
-# [核心執行緒] 逐字稿功能區
+# [Core Thread] Transcript Functionality
 # ==========================================
 class FileTranscriberThread(QThread):
     text_updated = pyqtSignal(str)
@@ -93,24 +93,24 @@ class FileTranscriberThread(QThread):
         self.language = language
 
     def run(self):
-        self.status_updated.emit("⏳ 正在分析音檔，請稍候...")
+        self.status_updated.emit("⏳ Analyzing audio file, please wait...")
         temp_path = None
         audio = None
         normalized = None
         try:
-            # 1. 預先標準化音量 (Normalize)
-            self.status_updated.emit("🔊 正在標準化音量...")
+            # 1. Pre-normalize Volume (Normalize)
+            self.status_updated.emit("🔊 Analyzing audio volume...")
             audio = AudioSegment.from_file(self.file_path)
             normalized = audio.apply_gain(self.target_dbfs - audio.dBFS)
             temp_path = os.path.join(os.getcwd(), "temp_normalized.wav")
             normalized.export(temp_path, format="wav")
 
-            # faster-whisper 內建支援直接讀取常見影音檔
+                # faster-whisper natively supports direct reading of common media files
             segments, info = self.model.transcribe(
                 temp_path,
                 beam_size=self.beam_size, 
                 language=self.language,
-                condition_on_previous_text=True, # 確保開啟上下文關聯（預設為 True，但顯式寫出較好）
+                condition_on_previous_text=True, # Ensure context association is enabled (Default is True, but explicit is better)
                 initial_prompt=self.initial_prompt
             )
 
@@ -122,24 +122,24 @@ class FileTranscriberThread(QThread):
                 formatted_text = f"[{timestamp}] {segment.text}"
                 self.text_updated.emit(formatted_text)
                 
-                # 自動備份
+                # Auto-backup
                 with open("temp_transcript.txt", "a", encoding="utf-8") as f:
                     f.write(formatted_text + "\n")
-            self.status_updated.emit("✅ 檔案處理完成！")
+            self.status_updated.emit("✅ File processing completed!")
         except Exception as e:
-            self.status_updated.emit(f"❌ 檔案處理失敗: {e}")
+            self.status_updated.emit(f"❌ File processing failed: {e}")
         finally:
             if temp_path and os.path.exists(temp_path):
                 os.remove(temp_path)
             
-            # 主動釋放記憶體
+            # Proactively release memory
             if audio: del audio
             if normalized: del normalized
             gc.collect()
             self.finished_signal.emit()
 
 class ModelLoaderThread(QThread):
-    """專門用於非同步載入 Whisper 模型的執行緒，避免 UI 凍結"""
+    """Thread specialized for asynchronous loading of the Whisper model to avoid UI freezing"""
     finished_signal = pyqtSignal(object)
     error_signal = pyqtSignal(str)
     status_signal = pyqtSignal(str)
@@ -151,25 +151,25 @@ class ModelLoaderThread(QThread):
 
     def run(self):
         try:
-            self.status_signal.emit(f"🚀 正在背景載入模型 ({self.device}/{self.compute_type})...")
-            # 執行耗時的模型初始化
+            self.status_signal.emit(f"🚀 Loading model in background ({self.device}/{self.compute_type})...")
+            # Execute time-consuming model initialization
             model = WhisperModel(MODEL_ID, device=self.device, compute_type=self.compute_type)
             self.finished_signal.emit(model)
         except Exception as e:
-            # 捕捉可能的 CUDA 記憶體不足或驅動問題
+            # Capture potential CUDA out-of-memory or driver issues
             error_msg = str(e)
             if "out of memory" in error_msg.lower():
-                error_msg = "GPU 記憶體不足，請嘗試切換至 int8 精度或關閉其他程式。"
+                error_msg = "Insufficient GPU memory. Try switching to int8 precision or closing other programs."
             self.error_signal.emit(error_msg)
 
 class UpdateCheckerThread(QThread):
-    """檢查 GitHub 是否有新版本"""
+    """Check GitHub for new versions"""
     found_update = pyqtSignal(str, str) # version, url
 
     def run(self):
         try:
-            # 請將此處替換為你實際的 GitHub Repo (User/Repo)
-            # 這裡使用範例路徑，實作時請修改
+            # Please replace this with your actual GitHub Repo (User/Repo)
+            # This is an example path; modify it during implementation
             repo_url = "https://api.github.com/repos/JasonLin/UltimateAudioAssistant/releases/latest"
             response = requests.get(repo_url, timeout=3)
             if response.status_code == 200:
@@ -179,7 +179,7 @@ class UpdateCheckerThread(QThread):
                 if latest_ver > current_ver:
                     self.found_update.emit(latest_ver, data['html_url'])
         except:
-            pass # 網路不通或 API 限制時靜默失敗，不影響主程式
+            pass # Silent failure on network issues or API limits, does not affect main program
 
 class TranscriberThread(QThread):
     text_updated = pyqtSignal(str)
@@ -194,7 +194,7 @@ class TranscriberThread(QThread):
         self.compute_type = COMPUTE_TYPE
 
     def run(self):
-        # 執行緒啟動後，進入循環等待模型與音訊
+        # After thread starts, enter loop waiting for model and audio
         while self.running:
             try:
                 if self.model is None:
@@ -204,7 +204,7 @@ class TranscriberThread(QThread):
                 audio_data = self.audio_queue.get(timeout=1)
                 segments, info = self.model.transcribe(
                     audio_data, beam_size=5, language="zh",
-                    initial_prompt="以下是繁體中文的會議記錄。"
+                    initial_prompt="The following is a professional meeting record."
                 )
                 text_segment = "".join([s.text for s in segments])
                 if text_segment.strip():
@@ -216,7 +216,7 @@ class TranscriberThread(QThread):
             except queue.Empty:
                 continue
             except Exception as e:
-                print(f"轉錄錯誤: {e}")
+                print(f"Transcription error: {e}")
 
     def add_audio(self, audio_np):
         self.audio_queue.put(audio_np)
@@ -241,7 +241,7 @@ class AudioRecorderThread(QThread):
         with no_alsa_err():
             pa = pyaudio.PyAudio()
         
-        # 1. 優先尋找 pulse 虛擬裝置 (支援自動重新取樣，解決 Invalid sample rate)
+        # 1. Prioritize finding pulse virtual device (supports auto-resampling, solves Invalid sample rate)
         target_device_index = None
         target_channels = 1
         
@@ -253,19 +253,19 @@ class AudioRecorderThread(QThread):
                 break
         
         try:
-            # 嘗試使用找到的 pulse 裝置或系統預設裝置
+            # Try using the found pulse device or system default device
             if target_device_index is not None:
-                print(f"🚀 掛載 PulseAudio 虛擬設備: Index {target_device_index}, Channels: {target_channels}")
+                print(f"🚀 Mounting PulseAudio virtual device: Index {target_device_index}, Channels: {target_channels}")
                 stream = pa.open(format=pyaudio.paInt16, channels=target_channels, rate=SAMPLE_RATE,
                                  input=True, input_device_index=target_device_index, frames_per_buffer=CHUNK_SIZE)
             else:
-                print("⚠️ 找不到 pulse 設備，嘗試系統預設裝置...")
+                print("⚠️ Pulse device not found, trying system default device...")
                 stream = pa.open(format=pyaudio.paInt16, channels=1, rate=SAMPLE_RATE,
                                  input=True, frames_per_buffer=CHUNK_SIZE)
                 target_channels = 1
         except Exception as e:
-            # 終極 Fallback：如果連預設都失敗，直接拋出錯誤讓後續處理
-            self.finished_signal.emit(f"硬體掛載失敗: {str(e)}")
+            # Ultimate Fallback: If even default fails, emit error for subsequent handling
+            self.finished_signal.emit(f"Hardware mounting failed: {str(e)}")
             pa.terminate()
             return
 
@@ -278,9 +278,9 @@ class AudioRecorderThread(QThread):
                 raw_data = stream.read(CHUNK_SIZE, exception_on_overflow=False)
                 np_data = np.frombuffer(raw_data, dtype=np.int16)
                 
-                # 動態降維：將多聲道重塑並只提取第一個聲道 (Channel 0)
+                # Dynamic down-mixing: Reshape multi-channel and extract only the first channel (Channel 0)
                 if target_channels > 1:
-                    # reshape 成 [幀數, 聲道數]，然後取第一列
+                    # reshape to [frames, channels], then take the first column
                     np_data = np_data.reshape(-1, target_channels)[:, 0].copy()
                     vad_data = np_data.tobytes() 
                 else:
@@ -297,36 +297,36 @@ class AudioRecorderThread(QThread):
                     silence_frames += 1
 
                 if len(speech_buffer) > 0 and silence_frames > (1000/CHUNK_MS * min_speech_len):
-                    # 將收集到的語音合併
+                    # Merge collected speech
                     audio_np = np.concatenate(speech_buffer).flatten().astype(np.float32) / 32768.0
                     
-                    # 🌟 降噪處理：針對整段語句進行降噪，比對單一 Frame 處理效果更好且運算更省
+                    # 🌟 Denoising: Denoise the entire sentence; better effect and more efficient than per-frame
                     if self.enable_denoise:
                         try:
                             audio_np = nr.reduce_noise(y=audio_np, sr=SAMPLE_RATE, stationary=True, prop_decrease=0.75)
                         except Exception as e:
-                            print(f"降噪失敗 (略過): {e}")
+                            print(f"Denoising failed (skipped): {e}")
                     
-                    # 🌟 關鍵 3：在結尾強制加上 0.5 秒的純靜音 (Zero Padding)
+                    # 🌟 Key 3: Force 0.5s of silence at the end (Zero Padding)
                     padding_length = int(SAMPLE_RATE * 0.5) 
                     silence_padding = np.zeros(padding_length, dtype=np.float32)
                     padded_audio_np = np.concatenate([audio_np, silence_padding])
                     
-                    self.transcriber.add_audio(padded_audio_np) # 送出加上靜音尾巴的音訊
+                    self.transcriber.add_audio(padded_audio_np) # Send audio with silence tail
                     speech_buffer = [] 
-                    silence_frames = 0 # 重置計數
+                    silence_frames = 0 # Reset counter
                     
             except Exception as e:
-                print(f"音訊迴圈錯誤: {e}")
+                print(f"Audio loop error: {e}")
                 break
 
         stream.stop_stream()
         stream.close()
         pa.terminate()
         
-        # 錄音中斷但沒有資料時防呆
+        # Safety check for no data when recording stops
         if not self.full_frames:
-            self.finished_signal.emit("未錄製到任何音訊")
+            self.finished_signal.emit("No audio recorded")
             return
 
         wav_path = self.filename + ".wav"
@@ -356,14 +356,14 @@ class SmartSplitterThread(QThread):
     def run(self):
         audio = None
         try:
-            self.log_signal.emit(f"⏳ 正在載入音檔...\n檔案: {self.file_path}")
+            self.log_signal.emit(f"⏳ Loading audio file...\nFile: {self.file_path}")
             self.progress_signal.emit(5)
             
             audio = AudioSegment.from_file(self.file_path)
             total_duration_ms = len(audio)
-            self.log_signal.emit(f"✅ 載入成功！總長度: {total_duration_ms / 60000:.2f} 分鐘")
+            self.log_signal.emit(f"✅ Load successful! Total duration: {total_duration_ms / 60000:.2f} minutes")
 
-            # 嘗試獲取原始檔案的 bitrate，避免強制轉 192k 導致檔案變大
+            # Try to get original bitrate to avoid forced 192k making files larger
             try:
                 info = mediainfo(self.file_path)
                 original_bitrate = info.get('bit_rate', None)
@@ -380,7 +380,7 @@ class SmartSplitterThread(QThread):
             
             while current_pos < total_duration_ms:
                 if (total_duration_ms - current_pos) <= (self.target_ms + self.tolerance_ms):
-                    self.log_signal.emit(f"✂️ 正在匯出最後一段 (第 {chunk_index} 段)...")
+                    self.log_signal.emit(f"✂️ Exporting final segment (Part {chunk_index})...")
                     final_chunk = audio[current_pos:]
                     self.export_chunk(final_chunk, base_name, chunk_index, ext, original_bitrate)
                     self.progress_signal.emit(100)
@@ -388,7 +388,7 @@ class SmartSplitterThread(QThread):
                 
                 search_start = current_pos + self.target_ms - self.tolerance_ms
                 search_end = min(current_pos + self.target_ms + self.tolerance_ms, total_duration_ms)
-                self.log_signal.emit(f"🔍 分析第 {chunk_index} 段最佳斷點 ({search_start/60000:.1f} ~ {search_end/60000:.1f} 分)...")
+                self.log_signal.emit(f"🔍 Analyzing best cut point for Part {chunk_index} ({search_start/60000:.1f} ~ {search_end/60000:.1f} min)...")
                 
                 window = audio[search_start:search_end]
                 silences = detect_silence(window, min_silence_len=1000, silence_thresh=audio.dBFS - 16)
@@ -396,15 +396,15 @@ class SmartSplitterThread(QThread):
                 if silences:
                     best_silence = silences[len(silences)//2]
                     cut_point = search_start + (best_silence[0] + best_silence[1]) // 2
-                    self.log_signal.emit(f"🎯 找到合適停頓點！於 {cut_point/60000:.2f} 分鐘處切割。")
+                    self.log_signal.emit(f"🎯 Found suitable pause point! Cutting at {cut_point/60000:.2f} minutes.")
                 else:
                     cut_point = current_pos + self.target_ms
-                    self.log_signal.emit(f"⚠️ 找不到明顯停頓，於 {cut_point/60000:.2f} 分鐘處平滑切割。")
+                    self.log_signal.emit(f"⚠️ No obvious pause found, performing smooth cut at {cut_point/60000:.2f} minutes.")
                 
                 chunk = audio[current_pos:cut_point]
                 if not silences: chunk = chunk.fade_out(100)
                 
-                self.log_signal.emit(f"💾 正在儲存第 {chunk_index} 段...")
+                self.log_signal.emit(f"💾 Saving Part {chunk_index}...")
                 self.export_chunk(chunk, base_name, chunk_index, ext, original_bitrate)
                 
                 current_pos = cut_point
@@ -417,7 +417,7 @@ class SmartSplitterThread(QThread):
         except Exception as e:
             self.error_signal.emit(str(e))
         finally:
-            # 確保大型音訊物件被釋放
+            # Ensure large audio objects are released
             if audio: del audio
             gc.collect()
 
@@ -425,7 +425,7 @@ class SmartSplitterThread(QThread):
         out_path = os.path.join(self.output_dir, f"{base_name}_part{index:02d}.{ext}")
         export_kwargs = {"format": ext}
         if ext == "mp3":
-            # 如果有偵測到原始 bitrate 則使用，否則預設 192k
+            # Use original bitrate if detected, otherwise default to 192k
             target_bitrate = str(bitrate) if bitrate else "192k"
             export_kwargs["bitrate"] = target_bitrate
         chunk.export(out_path, **export_kwargs)
@@ -444,9 +444,9 @@ class TranscriptionTab(QWidget):
         self.transcriber_thread.status_updated.connect(self.update_status_only)
         self.transcriber_thread.start()
         self.executor = ThreadPoolExecutor(max_workers=2)
-        self.pending_files = [] # 批次任務隊列
-        self.model_loader = None # 非同步載入器
-        self.total_batch_count = 0 # 批次總數紀錄
+        self.pending_files = [] # Batch task queue
+        self.model_loader = None # Async loader
+        self.total_batch_count = 0 # Batch total record
         self.update_checker = None
         
         self.current_folder = os.getcwd()
@@ -457,18 +457,18 @@ class TranscriptionTab(QWidget):
         layout = QVBoxLayout(self)
         
         info_layout = QHBoxLayout()
-        self.status_label = QLabel("狀態: 等待 GPU 初始化...")
+        self.status_label = QLabel("Status: Waiting for GPU initialization...")
         self.status_label.setStyleSheet("font-weight: bold; color: #00bcd4; font-size: 14px;")
         self.name_input = QLineEdit()
-        self.name_input.setPlaceholderText("錄音檔名稱後綴")
+        self.name_input.setPlaceholderText("Recording filename suffix")
         info_layout.addWidget(self.status_label, stretch=2)
         info_layout.addWidget(self.name_input, stretch=1)
         layout.addLayout(info_layout)
 
-        # --- 進階設定摺疊區域 ---
-        self.btn_toggle_settings = QPushButton("▶ 顯示進階設定")
+        # --- Advanced Settings Collapsible Area ---
+        self.btn_toggle_settings = QPushButton("▶ Show Advanced Settings")
         self.btn_toggle_settings.setCheckable(True)
-        # 修正文字消失問題：顯式指定顏色並確保最小高度
+        # Fix text disappearance: explicitly specify color and ensure minimum height
         self.btn_toggle_settings.setStyleSheet("text-align: left; padding: 5px; background: #333; border-radius: 4px; color: #00bcd4; min-height: 30px;")
         self.btn_toggle_settings.clicked.connect(self.toggle_settings)
         layout.addWidget(self.btn_toggle_settings)
@@ -477,17 +477,17 @@ class TranscriptionTab(QWidget):
         self.settings_container.setVisible(False)
         settings_vbox = QVBoxLayout(self.settings_container)
 
-        # 6. 即時降噪開關
+        # 6. Real-time Denoise Switch
         denoise_layout = QHBoxLayout()
-        self.chk_denoise = QCheckBox("啟用即時降噪 (Real-time Denoise)")
-        self.chk_denoise.setChecked(False) # 預設關閉，保留原始音質
-        self.chk_denoise.setToolTip("在嘈雜環境下建議開啟，安靜環境建議關閉以保留細節")
+        self.chk_denoise = QCheckBox("Enable Real-time Denoise")
+        self.chk_denoise.setChecked(False) # Default off to preserve original quality
+        self.chk_denoise.setToolTip("Recommended for noisy environments; keep off in quiet environments to preserve detail")
         denoise_layout.addWidget(self.chk_denoise)
         denoise_layout.addStretch()
         settings_vbox.addLayout(denoise_layout)
         
         norm_layout = QHBoxLayout()
-        norm_layout.addWidget(QLabel("音量標準化目標 (dBFS):"))
+        norm_layout.addWidget(QLabel("Target Volume Normalization (dBFS):"))
         self.spin_norm = QSpinBox()
         self.spin_norm.setRange(-40, -5)
         self.spin_norm.setValue(-20)
@@ -497,7 +497,7 @@ class TranscriptionTab(QWidget):
 
         # 2. Beam Size
         beam_layout = QHBoxLayout()
-        beam_layout.addWidget(QLabel("Beam Size (建議 5):"))
+        beam_layout.addWidget(QLabel("Beam Size (Recommended: 5):"))
         self.spin_beam = QSpinBox()
         self.spin_beam.setRange(1, 15)
         self.spin_beam.setValue(5)
@@ -507,35 +507,35 @@ class TranscriptionTab(QWidget):
 
         # 3. Initial Prompt
         prompt_layout = QVBoxLayout()
-        prompt_layout.addWidget(QLabel("初始提示詞 (Initial Prompt):"))
+        prompt_layout.addWidget(QLabel("Initial Prompt:"))
         self.prompt_input = QLineEdit()
-        self.prompt_input.setText("這是一份專業的繁體中文會議紀錄，請務必根據語氣加上正確的全形標點符號。")
+        self.prompt_input.setText("This is a professional meeting record, please use correct punctuation.")
         prompt_layout.addWidget(self.prompt_input)
         settings_vbox.addLayout(prompt_layout)
 
-        # 4. 語言選擇
+        # 4. Language Selection
         lang_layout = QHBoxLayout()
-        lang_layout.addWidget(QLabel("辨識語言:"))
+        lang_layout.addWidget(QLabel("Recognition Language:"))
         self.combo_lang = QComboBox()
-        self.combo_lang.addItem("自動偵測", None)
-        self.combo_lang.addItem("  繁體中文  ", "zh")
-        self.combo_lang.addItem("英文", "en")
-        self.combo_lang.addItem("日文", "ja")
-        self.combo_lang.setCurrentIndex(1) # 預設繁體中文 (Index 1)
+        self.combo_lang.addItem("Auto Detect", None)
+        self.combo_lang.addItem("  Traditional Chinese  ", "zh")
+        self.combo_lang.addItem("English", "en")
+        self.combo_lang.addItem("Japanese", "ja")
+        self.combo_lang.setCurrentIndex(1) # Default Traditional Chinese (Index 1)
         lang_layout.addWidget(self.combo_lang)
         lang_layout.addStretch()
         settings_vbox.addLayout(lang_layout)
 
-        # 5. 模型精度與重新載入
+        # 5. Model Precision & Reload
         model_settings_layout = QHBoxLayout()
-        model_settings_layout.addWidget(QLabel("計算精度:"))
+        model_settings_layout.addWidget(QLabel("Compute Precision:"))
         self.combo_compute = QComboBox()
-        self.combo_compute.addItem("float16 (GPU 推薦)", "float16")
-        self.combo_compute.addItem("int8 (CPU 加速/省記憶體)", "int8")
-        self.combo_compute.addItem("float32 (高精度)", "float32")
+        self.combo_compute.addItem("float16 (GPU Recommended)", "float16")
+        self.combo_compute.addItem("int8 (CPU Accel/Save Memory)", "int8")
+        self.combo_compute.addItem("float32 (High Precision)", "float32")
         model_settings_layout.addWidget(self.combo_compute)
         
-        self.btn_reload_model = QPushButton("🔄 重新載入模型")
+        self.btn_reload_model = QPushButton("🔄 Reload Model")
         self.btn_reload_model.setStyleSheet("background-color: #546e7a; color: white;")
         self.btn_reload_model.clicked.connect(self.apply_model_settings)
         model_settings_layout.addWidget(self.btn_reload_model)
@@ -545,7 +545,7 @@ class TranscriptionTab(QWidget):
 
         layout.addWidget(self.settings_container)
 
-        # --- 批次進度條 ---
+        # --- Batch Progress Bar ---
         self.batch_progress = QProgressBar()
         self.batch_progress.setVisible(False)
         layout.addWidget(self.batch_progress)
@@ -562,16 +562,16 @@ class TranscriptionTab(QWidget):
         layout.addWidget(self.text_area, stretch=2)
 
         btn_layout = QHBoxLayout()
-        self.btn_record = QPushButton("🎙️ 開始錄製")
+        self.btn_record = QPushButton("🎙️ Start Recording")
         self.btn_record.clicked.connect(self.toggle_record)
         self.btn_record.setFixedHeight(50)
         self.btn_record.setStyleSheet("font-size: 16px; font-weight: bold;")
         
-        self.btn_import = QPushButton("📁 匯入音檔/影片轉錄")
+        self.btn_import = QPushButton("📁 Import Audio/Video for Transcription")
         self.btn_import.clicked.connect(self.import_file)
         self.btn_import.setFixedHeight(50)
         
-        self.btn_save_txt = QPushButton("💾 儲存逐字稿 (.txt)")
+        self.btn_save_txt = QPushButton("💾 Save Transcript (.txt)")
         self.btn_save_txt.clicked.connect(self.save_transcript)
         self.btn_save_txt.setFixedHeight(50)
         
@@ -580,10 +580,10 @@ class TranscriptionTab(QWidget):
         btn_layout.addWidget(self.btn_save_txt, stretch=1)
         layout.addLayout(btn_layout)
 
-        # 初始啟動時也使用非同步載入 (必須在 UI 元件初始化後呼叫)
+        # Use async loading on initial startup (must be called after UI component initialization)
         self.apply_model_settings()
 
-        # 啟動自動更新檢查
+        # Start auto-update check
         self.check_for_updates()
 
     def check_for_updates(self):
@@ -592,32 +592,32 @@ class TranscriptionTab(QWidget):
         self.update_checker.start()
 
     def show_update_dialog(self, version, url):
-        reply = QMessageBox.question(self, "發現新版本", f"檢測到新版本 v{version}！\n是否前往 GitHub 下載？", QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
+        reply = QMessageBox.question(self, "New Version Found", f"Detected new version v{version}!\nGo to GitHub to download?", QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
         if reply == QMessageBox.StandardButton.Yes:
             webbrowser.open(url)
 
     def toggle_settings(self):
-        """切換進階設定區域的顯示/隱藏"""
+        """Toggle display/hide of advanced settings area"""
         if self.btn_toggle_settings.isChecked():
-            self.btn_toggle_settings.setText("▼ 隱藏進階設定")
+            self.btn_toggle_settings.setText("▼ Hide Advanced Settings")
             self.settings_container.setVisible(True)
         else:
-            self.btn_toggle_settings.setText("▶ 顯示進階設定")
+            self.btn_toggle_settings.setText("▶ Show Advanced Settings")
             self.settings_container.setVisible(False)
 
     def import_file(self):
         if self.transcriber_thread.model is None:
-            QMessageBox.warning(self, "請稍候", "模型尚未就緒。")
+            QMessageBox.warning(self, "Please wait", "Model is not ready.")
             return
         if self.recorder_thread is not None:
-            QMessageBox.warning(self, "錯誤", "請先停止錄製再匯入檔案。")
+            QMessageBox.warning(self, "Error", "Please stop recording before importing files.")
             return
 
-        # 改為支援多選
-        files, _ = QFileDialog.getOpenFileNames(self, "選擇影音檔案", "", "Media Files (*.mp4 *.m4a *.mp3 *.wav *.flac *.mkv)")
+        # Changed to support multi-selection
+        files, _ = QFileDialog.getOpenFileNames(self, "Select Media Files", "", "Media Files (*.mp4 *.m4a *.mp3 *.wav *.flac *.mkv)")
         if files:
             self.pending_files.extend(files)
-            # 初始化進度條
+            # Initialize progress bar
             self.total_batch_count = len(self.pending_files)
             self.batch_progress.setMaximum(self.total_batch_count)
             self.batch_progress.setValue(0)
@@ -696,13 +696,13 @@ class TranscriptionTab(QWidget):
         )
         self.file_thread.text_updated.connect(self.update_log)
         self.file_thread.status_updated.connect(self.update_status_only)
-        self.file_thread.finished_signal.connect(self.process_next_file) # 遞迴呼叫處理下一個
+        self.file_thread.finished_signal.connect(self.process_next_file) # Recursive call to process next
         self.file_thread.start()
 
     def toggle_record(self):
         if self.recorder_thread is None:
             if self.transcriber_thread.model is None:
-                QMessageBox.warning(self, "請稍候", "模型尚未就緒。")
+                QMessageBox.warning(self, "Please wait", "Model is not ready.")
                 return
             
             suffix = self.name_input.text().strip() or "record"
@@ -778,8 +778,8 @@ class TranscriptionTab(QWidget):
 
     @pyqtSlot(str)
     def process_audio(self, wav_path):
-        # 防呆過濾
-        if "硬體掛載失敗" in wav_path or "未錄製到任何音訊" in wav_path:
+        # Safety filtering
+        if "Hardware mounting failed" in wav_path or "No audio recorded" in wav_path:
             return
         self.executor.submit(self._normalization_task, wav_path, float(self.spin_norm.value()))
 
@@ -792,10 +792,10 @@ class TranscriptionTab(QWidget):
             if os.path.exists(wav_path):
                 os.remove(wav_path)
             
-            # 釋放資源
+            # Release resources
             del audio
             del normalized
-        except Exception as e: print(f"處理失敗: {e}")
+        except Exception as e: print(f"Processing failed: {e}")
         finally:
             gc.collect()
 
@@ -807,7 +807,7 @@ class TranscriptionTab(QWidget):
             self.file_thread.terminate()
 
 # ==========================================
-# [UI] 頁籤 2: 智慧音檔切割 (Splitter Tab)
+# [UI] Tab 2: Intelligent Track Splitting (Splitter Tab)
 # ==========================================
 class SplitterTab(QWidget):
     def __init__(self):
@@ -821,22 +821,22 @@ class SplitterTab(QWidget):
         layout = QVBoxLayout(self)
         layout.setSpacing(15)
 
-        header = QLabel("✂️ 智慧音軌切割器")
+        header = QLabel("✂️ Intelligent Track Splitter")
         header.setStyleSheet("font-size: 20px; font-weight: bold; color: #00bcd4;")
         layout.addWidget(header, alignment=Qt.AlignmentFlag.AlignCenter)
 
-        desc = QLabel("自動尋找講者換氣或停頓處進行切割，避免話說到一半被生硬打斷。")
+        desc = QLabel("Automatically find speaker pauses or breaths for cutting to avoid abrupt interruptions.")
         desc.setStyleSheet("font-size: 14px; color: #aaaaaa;")
         layout.addWidget(desc, alignment=Qt.AlignmentFlag.AlignCenter)
 
         settings_layout = QHBoxLayout()
-        settings_layout.addWidget(QLabel("目標切割長度 (分鐘):"))
+        settings_layout.addWidget(QLabel("Target Segment Length (minutes):"))
         self.spin_target = QSpinBox()
         self.spin_target.setRange(5, 120)
         self.spin_target.setValue(40)
         settings_layout.addWidget(self.spin_target)
 
-        settings_layout.addWidget(QLabel(" 容許誤差 (分鐘):"))
+        settings_layout.addWidget(QLabel(" Tolerance (minutes):"))
         self.spin_tol = QSpinBox()
         self.spin_tol.setRange(1, 15)
         self.spin_tol.setValue(5)
@@ -845,15 +845,15 @@ class SplitterTab(QWidget):
         layout.addLayout(settings_layout)
 
         btn_layout = QHBoxLayout()
-        self.btn_select = QPushButton("1. 選擇來源音檔")
+        self.btn_select = QPushButton("1. Select Source Audio")
         self.btn_select.setFixedHeight(50)
         self.btn_select.clicked.connect(self.select_file)
 
-        self.btn_outdir = QPushButton("2. 選擇儲存資料夾")
+        self.btn_outdir = QPushButton("2. Select Output Folder")
         self.btn_outdir.setFixedHeight(50)
         self.btn_outdir.clicked.connect(self.select_outdir)
 
-        self.btn_start = QPushButton("3. 開始智慧切割")
+        self.btn_start = QPushButton("3. Start Intelligent Splitting")
         self.btn_start.setFixedHeight(50)
         self.btn_start.setStyleSheet("background-color: #2e7d32; color: white; font-weight: bold;")
         self.btn_start.clicked.connect(self.start_split)
@@ -864,7 +864,7 @@ class SplitterTab(QWidget):
         btn_layout.addWidget(self.btn_start)
         layout.addLayout(btn_layout)
 
-        self.lbl_file = QLabel("目前尚未選擇檔案")
+        self.lbl_file = QLabel("No file selected")
         self.lbl_file.setStyleSheet("color: #ff9800;")
         layout.addWidget(self.lbl_file)
 
@@ -878,14 +878,14 @@ class SplitterTab(QWidget):
         layout.addWidget(self.log_area)
 
     def select_file(self):
-        path, _ = QFileDialog.getOpenFileName(self, "選擇要切割的音檔", "", "Audio/Video Files (*.mp3 *.wav *.m4a *.mp4 *.flac)")
+        path, _ = QFileDialog.getOpenFileName(self, "Select audio to split", "", "Audio/Video Files (*.mp3 *.wav *.m4a *.mp4 *.flac)")
         if path:
             self.file_path = path
             self.output_dir = os.path.dirname(path)
             self.update_status()
 
     def select_outdir(self):
-        dir_path = QFileDialog.getExistingDirectory(self, "選擇儲存資料夾")
+        dir_path = QFileDialog.getExistingDirectory(self, "Select output folder")
         if dir_path:
             self.output_dir = dir_path
             self.update_status()
@@ -893,7 +893,7 @@ class SplitterTab(QWidget):
     def update_status(self):
         if self.file_path and self.output_dir:
             file_name = os.path.basename(self.file_path)
-            self.lbl_file.setText(f"來源: {file_name} | 輸出至: {self.output_dir}")
+            self.lbl_file.setText(f"Source: {file_name} | Output to: {self.output_dir}")
             self.btn_start.setEnabled(True)
 
     def start_split(self):
@@ -916,12 +916,12 @@ class SplitterTab(QWidget):
         self.log_area.verticalScrollBar().setValue(self.log_area.verticalScrollBar().maximum())
 
     def handle_error(self, err_msg):
-        QMessageBox.critical(self, "錯誤", f"處理過程中發生錯誤：\n{err_msg}")
+        QMessageBox.critical(self, "Error", f"An error occurred during processing:\n{err_msg}")
         self.reset_ui()
 
     def process_finished(self):
         self.progress_bar.setValue(100)
-        QMessageBox.information(self, "完成", "智慧切割處理完成！")
+        QMessageBox.information(self, "Completed", "Intelligent splitting completed!")
         self.reset_ui()
 
     def reset_ui(self):
@@ -931,7 +931,7 @@ class SplitterTab(QWidget):
 
 
 # ==========================================
-# [UI] 主視窗 (Main Application Window)
+# [UI] Main Application Window
 # ==========================================
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -940,61 +940,61 @@ class MainWindow(QMainWindow):
         self.initSystemTray()
 
     def initUI(self):
-        self.setWindowTitle(f"Ultimate Audio Assistant v{__version__} | 全方位錄音助理")
+        self.setWindowTitle(f"Ultimate Audio Assistant v{__version__} | Comprehensive Audio Assistant")
         self.resize(1000, 800)
         
-        # 建立 Tab Widget
+        # Create Tab Widget
         self.tabs = QTabWidget()
         self.setCentralWidget(self.tabs)
         
-        # 實例化兩個功能分頁
+        # Instantiate two functional tabs
         self.tab_transcription = TranscriptionTab()
         self.tab_splitter = SplitterTab()
         
-        # 加入分頁並設定標籤名稱
-        self.tabs.addTab(self.tab_transcription, "📝 錄音與逐字稿")
-        self.tabs.addTab(self.tab_splitter, "✂️ 智慧音軌切割")
+        # Add tabs and set labels
+        self.tabs.addTab(self.tab_transcription, "📝 Recording & Transcription")
+        self.tabs.addTab(self.tab_splitter, "✂️ Intelligent Track Splitting")
 
-        # 底部狀態列 (可顯示版權資訊)
+        # Bottom Status Bar (can display copyright info)
         # ==========================================
-        # 狀態列工程化佈局 (Status Bar)
+        # Status Bar Engineering Layout
         # ==========================================
-        # 抓取主程式最後修改時間 (自動化 Ground Truth)
+        # Grab main program last modification time (Automated Ground Truth)
         build_date = time.strftime('%Y-%m-%d', time.localtime(os.path.getmtime(__file__)))
 
-        # 左側：動態系統狀態 (Telemetry)
+        # Left: Dynamic system status (Telemetry)
         self.sys_status = QLabel("Status: Idle | GPU: Allocating...")
         self.sys_status.setStyleSheet("padding: 5px; color: #00ff00; font-weight: bold; font-size: 11px;")
-        self.statusBar().addWidget(self.sys_status, 1) # 佔據剩餘空間向右推
+        self.statusBar().addWidget(self.sys_status, 1) # Occupy remaining space and push right
 
-        # 右側：靜態版本與版權資訊 (Metadata)
+        # Right: Static version and copyright info (Metadata)
         footer_text = f"© {build_date[:4]}  {__organization__}  |  v{__version__} ({build_date})  |  {__author__}"
         footer = QLabel(footer_text)
         footer.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
         footer.setStyleSheet("padding: 5px; color: #888888; font-size: 11px;")
-        self.statusBar().addPermanentWidget(footer) # 強制錨定右側
+        self.statusBar().addPermanentWidget(footer) # Force anchor to right
 
     def initSystemTray(self):
-        """初始化系統托盤圖示"""
+        """Initialize system tray icon"""
         self.tray_icon = QSystemTrayIcon(self)
-        # 使用系統內建圖示 (SP_MediaVolume)
+        # Use system built-in icon (SP_MediaVolume)
         icon = self.style().standardIcon(QStyle.StandardPixmap.SP_MediaVolume)
         self.tray_icon.setIcon(icon)
         
-        # 建立右鍵選單
+        # Create right-click menu
         tray_menu = QMenu()
         
-        show_action = QAction("顯示主視窗", self)
+        show_action = QAction("Show Main Window", self)
         show_action.triggered.connect(self.show_window)
         
-        quit_action = QAction("退出程式", self)
+        quit_action = QAction("Exit Program", self)
         quit_action.triggered.connect(self.quit_app)
         
         tray_menu.addAction(show_action)
         tray_menu.addAction(quit_action)
         self.tray_icon.setContextMenu(tray_menu)
         
-        # 點擊托盤圖示的行為
+        # Behavior on tray icon activation
         self.tray_icon.activated.connect(self.on_tray_icon_activated)
         self.tray_icon.show()
 
@@ -1014,10 +1014,10 @@ class MainWindow(QMainWindow):
         QApplication.quit()
 
     def perform_cleanup(self):
-        """視窗關閉時，安全釋放所有背景執行緒與暫存資源"""
+        """Safely release all background threads and temporary resources when window closes"""
         self.tab_transcription.stop_threads()
         
-        # 安全釋放 GPU 記憶體 (使用 hasattr 防止 AttributeError)
+        # Safely release GPU memory (use hasattr to prevent AttributeError)
         t_thread = self.tab_transcription.transcriber_thread
         if hasattr(t_thread, 'model') and t_thread.model is not None:
             del t_thread.model
@@ -1035,12 +1035,12 @@ class MainWindow(QMainWindow):
             os.remove("temp_transcript.txt") 
 
     def closeEvent(self, event):
-        """覆寫關閉事件：縮小至托盤而非直接退出"""
+        """Override close event: minimize to tray instead of exiting directly"""
         if self.tray_icon.isVisible():
             self.hide()
             self.tray_icon.showMessage(
-                "全方位錄音助理",
-                "程式已縮小至系統托盤，錄音與轉錄將在背景繼續執行。",
+                "Comprehensive Audio Assistant",
+                "Program minimized to tray. Recording and transcription will continue in the background.",
                 QSystemTrayIcon.MessageIcon.Information,
                 2000
             )
@@ -1052,7 +1052,7 @@ class MainWindow(QMainWindow):
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     
-    # 套用深色現代化主題 (需 pip install qt-material)
+    # Apply dark modern theme (requires pip install qt-material)
     apply_stylesheet(app, theme='dark_teal.xml')
     
     window = MainWindow()

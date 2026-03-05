@@ -6,6 +6,7 @@
 
 # Allow specific files
 !audio_aura.py
+!audio_aura_zh.py
 !requirements.txt
 !README.md
 !LICENSE
