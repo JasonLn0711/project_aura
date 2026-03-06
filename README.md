@@ -4,12 +4,12 @@
 
 ## Project Status Update
 
-This Python-based prototype served as the initial proof-of-concept for the AURA system. Development has officially shifted to the Rust ecosystem to leverage strict memory management and high-performance concurrency—essential for our ongoing AI and Cybersecurity research at **National Yang Ming Chiao Tung University (NYCU)**.
+This Python-based prototype served as the initial proof-of-concept for the AURA system. Development has officially shifted to the Rust ecosystem to leverage strict memory management and high-performance concurrency, essential for our ongoing AI and Cybersecurity research at National Yang Ming Chiao Tung University (NYCU).
 
 > [!WARNING]
-> **This project is now End-of-Life (EOL) and no longer maintained.**
-> To achieve superior security, higher performance, and memory safety, this project will be migrated to a **Rust** implementation.
-> 👉 **Please visit the new version:** [Aura-RS (Rust Implementation)](https://github.com/JasonLn0711/Aura-RS)
+> <h> **This project is now End-of-Life (EOL) and no longer maintained.**
+> <h> To achieve superior security, higher performance, and memory safety, this project will be migrated to a **Rust** implementation.
+> <h> 👉 **Please visit the new version:** [Aura-RS (Rust Implementation)](https://github.com/JasonLn0711/Aura-RS)
 
 ![alt text](./img/image.png)
 
