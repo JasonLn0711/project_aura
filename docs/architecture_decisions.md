@@ -27,4 +27,11 @@ Speaker diarization is an optional imported-file post-processing path. It intent
 
 LLM summary is also optional post-processing. It runs after ASR output exists, loads Qwen3.5-9B through an optional dependency boundary, and forces summary prompts toward Taiwanese Traditional Chinese so summarization behavior is independent from the ASR language setting.
 
+Transcript output is treated as a durable artifact set, not as UI text. From first principles, the user needs to know what was heard, what was summarized, where it was saved, and how long each stage took. Therefore:
+
+- `src/aura/ui/transcript_io.py` owns raw/final/summary/metrics file naming and write behavior.
+- `src/aura/asr/threads.py` records imported-file status events so FFmpeg normalization and ASR progress can be inspected after the run.
+- `src/aura/ui/transcription_tab.py` owns interaction policy: auto-save after Stop Recording, clear the visible recording transcript after save, serialize batch summary/save before moving to the next import, expose Cancel Import, and show Open Output Folder only after an artifact exists.
+- Advanced Settings owns output-location policy so transcript artifacts can stay beside the source/recording, go to a repo-local outputs folder, or go to a custom folder.
+
 The next high-value cleanup is to add the evaluation harness described in `docs/denoise_upgrade_plan.md`, then test DeepFilterNet3 and ClearerVoice-Studio as optional model-based backends before promoting any new default.

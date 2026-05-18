@@ -49,12 +49,75 @@ The app is designed for professional meeting and lecture workflows. It includes 
 | Project Lead | Jason Chia-Sheng Lin (PhD. Student) |
 | License | MIT |
 
+## Current Working Version Changes
+
+This working version builds on `v1.8.1` and focuses on making transcription workflows automatic, traceable, and easier to recover when long imported files are processing.
+
+### User Workflow Changes
+
+- The main transcription controls are simplified around the actual user actions: **Start/Stop Recording**, **Import Media**, optional **Cancel Import**, optional **Open Output Folder**, and **Summarize Current Transcript**.
+- The previous standalone **Save Transcript** and **Clear Transcript** buttons are removed from the primary workflow.
+- After **Stop Recording**, AURA now waits for the live ASR queue to finish, runs the optional LLM summary if enabled, saves transcript artifacts automatically, clears the visible transcript pane, and removes the temporary transcript backup.
+- After an auto-save, **Open Output Folder** becomes available so the user can inspect the generated files without searching manually.
+- Import wording is shortened to **Import Media** because the import action already starts transcription automatically.
+
+### Transcript Artifact Changes
+
+Transcripts are now saved as a durable artifact set instead of one manually saved text file:
+
+```text
+{base}_raw.txt
+{base}_final.txt
+{base}_summary.txt
+{base}_processing_metrics.json
+```
+
+- `raw.txt` contains the ASR transcript only.
+- `final.txt` contains the transcript plus the LLM summary when a summary is available.
+- `summary.txt` contains only the LLM summary and is written only when a summary is produced.
+- `processing_metrics.json` records the workflow type, source path, output policy, output paths, total elapsed time, coarse stage durations, and imported-file status events.
+
+This split makes it possible to compare the original ASR output with the final user-facing transcript and audit where the file was saved.
+
+### Import And Batch Processing Changes
+
+- Imported audio/video files are processed as a queue.
+- When **Summarize transcript after ASR** is enabled, each imported file now completes ASR, summary, and artifact saving before the next queued file begins.
+- This prevents later batch files from skipping summary when a previous summary is still running.
+- **Cancel Import** now clears the remaining queue and requests cancellation of the active import worker.
+- Supported import formats include common audio/video containers such as `mp3`, `mp4`, `m4a`, `wav`, `flac`, `mkv`, `mov`, `ogg`, `aac`, `wma`, `aiff`, `opus`, `webm`, `avi`, `m4v`, `3gp`, and `3g2`, with an **All Files** fallback for other FFmpeg-supported media.
+
+### Advanced Settings Changes
+
+Advanced Settings now includes a transcript output policy:
+
+- **Same folder as source/recording**: default; keeps imported transcripts beside the source file and live-recording transcripts in the recording folder.
+- **Project outputs/transcripts folder**: writes transcript artifacts under `outputs/transcripts/` in this repo.
+- **Custom folder**: writes all transcript artifacts to a user-selected folder.
+
+Existing advanced options remain available: denoise mode, speaker diarization, LLM summary, target volume normalization, beam size, initial prompt, language, compute precision, and model reload.
+
+### Progress And Performance Visibility Changes
+
+- Import normalization progress is surfaced in the status line, including CPU thread budget, FFmpeg volume-analysis pass, detected mean volume, gain amount, export progress percentage, and completion.
+- Imported-file status events are retained in `processing_metrics.json`, so users can inspect what happened after the run finishes.
+- FFmpeg normalization uses a multi-core CPU policy of `CPU count - 6` threads, with a minimum of `1`.
+- CPU count detection tries multiple probes and reports clearly if CPU count cannot be detected.
+- ASR remains RTX/CUDA-only. CPU fallback is disabled so transcription never silently leaves the GPU path.
+
+### Documentation And Test Changes
+
+- README workflow documentation now matches the simplified UI and automatic transcript-saving behavior.
+- `docs/architecture_decisions.md` records the first-principles ownership split for transcript artifacts, output policy, progress visibility, and UI interaction policy.
+- Tests now cover transcript artifact naming, raw/final/summary splitting, metrics JSON writing, FFmpeg progress parsing, and propagation of normalization progress into the import pipeline.
+
 ## Feature Implementation Checklist
 
 | Feature Category | Implementation Details |
 | --- | --- |
-| Real-time Transcription | Live microphone recording plus streaming ASR via `faster-whisper`. |
-| Batch Transcription | Import multiple audio/video files with queue scheduling and progress tracking. |
+| Real-time Transcription | Live microphone recording plus streaming ASR via `faster-whisper`; stopping a recording auto-saves transcript artifacts and clears the transcript pane. |
+| Batch Transcription | Import multiple audio/video files with queue scheduling, cancellation, serialized optional summaries, and progress tracking. |
+| Transcript Artifacts | Auto-saves raw transcript, final transcript, optional summary, and processing metrics JSON to the selected output policy. |
 | Speaker Diarization | Optional imported-file speaker labeling through `pyannote.audio`, with configurable speaker-count bounds. |
 | Real-time Denoising | Optional `noisereduce` processing before ASR for noisy environments. |
 | Volume Normalization | Dynamically standardizes imported and recorded audio to a target dBFS, default `-20`, using a fast FFmpeg path when denoise is off. The FFmpeg path uses `CPU count - 6` worker threads, with a minimum of `1`, and reports clearly if CPU count cannot be detected. |
@@ -99,6 +162,9 @@ project_aura_refactor/
 │   │   ├── export.py             # Recording normalization/export helpers
 │   │   ├── splitter.py           # Thin Qt wrapper for smart audio splitting
 │   │   └── splitter_pipeline.py  # Testable split-point detection and export service
+│   ├── llm/
+│   │   ├── summary.py            # Optional local LLM summary service
+│   │   └── threads.py            # Qt wrapper for summary generation
 │   ├── system/
 │   │   ├── cuda.py               # CUDA runtime preload and required-library detection
 │   │   ├── native_audio.py       # ALSA/JACK stderr suppression helpers
@@ -107,6 +173,7 @@ project_aura_refactor/
 │       ├── messages.py           # User-facing strings and dynamic UI message formatting
 │       ├── main_window.py
 │       ├── splitter_tab.py
+│       ├── transcript_io.py      # Transcript artifact writing helpers
 │       └── transcription_tab.py
 └── tests/
     ├── test_denoise.py
@@ -200,12 +267,33 @@ The packaged entrypoints are defined in `pyproject.toml`:
 ### Tab 1: Recording & Transcription
 
 1. Wait for the background `ModelLoaderThread` to initialize the ASR model.
-2. Open **Advanced Settings** to adjust target dBFS, compute type, beam size, language, initial prompt, denoise, optional speaker diarization, and optional LLM summary.
+2. Open **Advanced Settings** to adjust target dBFS, compute type, beam size, language, initial prompt, denoise, optional speaker diarization, optional LLM summary, and transcript output location.
 3. Click **Start Recording** for live recording and live transcription.
-4. Click **Import Audio/Video** for batch transcription. Speaker diarization runs only on imported files when enabled.
-   The import dialog lists common media containers including `mp3`, `mp4`, `m4a`, `wav`, `flac`, `mkv`, `mov`, `ogg`, `aac`, `wma`, `aiff`, `opus`, `webm`, `avi`, `m4v`, `3gp`, and `3g2`; the fallback **All Files** filter can still be used for other ffmpeg-supported media.
+4. Click **Import Media** for batch transcription. Speaker diarization runs only on imported files when enabled.
+   The import dialog lists common media containers including `mp3`, `mp4`, `m4a`, `wav`, `flac`, `mkv`, `mov`, `ogg`, `aac`, `wma`, `aiff`, `opus`, `webm`, `avi`, `m4v`, `3gp`, and `3g2`; the fallback **All Files** filter can still be used for other ffmpeg-supported media. Each imported transcript is auto-saved according to the selected transcript output policy.
+   Use **Cancel Import** to stop the active import when possible and skip the remaining queue.
 5. Enable **Summarize transcript after ASR** or click **Summarize Current Transcript** to append a local Qwen summary.
-6. Click **Save Transcript** to write the transcript to disk, or **Clear Transcript** to clear the transcript pane and temporary backup after confirmation.
+6. Click **Stop Recording** to finish live recording. The app waits for final ASR text, runs the optional summary if enabled, saves `{recording_name}_raw.txt`, `{recording_name}_final.txt`, optional `{recording_name}_summary.txt`, and `{recording_name}_processing_metrics.json`, then clears the transcript pane and temporary backup.
+7. Use **Open Output Folder** after an auto-save to inspect the generated transcript artifacts.
+
+### Transcript Output Policy
+
+Advanced Settings exposes three output modes:
+
+- **Same folder as source/recording**: default; imported-file artifacts stay beside the source media, and live-recording artifacts stay in the recording folder.
+- **Project outputs/transcripts folder**: stores artifacts under `outputs/transcripts/` in this repo.
+- **Custom folder**: stores all transcript artifacts in the selected folder.
+
+For each transcript base name, AURA writes:
+
+```text
+{base}_raw.txt
+{base}_final.txt
+{base}_summary.txt                  # only when a summary is produced
+{base}_processing_metrics.json
+```
+
+The metrics JSON includes output policy, source path, saved artifact paths, total elapsed time, coarse stage durations, and imported-file status events such as FFmpeg normalization progress.
 
 ### Tab 2: Smart Splitter
 
@@ -269,7 +357,7 @@ When enabled in Advanced Settings, the file pipeline:
 
 1. Decodes the source media with `pydub`.
 2. Optionally applies the selected denoise preset.
-3. Normalizes the file to the target dBFS and writes a temporary WAV under `AURA_RUNTIME_DIR`. The normal no-denoise path uses FFmpeg `volumedetect` plus `volume` filtering to avoid slow Python/pydub processing; FFmpeg is configured with `CPU count - 6` threads, with a minimum of `1`. CPU count detection tries `os.cpu_count()`, Linux CPU affinity, `nproc`, and `/proc/cpuinfo`; if all probes fail, the UI reports that CPU count is unavailable and uses one FFmpeg normalization thread. Denoise-enabled imports still use the Python audio path because denoise operates on an in-memory `AudioSegment`.
+3. Normalizes the file to the target dBFS and writes a temporary WAV under `AURA_RUNTIME_DIR`. The normal no-denoise path uses FFmpeg `volumedetect` plus `volume` filtering to avoid slow Python/pydub processing; FFmpeg is configured with `CPU count - 6` threads, with a minimum of `1`. CPU count detection tries `os.cpu_count()`, Linux CPU affinity, `nproc`, and `/proc/cpuinfo`; if all probes fail, the UI reports that CPU count is unavailable and uses one FFmpeg normalization thread. During import, the status line reports CPU budget, volume-analysis pass, detected mean volume, gain, export progress, and completion. Denoise-enabled imports still use the Python audio path because denoise operates on an in-memory `AudioSegment`.
 4. Runs `faster-whisper` transcription on that prepared WAV.
 5. Runs `pyannote.audio` speaker diarization on the same prepared WAV.
 6. Assigns each transcript segment to the speaker turn with the largest timestamp overlap.
@@ -296,7 +384,7 @@ LLM summary is an optional post-ASR workflow. It is intentionally separate from 
 
 When enabled in Advanced Settings:
 
-- imported-file transcription starts summary after each file's transcript is complete
+- imported-file transcription starts summary after each file's transcript is complete and waits for that summary/save step before starting the next queued file
 - live recording schedules summary shortly after the user stops recording, giving the ASR queue a short drain window
 - the **Summarize Current Transcript** button can run summary manually on the current transcript area
 
@@ -361,6 +449,7 @@ Current coverage includes:
 - speaker diarization timestamp assignment and speaker-count argument handling
 - LLM summary prompt and Qwen int8 default settings
 - import smoke coverage for every `aura` package module
+- transcript artifact naming, final/raw/summary splitting, and metrics JSON writing
 - short-buffer denoise stability
 - denoise preset normalization and `off` bypass behavior
 - silence denoise bypass
