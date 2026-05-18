@@ -27,11 +27,15 @@ Speaker diarization is an optional imported-file post-processing path. It intent
 
 LLM summary is also optional post-processing. It runs after ASR output exists, loads Qwen3.5-9B through an optional dependency boundary, and forces summary prompts toward Taiwanese Traditional Chinese so summarization behavior is independent from the ASR language setting.
 
+Traditional Chinese punctuation restoration is a post-ASR readability layer, not an ASR decoding policy. From first principles, punctuation should improve the saved transcript without changing what the recognizer heard. Therefore `src/aura/asr/punctuation.py` owns Chinese-language/script detection, model-backed punctuation insertion, and deterministic fallback cleanup. File imports call it after ASR segments are collected and before diarization/formatting; live ASR calls it inside the transcriber thread; final recording save applies a no-model fallback so the UI thread never blocks on model download.
+
 Transcript output is treated as a durable artifact set, not as UI text. From first principles, the user needs to know what was heard, what was summarized, where it was saved, and how long each stage took. Therefore:
 
 - `src/aura/ui/transcript_io.py` owns raw/final/summary/metrics file naming and write behavior.
 - `src/aura/asr/threads.py` records imported-file status events so FFmpeg normalization and ASR progress can be inspected after the run.
 - `src/aura/ui/transcription_tab.py` owns interaction policy: auto-save after Stop Recording, clear the visible recording transcript after save, serialize batch summary/save before moving to the next import, expose Cancel Import, and show Open Output Folder only after an artifact exists.
 - Advanced Settings owns output-location policy so transcript artifacts can stay beside the source/recording, go to a repo-local outputs folder, or go to a custom folder.
+
+Live capture source selection belongs in `src/aura/audio/capture.py` because it is platform I/O, not ASR logic. The UI may request system-only, microphone-only, or system+microphone capture, but the capture layer owns PulseAudio/PipeWire source discovery, `parec` readers, PyAudio fallback, and mono mixing before VAD/ASR. Mixed live capture also performs RMS-based active-source balancing with limited gain and headroom so the microphone and system audio remain usable without amplifying silence or clipping speech.
 
 The next high-value cleanup is to add the evaluation harness described in `docs/denoise_upgrade_plan.md`, then test DeepFilterNet3 and ClearerVoice-Studio as optional model-based backends before promoting any new default.
