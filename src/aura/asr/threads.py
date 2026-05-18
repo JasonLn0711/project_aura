@@ -79,6 +79,7 @@ class FileTranscriberThread(QThread):
         )
         self.cancellation = CancellationToken()
         self.result_lines = []
+        self.status_events = []
 
     @property
     def initial_prompt(self):
@@ -98,8 +99,17 @@ class FileTranscriberThread(QThread):
     def _raise_if_cancelled(self):
         self.cancellation.raise_if_cancelled()
 
+    def emit_status(self, message: str):
+        self.status_events.append(
+            {
+                "timestamp": datetime.datetime.now().astimezone().isoformat(timespec="seconds"),
+                "message": message,
+            }
+        )
+        self.status_updated.emit(message)
+
     def run(self):
-        self.status_updated.emit("⏳ Analyzing audio file, please wait...")
+        self.emit_status("⏳ Analyzing audio file, please wait...")
         file_name = os.path.basename(self.file_path)
         try:
             result = transcribe_file(
@@ -108,17 +118,17 @@ class FileTranscriberThread(QThread):
                 settings=self.settings,
                 worker_id=id(self),
                 cancellation=self.cancellation,
-                status_callback=self.status_updated.emit,
+                status_callback=self.emit_status,
                 line_callback=self.text_updated.emit,
             )
             self.result_lines = result.lines
         except FileTranscriptionCancelled:
-            self.status_updated.emit(f"⚠️ Cancelled transcribing {file_name}")
+            self.emit_status(f"⚠️ Cancelled transcribing {file_name}")
         except Exception as e:
             if self.cancel_requested:
-                self.status_updated.emit(f"⚠️ Cancelled transcribing {file_name}")
+                self.emit_status(f"⚠️ Cancelled transcribing {file_name}")
             else:
-                self.status_updated.emit(f"❌ Failed to transcribe {file_name}")
+                self.emit_status(f"❌ Failed to transcribe {file_name}")
                 self.error_signal.emit(f"{file_name}\n\n{normalize_file_transcription_error(e)}")
         finally:
             self.finished_signal.emit()

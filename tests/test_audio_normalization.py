@@ -9,7 +9,9 @@ from aura.audio.normalization import (
     gain_for_target_dbfs,
     normalization_cpu_status,
     normalization_thread_count,
+    parse_out_time_ms,
     parse_mean_volume,
+    run_ffmpeg_with_progress,
 )
 
 
@@ -18,6 +20,10 @@ class AudioNormalizationTests(unittest.TestCase):
         output = "[Parsed_volumedetect_0 @ 0x1] mean_volume: -27.4 dB\n"
 
         self.assertEqual(parse_mean_volume(output), -27.4)
+
+    def test_parse_out_time_ms_from_ffmpeg_progress(self):
+        self.assertEqual(parse_out_time_ms("2500000"), 2.5)
+        self.assertIsNone(parse_out_time_ms("not-a-number"))
 
     def test_gain_for_target_dbfs(self):
         self.assertAlmostEqual(gain_for_target_dbfs(-32.5, -20.0), 12.5)
@@ -63,6 +69,25 @@ class AudioNormalizationTests(unittest.TestCase):
     def test_normalization_cpu_status_reports_unavailable_count(self):
         with patch("aura.audio.normalization.detect_cpu_count", return_value=CpuDetectionResult(None, "unavailable")):
             self.assertEqual(normalization_cpu_status(), "CPU count unavailable; using 1 FFmpeg normalization thread.")
+
+    def test_run_ffmpeg_with_progress_reports_percent(self):
+        class FakeStdout:
+            def __iter__(self):
+                return iter(["out_time_ms=1000000\n", "out_time_ms=5000000\n", "progress=end\n"])
+
+        class FakeProcess:
+            stdout = FakeStdout()
+            returncode = 0
+
+            def communicate(self):
+                return "", ""
+
+        messages = []
+        with patch("aura.audio.normalization.subprocess.Popen", return_value=FakeProcess()):
+            run_ffmpeg_with_progress(["ffmpeg"], duration_seconds=10, progress_callback=messages.append)
+
+        self.assertIn("🔉 Volume normalization pass 2/2: 10%", messages)
+        self.assertIn("🔉 Volume normalization pass 2/2: 50%", messages)
 
 
 if __name__ == "__main__":

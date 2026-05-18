@@ -135,7 +135,12 @@ def prepare_import_audio(
                 status_callback(f"🔉 Fast-normalizing volume for {file_name} with FFmpeg...")
                 status_callback(f"🧮 {normalization_cpu_status()}")
             try:
-                result = normalize_media_to_wav(file_path, temp_path, settings.target_dbfs)
+                result = normalize_media_to_wav(
+                    file_path,
+                    temp_path,
+                    settings.target_dbfs,
+                    progress_callback=status_callback,
+                )
                 cancellation.raise_if_cancelled()
                 return result
             except (FfmpegUnavailable, RuntimeError):

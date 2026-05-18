@@ -83,6 +83,36 @@ class FilePipelineTests(unittest.TestCase):
             self.assertEqual(result, target)
             self.assertTrue(target.exists())
 
+    def test_prepare_import_audio_surfaces_ffmpeg_progress(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            source = Path(tmpdir) / "input.wav"
+            target = Path(tmpdir) / "prepared.wav"
+            export_silence(source)
+            statuses = []
+
+            def fake_normalize_media_to_wav(file_path, temp_path, target_dbfs, progress_callback=None):
+                self.assertEqual(file_path, str(source))
+                self.assertEqual(temp_path, target)
+                self.assertEqual(target_dbfs, -20.0)
+                progress_callback("🔉 Volume normalization pass 2/2: 50%")
+                target.write_bytes(b"RIFF")
+                return target
+
+            with (
+                patch("aura.asr.file_pipeline.normalization_cpu_status", return_value="CPU count detected via test: 12; using 6 FFmpeg normalization threads (reserved 6)."),
+                patch("aura.asr.file_pipeline.normalize_media_to_wav", side_effect=fake_normalize_media_to_wav),
+            ):
+                result = prepare_import_audio(
+                    file_path=str(source),
+                    settings=FileTranscriptionSettings(target_dbfs=-20.0),
+                    temp_path=target,
+                    status_callback=statuses.append,
+                )
+
+            self.assertEqual(result, target)
+            self.assertIn("🧮 CPU count detected via test: 12; using 6 FFmpeg normalization threads (reserved 6).", statuses)
+            self.assertIn("🔉 Volume normalization pass 2/2: 50%", statuses)
+
     @unittest.skipUnless(shutil.which("ffmpeg"), "ffmpeg is required for imported media containers")
     def test_prepare_import_audio_accepts_common_audio_video_containers(self):
         container_codecs = {
