@@ -12,13 +12,15 @@ class SummaryThread(QThread):
         super().__init__()
         self.transcript = transcript
         self.settings = settings
+        self.summary_block = ""
 
     def run(self):
         try:
             self.status_updated.emit("🧠 Summarizing transcript with local Qwen3.5-9B int8...")
             summary = summarize_transcript(self.transcript, self.settings)
             if summary.strip():
-                self.summary_ready.emit(format_summary_block(summary))
+                self.summary_block = format_summary_block(summary)
+                self.summary_ready.emit(self.summary_block)
                 self.status_updated.emit("✅ LLM summary completed")
             else:
                 self.status_updated.emit("⚠️ No transcript content available for summary")

@@ -45,6 +45,13 @@ class UIStrings:
         "Output is constrained to Taiwanese Traditional Chinese."
     )
     llm_summary_button: str = "🧠 Summarize Current Transcript"
+    output_policy_label: str = "Transcript Output:"
+    output_policy_same_folder: str = "Same folder as source/recording"
+    output_policy_session_folder: str = "Project outputs/transcripts folder"
+    output_policy_custom_folder: str = "Custom folder"
+    output_policy_tooltip: str = "Controls where auto-saved transcript artifacts and processing metrics are written."
+    select_output_folder: str = "Select Folder"
+    output_folder_selected: str = "Output folder: {folder}"
     target_volume_label: str = "Target Volume Normalization (dBFS):"
     beam_size_label: str = "Beam Size (Recommended: 5):"
     initial_prompt_label: str = "Initial Prompt:"
@@ -62,12 +69,10 @@ class UIStrings:
     live_waveform_title: str = "Live Waveform"
     start_recording: str = "🎙️ Start Recording"
     stop_recording: str = "🛑 Stop Recording"
-    import_media: str = "📁 Import Audio/Video and Start Transcription"
-    save_transcript: str = "💾 Save Transcript (.txt)"
-    clear_transcript: str = "🧹 Clear Transcript"
-    clear_transcript_confirm: str = "Clear the current transcript from the screen and temporary backup?"
-    transcript_cleared: str = "Transcript cleared."
-    no_content_to_clear: str = "There is currently no transcript content to clear."
+    import_media: str = "📁 Import Media"
+    import_media_tooltip: str = "Select audio/video files. Transcription starts automatically after import."
+    cancel_import: str = "✖ Cancel Import"
+    open_output_folder: str = "📂 Open Output Folder"
     batch_hint: str = "Imported files begin batch transcription automatically. No separate ASR start button is required."
     please_wait_title: str = "Please wait"
     model_not_ready: str = "Model is not ready."
@@ -76,13 +81,21 @@ class UIStrings:
     select_media_files: str = "Select Media Files"
     media_files_filter: str = media_filter("Media Files", SUPPORTED_IMPORT_EXTENSIONS)
     batch_tasks_completed: str = "✅ All batch tasks completed"
+    batch_tasks_cancelled: str = "⚠️ Batch import cancelled"
+    import_cancel_requested: str = "⚠️ Cancelling import and skipping remaining files..."
+    import_cancel_after_current: str = "⚠️ Current file is finishing; remaining imports will be skipped..."
+    summary_already_running: str = "A transcript summary is already running. Please wait for it to finish before importing files."
     file_transcription_failed: str = "File Transcription Failed"
     summary_failed: str = "LLM Summary Failed"
-    recording_finished_processing: str = "✅ Recording finished, processing..."
+    transcript_artifacts_saved: str = "💾 Transcript artifacts saved: {file_path} ({elapsed_seconds:.1f}s)"
+    transcript_artifacts_saved_remaining_skipped: str = (
+        "💾 Transcript artifacts saved: {file_path} ({elapsed_seconds:.1f}s); remaining imports skipped"
+    )
+    recording_finished_processing: str = "✅ Recording finished, waiting for final transcript..."
+    auto_save_transcript_pending: str = "💾 Saving transcript and clearing the workspace..."
+    output_folder_unavailable: str = "Output folder is not available yet."
     notice_title: str = "Notice"
     no_content_to_save: str = "There is currently no content to save."
-    save_file: str = "Save File"
-    text_files_filter: str = "Text Files (*.txt)"
     success_title: str = "Success"
     model_loading_failed: str = "Model Loading Failed"
     new_version_found: str = "New Version Found"
@@ -116,8 +129,14 @@ class UIStrings:
     def recording(self, base_name: str) -> str:
         return f"🔴 Recording: {base_name}"
 
-    def transcript_saved(self, file_path: str) -> str:
-        return f"Transcript saved successfully!\n{file_path}"
+    def transcript_artifacts_saved_message(self, file_path: str, elapsed_seconds: float) -> str:
+        return self.transcript_artifacts_saved.format(file_path=file_path, elapsed_seconds=elapsed_seconds)
+
+    def transcript_artifacts_saved_cancelled_message(self, file_path: str, elapsed_seconds: float) -> str:
+        return self.transcript_artifacts_saved_remaining_skipped.format(
+            file_path=file_path,
+            elapsed_seconds=elapsed_seconds,
+        )
 
     def splitter_status(self, file_name: str, output_dir: str) -> str:
         return f"Source: {file_name} | Output to: {output_dir}"
