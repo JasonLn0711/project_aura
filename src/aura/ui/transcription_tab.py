@@ -31,6 +31,7 @@ from aura.audio.export import normalize_wav_to_mp3
 from aura.llm.summary import SummarySettings
 from aura.llm.threads import SummaryThread
 from aura.settings import DEFAULT_SETTINGS
+from aura.system.runtime_paths import remove_transcript_backup
 from aura.system.update_checker import UpdateCheckerThread
 from aura.ui.messages import UI_TEXT
 
@@ -54,6 +55,7 @@ class TranscriptionTab(QWidget):
         self.summary_thread = None
         self.total_batch_count = 0
         self.update_checker = None
+        self.transcript_revision = 0
 
         self.current_folder = os.getcwd()
         self.current_filename = "transcript"
@@ -214,6 +216,10 @@ class TranscriptionTab(QWidget):
         self.btn_save_txt.clicked.connect(self.save_transcript)
         self.btn_save_txt.setFixedHeight(50)
 
+        self.btn_clear_transcript = QPushButton(self.strings.clear_transcript)
+        self.btn_clear_transcript.clicked.connect(self.clear_transcript)
+        self.btn_clear_transcript.setFixedHeight(50)
+
         self.btn_summary = QPushButton(self.strings.llm_summary_button)
         self.btn_summary.clicked.connect(self.summarize_current_transcript)
         self.btn_summary.setFixedHeight(50)
@@ -221,6 +227,7 @@ class TranscriptionTab(QWidget):
         btn_layout.addWidget(self.btn_record, stretch=2)
         btn_layout.addWidget(self.btn_import, stretch=2)
         btn_layout.addWidget(self.btn_save_txt, stretch=1)
+        btn_layout.addWidget(self.btn_clear_transcript, stretch=1)
         btn_layout.addWidget(self.btn_summary, stretch=1)
         layout.addLayout(btn_layout)
 
@@ -444,6 +451,7 @@ class TranscriptionTab(QWidget):
             self.btn_record.setStyleSheet("background-color: #e74c3c; color: white; font-size: 16px; font-weight: bold;")
             self.status_label.setText(self.strings.recording(base_name))
             self.text_area.clear()
+            self.transcript_revision += 1
         else:
             self.recorder_thread.running = False
             self.recorder_thread.quit()
@@ -474,6 +482,26 @@ class TranscriptionTab(QWidget):
             with open(file_path, "w", encoding="utf-8") as f:
                 f.write(content)
             QMessageBox.information(self, self.strings.success_title, self.strings.transcript_saved(file_path))
+
+    def clear_transcript(self):
+        if not self.text_area.toPlainText().strip():
+            QMessageBox.information(self, self.strings.notice_title, self.strings.no_content_to_clear)
+            return
+
+        reply = QMessageBox.question(
+            self,
+            self.strings.notice_title,
+            self.strings.clear_transcript_confirm,
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No,
+        )
+        if reply != QMessageBox.StandardButton.Yes:
+            return
+
+        self.transcript_revision += 1
+        self.text_area.clear()
+        remove_transcript_backup()
+        self.status_label.setText(self.strings.transcript_cleared)
 
     @pyqtSlot(np.ndarray)
     def update_plot(self, data):
@@ -537,11 +565,18 @@ class TranscriptionTab(QWidget):
             return
         self.btn_summary.setEnabled(False)
         self.summary_thread = SummaryThread(transcript, self.summary_settings())
-        self.summary_thread.summary_ready.connect(self.update_log)
+        summary_revision = self.transcript_revision
+        self.summary_thread.summary_ready.connect(
+            lambda text, revision=summary_revision: self.update_summary_log(text, revision)
+        )
         self.summary_thread.status_updated.connect(self.update_status_only)
         self.summary_thread.error_signal.connect(self.on_summary_error)
         self.summary_thread.finished.connect(lambda: self.btn_summary.setEnabled(True))
         self.summary_thread.start()
+
+    def update_summary_log(self, text: str, revision: int):
+        if revision == self.transcript_revision:
+            self.update_log(text)
 
     @pyqtSlot(str)
     def on_summary_error(self, err_msg):
