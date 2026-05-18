@@ -16,6 +16,7 @@ temp_normalized.wav
 runtime/
 outputs/
 recordings/
+??????_????_*/
 *.wav
 *.mp3
 *.m4a
