@@ -3,6 +3,8 @@ from pathlib import Path
 
 from pydub import AudioSegment
 
+from aura.audio.normalization import FfmpegUnavailable, normalize_wav_to_mp3_with_ffmpeg
+
 
 def mp3_path_for_wav(wav_path: str | Path) -> Path:
     return Path(wav_path).with_suffix(".mp3")
@@ -11,6 +13,14 @@ def mp3_path_for_wav(wav_path: str | Path) -> Path:
 def normalize_wav_to_mp3(wav_path: str | Path, target_dbfs: float) -> Path:
     wav_path = Path(wav_path)
     mp3_path = mp3_path_for_wav(wav_path)
+    try:
+        normalize_wav_to_mp3_with_ffmpeg(wav_path, mp3_path, target_dbfs)
+        if wav_path.exists():
+            wav_path.unlink()
+        return mp3_path
+    except (FfmpegUnavailable, RuntimeError):
+        pass
+
     audio = None
     normalized = None
     try:
