@@ -39,6 +39,15 @@ class FakeModel:
         return [SimpleNamespace(start=1.2, end=2.5, text=" hello")], SimpleNamespace()
 
 
+class FakeChineseModel:
+    def __init__(self):
+        self.calls = []
+
+    def transcribe(self, path, **kwargs):
+        self.calls.append((path, kwargs))
+        return [SimpleNamespace(start=1.2, end=2.5, text="這是測試")], SimpleNamespace(language="zh")
+
+
 class FilePipelineTests(unittest.TestCase):
     def test_format_segment_uses_hms_timestamp(self):
         segment = SimpleNamespace(start=3661.7, text=" hello")
@@ -197,6 +206,28 @@ class FilePipelineTests(unittest.TestCase):
 
             self.assertEqual(model.calls[0][1]["beam_size"], 7)
             self.assertEqual(model.calls[0][1]["language"], "zh")
+
+    def test_transcribe_file_restores_traditional_chinese_punctuation(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            source = Path(tmpdir) / "input.wav"
+            export_silence(source)
+            model = FakeChineseModel()
+            statuses = []
+            lines = []
+
+            with patch.dict(os.environ, {runtime_paths.RUNTIME_DIR_ENV: tmpdir}):
+                result = transcribe_file(
+                    model=model,
+                    file_path=str(source),
+                    settings=FileTranscriptionSettings(language=None),
+                    worker_id="unit-zh-punc",
+                    status_callback=statuses.append,
+                    line_callback=lines.append,
+                )
+
+            self.assertEqual(result.lines, ["[00:00:01] 這是測試。"])
+            self.assertEqual(lines, ["[00:00:01] 這是測試。"])
+            self.assertIn("🔤 Restoring Traditional Chinese punctuation...", statuses)
 
     def test_transcribe_file_can_label_speakers_with_diarization_runner(self):
         with tempfile.TemporaryDirectory() as tmpdir:

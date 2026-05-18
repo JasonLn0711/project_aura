@@ -26,10 +26,12 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
+from aura.asr.punctuation import restore_chinese_punctuation_for_transcript
 from aura.asr.threads import FileTranscriberThread, ModelLoaderThread, TranscriberThread
 from aura.audio.denoise import DEFAULT_ACTIVE_DENOISE_PRESET, OFF_DENOISE_PRESET, normalize_denoise_preset
 from aura.audio.capture import AudioRecorderThread
 from aura.audio.export import normalize_wav_to_mp3
+from aura.config import LIVE_CAPTURE_MICROPHONE, LIVE_CAPTURE_SYSTEM, LIVE_CAPTURE_SYSTEM_MICROPHONE
 from aura.llm.summary import SummarySettings
 from aura.llm.threads import SummaryThread
 from aura.settings import DEFAULT_SETTINGS
@@ -136,6 +138,19 @@ class TranscriptionTab(QWidget):
         speaker_layout.addStretch()
         settings_vbox.addLayout(speaker_layout)
         self.update_speaker_controls(self.check_speaker_diarization.isChecked())
+
+        capture_layout = QHBoxLayout()
+        capture_layout.addWidget(QLabel(self.strings.live_capture_source_label))
+        self.combo_live_capture = QComboBox()
+        self.combo_live_capture.setToolTip(self.strings.live_capture_source_tooltip)
+        self.combo_live_capture.addItem(self.strings.live_capture_system_microphone, LIVE_CAPTURE_SYSTEM_MICROPHONE)
+        self.combo_live_capture.addItem(self.strings.live_capture_system, LIVE_CAPTURE_SYSTEM)
+        self.combo_live_capture.addItem(self.strings.live_capture_microphone, LIVE_CAPTURE_MICROPHONE)
+        capture_index = self.combo_live_capture.findData(self.settings.live_capture_source)
+        self.combo_live_capture.setCurrentIndex(capture_index if capture_index >= 0 else 0)
+        capture_layout.addWidget(self.combo_live_capture)
+        capture_layout.addStretch()
+        settings_vbox.addLayout(capture_layout)
 
         summary_layout = QHBoxLayout()
         self.check_llm_summary = QCheckBox(self.strings.llm_summary_label)
@@ -418,6 +433,9 @@ class TranscriptionTab(QWidget):
     def denoise_enabled(self) -> bool:
         return self.selected_denoise_preset() != OFF_DENOISE_PRESET
 
+    def selected_live_capture_source(self) -> str:
+        return self.combo_live_capture.currentData() or LIVE_CAPTURE_SYSTEM_MICROPHONE
+
     def update_speaker_controls(self, enabled):
         self.spin_min_speakers.setEnabled(enabled)
         self.spin_max_speakers.setEnabled(enabled)
@@ -663,6 +681,7 @@ class TranscriptionTab(QWidget):
                 self.default_transcript_base_path(),
             )
             self.current_recording_metrics["recording_started_at"] = self.timestamp_now()
+            self.current_recording_metrics["capture_source"] = self.selected_live_capture_source()
 
             self.transcriber_thread.update_live_settings(
                 beam_size=self.spin_beam.value(),
@@ -675,9 +694,11 @@ class TranscriptionTab(QWidget):
                 self.transcriber_thread,
                 enable_denoise=self.denoise_enabled(),
                 denoise_preset=self.selected_denoise_preset(),
+                capture_mode=self.selected_live_capture_source(),
             )
             self.recorder_thread.waveform_signal.connect(self.update_plot)
             self.recorder_thread.finished_signal.connect(self.process_audio)
+            self.recorder_thread.status_signal.connect(self.update_status_only)
 
             self.btn_import.setEnabled(False)
             self.btn_reload_model.setEnabled(False)
@@ -756,6 +777,14 @@ class TranscriptionTab(QWidget):
             metrics["llm_summary_finished_at"] = self.timestamp_now()
 
         raw_transcript, summary = split_transcript_sections(self.text_area.toPlainText())
+        punctuation_result = None
+        if self.settings.chinese_punctuation_enabled:
+            punctuation_result = restore_chinese_punctuation_for_transcript(
+                raw_transcript,
+                language=self.combo_lang.currentData(),
+                enable_model=False,
+            )
+            raw_transcript = punctuation_result.text
         summary = summary_override or summary
         if not raw_transcript and not summary:
             self.status_label.setText(self.strings.no_content_to_save)
@@ -767,6 +796,8 @@ class TranscriptionTab(QWidget):
         save_started = time.perf_counter()
         if metrics is not None:
             metrics["save_started_at"] = self.timestamp_now()
+            if punctuation_result is not None and punctuation_result.backend != "skipped":
+                metrics["punctuation_restoration_backend"] = punctuation_result.backend
         saved = write_transcript_artifacts(base_path, raw_transcript, summary_text=summary)
         if metrics is not None:
             self.add_stage_duration(metrics, "save_outputs", save_started)

@@ -1,6 +1,7 @@
 import unittest
 
 from aura.config import (
+    CHINESE_PUNCTUATION_MODEL_ID,
     COMPUTE_TYPE,
     DEFAULT_LIVE_PROMPT,
     DEFAULT_PROMPT,
@@ -31,6 +32,8 @@ class SettingsTests(unittest.TestCase):
         self.assertFalse(DEFAULT_SETTINGS.llm_summary_enabled)
         self.assertEqual(DEFAULT_SETTINGS.llm_summary_model, SUMMARY_MODEL_ID)
         self.assertEqual(DEFAULT_SETTINGS.llm_summary_quantization, "int8")
+        self.assertTrue(DEFAULT_SETTINGS.chinese_punctuation_enabled)
+        self.assertEqual(DEFAULT_SETTINGS.chinese_punctuation_model, CHINESE_PUNCTUATION_MODEL_ID)
 
     def test_custom_settings_can_override_runtime_defaults(self):
         settings = AppSettings(device="cpu", compute_type="int8", language=None, target_dbfs=-18.0)

@@ -2598,7 +2598,7 @@ wheels = [
 
 [[package]]
 name = "project-aura-refactor"
-version = "1.9.0"
+version = "1.10.0"
 source = { editable = "." }
 dependencies = [
     { name = "faster-whisper" },
@@ -2621,6 +2621,10 @@ dependencies = [
 diarization = [
     { name = "pyannote-audio" },
     { name = "torch" },
+]
+punctuation = [
+    { name = "torch" },
+    { name = "transformers" },
 ]
 summary = [
     { name = "accelerate" },
@@ -2647,11 +2651,13 @@ requires-dist = [
     { name = "requests", specifier = ">=2.32" },
     { name = "setuptools", specifier = "<70" },
     { name = "torch", marker = "extra == 'diarization'", specifier = ">=2.0" },
+    { name = "torch", marker = "extra == 'punctuation'", specifier = ">=2.0" },
     { name = "torch", marker = "extra == 'summary'", specifier = ">=2.0" },
+    { name = "transformers", marker = "extra == 'punctuation'", specifier = ">=4.55" },
     { name = "transformers", marker = "extra == 'summary'", specifier = ">=4.55" },
     { name = "webrtcvad", specifier = ">=2.0.10" },
 ]
-provides-extras = ["diarization", "summary"]
+provides-extras = ["diarization", "summary", "punctuation"]
 
 [[package]]
 name = "propcache"

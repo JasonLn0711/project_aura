@@ -17,6 +17,7 @@ from aura.asr.file_pipeline import (
     resolve_initial_prompt,
     transcribe_file,
 )
+from aura.asr.punctuation import restore_chinese_punctuation
 from aura.settings import DEFAULT_SETTINGS
 from aura.diarization.pyannote_pipeline import DiarizationSettings
 from aura.system.cuda import is_cuda_runtime_error, preload_cuda_runtime_libraries
@@ -200,6 +201,8 @@ class TranscriberThread(QThread):
         self.live_beam_size = DEFAULT_SETTINGS.beam_size
         self.live_language = DEFAULT_SETTINGS.language
         self.live_initial_prompt = DEFAULT_SETTINGS.live_initial_prompt
+        self.live_chinese_punctuation_enabled = DEFAULT_SETTINGS.chinese_punctuation_enabled
+        self.punctuation_status_emitted = False
 
     def update_live_settings(
         self,
@@ -228,7 +231,21 @@ class TranscriberThread(QThread):
 
                 self.processing = True
                 segments, info = self.model.transcribe(audio_data, **transcribe_kwargs)
+                detected_language = getattr(info, "language", None) or self.live_language
                 text_segment = "".join([s.text for s in segments])
+                if self.live_chinese_punctuation_enabled:
+                    punctuation_result = restore_chinese_punctuation(text_segment, language=detected_language)
+                    text_segment = punctuation_result.text
+                    if punctuation_result.backend != "skipped" and not self.punctuation_status_emitted:
+                        if punctuation_result.backend == "model":
+                            self.status_updated.emit("🔤 Traditional Chinese punctuation restored with the local model.")
+                        elif punctuation_result.detail:
+                            self.status_updated.emit(
+                                f"⚠️ Punctuation model unavailable; using rule fallback. Detail: {punctuation_result.detail}"
+                            )
+                        else:
+                            self.status_updated.emit("🔤 Traditional Chinese punctuation normalized with rule fallback.")
+                        self.punctuation_status_emitted = True
                 if text_segment.strip():
                     timestamp = datetime.datetime.now().strftime("%H:%M:%S")
                     formatted_text = f"[{timestamp}] {text_segment}"

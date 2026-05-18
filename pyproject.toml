@@ -40,6 +40,10 @@ summary = [
   "torch>=2.0",
   "transformers>=4.55",
 ]
+punctuation = [
+  "torch>=2.0",
+  "transformers>=4.55",
+]
 
 [project.scripts]
 aura = "aura.app:main"

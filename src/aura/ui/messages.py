@@ -32,6 +32,14 @@ class UIStrings:
         "Applies noise reduction to live recording and imported media before ASR. "
         "Use Off in quiet environments; stronger modes may remove speech detail."
     )
+    live_capture_source_label: str = "Live Capture Source:"
+    live_capture_system: str = "System audio only"
+    live_capture_microphone: str = "Microphone only"
+    live_capture_system_microphone: str = "System audio + microphone"
+    live_capture_source_tooltip: str = (
+        "Controls live recording input. System+microphone uses PulseAudio/PipeWire sources "
+        "when available and falls back to the default input if separate sources are not exposed."
+    )
     speaker_diarization_label: str = "Identify speakers after import transcription"
     speaker_diarization_tooltip: str = (
         "Uses optional pyannote diarization on imported files and labels transcript segments by speaker. "

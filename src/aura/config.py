@@ -6,9 +6,16 @@ VAD_LEVEL = 3
 MODEL_ID = "SoybeanMilk/faster-whisper-Breeze-ASR-25"
 DIARIZATION_MODEL_ID = "pyannote/speaker-diarization-community-1"
 SUMMARY_MODEL_ID = "Qwen/Qwen3.5-9B"
+CHINESE_PUNCTUATION_MODEL_ID = "kotoba-speech/mmbert-base-zh-punctuation-320000"
+CHINESE_PUNCTUATION_FALLBACK_MODEL_ID = "p208p2002/zh-wiki-punctuation-restore"
 DEVICE = "cuda"
 COMPUTE_TYPE = "int8"
 GITHUB_REPOSITORY = "JasonLn0711/project_aura"
+
+LIVE_CAPTURE_SYSTEM = "system"
+LIVE_CAPTURE_MICROPHONE = "microphone"
+LIVE_CAPTURE_SYSTEM_MICROPHONE = "system_microphone"
+DEFAULT_LIVE_CAPTURE_SOURCE = LIVE_CAPTURE_SYSTEM_MICROPHONE
 
 DEFAULT_PROMPT = "這是一份專業的繁體中文會議紀錄，請務必根據語氣加上正確的全形標點符號。"
 DEFAULT_LIVE_PROMPT = "The following is a professional meeting record."

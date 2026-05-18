@@ -1,7 +1,9 @@
 from dataclasses import dataclass
 
 from aura.config import (
+    CHINESE_PUNCTUATION_MODEL_ID,
     COMPUTE_TYPE,
+    DEFAULT_LIVE_CAPTURE_SOURCE,
     DEFAULT_LIVE_PROMPT,
     DEFAULT_PROMPT,
     DEVICE,
@@ -19,6 +21,7 @@ class AppSettings:
     target_dbfs: float = -20.0
     beam_size: int = 5
     language: str | None = "zh"
+    live_capture_source: str = DEFAULT_LIVE_CAPTURE_SOURCE
     file_initial_prompt: str | None = DEFAULT_PROMPT
     live_initial_prompt: str | None = DEFAULT_LIVE_PROMPT
     denoise_enabled: bool = False
@@ -34,6 +37,8 @@ class AppSettings:
     llm_summary_quantization: str = "int8"
     llm_summary_max_new_tokens: int = 768
     llm_summary_temperature: float = 0.2
+    chinese_punctuation_enabled: bool = True
+    chinese_punctuation_model: str = CHINESE_PUNCTUATION_MODEL_ID
     splitter_target_minutes: int = 40
     splitter_tolerance_minutes: int = 5
 

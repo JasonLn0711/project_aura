@@ -8,6 +8,7 @@ from pydub import AudioSegment
 
 from aura.audio.denoise import OFF_DENOISE_PRESET, normalize_denoise_preset, reduce_audio_segment_noise
 from aura.audio.normalization import FfmpegUnavailable, normalize_media_to_wav, normalization_cpu_status
+from aura.asr.punctuation import restore_chinese_punctuation, should_restore_traditional_chinese_punctuation
 from aura.diarization.pyannote_pipeline import DiarizationSettings, diarize_audio_file
 from aura.diarization.speaker_assignment import TranscriptSegment, assign_speakers
 from aura.settings import DEFAULT_SETTINGS
@@ -40,6 +41,7 @@ class FileTranscriptionSettings:
     enable_denoise: bool = DEFAULT_SETTINGS.denoise_enabled
     denoise_preset: str = DEFAULT_SETTINGS.denoise_preset
     diarization: DiarizationSettings = field(default_factory=DiarizationSettings)
+    chinese_punctuation_enabled: bool = DEFAULT_SETTINGS.chinese_punctuation_enabled
 
     def __post_init__(self):
         object.__setattr__(
@@ -94,6 +96,48 @@ def transcript_segment_from_whisper(segment) -> TranscriptSegment:
     if end < start:
         end = start
     return TranscriptSegment(start=start, end=end, text=str(segment.text))
+
+
+def restore_transcript_segments_punctuation(
+    transcript_segments: list[TranscriptSegment],
+    language: str | None,
+    status_callback: Callable[[str], None] | None = None,
+) -> list[TranscriptSegment]:
+    combined_text = "".join(segment.text for segment in transcript_segments)
+    if not should_restore_traditional_chinese_punctuation(combined_text, language):
+        return transcript_segments
+
+    if status_callback:
+        status_callback("🔤 Restoring Traditional Chinese punctuation...")
+
+    restored_segments = []
+    backend = "skipped"
+    detail = ""
+    for segment in transcript_segments:
+        result = restore_chinese_punctuation(segment.text, language=language)
+        restored_segments.append(
+            TranscriptSegment(
+                start=segment.start,
+                end=segment.end,
+                text=result.text,
+            )
+        )
+        if result.backend == "model":
+            backend = "model"
+        elif backend == "skipped" and result.backend == "rule_fallback":
+            backend = "rule_fallback"
+        if result.detail and not detail:
+            detail = result.detail
+
+    if status_callback and backend != "skipped":
+        if backend == "model":
+            status_callback("✅ Traditional Chinese punctuation restored with the local model.")
+        elif detail:
+            status_callback(f"⚠️ Punctuation model unavailable; used rule fallback. Detail: {detail}")
+        else:
+            status_callback("✅ Traditional Chinese punctuation normalized with rule fallback.")
+
+    return restored_segments
 
 
 def normalize_file_transcription_error(error: Exception) -> str:
@@ -208,10 +252,19 @@ def transcribe_file(
         )
         segments, info = transcribe_prepared_file(model, prepared_path, settings)
         transcript_segments = []
+        detected_language = getattr(info, "language", None) or settings.language
 
         for segment in segments:
             cancellation.raise_if_cancelled()
             transcript_segments.append(transcript_segment_from_whisper(segment))
+
+        if settings.chinese_punctuation_enabled:
+            transcript_segments = restore_transcript_segments_punctuation(
+                transcript_segments,
+                language=detected_language,
+                status_callback=status_callback,
+            )
+        cancellation.raise_if_cancelled()
 
         if settings.diarization.enabled:
             if status_callback:
