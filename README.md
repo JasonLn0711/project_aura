@@ -41,8 +41,8 @@ The app is designed for professional meeting and lecture workflows. It includes 
 | Field | Value |
 | --- | --- |
 | Project Name | Project AURA / Ultimate Audio Assistant |
-| Refactor Version | `1.8.1` |
-| Current Release Tag | `v1.8.1` |
+| Refactor Version | `1.9.0` |
+| Current Release Tag | `v1.9.0` |
 | ASR Model | `SoybeanMilk/faster-whisper-Breeze-ASR-25` |
 | GitHub Repository | `JasonLn0711/project_aura` |
 | Academic Affiliation | National Yang Ming Chiao Tung University (NYCU) |
@@ -51,7 +51,7 @@ The app is designed for professional meeting and lecture workflows. It includes 
 
 ## Current Working Version Changes
 
-This working version builds on `v1.8.1` and focuses on making transcription workflows automatic, traceable, and easier to recover when long imported files are processing.
+`v1.9.0` focuses on making transcription workflows automatic, traceable, and easier to recover when long imported files are processing.
 
 ### User Workflow Changes
 
