@@ -3,6 +3,7 @@ import os
 import re
 import shutil
 import subprocess
+from dataclasses import dataclass
 from pathlib import Path
 
 
@@ -12,6 +13,16 @@ RESERVED_CPU_COUNT = 6
 
 class FfmpegUnavailable(RuntimeError):
     pass
+
+
+@dataclass(frozen=True)
+class CpuDetectionResult:
+    count: int | None
+    source: str
+
+    @property
+    def available(self) -> bool:
+        return bool(self.count and self.count > 0)
 
 
 def require_ffmpeg() -> str:
@@ -39,11 +50,65 @@ def gain_for_target_dbfs(mean_volume: float | None, target_dbfs: float) -> float
     return float(target_dbfs) - mean_volume
 
 
+def _positive_int(value) -> int | None:
+    try:
+        parsed = int(value)
+    except (TypeError, ValueError):
+        return None
+    return parsed if parsed > 0 else None
+
+
+def detect_cpu_count() -> CpuDetectionResult:
+    detected = _positive_int(os.cpu_count())
+    if detected:
+        return CpuDetectionResult(detected, "os.cpu_count")
+
+    if hasattr(os, "sched_getaffinity"):
+        try:
+            affinity_count = len(os.sched_getaffinity(0))
+        except OSError:
+            affinity_count = 0
+        detected = _positive_int(affinity_count)
+        if detected:
+            return CpuDetectionResult(detected, "os.sched_getaffinity")
+
+    nproc = shutil.which("nproc")
+    if nproc:
+        result = subprocess.run([nproc], capture_output=True, text=True, check=False)
+        if result.returncode == 0:
+            detected = _positive_int(result.stdout.strip())
+            if detected:
+                return CpuDetectionResult(detected, "nproc")
+
+    cpuinfo = Path("/proc/cpuinfo")
+    try:
+        if cpuinfo.exists():
+            processor_count = sum(1 for line in cpuinfo.read_text(encoding="utf-8").splitlines() if line.startswith("processor"))
+            detected = _positive_int(processor_count)
+            if detected:
+                return CpuDetectionResult(detected, "/proc/cpuinfo")
+    except OSError:
+        pass
+
+    return CpuDetectionResult(None, "unavailable")
+
+
 def normalization_thread_count(cpu_count: int | None = None, reserved_cpus: int = RESERVED_CPU_COUNT) -> int:
-    available_cpus = cpu_count if cpu_count is not None else os.cpu_count()
+    available_cpus = _positive_int(cpu_count) if cpu_count is not None else detect_cpu_count().count
     if not available_cpus:
         return 1
     return max(1, int(available_cpus) - int(reserved_cpus))
+
+
+def normalization_cpu_status(reserved_cpus: int = RESERVED_CPU_COUNT) -> str:
+    detected = detect_cpu_count()
+    threads = normalization_thread_count(detected.count, reserved_cpus)
+    if not detected.available:
+        return "CPU count unavailable; using 1 FFmpeg normalization thread."
+    return (
+        f"CPU count detected via {detected.source}: {detected.count}; "
+        f"using {threads} FFmpeg normalization threads (reserved {reserved_cpus})."
+    )
 
 
 def ffmpeg_cpu_args(thread_count: int | None = None) -> list[str]:

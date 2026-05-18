@@ -1,9 +1,13 @@
 import gc
+import logging
 from pathlib import Path
 
 from pydub import AudioSegment
 
-from aura.audio.normalization import FfmpegUnavailable, normalize_wav_to_mp3_with_ffmpeg
+from aura.audio.normalization import FfmpegUnavailable, normalize_wav_to_mp3_with_ffmpeg, normalization_cpu_status
+
+
+logger = logging.getLogger(__name__)
 
 
 def mp3_path_for_wav(wav_path: str | Path) -> Path:
@@ -14,6 +18,7 @@ def normalize_wav_to_mp3(wav_path: str | Path, target_dbfs: float) -> Path:
     wav_path = Path(wav_path)
     mp3_path = mp3_path_for_wav(wav_path)
     try:
+        logger.info("Recording normalization CPU budget: %s", normalization_cpu_status())
         normalize_wav_to_mp3_with_ffmpeg(wav_path, mp3_path, target_dbfs)
         if wav_path.exists():
             wav_path.unlink()

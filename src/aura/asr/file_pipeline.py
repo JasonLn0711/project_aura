@@ -7,7 +7,7 @@ from typing import Callable
 from pydub import AudioSegment
 
 from aura.audio.denoise import OFF_DENOISE_PRESET, normalize_denoise_preset, reduce_audio_segment_noise
-from aura.audio.normalization import FfmpegUnavailable, normalize_media_to_wav
+from aura.audio.normalization import FfmpegUnavailable, normalize_media_to_wav, normalization_cpu_status
 from aura.diarization.pyannote_pipeline import DiarizationSettings, diarize_audio_file
 from aura.diarization.speaker_assignment import TranscriptSegment, assign_speakers
 from aura.settings import DEFAULT_SETTINGS
@@ -133,6 +133,7 @@ def prepare_import_audio(
         if settings.denoise_preset == OFF_DENOISE_PRESET:
             if status_callback:
                 status_callback(f"🔉 Fast-normalizing volume for {file_name} with FFmpeg...")
+                status_callback(f"🧮 {normalization_cpu_status()}")
             try:
                 result = normalize_media_to_wav(file_path, temp_path, settings.target_dbfs)
                 cancellation.raise_if_cancelled()

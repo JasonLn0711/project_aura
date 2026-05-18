@@ -3,8 +3,11 @@ import unittest
 from unittest.mock import patch
 
 from aura.audio.normalization import (
+    CpuDetectionResult,
+    detect_cpu_count,
     ffmpeg_cpu_args,
     gain_for_target_dbfs,
+    normalization_cpu_status,
     normalization_thread_count,
     parse_mean_volume,
 )
@@ -28,12 +31,38 @@ class AudioNormalizationTests(unittest.TestCase):
 
     def test_normalization_thread_count_keeps_at_least_one_cpu(self):
         self.assertEqual(normalization_thread_count(cpu_count=4), 1)
-        with patch("aura.audio.normalization.os.cpu_count", return_value=None):
+        with patch("aura.audio.normalization.detect_cpu_count", return_value=CpuDetectionResult(None, "unavailable")):
             self.assertEqual(normalization_thread_count(), 1)
 
     def test_ffmpeg_cpu_args_use_normalization_budget(self):
-        with patch("aura.audio.normalization.os.cpu_count", return_value=12):
+        with patch("aura.audio.normalization.detect_cpu_count", return_value=CpuDetectionResult(12, "test")):
             self.assertEqual(ffmpeg_cpu_args(), ["-threads", "6", "-filter_threads", "6"])
+
+    def test_detect_cpu_count_falls_back_to_affinity(self):
+        with (
+            patch("aura.audio.normalization.os.cpu_count", return_value=None),
+            patch("aura.audio.normalization.os.sched_getaffinity", return_value={0, 1, 2, 3}),
+        ):
+            result = detect_cpu_count()
+
+        self.assertEqual(result, CpuDetectionResult(4, "os.sched_getaffinity"))
+
+    def test_detect_cpu_count_falls_back_to_nproc(self):
+        fake_result = type("Result", (), {"returncode": 0, "stdout": "8\n"})()
+        with (
+            patch("aura.audio.normalization.os.cpu_count", return_value=None),
+            patch("aura.audio.normalization.os.sched_getaffinity", side_effect=OSError),
+            patch("aura.audio.normalization.shutil.which", return_value="/usr/bin/nproc"),
+            patch("aura.audio.normalization.subprocess.run", return_value=fake_result),
+            patch("aura.audio.normalization.Path.exists", return_value=False),
+        ):
+            result = detect_cpu_count()
+
+        self.assertEqual(result, CpuDetectionResult(8, "nproc"))
+
+    def test_normalization_cpu_status_reports_unavailable_count(self):
+        with patch("aura.audio.normalization.detect_cpu_count", return_value=CpuDetectionResult(None, "unavailable")):
+            self.assertEqual(normalization_cpu_status(), "CPU count unavailable; using 1 FFmpeg normalization thread.")
 
 
 if __name__ == "__main__":
