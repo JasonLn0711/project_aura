@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "project-aura-refactor"
-version = "1.8.0"
+version = "1.8.1"
 description = "Refactored Project AURA desktop audio transcription and splitting tool."
 readme = "README.md"
 requires-python = ">=3.10"
