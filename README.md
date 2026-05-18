@@ -57,7 +57,7 @@ The app is designed for professional meeting and lecture workflows. It includes 
 | Batch Transcription | Import multiple audio/video files with queue scheduling and progress tracking. |
 | Speaker Diarization | Optional imported-file speaker labeling through `pyannote.audio`, with configurable speaker-count bounds. |
 | Real-time Denoising | Optional `noisereduce` processing before ASR for noisy environments. |
-| Volume Normalization | Dynamically standardizes imported and recorded audio to a target dBFS, default `-20`, using a fast FFmpeg path when denoise is off. The FFmpeg path uses `CPU count - 6` worker threads, with a minimum of `1`. |
+| Volume Normalization | Dynamically standardizes imported and recorded audio to a target dBFS, default `-20`, using a fast FFmpeg path when denoise is off. The FFmpeg path uses `CPU count - 6` worker threads, with a minimum of `1`, and reports clearly if CPU count cannot be detected. |
 | Asynchronous Architecture | `ModelLoaderThread` prevents UI freezing during initialization and compute-type switching. |
 | RTX/CUDA-only ASR | ASR model loading is pinned to `cuda`; CPU fallback is disabled so transcription never silently leaves the RTX GPU path. |
 | System Tray Integration | Minimizes to background with `QSystemTrayIcon`. |
@@ -269,7 +269,7 @@ When enabled in Advanced Settings, the file pipeline:
 
 1. Decodes the source media with `pydub`.
 2. Optionally applies the selected denoise preset.
-3. Normalizes the file to the target dBFS and writes a temporary WAV under `AURA_RUNTIME_DIR`. The normal no-denoise path uses FFmpeg `volumedetect` plus `volume` filtering to avoid slow Python/pydub processing; FFmpeg is configured with `CPU count - 6` threads, with a minimum of `1`. Denoise-enabled imports still use the Python audio path because denoise operates on an in-memory `AudioSegment`.
+3. Normalizes the file to the target dBFS and writes a temporary WAV under `AURA_RUNTIME_DIR`. The normal no-denoise path uses FFmpeg `volumedetect` plus `volume` filtering to avoid slow Python/pydub processing; FFmpeg is configured with `CPU count - 6` threads, with a minimum of `1`. CPU count detection tries `os.cpu_count()`, Linux CPU affinity, `nproc`, and `/proc/cpuinfo`; if all probes fail, the UI reports that CPU count is unavailable and uses one FFmpeg normalization thread. Denoise-enabled imports still use the Python audio path because denoise operates on an in-memory `AudioSegment`.
 4. Runs `faster-whisper` transcription on that prepared WAV.
 5. Runs `pyannote.audio` speaker diarization on the same prepared WAV.
 6. Assigns each transcript segment to the speaker turn with the largest timestamp overlap.
