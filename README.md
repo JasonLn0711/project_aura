@@ -49,6 +49,26 @@ The app is designed for professional meeting and lecture workflows. It includes 
 | Project Lead | Jason Chia-Sheng Lin (PhD. Student) |
 | License | MIT |
 
+## What We Updated Today (2026-05-25)
+
+The real problem in meeting transcription is rarely that a person does not know how to press a button. The problem is that humans are busy, meetings start while we are still switching context, and recordings often keep running long after the real conversation has ended. A transcription tool should protect attention instead of demanding more of it.
+
+Before today, AURA already had the essential professional workflow: live recording, real-time ASR, optional summary generation, automatic transcript artifact saving, and an output folder policy. But it still depended on one fragile human habit: remember exactly when to start, and remember exactly when to stop.
+
+Today we added two safety rails:
+
+1. **Scheduled live recording**: AURA can now arm a recording for a specific wall-clock `HH:mm` start time, with an optional `HH:mm` auto-stop time. If the selected time has already passed today, AURA rolls it to the next matching time. If the stop time is earlier than the start time, AURA treats it as a next-day stop.
+2. **No-voice failsafe**: if live capture detects no human voice for 20 continuous minutes, AURA automatically stops the recording and trims the final no-voice audio from the saved WAV/MP3 path. This prevents forgotten recordings from turning into long silent files.
+
+We compared four implementation paths before choosing this design:
+
+- OS-level scheduling such as cron/systemd timers: powerful, but too detached from the desktop recording state and transcript artifact workflow.
+- A UI-only countdown timer: simple, but it cannot know whether the room is still active or only silent.
+- A fixed maximum recording duration: safe, but it can interrupt long lectures or research meetings at the worst moment.
+- Capture-layer voice-aware stopping: slightly more work, but it uses the same live audio stream that drives ASR and can trim the saved audio at the exact place where useful speech ends.
+
+The final decision is intentionally hybrid: wall-clock scheduling belongs in the PyQt interaction layer, while the 20-minute no-voice guard belongs in the audio capture layer. That keeps the feature predictable for the user and keeps the saved transcript/audio artifacts consistent with the same recording pipeline AURA already trusts.
+
 ## Current Working Version Changes
 
 `v1.10.0` turns the refactor from a cleaned-up transcription UI into a more complete meeting-transcription workstation. The main goals are: reduce manual transcript handling, make imported-file processing observable, keep ASR on the required RTX/CUDA path, support live system-audio plus microphone capture, improve Traditional Chinese readability, and keep the growing feature set behind clear module boundaries.
@@ -56,6 +76,8 @@ The app is designed for professional meeting and lecture workflows. It includes 
 ### User Workflow Changes
 
 - The main transcription controls are simplified around the actual user actions: **Start/Stop Recording**, **Import Media**, optional **Cancel Import**, optional **Open Output Folder**, and **Summarize Current Transcript**.
+- Live recording can be armed from Advanced Settings to start at a selected wall-clock time. The same schedule can optionally auto-stop at a selected wall-clock time, including next-day stop times when the end time is earlier than the start time.
+- Live recording now has a 20-minute no-voice failsafe: if AURA does not detect human voice for 20 continuous minutes, it auto-stops and trims the trailing no-voice audio before saving the recording.
 - The previous standalone **Save Transcript** and **Clear Transcript** buttons are removed from the primary workflow.
 - After **Stop Recording**, AURA now waits for the live ASR queue to finish, runs the optional LLM summary if enabled, saves transcript artifacts automatically, clears the visible transcript pane, and removes the temporary transcript backup.
 - After an auto-save, **Open Output Folder** becomes available so the user can inspect the generated files without searching manually.
@@ -96,6 +118,7 @@ This split makes it possible to compare the original ASR output with the final u
 - When PulseAudio/PipeWire source discovery is unavailable, the app reports the fallback and records from the default PyAudio/Pulse input instead of failing silently.
 - System-audio plus microphone capture is mixed before VAD/ASR as 16 kHz mono `int16` frames.
 - Mixed live capture now applies RMS-based active-source balancing. Silent/background-only chunks are ignored, active sources receive limited gain, and mix headroom is preserved so microphone speech and system audio do not clip or drown each other out.
+- If no voice-like live audio is detected for 20 continuous minutes, the capture layer stops the recording and removes the final no-voice tail before the WAV is normalized/exported.
 - The selected live capture mode is stored in recording metrics as `capture_source`.
 
 ### ASR, GPU, And Readability Changes
@@ -116,6 +139,12 @@ Advanced Settings now includes a transcript output policy:
 - **Custom folder**: writes all transcript artifacts to a user-selected folder.
 
 Existing advanced options remain available: live capture source, denoise mode, speaker diarization, LLM summary, target volume normalization, beam size, initial prompt, language, compute precision, output policy, and model reload.
+
+Advanced Settings also includes scheduled live recording:
+
+- **Schedule recording start** turns the main recording button into **Schedule Recording** and starts live recording/transcription at the selected `HH:mm` wall-clock time.
+- **Auto-stop at** is optional. When enabled, AURA automatically stops the scheduled recording at the selected `HH:mm` wall-clock time and then uses the normal transcript finalization and artifact save workflow.
+- If the selected start time has already passed for the day, AURA schedules the next matching wall-clock time. If the selected stop time is not after the scheduled start, AURA treats it as a next-day stop.
 
 ### Progress And Performance Visibility Changes
 
@@ -138,7 +167,7 @@ Existing advanced options remain available: live capture source, denoise mode, s
 
 - README workflow documentation now matches the simplified UI and automatic transcript-saving behavior.
 - `docs/architecture_decisions.md` records the first-principles ownership split for transcript artifacts, output policy, progress visibility, UI interaction policy, live capture ownership, and Traditional Chinese punctuation post-processing.
-- Tests now cover transcript artifact naming, raw/final/summary splitting, metrics JSON writing, FFmpeg progress parsing, CPU-count detection, live capture source selection, RMS-based source mixing, Traditional Chinese punctuation post-processing, and propagation of normalization progress into the import pipeline.
+- Tests now cover transcript artifact naming, raw/final/summary splitting, metrics JSON writing, FFmpeg progress parsing, CPU-count detection, live capture source selection, RMS-based source mixing, scheduled wall-clock calculation, no-voice auto-stop/trailing-trim helpers, Traditional Chinese punctuation post-processing, and propagation of normalization progress into the import pipeline.
 
 ### Current Architecture Health
 
@@ -154,6 +183,8 @@ The guiding rule remains: if behavior can be tested without launching Qt, it sho
 | Feature Category | Implementation Details |
 | --- | --- |
 | Real-time Transcription | Live system-audio, microphone, or system+microphone recording plus streaming ASR via `faster-whisper`; stopping a recording waits for final ASR, auto-saves transcript artifacts, and clears the transcript pane. |
+| Scheduled Live Recording | Optional wall-clock scheduled start for live recording/transcription, with optional wall-clock auto-stop and normal transcript artifact finalization. |
+| No-Voice Failsafe | Automatically stops live recording after 20 continuous minutes without detected human voice and trims the trailing no-voice audio before export. |
 | Batch Transcription | Import multiple audio/video files with queue scheduling, cancellation, serialized optional summaries, and progress tracking. |
 | Transcript Artifacts | Auto-saves raw transcript, final transcript, optional summary, and processing metrics JSON to the selected output policy. |
 | Traditional Chinese Punctuation | Detects Traditional Chinese ASR output and restores readable full-width punctuation after ASR, using a local model when available and rule fallback when not. |

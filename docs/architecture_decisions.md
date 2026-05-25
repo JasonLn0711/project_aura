@@ -12,6 +12,7 @@ Therefore, each layer has one owner:
 - `src/aura/diarization/` owns optional speaker diarization backends and timestamp-based speaker assignment.
 - `src/aura/llm/` owns optional local LLM post-processing such as transcript summaries.
 - `src/aura/audio/` owns audio capture, denoise, export, and splitting behavior.
+- `src/aura/scheduling.py` owns wall-clock scheduling calculations that can be tested without launching Qt.
 - `src/aura/system/` owns platform/runtime concerns such as CUDA, native audio stderr, runtime paths, and update checks.
 - `src/aura/ui/` owns widgets, signal wiring, and user interaction only.
 
@@ -37,5 +38,9 @@ Transcript output is treated as a durable artifact set, not as UI text. From fir
 - Advanced Settings owns output-location policy so transcript artifacts can stay beside the source/recording, go to a repo-local outputs folder, or go to a custom folder.
 
 Live capture source selection belongs in `src/aura/audio/capture.py` because it is platform I/O, not ASR logic. The UI may request system-only, microphone-only, or system+microphone capture, but the capture layer owns PulseAudio/PipeWire source discovery, `parec` readers, PyAudio fallback, and mono mixing before VAD/ASR. Mixed live capture also performs RMS-based active-source balancing with limited gain and headroom so the microphone and system audio remain usable without amplifying silence or clipping speech.
+
+The no-voice failsafe also belongs in `src/aura/audio/capture.py` because the capture loop is the only layer that sees every recorded frame and its voice/silence decision before WAV export. From first principles, a forgotten recording should stop because the audio stream has gone inactive, not because the UI guessed a duration. Therefore the recorder tracks continuous no-voice frames, auto-stops after 20 minutes, and trims the trailing no-voice frames before writing the WAV. The UI only reacts to the recorder thread finishing and then runs the normal ASR-drain, summary, and artifact-save flow.
+
+Scheduled recording is an interaction policy, not a second recording pipeline. The UI owns arming/cancelling timers and disabling conflicting controls while a schedule is pending. `src/aura/scheduling.py` owns the testable wall-clock rules: start times resolve to the next matching `HH:mm`, and optional stop times must resolve strictly after the scheduled start, rolling to the next day when needed. When a timer fires, the UI calls the same live recording start/stop paths used by manual recording so transcript artifacts, summaries, normalization, and metrics stay consistent.
 
 The next high-value cleanup is to add the evaluation harness described in `docs/denoise_upgrade_plan.md`, then test DeepFilterNet3 and ClearerVoice-Studio as optional model-based backends before promoting any new default.
