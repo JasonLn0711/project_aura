@@ -41,8 +41,8 @@ The app is designed for professional meeting and lecture workflows. It includes 
 | Field | Value |
 | --- | --- |
 | Project Name | Project AURA / Ultimate Audio Assistant |
-| Refactor Version | `1.10.0` |
-| Current Release Tag | `v1.10.0` |
+| Refactor Version | `1.11.0` |
+| Current Release Tag | `v1.11.0` |
 | ASR Model | `SoybeanMilk/faster-whisper-Breeze-ASR-25` |
 | GitHub Repository | `JasonLn0711/project_aura` |
 | Academic Affiliation | National Yang Ming Chiao Tung University (NYCU) |
@@ -71,7 +71,7 @@ The final decision is intentionally hybrid: wall-clock scheduling belongs in the
 
 ## Current Working Version Changes
 
-`v1.10.0` turns the refactor from a cleaned-up transcription UI into a more complete meeting-transcription workstation. The main goals are: reduce manual transcript handling, make imported-file processing observable, keep ASR on the required RTX/CUDA path, support live system-audio plus microphone capture, improve Traditional Chinese readability, and keep the growing feature set behind clear module boundaries.
+`v1.11.0` turns the refactor from a cleaned-up transcription UI into a more complete meeting-transcription workstation. The main goals are: reduce manual transcript handling, make imported-file processing observable, keep ASR on the required RTX/CUDA path, support live system-audio plus microphone capture, improve Traditional Chinese readability, add wall-clock recording safeguards, and keep the growing feature set behind clear module boundaries.
 
 ### User Workflow Changes
 
