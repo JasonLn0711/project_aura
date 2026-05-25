@@ -9,7 +9,7 @@ from pathlib import Path
 
 import numpy as np
 import pyqtgraph as pg
-from PyQt6.QtCore import QTimer, pyqtSlot
+from PyQt6.QtCore import QTime, QTimer, pyqtSlot
 from PyQt6.QtWidgets import (
     QComboBox,
     QCheckBox,
@@ -22,6 +22,7 @@ from PyQt6.QtWidgets import (
     QPushButton,
     QSpinBox,
     QTextEdit,
+    QTimeEdit,
     QVBoxLayout,
     QWidget,
 )
@@ -31,9 +32,10 @@ from aura.asr.threads import FileTranscriberThread, ModelLoaderThread, Transcrib
 from aura.audio.denoise import DEFAULT_ACTIVE_DENOISE_PRESET, OFF_DENOISE_PRESET, normalize_denoise_preset
 from aura.audio.capture import AudioRecorderThread
 from aura.audio.export import normalize_wav_to_mp3
-from aura.config import LIVE_CAPTURE_MICROPHONE, LIVE_CAPTURE_SYSTEM, LIVE_CAPTURE_SYSTEM_MICROPHONE
+from aura.config import CHUNK_MS, LIVE_CAPTURE_MICROPHONE, LIVE_CAPTURE_SYSTEM, LIVE_CAPTURE_SYSTEM_MICROPHONE
 from aura.llm.summary import SummarySettings
 from aura.llm.threads import SummaryThread
+from aura.scheduling import milliseconds_until, next_wall_clock_datetime, stop_datetime_after_start
 from aura.settings import DEFAULT_SETTINGS
 from aura.system.runtime_paths import remove_transcript_backup
 from aura.system.update_checker import UpdateCheckerThread
@@ -73,6 +75,15 @@ class TranscriptionTab(QWidget):
         self.current_recording_metrics = None
         self.last_output_folder = None
         self.custom_output_folder = os.path.join(os.getcwd(), "outputs", "transcripts")
+        self.scheduled_recording_pending = False
+        self.scheduled_start_at = None
+        self.scheduled_stop_at = None
+        self.scheduled_start_timer = QTimer(self)
+        self.scheduled_start_timer.setSingleShot(True)
+        self.scheduled_start_timer.timeout.connect(self.start_scheduled_recording)
+        self.scheduled_stop_timer = QTimer(self)
+        self.scheduled_stop_timer.setSingleShot(True)
+        self.scheduled_stop_timer.timeout.connect(self.stop_scheduled_recording)
 
         self.current_folder = os.getcwd()
         self.current_filename = "transcript"
@@ -151,6 +162,32 @@ class TranscriptionTab(QWidget):
         capture_layout.addWidget(self.combo_live_capture)
         capture_layout.addStretch()
         settings_vbox.addLayout(capture_layout)
+
+        schedule_layout = QHBoxLayout()
+        self.check_schedule_recording = QCheckBox(self.strings.schedule_recording_label)
+        self.check_schedule_recording.setToolTip(self.strings.schedule_recording_tooltip)
+        self.check_schedule_recording.toggled.connect(self.update_schedule_controls)
+        self.check_schedule_recording.toggled.connect(self.update_record_button_label)
+        schedule_layout.addWidget(self.check_schedule_recording)
+
+        schedule_layout.addWidget(QLabel(self.strings.schedule_start_time_label))
+        self.time_schedule_start = QTimeEdit()
+        self.time_schedule_start.setDisplayFormat("HH:mm")
+        self.time_schedule_start.setTime(QTime.currentTime().addSecs(300))
+        schedule_layout.addWidget(self.time_schedule_start)
+
+        self.check_schedule_auto_stop = QCheckBox(self.strings.schedule_auto_stop_label)
+        self.check_schedule_auto_stop.setToolTip(self.strings.schedule_stop_tooltip)
+        self.check_schedule_auto_stop.toggled.connect(self.update_schedule_controls)
+        schedule_layout.addWidget(self.check_schedule_auto_stop)
+
+        self.time_schedule_end = QTimeEdit()
+        self.time_schedule_end.setDisplayFormat("HH:mm")
+        self.time_schedule_end.setTime(QTime.currentTime().addSecs(3600))
+        schedule_layout.addWidget(self.time_schedule_end)
+        schedule_layout.addStretch()
+        settings_vbox.addLayout(schedule_layout)
+        self.update_schedule_controls()
 
         summary_layout = QHBoxLayout()
         self.check_llm_summary = QCheckBox(self.strings.llm_summary_label)
@@ -436,6 +473,65 @@ class TranscriptionTab(QWidget):
     def selected_live_capture_source(self) -> str:
         return self.combo_live_capture.currentData() or LIVE_CAPTURE_SYSTEM_MICROPHONE
 
+    def schedule_recording_enabled(self) -> bool:
+        return bool(
+            hasattr(self, "check_schedule_recording")
+            and self.check_schedule_recording.isChecked()
+        )
+
+    def scheduled_auto_stop_enabled(self) -> bool:
+        return bool(
+            self.schedule_recording_enabled()
+            and hasattr(self, "check_schedule_auto_stop")
+            and self.check_schedule_auto_stop.isChecked()
+        )
+
+    def selected_schedule_datetime(self) -> tuple[datetime.datetime, datetime.datetime | None]:
+        now = datetime.datetime.now().astimezone()
+        start_time = self.time_schedule_start.time()
+        start_at = next_wall_clock_datetime(now, start_time.hour(), start_time.minute())
+        stop_at = None
+        if self.scheduled_auto_stop_enabled():
+            stop_time = self.time_schedule_end.time()
+            stop_at = stop_datetime_after_start(start_at, stop_time.hour(), stop_time.minute())
+        return start_at, stop_at
+
+    def update_schedule_controls(self, *_):
+        if not hasattr(self, "check_schedule_recording"):
+            return
+
+        active_workflow = (
+            self.scheduled_recording_pending
+            or self.recorder_thread is not None
+            or self.file_import_active()
+            or self.finalize_recording_pending
+        )
+        schedule_enabled = self.check_schedule_recording.isChecked()
+        self.check_schedule_recording.setEnabled(not active_workflow)
+        self.time_schedule_start.setEnabled(schedule_enabled and not active_workflow)
+        self.check_schedule_auto_stop.setEnabled(schedule_enabled and not active_workflow)
+        self.time_schedule_end.setEnabled(
+            schedule_enabled
+            and self.check_schedule_auto_stop.isChecked()
+            and not active_workflow
+        )
+
+    def update_record_button_label(self, *_):
+        if not hasattr(self, "btn_record"):
+            return
+        if self.scheduled_recording_pending:
+            self.btn_record.setText(self.strings.cancel_scheduled_recording)
+            self.btn_record.setStyleSheet("background-color: #5d4037; color: white; font-size: 16px; font-weight: bold;")
+        elif self.recorder_thread is not None:
+            self.btn_record.setText(self.strings.stop_recording)
+            self.btn_record.setStyleSheet("background-color: #e74c3c; color: white; font-size: 16px; font-weight: bold;")
+        elif self.schedule_recording_enabled():
+            self.btn_record.setText(self.strings.schedule_recording_button)
+            self.btn_record.setStyleSheet("background-color: #546e7a; color: white; font-size: 16px; font-weight: bold;")
+        else:
+            self.btn_record.setText(self.strings.start_recording)
+            self.btn_record.setStyleSheet("font-size: 16px; font-weight: bold;")
+
     def update_speaker_controls(self, enabled):
         self.spin_min_speakers.setEnabled(enabled)
         self.spin_max_speakers.setEnabled(enabled)
@@ -451,9 +547,11 @@ class TranscriptionTab(QWidget):
         self.btn_record.setEnabled(not active)
         self.btn_import.setEnabled(not active)
         self.btn_reload_model.setEnabled(not active)
-        self.btn_summary.setEnabled(not active)
         self.btn_cancel_import.setVisible(active)
         self.btn_cancel_import.setEnabled(active)
+        self.update_summary_button_state()
+        self.update_schedule_controls()
+        self.update_record_button_label()
 
     def cancel_import(self):
         if not self.file_import_active():
@@ -484,6 +582,7 @@ class TranscriptionTab(QWidget):
         self.btn_record.setEnabled(False)
         self.btn_import.setEnabled(False)
         self.btn_reload_model.setText(self.strings.loading_model)
+        self.update_schedule_controls()
 
         self.model_loader = ModelLoaderThread(self.settings.device, new_compute)
         self.model_loader.status_signal.connect(self.update_status_only)
@@ -514,6 +613,8 @@ class TranscriptionTab(QWidget):
         self.btn_import.setEnabled(not import_active)
         self.btn_reload_model.setEnabled(not import_active)
         self.btn_reload_model.setText(self.strings.reload_model)
+        self.update_schedule_controls()
+        self.update_record_button_label()
         self.status_label.setText(self.strings.model_ready(active_device, active_compute))
 
     @pyqtSlot(str)
@@ -524,6 +625,8 @@ class TranscriptionTab(QWidget):
         self.btn_import.setEnabled(not import_active)
         self.btn_reload_model.setEnabled(not import_active)
         self.btn_reload_model.setText(self.strings.reload_model)
+        self.update_schedule_controls()
+        self.update_record_button_label()
 
     def process_next_file(self):
         if self.import_cancel_requested:
@@ -661,76 +764,190 @@ class TranscriptionTab(QWidget):
         QMessageBox.critical(self, self.strings.file_transcription_failed, err_msg)
 
     def toggle_record(self):
+        if self.scheduled_recording_pending:
+            self.cancel_scheduled_recording()
+            return
+        if self.recorder_thread is None and self.schedule_recording_enabled():
+            self.arm_scheduled_recording()
+            return
         if self.recorder_thread is None:
-            if self.transcriber_thread.model is None:
+            self.start_recording_session("manual")
+            return
+        self.stop_recording_session("manual")
+
+    def start_recording_session(self, trigger: str) -> bool:
+        if self.transcriber_thread.model is None:
+            if trigger == "manual":
                 QMessageBox.warning(self, self.strings.please_wait_title, self.strings.model_not_ready)
-                return
+            else:
+                self.status_label.setText(self.strings.scheduled_recording_model_not_ready)
+            return False
+        if self.file_import_active():
+            self.status_label.setText(self.strings.scheduled_recording_start_failed)
+            return False
 
-            suffix = self.name_input.text().strip() or "record"
-            timestamp = datetime.datetime.now().strftime("%y%m%d_%H%M")
-            base_name = f"{timestamp}_{suffix}"
+        suffix = self.name_input.text().strip() or "record"
+        timestamp = datetime.datetime.now().strftime("%y%m%d_%H%M")
+        base_name = f"{timestamp}_{suffix}"
 
-            self.current_folder = os.path.join(os.getcwd(), base_name)
-            os.makedirs(self.current_folder, exist_ok=True)
-            self.current_filename = base_name
-            full_path = os.path.join(self.current_folder, base_name)
-            self.update_output_folder_controls()
-            self.current_recording_metrics = self.new_metrics(
-                "recording",
-                f"{full_path}.wav",
-                self.default_transcript_base_path(),
+        self.current_folder = os.path.join(os.getcwd(), base_name)
+        os.makedirs(self.current_folder, exist_ok=True)
+        self.current_filename = base_name
+        full_path = os.path.join(self.current_folder, base_name)
+        self.update_output_folder_controls()
+        self.current_recording_metrics = self.new_metrics(
+            "recording",
+            f"{full_path}.wav",
+            self.default_transcript_base_path(),
+        )
+        self.current_recording_metrics["recording_started_at"] = self.timestamp_now()
+        self.current_recording_metrics["recording_start_trigger"] = trigger
+        self.current_recording_metrics["capture_source"] = self.selected_live_capture_source()
+        if trigger == "scheduled":
+            self.current_recording_metrics["scheduled_start_at"] = (
+                self.scheduled_start_at.isoformat(timespec="seconds") if self.scheduled_start_at else None
             )
-            self.current_recording_metrics["recording_started_at"] = self.timestamp_now()
-            self.current_recording_metrics["capture_source"] = self.selected_live_capture_source()
-
-            self.transcriber_thread.update_live_settings(
-                beam_size=self.spin_beam.value(),
-                language=self.combo_lang.currentData(),
-                initial_prompt=self.prompt_input.text(),
+            self.current_recording_metrics["scheduled_stop_at"] = (
+                self.scheduled_stop_at.isoformat(timespec="seconds") if self.scheduled_stop_at else None
             )
 
-            self.recorder_thread = AudioRecorderThread(
-                full_path,
-                self.transcriber_thread,
-                enable_denoise=self.denoise_enabled(),
-                denoise_preset=self.selected_denoise_preset(),
-                capture_mode=self.selected_live_capture_source(),
+        self.transcriber_thread.update_live_settings(
+            beam_size=self.spin_beam.value(),
+            language=self.combo_lang.currentData(),
+            initial_prompt=self.prompt_input.text(),
+        )
+
+        self.recorder_thread = AudioRecorderThread(
+            full_path,
+            self.transcriber_thread,
+            enable_denoise=self.denoise_enabled(),
+            denoise_preset=self.selected_denoise_preset(),
+            capture_mode=self.selected_live_capture_source(),
+        )
+        recorder_thread = self.recorder_thread
+        recorder_thread.waveform_signal.connect(self.update_plot)
+        recorder_thread.finished_signal.connect(
+            lambda wav_path, thread=recorder_thread: self.on_recording_thread_finished(thread, wav_path)
+        )
+        recorder_thread.status_signal.connect(self.update_status_only)
+
+        self.btn_import.setEnabled(False)
+        self.btn_reload_model.setEnabled(False)
+        self.recorder_thread.start()
+
+        self.update_record_button_label()
+        self.update_schedule_controls()
+        self.status_label.setText(self.strings.recording(base_name))
+        self.text_area.clear()
+        self.transcript_revision += 1
+        return True
+
+    def stop_recording_session(self, trigger: str, recorder_thread=None, thread_already_finished: bool = False):
+        recorder_thread = recorder_thread or self.recorder_thread
+        if recorder_thread is None:
+            return
+        self.scheduled_stop_timer.stop()
+        if not thread_already_finished:
+            recorder_thread.running = False
+            recorder_thread.quit()
+        self.recorder_thread = None
+
+        self.btn_record.setEnabled(False)
+        self.btn_import.setEnabled(False)
+        self.btn_summary.setEnabled(False)
+        self.status_label.setText(self.strings.recording_finished_processing)
+        self.finalize_recording_pending = True
+        if self.current_recording_metrics is not None:
+            self.current_recording_metrics["recording_stop_requested_at"] = self.timestamp_now()
+            self.current_recording_metrics["recording_stop_trigger"] = trigger
+            self.current_recording_metrics["recording_auto_stopped_for_no_voice"] = bool(
+                getattr(recorder_thread, "auto_stopped_for_no_voice", False)
             )
-            self.recorder_thread.waveform_signal.connect(self.update_plot)
-            self.recorder_thread.finished_signal.connect(self.process_audio)
-            self.recorder_thread.status_signal.connect(self.update_status_only)
-
-            self.btn_import.setEnabled(False)
-            self.btn_reload_model.setEnabled(False)
-            self.recorder_thread.start()
-
-            self.btn_record.setText(self.strings.stop_recording)
-            self.btn_record.setStyleSheet("background-color: #e74c3c; color: white; font-size: 16px; font-weight: bold;")
-            self.status_label.setText(self.strings.recording(base_name))
-            self.text_area.clear()
-            self.transcript_revision += 1
-        else:
-            self.recorder_thread.running = False
-            self.recorder_thread.quit()
-            self.recorder_thread = None
-
-            self.btn_record.setText(self.strings.start_recording)
-            self.btn_record.setStyleSheet("font-size: 16px; font-weight: bold;")
-            self.btn_record.setEnabled(False)
-            self.btn_import.setEnabled(False)
-            self.btn_summary.setEnabled(False)
-            self.status_label.setText(self.strings.recording_finished_processing)
-            self.finalize_recording_pending = True
-            if self.current_recording_metrics is not None:
-                self.current_recording_metrics["recording_stop_requested_at"] = self.timestamp_now()
-                self.current_recording_metrics["_stop_requested_perf"] = time.perf_counter()
-                self.add_stage_duration(
-                    self.current_recording_metrics,
-                    "recording_capture",
-                    self.current_recording_metrics.get("_started_perf"),
+            self.current_recording_metrics["no_voice_auto_stop_minutes"] = getattr(
+                recorder_thread,
+                "no_voice_auto_stop_minutes",
+                None,
+            )
+            trimmed_frames = int(getattr(recorder_thread, "trimmed_trailing_no_voice_frames", 0) or 0)
+            if trimmed_frames:
+                self.current_recording_metrics["trimmed_trailing_no_voice_frames"] = trimmed_frames
+                self.current_recording_metrics["trimmed_trailing_no_voice_seconds"] = round(
+                    trimmed_frames * CHUNK_MS / 1000,
+                    3,
                 )
-            QTimer.singleShot(1000, self.enable_reload_after_live_asr_idle)
-            QTimer.singleShot(1000, self.finalize_recording_after_live_asr_idle)
+            self.current_recording_metrics["_stop_requested_perf"] = time.perf_counter()
+            self.add_stage_duration(
+                self.current_recording_metrics,
+                "recording_capture",
+                self.current_recording_metrics.get("_started_perf"),
+            )
+        self.scheduled_start_at = None
+        self.scheduled_stop_at = None
+        self.update_record_button_label()
+        self.update_schedule_controls()
+        QTimer.singleShot(1000, self.enable_reload_after_live_asr_idle)
+        QTimer.singleShot(1000, self.finalize_recording_after_live_asr_idle)
+
+    def arm_scheduled_recording(self):
+        if self.transcriber_thread.model is None:
+            QMessageBox.warning(self, self.strings.please_wait_title, self.strings.model_not_ready)
+            return
+        if self.file_import_active() or self.recorder_thread is not None:
+            self.status_label.setText(self.strings.scheduled_recording_start_failed)
+            return
+
+        start_at, stop_at = self.selected_schedule_datetime()
+        now = datetime.datetime.now().astimezone()
+        self.scheduled_recording_pending = True
+        self.scheduled_start_at = start_at
+        self.scheduled_stop_at = stop_at
+        self.scheduled_start_timer.start(milliseconds_until(now, start_at))
+
+        self.btn_import.setEnabled(False)
+        self.btn_reload_model.setEnabled(False)
+        self.btn_summary.setEnabled(False)
+        self.update_record_button_label()
+        self.update_schedule_controls()
+        self.status_label.setText(self.strings.scheduled_recording_armed(start_at, stop_at))
+
+    def cancel_scheduled_recording(self):
+        self.scheduled_start_timer.stop()
+        self.scheduled_stop_timer.stop()
+        self.scheduled_recording_pending = False
+        self.scheduled_start_at = None
+        self.scheduled_stop_at = None
+        import_active = self.file_import_active()
+        self.btn_record.setEnabled(not import_active)
+        self.btn_import.setEnabled(not import_active)
+        self.btn_reload_model.setEnabled(not import_active)
+        self.update_summary_button_state()
+        self.update_record_button_label()
+        self.update_schedule_controls()
+        self.status_label.setText(self.strings.scheduled_recording_cancelled)
+
+    def start_scheduled_recording(self):
+        if not self.scheduled_recording_pending:
+            return
+        self.scheduled_recording_pending = False
+        stop_at = self.scheduled_stop_at
+        if not self.start_recording_session("scheduled"):
+            self.scheduled_start_at = None
+            self.scheduled_stop_at = None
+            self.update_record_button_label()
+            self.update_schedule_controls()
+            return
+        if stop_at:
+            now = datetime.datetime.now().astimezone()
+            self.scheduled_stop_timer.start(milliseconds_until(now, stop_at))
+            self.status_label.setText(self.strings.recording_with_scheduled_stop(self.current_filename, stop_at))
+
+    def stop_scheduled_recording(self):
+        if self.recorder_thread is None:
+            self.scheduled_stop_at = None
+            self.update_record_button_label()
+            self.update_schedule_controls()
+            return
+        self.stop_recording_session("scheduled_stop")
 
     def default_transcript_base_path(self) -> str:
         return self.transcript_base_path(self.current_folder, self.current_filename)
@@ -824,10 +1041,18 @@ class TranscriptionTab(QWidget):
         import_active = self.file_import_active()
         self.btn_record.setEnabled(not import_active)
         self.btn_import.setEnabled(not import_active)
+        self.btn_reload_model.setEnabled(not import_active)
+        self.update_record_button_label()
+        self.update_schedule_controls()
         self.update_summary_button_state()
 
     def update_summary_button_state(self):
-        self.btn_summary.setEnabled(not self.file_import_active() and not self.finalize_recording_pending)
+        self.btn_summary.setEnabled(
+            not self.file_import_active()
+            and not self.finalize_recording_pending
+            and not self.scheduled_recording_pending
+            and self.recorder_thread is None
+        )
 
     @pyqtSlot(np.ndarray)
     def update_plot(self, data):
@@ -916,6 +1141,21 @@ class TranscriptionTab(QWidget):
     def on_summary_error(self, err_msg):
         QMessageBox.critical(self, self.strings.summary_failed, err_msg)
 
+    def on_recording_thread_finished(self, recorder_thread, wav_path):
+        self.process_audio(wav_path)
+        if self.recorder_thread is not recorder_thread or self.finalize_recording_pending:
+            return
+        trigger = (
+            "no_voice_auto_stop"
+            if getattr(recorder_thread, "auto_stopped_for_no_voice", False)
+            else "recorder_thread_finished"
+        )
+        self.stop_recording_session(
+            trigger,
+            recorder_thread=recorder_thread,
+            thread_already_finished=True,
+        )
+
     @pyqtSlot(str)
     def process_audio(self, wav_path):
         if "Hardware mounting failed" in wav_path or "No audio recorded" in wav_path:
@@ -929,6 +1169,8 @@ class TranscriptionTab(QWidget):
             logger.exception("Recording normalization failed: %s", e)
 
     def stop_threads(self):
+        self.scheduled_start_timer.stop()
+        self.scheduled_stop_timer.stop()
         self.transcriber_thread.stop()
         if self.recorder_thread:
             self.recorder_thread.running = False

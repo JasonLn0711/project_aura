@@ -5,6 +5,8 @@ import numpy as np
 from aura.audio.capture import (
     MIX_MAX_GAIN,
     MIX_MIN_GAIN,
+    NO_VOICE_AUTO_STOP_MINUTES,
+    frames_for_duration_seconds,
     frame_rms,
     gain_for_rms,
     mix_audio_frames,
@@ -12,8 +14,10 @@ from aura.audio.capture import (
     select_microphone_pulse_source,
     select_pulse_sources_for_mode,
     select_system_pulse_source,
+    should_auto_stop_for_no_voice,
+    trim_trailing_unvoiced_frames,
 )
-from aura.config import LIVE_CAPTURE_MICROPHONE, LIVE_CAPTURE_SYSTEM, LIVE_CAPTURE_SYSTEM_MICROPHONE
+from aura.config import CHUNK_MS, LIVE_CAPTURE_MICROPHONE, LIVE_CAPTURE_SYSTEM, LIVE_CAPTURE_SYSTEM_MICROPHONE
 
 
 PACTL_SOURCES = """\
@@ -98,6 +102,35 @@ class AudioCaptureTests(unittest.TestCase):
         self.assertGreater(peak, int(np.abs(quiet).max()))
         self.assertLess(peak, int(np.abs(loud).max()))
         self.assertLess(peak, 32767)
+
+    def test_frames_for_duration_seconds_rounds_up_to_capture_chunks(self):
+        self.assertEqual(frames_for_duration_seconds(CHUNK_MS / 1000), 1)
+        self.assertEqual(
+            frames_for_duration_seconds(NO_VOICE_AUTO_STOP_MINUTES * 60),
+            int(np.ceil(NO_VOICE_AUTO_STOP_MINUTES * 60 * 1000 / CHUNK_MS)),
+        )
+
+    def test_should_auto_stop_for_no_voice_only_after_limit(self):
+        self.assertFalse(should_auto_stop_for_no_voice(9, 10))
+        self.assertTrue(should_auto_stop_for_no_voice(10, 10))
+        self.assertFalse(should_auto_stop_for_no_voice(10, 0))
+
+    def test_trim_trailing_unvoiced_frames_removes_only_tail(self):
+        frames = [b"voice-1", b"quiet-1", b"voice-2", b"quiet-2", b"quiet-3"]
+        trimmed, count = trim_trailing_unvoiced_frames(frames, [True, False, True, False, False])
+
+        self.assertEqual(trimmed, [b"voice-1", b"quiet-1", b"voice-2"])
+        self.assertEqual(count, 2)
+
+    def test_trim_trailing_unvoiced_frames_drops_all_when_no_voice_exists(self):
+        trimmed, count = trim_trailing_unvoiced_frames([b"quiet-1", b"quiet-2"], [False, False])
+
+        self.assertEqual(trimmed, [])
+        self.assertEqual(count, 2)
+
+    def test_trim_trailing_unvoiced_frames_requires_matching_lengths(self):
+        with self.assertRaises(ValueError):
+            trim_trailing_unvoiced_frames([b"frame"], [])
 
 
 if __name__ == "__main__":

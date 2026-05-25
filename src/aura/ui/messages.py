@@ -40,6 +40,13 @@ class UIStrings:
         "Controls live recording input. System+microphone uses PulseAudio/PipeWire sources "
         "when available and falls back to the default input if separate sources are not exposed."
     )
+    schedule_recording_label: str = "Schedule recording start"
+    schedule_start_time_label: str = "Start at:"
+    schedule_auto_stop_label: str = "Auto-stop at:"
+    schedule_recording_tooltip: str = (
+        "Arms the recording button to start live recording and transcription at the selected wall-clock time."
+    )
+    schedule_stop_tooltip: str = "Optionally stops the scheduled recording at the selected wall-clock time."
     speaker_diarization_label: str = "Identify speakers after import transcription"
     speaker_diarization_tooltip: str = (
         "Uses optional pyannote diarization on imported files and labels transcript segments by speaker. "
@@ -77,6 +84,8 @@ class UIStrings:
     live_waveform_title: str = "Live Waveform"
     start_recording: str = "🎙️ Start Recording"
     stop_recording: str = "🛑 Stop Recording"
+    schedule_recording_button: str = "⏱️ Schedule Recording"
+    cancel_scheduled_recording: str = "✖ Cancel Scheduled Recording"
     import_media: str = "📁 Import Media"
     import_media_tooltip: str = "Select audio/video files. Transcription starts automatically after import."
     cancel_import: str = "✖ Cancel Import"
@@ -100,6 +109,9 @@ class UIStrings:
         "💾 Transcript artifacts saved: {file_path} ({elapsed_seconds:.1f}s); remaining imports skipped"
     )
     recording_finished_processing: str = "✅ Recording finished, waiting for final transcript..."
+    scheduled_recording_cancelled: str = "⚠️ Scheduled recording cancelled"
+    scheduled_recording_start_failed: str = "⚠️ Scheduled recording could not start because another workflow is active."
+    scheduled_recording_model_not_ready: str = "⚠️ Scheduled recording could not start because the model is not ready."
     auto_save_transcript_pending: str = "💾 Saving transcript and clearing the workspace..."
     output_folder_unavailable: str = "Output folder is not available yet."
     notice_title: str = "Notice"
@@ -136,6 +148,15 @@ class UIStrings:
 
     def recording(self, base_name: str) -> str:
         return f"🔴 Recording: {base_name}"
+
+    def scheduled_recording_armed(self, start_at, stop_at=None) -> str:
+        message = f"⏱️ Scheduled recording armed: starts {start_at:%Y-%m-%d %H:%M}"
+        if stop_at:
+            message += f"; auto-stops {stop_at:%Y-%m-%d %H:%M}"
+        return message
+
+    def recording_with_scheduled_stop(self, base_name: str, stop_at) -> str:
+        return f"🔴 Recording: {base_name} | auto-stop {stop_at:%Y-%m-%d %H:%M}"
 
     def transcript_artifacts_saved_message(self, file_path: str, elapsed_seconds: float) -> str:
         return self.transcript_artifacts_saved.format(file_path=file_path, elapsed_seconds=elapsed_seconds)

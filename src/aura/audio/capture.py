@@ -29,6 +29,7 @@ MIX_ACTIVE_RMS_FLOOR = 80.0
 MIX_MIN_GAIN = 0.5
 MIX_MAX_GAIN = 3.0
 MIX_HEADROOM = 0.8
+NO_VOICE_AUTO_STOP_MINUTES = 20
 
 
 @dataclass(frozen=True)
@@ -213,6 +214,26 @@ def mix_audio_frames(frames: list[np.ndarray]) -> np.ndarray:
     return np.clip(mixed, -32768, 32767).astype(np.int16)
 
 
+def frames_for_duration_seconds(duration_seconds: float) -> int:
+    if duration_seconds <= 0:
+        return 0
+    return int(np.ceil(duration_seconds * 1000 / CHUNK_MS))
+
+
+def should_auto_stop_for_no_voice(no_voice_frames: int, limit_frames: int) -> bool:
+    return limit_frames > 0 and no_voice_frames >= limit_frames
+
+
+def trim_trailing_unvoiced_frames(frames: list[bytes], voiced_flags: list[bool]) -> tuple[list[bytes], int]:
+    if len(frames) != len(voiced_flags):
+        raise ValueError("frames and voiced_flags must have the same length")
+    for index in range(len(voiced_flags) - 1, -1, -1):
+        if voiced_flags[index]:
+            trimmed_count = len(frames) - index - 1
+            return frames[: index + 1], trimmed_count
+    return [], len(frames)
+
+
 class PulseRawInput:
     def __init__(self, source: PulseSource):
         self.source = source
@@ -334,9 +355,13 @@ class AudioRecorderThread(QThread):
         self.running = True
         self.vad = webrtcvad.Vad(VAD_LEVEL)
         self.full_frames = []
+        self.full_frame_voice_flags = []
         self.min_speech_len_sec = 0.5
         self.max_segment_len_sec = 8.0
         self.energy_gate_rms = 550.0
+        self.no_voice_auto_stop_minutes = NO_VOICE_AUTO_STOP_MINUTES
+        self.auto_stopped_for_no_voice = False
+        self.trimmed_trailing_no_voice_frames = 0
 
     def _flush_speech_buffer(self, speech_buffer):
         if not speech_buffer:
@@ -432,9 +457,11 @@ class AudioRecorderThread(QThread):
 
         self.status_signal.emit(reader.description)
         silence_frames = 0
+        no_voice_frames = 0
         speech_buffer = []
         min_silence_frames = int((1000 / CHUNK_MS) * self.min_speech_len_sec)
         max_speech_frames = int((1000 / CHUNK_MS) * self.max_segment_len_sec)
+        no_voice_auto_stop_frames = frames_for_duration_seconds(self.no_voice_auto_stop_minutes * 60)
 
         while self.running:
             try:
@@ -449,19 +476,28 @@ class AudioRecorderThread(QThread):
                     if frame_rms >= self.energy_gate_rms:
                         is_speech = True
 
+                self.full_frames.append(vad_data)
+                self.full_frame_voice_flags.append(is_speech)
                 if is_speech:
-                    self.full_frames.append(vad_data)
                     speech_buffer.append(np_data)
                     silence_frames = 0
+                    no_voice_frames = 0
                 else:
-                    self.full_frames.append(vad_data)
                     silence_frames += 1
+                    no_voice_frames += 1
 
                 reached_silence_boundary = len(speech_buffer) > 0 and silence_frames > min_silence_frames
                 reached_max_segment = len(speech_buffer) >= max_speech_frames
                 if reached_silence_boundary or reached_max_segment:
                     speech_buffer = self._flush_speech_buffer(speech_buffer)
                     silence_frames = 0
+                if should_auto_stop_for_no_voice(no_voice_frames, no_voice_auto_stop_frames):
+                    self.auto_stopped_for_no_voice = True
+                    self.status_signal.emit(
+                        f"No human voice detected for {self.no_voice_auto_stop_minutes} minutes; "
+                        "auto-stopping and trimming the trailing no-voice audio."
+                    )
+                    self.running = False
             except Exception as e:
                 logger.exception("Audio loop stopped after error: %s", e)
                 break
@@ -469,7 +505,17 @@ class AudioRecorderThread(QThread):
         speech_buffer = self._flush_speech_buffer(speech_buffer)
         reader.close()
 
-        if not self.full_frames:
+        frames_to_write = self.full_frames
+        if self.auto_stopped_for_no_voice:
+            frames_to_write, self.trimmed_trailing_no_voice_frames = trim_trailing_unvoiced_frames(
+                self.full_frames,
+                self.full_frame_voice_flags,
+            )
+            if self.trimmed_trailing_no_voice_frames:
+                trimmed_seconds = self.trimmed_trailing_no_voice_frames * CHUNK_MS / 1000
+                self.status_signal.emit(f"Trimmed {trimmed_seconds:.1f}s of trailing no-voice audio.")
+
+        if not frames_to_write:
             self.finished_signal.emit("No audio recorded")
             return
 
@@ -479,5 +525,5 @@ class AudioRecorderThread(QThread):
             wf.setnchannels(1)
             wf.setsampwidth(reader.sample_width)
             wf.setframerate(SAMPLE_RATE)
-            wf.writeframes(b"".join(self.full_frames))
+            wf.writeframes(b"".join(frames_to_write))
         self.finished_signal.emit(wav_path)
