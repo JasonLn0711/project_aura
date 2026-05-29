@@ -44,3 +44,11 @@ Use this sibling repository as the new maintainable Python codebase. Keep `recor
    - Add release commands. Done with `Makefile` targets for `check`, `test`, `compile`, `build`, and `clean`, plus README release-build instructions.
    - Add CI checks for compile, tests, and formatting. Compile and unit-test CI is now in `.github/workflows/ci.yml`; formatting/linting can be added after adopting a formatter.
    - Add strict version-bump rules. Done in `docs/versioning.md`; tests now verify that `pyproject.toml`, `src/aura/metadata.py`, and the README refactor version stay synchronized.
+
+7. Windows native RTX validation
+   - Treat Windows native support as a first-class validation lane after the Ubuntu refactor baseline. The detailed plan is tracked in `docs/windows_native_roadmap.md`.
+   - Start with `scripts/windows_gpu_smoke.py` and `scripts/runtime_report.py` so Windows CUDA activation can be proven before packaging work begins.
+   - Move platform-specific CUDA, GPU, audio, FFmpeg, and dependency checks under `src/aura/system/` so UI and ASR code consume shared diagnostic results.
+   - Keep CPU fallback disabled, but make runtime failures product-facing: the machine has not completed RTX/CUDA activation for AURA, and the diagnostic report should identify the missing layer.
+   - Add Windows hosted CI for non-GPU compatibility and a self-hosted Windows RTX runner for CUDA model-load and small-audio ASR smoke tests.
+   - Build the first Windows release as a portable developer artifact before evaluating PyInstaller, Nuitka, or a full installer.

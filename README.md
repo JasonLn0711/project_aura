@@ -178,6 +178,12 @@ The project is still within a maintainable size for a desktop transcription tool
 
 The guiding rule remains: if behavior can be tested without launching Qt, it should live outside `src/aura/ui/`.
 
+## Windows Native Roadmap
+
+AURA's next platform expansion is Windows native RTX validation. The supported direction is to prove the CUDA runtime and `faster-whisper` model load first, then move platform differences into shared diagnostics modules, and only after that prepare a portable Windows release.
+
+The roadmap is tracked in [`docs/windows_native_roadmap.md`](docs/windows_native_roadmap.md). It covers the planned Windows GPU smoke script, runtime report, platform diagnostics modules, Windows setup guide, PyQt6 diagnostics UI, Windows CI strategy, self-hosted RTX validation, and portable packaging path.
+
 ## Feature Implementation Checklist
 
 | Feature Category | Implementation Details |
