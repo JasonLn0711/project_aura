@@ -2,7 +2,9 @@ import glob
 import os
 import site
 import sys
-from ctypes import CDLL, RTLD_GLOBAL
+import ctypes
+
+from aura.system.platform import detect_runtime_platform, platform_cuda_guidance
 
 
 CUDA_RUNTIME_GLOBS = (
@@ -10,8 +12,25 @@ CUDA_RUNTIME_GLOBS = (
     "nvidia/cublas/lib/libcublas.so*",
     "nvidia/cublas/lib/libcublasLt.so*",
     "nvidia/cudnn/lib/libcudnn*.so*",
+    "nvidia/cuda_runtime/bin/cudart64_*.dll",
+    "nvidia/cublas/bin/cublas64_*.dll",
+    "nvidia/cublas/bin/cublasLt64_*.dll",
+    "nvidia/cudnn/bin/cudnn64_*.dll",
 )
 CUDA_REQUIRED_LIBS = ("libcublas.so.12", "libcublasLt.so.12")
+CUDA_REQUIRED_DLLS = ("cublas64_12.dll", "cublasLt64_12.dll")
+CDLL_MODE = getattr(ctypes, "RTLD_GLOBAL", getattr(ctypes, "DEFAULT_MODE", 0))
+
+
+def required_cuda_libraries():
+    runtime = detect_runtime_platform()
+    if runtime.is_windows:
+        return CUDA_REQUIRED_DLLS
+    return CUDA_REQUIRED_LIBS
+
+
+def _load_library(lib_name: str):
+    return ctypes.CDLL(lib_name, mode=CDLL_MODE)
 
 
 def _candidate_site_packages():
@@ -33,7 +52,9 @@ def _candidate_site_packages():
     candidates.extend(
         [
             os.path.join(sys.prefix, "lib", py_ver, "site-packages"),
+            os.path.join(sys.prefix, "Lib", "site-packages"),
             os.path.join(os.path.dirname(sys.executable), "..", "lib", py_ver, "site-packages"),
+            os.path.join(os.path.dirname(sys.executable), "..", "Lib", "site-packages"),
             os.path.join(os.path.dirname(__file__), "../../../.record", "lib", py_ver, "site-packages"),
         ]
     )
@@ -54,8 +75,8 @@ def preload_cuda_runtime_libraries():
         return cached
 
     try:
-        for lib_name in CUDA_REQUIRED_LIBS:
-            CDLL(lib_name, mode=RTLD_GLOBAL)
+        for lib_name in required_cuda_libraries():
+            _load_library(lib_name)
         result = (True, "system")
         preload_cuda_runtime_libraries._cache = result
         return result
@@ -71,16 +92,17 @@ def preload_cuda_runtime_libraries():
                     continue
                 seen.add(real_path)
                 try:
-                    CDLL(real_path, mode=RTLD_GLOBAL)
+                    _load_library(real_path)
                 except OSError:
                     continue
 
     try:
-        for lib_name in CUDA_REQUIRED_LIBS:
-            CDLL(lib_name, mode=RTLD_GLOBAL)
+        for lib_name in required_cuda_libraries():
+            _load_library(lib_name)
         result = (True, "bundled")
     except OSError as exc:
-        result = (False, str(exc))
+        runtime = detect_runtime_platform()
+        result = (False, f"{runtime.label}: {exc}. {platform_cuda_guidance(runtime)}")
 
     preload_cuda_runtime_libraries._cache = result
     return result
@@ -92,7 +114,12 @@ def is_cuda_runtime_error(error_msg):
         "libcublas.so",
         "libcublaslt.so",
         "libcudnn",
+        "cublas64",
+        "cudnn64",
+        "cudart64",
         "cannot be loaded",
         "cannot open shared object file",
+        "dynamic library",
+        "dll",
     )
     return any(needle in lowered for needle in needles)

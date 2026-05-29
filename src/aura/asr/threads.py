@@ -21,6 +21,7 @@ from aura.asr.punctuation import restore_chinese_punctuation
 from aura.settings import DEFAULT_SETTINGS
 from aura.diarization.pyannote_pipeline import DiarizationSettings
 from aura.system.cuda import is_cuda_runtime_error, preload_cuda_runtime_libraries
+from aura.system.platform import detect_runtime_platform, platform_cuda_guidance
 from aura.system.runtime_paths import append_transcript_backup
 
 logger = logging.getLogger(__name__)
@@ -29,12 +30,14 @@ REQUIRED_ASR_DEVICE = "cuda"
 
 
 def cuda_required_error(detail: str) -> str:
+    runtime = detect_runtime_platform()
     return (
-        "ASR is configured to require the NVIDIA RTX/CUDA GPU. "
-        "CPU fallback is disabled.\n\n"
+        "This machine has not completed Project AURA RTX/CUDA activation. "
+        "ASR is configured to require the NVIDIA RTX/CUDA GPU, and CPU fallback is disabled.\n\n"
+        f"Environment: {runtime.label}\n"
         f"CUDA detail: {detail}\n\n"
-        "Install the CUDA runtime/cuBLAS/cuDNN libraries in this environment, "
-        "then reload the model."
+        f"Next check: {platform_cuda_guidance(runtime)}\n"
+        "After fixing the runtime, reload the model."
     )
 
 

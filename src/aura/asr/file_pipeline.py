@@ -13,6 +13,7 @@ from aura.diarization.pyannote_pipeline import DiarizationSettings, diarize_audi
 from aura.diarization.speaker_assignment import TranscriptSegment, assign_speakers
 from aura.settings import DEFAULT_SETTINGS
 from aura.system.cuda import is_cuda_runtime_error
+from aura.system.platform import detect_runtime_platform, platform_cuda_guidance
 from aura.system.runtime_paths import append_transcript_backup, temp_normalized_path
 
 
@@ -144,11 +145,14 @@ def normalize_file_transcription_error(error: Exception) -> str:
     error_msg = str(error)
     lower_msg = error_msg.lower()
     if is_cuda_runtime_error(error_msg):
+        runtime = detect_runtime_platform()
         return (
-            "CUDA runtime is incomplete on this machine.\n"
-            "ASR is required to run on the RTX/CUDA GPU, but a CUDA runtime library is missing.\n\n"
-            "CPU fallback is disabled. Install CUDA/cuBLAS/cuDNN support in this uv environment, "
-            "then reload the model and import the file again."
+            "This machine has not completed Project AURA RTX/CUDA activation.\n"
+            "ASR is required to run on the RTX/CUDA GPU, and CPU fallback is disabled.\n\n"
+            f"Environment: {runtime.label}\n"
+            f"CUDA detail: {error_msg}\n"
+            f"Next check: {platform_cuda_guidance(runtime)}\n\n"
+            "After fixing the runtime, reload the model and import the file again."
         )
     if "ffmpeg" in lower_msg or "ffprobe" in lower_msg:
         return (
