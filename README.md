@@ -348,6 +348,18 @@ uv sync --extra punctuation
 
 Without this extra, AURA still applies safe Traditional Chinese punctuation cleanup through the built-in rule fallback.
 
+### Windows GPU Quick Check
+
+For Windows native RTX validation, follow [`docs/windows_setup.md`](docs/windows_setup.md), then run:
+
+```powershell
+nvidia-smi
+python scripts/runtime_report.py
+python scripts/windows_gpu_smoke.py
+```
+
+The smoke script checks `nvidia-smi`, Python imports for `faster_whisper` and `ctranslate2`, CUDA runtime DLL visibility, cuBLAS/cuDNN visibility, and the required `WhisperModel(..., device="cuda", compute_type="int8")` load path.
+
 ## Run
 
 From this sibling repo:
