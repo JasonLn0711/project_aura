@@ -11,6 +11,7 @@ import numpy as np
 import pyqtgraph as pg
 from PyQt6.QtCore import QTime, QTimer, pyqtSlot
 from PyQt6.QtWidgets import (
+    QApplication,
     QComboBox,
     QCheckBox,
     QFileDialog,
@@ -37,6 +38,7 @@ from aura.llm.summary import SummarySettings
 from aura.llm.threads import SummaryThread
 from aura.scheduling import milliseconds_until, next_wall_clock_datetime, stop_datetime_after_start
 from aura.settings import DEFAULT_SETTINGS
+from aura.system.runtime_report import build_runtime_report, collect_runtime_diagnostics, format_runtime_report
 from aura.system.runtime_paths import remove_transcript_backup
 from aura.system.update_checker import UpdateCheckerThread
 from aura.ui.messages import UI_TEXT
@@ -84,6 +86,8 @@ class TranscriptionTab(QWidget):
         self.scheduled_stop_timer = QTimer(self)
         self.scheduled_stop_timer.setSingleShot(True)
         self.scheduled_stop_timer.timeout.connect(self.stop_scheduled_recording)
+        self.asr_model_status = "not loaded"
+        self.latest_runtime_report = ""
 
         self.current_folder = os.getcwd()
         self.current_filename = "transcript"
@@ -270,6 +274,30 @@ class TranscriptionTab(QWidget):
 
         model_settings_layout.addStretch()
         settings_vbox.addLayout(model_settings_layout)
+
+        diagnostics_layout = QVBoxLayout()
+        diagnostics_layout.addWidget(QLabel(self.strings.runtime_diagnostics_title))
+        self.runtime_gpu_label = QLabel(self.strings.runtime_gpu_status.format(status="checking"))
+        self.runtime_cuda_label = QLabel(self.strings.runtime_cuda_status.format(status="checking"))
+        self.runtime_model_label = QLabel(self.strings.runtime_model_status.format(status=self.asr_model_status))
+        self.runtime_audio_label = QLabel(self.strings.runtime_audio_status.format(status="checking"))
+        self.runtime_output_label = QLabel(self.strings.runtime_output_status.format(status="checking"))
+        diagnostics_layout.addWidget(self.runtime_gpu_label)
+        diagnostics_layout.addWidget(self.runtime_cuda_label)
+        diagnostics_layout.addWidget(self.runtime_model_label)
+        diagnostics_layout.addWidget(self.runtime_audio_label)
+        diagnostics_layout.addWidget(self.runtime_output_label)
+
+        diagnostics_buttons = QHBoxLayout()
+        self.btn_refresh_runtime = QPushButton(self.strings.runtime_refresh)
+        self.btn_refresh_runtime.clicked.connect(self.refresh_runtime_diagnostics)
+        self.btn_copy_runtime_report = QPushButton(self.strings.runtime_copy_report)
+        self.btn_copy_runtime_report.clicked.connect(self.copy_runtime_report)
+        diagnostics_buttons.addWidget(self.btn_refresh_runtime)
+        diagnostics_buttons.addWidget(self.btn_copy_runtime_report)
+        diagnostics_buttons.addStretch()
+        diagnostics_layout.addLayout(diagnostics_buttons)
+        settings_vbox.addLayout(diagnostics_layout)
         layout.addWidget(self.settings_container)
 
         self.batch_progress = QProgressBar()
@@ -325,7 +353,15 @@ class TranscriptionTab(QWidget):
         self.batch_hint.setStyleSheet("color: #9e9e9e; font-size: 12px;")
         layout.addWidget(self.batch_hint)
 
+        layout.addWidget(QLabel(self.strings.runtime_log_title))
+        self.runtime_log = QTextEdit()
+        self.runtime_log.setReadOnly(True)
+        self.runtime_log.setFixedHeight(90)
+        self.runtime_log.setStyleSheet("font-family: Consolas, monospace; font-size: 11px;")
+        layout.addWidget(self.runtime_log)
+
         self.apply_model_settings()
+        QTimer.singleShot(0, self.refresh_runtime_diagnostics)
         self.check_for_updates()
 
     def check_for_updates(self):
@@ -578,6 +614,8 @@ class TranscriptionTab(QWidget):
             return
 
         new_compute = self.combo_compute.currentData()
+        self.asr_model_status = "loading"
+        self.update_runtime_model_status()
         self.btn_reload_model.setEnabled(False)
         self.btn_record.setEnabled(False)
         self.btn_import.setEnabled(False)
@@ -616,10 +654,14 @@ class TranscriptionTab(QWidget):
         self.update_schedule_controls()
         self.update_record_button_label()
         self.status_label.setText(self.strings.model_ready(active_device, active_compute))
+        self.asr_model_status = f"loaded ({active_device}/{active_compute})"
+        self.update_runtime_model_status()
 
     @pyqtSlot(str)
     def on_model_error(self, err_msg):
-        QMessageBox.critical(self, self.strings.model_loading_failed, err_msg)
+        self.asr_model_status = f"failed: {err_msg.splitlines()[0] if err_msg else 'unknown error'}"
+        self.update_runtime_model_status()
+        self.show_diagnostic_error(self.strings.model_loading_failed, err_msg)
         import_active = self.file_import_active()
         self.btn_record.setEnabled(not import_active)
         self.btn_import.setEnabled(not import_active)
@@ -761,7 +803,7 @@ class TranscriptionTab(QWidget):
 
     @pyqtSlot(str)
     def on_file_error(self, err_msg):
-        QMessageBox.critical(self, self.strings.file_transcription_failed, err_msg)
+        self.show_diagnostic_error(self.strings.file_transcription_failed, err_msg)
 
     def toggle_record(self):
         if self.scheduled_recording_pending:
@@ -1075,6 +1117,9 @@ class TranscriptionTab(QWidget):
     @pyqtSlot(str)
     def update_status_only(self, text):
         self.status_label.setText(text)
+        if hasattr(self, "runtime_log"):
+            self.runtime_log.append(f"{datetime.datetime.now().strftime('%H:%M:%S')} {text}")
+            self.runtime_log.verticalScrollBar().setValue(self.runtime_log.verticalScrollBar().maximum())
 
     def summary_settings(self) -> SummarySettings:
         return SummarySettings(
@@ -1139,7 +1184,7 @@ class TranscriptionTab(QWidget):
 
     @pyqtSlot(str)
     def on_summary_error(self, err_msg):
-        QMessageBox.critical(self, self.strings.summary_failed, err_msg)
+        self.show_diagnostic_error(self.strings.summary_failed, err_msg)
 
     def on_recording_thread_finished(self, recorder_thread, wav_path):
         self.process_audio(wav_path)
@@ -1180,3 +1225,51 @@ class TranscriptionTab(QWidget):
         if self.summary_thread and self.summary_thread.isRunning():
             self.summary_thread.quit()
             self.summary_thread.wait(2000)
+
+    def update_runtime_model_status(self):
+        if hasattr(self, "runtime_model_label"):
+            self.runtime_model_label.setText(
+                self.strings.runtime_model_status.format(status=self.asr_model_status)
+            )
+
+    def refresh_runtime_diagnostics(self):
+        diagnostics = collect_runtime_diagnostics(asr_model_status=self.asr_model_status)
+        self.latest_runtime_report = format_runtime_report(diagnostics)
+        self.runtime_gpu_label.setText(
+            self.strings.runtime_gpu_status.format(status="yes" if diagnostics.gpu.gpu_detected else "no")
+        )
+        self.runtime_cuda_label.setText(
+            self.strings.runtime_cuda_status.format(
+                status="ready" if diagnostics.gpu.cuda_ready else "incomplete"
+            )
+        )
+        self.runtime_model_label.setText(
+            self.strings.runtime_model_status.format(status=diagnostics.asr_model_status)
+        )
+        self.runtime_audio_label.setText(
+            self.strings.runtime_audio_status.format(status=diagnostics.audio.status_line)
+        )
+        self.runtime_output_label.setText(
+            self.strings.runtime_output_status.format(
+                status="yes" if diagnostics.output_folder_writable else "no"
+            )
+        )
+
+    def current_runtime_report(self) -> str:
+        if not self.latest_runtime_report:
+            self.latest_runtime_report = build_runtime_report(asr_model_status=self.asr_model_status)
+        return self.latest_runtime_report
+
+    def copy_runtime_report(self):
+        self.refresh_runtime_diagnostics()
+        QApplication.clipboard().setText(self.current_runtime_report())
+        self.status_label.setText(self.strings.runtime_report_copied)
+
+    def show_diagnostic_error(self, title: str, message: str):
+        self.refresh_runtime_diagnostics()
+        box = QMessageBox(self)
+        box.setIcon(QMessageBox.Icon.Critical)
+        box.setWindowTitle(title)
+        box.setText(message)
+        box.setDetailedText(self.current_runtime_report())
+        box.exec()
