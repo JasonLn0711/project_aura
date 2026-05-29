@@ -15,6 +15,7 @@ Every release version bump must update these files in the same commit:
 
 - `pyproject.toml`: `[project].version`
 - `src/aura/metadata.py`: `__version__`
+- `src/aura/metadata.py`: `__date__`, using the release update date
 - `README.md`: `Refactor Version` table row
 - `README.md`: `Current Release Tag` table row, using the leading-`v` tag form
 
@@ -33,10 +34,12 @@ make build PYTHON=/path/to/python
 Then update the required version files with the repository helper and commit:
 
 ```bash
-make bump-version VERSION=X.Y.Z PYTHON=/path/to/python
+make bump-version VERSION=X.Y.Z RELEASE_DATE=YYYY-MM-DD PYTHON=/path/to/python
 git add pyproject.toml src/aura/metadata.py README.md
 git commit -m "bump version to vX.Y.Z"
 ```
+
+If `RELEASE_DATE` is omitted, `scripts/bump_version.py` uses the current local date. Passing the date explicitly is preferred for reproducible release commits.
 
 The commit message must use the tagged form, for example:
 

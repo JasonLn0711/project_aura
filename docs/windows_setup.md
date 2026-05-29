@@ -1,5 +1,7 @@
 # Windows Native Setup
 
+Last updated: 2026-05-29 for Project AURA `v1.12.0`.
+
 ## 目標
 
 這份文件讓 Windows 使用者用 native Python/PyQt6 執行 Project AURA，不需要先進入 WSL、
@@ -79,6 +81,11 @@ python scripts/windows_asr_artifact_smoke.py
 
 這個 smoke test 會產生一個很短的 WAV、用 CUDA/int8 跑一次 `faster-whisper`，並驗證
 `raw`、`final`、`metrics` transcript artifacts 都能寫出。
+
+## Version note
+
+Windows native diagnostics, hosted Windows CI, the gated self-hosted RTX smoke path, the workstation UI layout,
+and the portable developer release builder are part of `v1.12.0`.
 
 ## Diagnostic report
 

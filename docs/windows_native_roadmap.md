@@ -1,5 +1,18 @@
 # Windows Native RTX Roadmap
 
+## Current Status: Implemented In v1.12.0
+
+As of `2026-05-29`, the Windows native foundation is implemented as a validation path:
+
+- `scripts/windows_gpu_smoke.py` checks `nvidia-smi`, Python imports, CUDA runtime visibility, cuBLAS/cuDNN, and `WhisperModel(..., device="cuda", compute_type="int8")`.
+- `scripts/runtime_report.py` produces a developer-facing report for OS, Python, GPU, CUDA, cuBLAS, cuDNN, `ctranslate2`, `faster-whisper`, FFmpeg, audio I/O, and output-folder writability.
+- `src/aura/system/platform.py`, `gpu_diagnostics.py`, `audio_diagnostics.py`, and `runtime_report.py` centralize platform/runtime facts.
+- The PyQt6 transcription tab now exposes Runtime Diagnostics, top GPU/model/device status, a workstation layout, copyable diagnostic reports, and a runtime log.
+- `.github/workflows/windows.yml` runs hosted Windows unit/import/PyQt/package/runtime checks. A gated self-hosted RTX job runs `windows_gpu_smoke.py` and `windows_asr_artifact_smoke.py`.
+- `scripts/build_windows_portable.ps1` prepares `dist/aura-windows-portable/` with setup docs, runtime checkers, known issues, and a generated sample WAV.
+
+The next validation layer is real Windows RTX hardware exercise with the self-hosted runner enabled.
+
 ## 目標
 
 Project AURA 的下一個平台能力，是把目前已經成立的 Ubuntu RTX/CUDA
@@ -50,15 +63,15 @@ Project AURA
 
 交付物：
 
-- 新增 `scripts/windows_gpu_smoke.py`.
+- 新增 `scripts/windows_gpu_smoke.py`. Done in `v1.12.0`.
   - 檢查 `nvidia-smi` 是否存在並回報 GPU。
   - 檢查 Python 能否 import `faster_whisper`。
   - 檢查 CUDA runtime DLL / cuBLAS / cuDNN 可見性。
   - 實際建立 `WhisperModel(MODEL_ID, device="cuda", compute_type="int8")`。
-- 新增 `scripts/runtime_report.py`.
+- 新增 `scripts/runtime_report.py`. Done in `v1.12.0`.
   - 輸出 OS、Python、GPU、CUDA、cuBLAS、cuDNN、`ctranslate2`、`faster-whisper` 版本。
   - 產生 single diagnostic report，方便 issue、Slack、email 或 release smoke log 直接貼上。
-- 等 scripts 存在後，再把 Windows GPU quick check 加進 README：
+- README now includes the Windows GPU quick check:
 
 ```powershell
 nvidia-smi
@@ -77,11 +90,11 @@ python scripts/windows_gpu_smoke.py
 
 交付物：
 
-- 新增 platform/runtime modules:
+- 新增 platform/runtime modules. Done in `v1.12.0`:
   - `src/aura/system/platform.py`
   - `src/aura/system/gpu_diagnostics.py`
   - `src/aura/system/audio_diagnostics.py`
-- 擴充 `src/aura/system/cuda.py`，讓 runtime messages 能區分：
+- 擴充 `src/aura/system/cuda.py`，讓 runtime messages 能區分。Done in `v1.12.0`:
   - Linux native
   - WSL
   - Windows native
@@ -103,7 +116,7 @@ python scripts/windows_gpu_smoke.py
 
 交付物：
 
-- 新增 `docs/windows_setup.md`.
+- 新增 `docs/windows_setup.md`. Done in `v1.12.0`.
 - 記錄建議安裝路徑：
 
 ```powershell
@@ -122,7 +135,7 @@ python -m aura
   - cuDNN / cuBLAS
   - PyAudio / sound device handling
   - FFmpeg on `PATH`
-- 新增 helper scripts:
+- 新增 helper scripts. Done in `v1.12.0`:
   - `scripts/run_aura_windows.ps1`
   - `scripts/check_windows_runtime.ps1`
 
@@ -167,7 +180,7 @@ python -m aura
 
 交付物：
 
-- 新增 `.github/workflows/windows.yml`.
+- 新增 `.github/workflows/windows.yml`. Done in `v1.12.0`.
 - Windows hosted runner 覆蓋：
   - unit tests
   - import smoke
@@ -176,7 +189,7 @@ python -m aura
   - non-GPU runtime report
 - Self-hosted Windows RTX runner 覆蓋：
   - `windows_gpu_smoke.py`
-  - small-audio ASR smoke test
+  - `windows_asr_artifact_smoke.py` small-audio ASR artifact smoke test
   - `device="cuda"` model load
   - transcript artifact output validation
 - Ubuntu CI 持續保留：
@@ -195,7 +208,7 @@ python -m aura
 
 交付物：
 
-- 建立第一個 portable dev release：
+- 建立第一個 portable dev release. Builder added in `v1.12.0`:
 
 ```text
 dist/aura-windows-portable/

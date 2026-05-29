@@ -1,5 +1,7 @@
 # Windows Known Issues
 
+Last updated: 2026-05-29 for Project AURA `v1.12.0`.
+
 ## CUDA activation
 
 AURA requires RTX/CUDA activation for ASR. If `windows_gpu_smoke.py` reports incomplete CUDA runtime,
