@@ -47,7 +47,7 @@ class AudioNormalizationTests(unittest.TestCase):
     def test_detect_cpu_count_falls_back_to_affinity(self):
         with (
             patch("aura.audio.normalization.os.cpu_count", return_value=None),
-            patch("aura.audio.normalization.os.sched_getaffinity", return_value={0, 1, 2, 3}),
+            patch("aura.audio.normalization.os.sched_getaffinity", return_value={0, 1, 2, 3}, create=True),
         ):
             result = detect_cpu_count()
 
@@ -57,7 +57,7 @@ class AudioNormalizationTests(unittest.TestCase):
         fake_result = type("Result", (), {"returncode": 0, "stdout": "8\n"})()
         with (
             patch("aura.audio.normalization.os.cpu_count", return_value=None),
-            patch("aura.audio.normalization.os.sched_getaffinity", side_effect=OSError),
+            patch("aura.audio.normalization.os.sched_getaffinity", side_effect=OSError, create=True),
             patch("aura.audio.normalization.shutil.which", return_value="/usr/bin/nproc"),
             patch("aura.audio.normalization.subprocess.run", return_value=fake_result),
             patch("aura.audio.normalization.Path.exists", return_value=False),
