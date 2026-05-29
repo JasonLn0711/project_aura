@@ -41,8 +41,8 @@ The app is designed for professional meeting and lecture workflows. It includes 
 | Field | Value |
 | --- | --- |
 | Project Name | Project AURA / Ultimate Audio Assistant |
-| Refactor Version | `1.12.0` |
-| Current Release Tag | `v1.12.0` |
+| Refactor Version | `1.13.0` |
+| Current Release Tag | `v1.13.0` |
 | ASR Model | `SoybeanMilk/faster-whisper-Breeze-ASR-25` |
 | GitHub Repository | `JasonLn0711/project_aura` |
 | Academic Affiliation | National Yang Ming Chiao Tung University (NYCU) |
@@ -50,6 +50,18 @@ The app is designed for professional meeting and lecture workflows. It includes 
 | License | MIT |
 
 ## What We Updated Today (2026-05-29)
+
+Project AURA `v1.13.0` is the Windows User Onboarding Release. The contribution in this update is user-facing: Windows users can now start from a portable folder, run one check, launch one script, and get a copyable diagnostic report when the machine is not ready. The implementation keeps the same RTX/CUDA-only ASR policy while reducing the setup flow from a developer command sequence to `Start-AURA.bat` / `Start-AURA.ps1` and `Check-AURA.bat`.
+
+This release adds three onboarding layers:
+
+1. **One-click Windows launch**: `Start-AURA.ps1` and `Start-AURA.bat` check Python 3.11, create `.venv`, install dependencies, verify FFmpeg, verify `nvidia-smi`, run `windows_gpu_smoke.py`, write `diagnostic_report.txt`, and then start the PyQt UI.
+2. **Portable Windows ZIP layout**: `scripts/build_windows_portable.ps1` now produces `dist/aura-windows-portable-v1.13.0.zip` with root-level `Start-AURA.bat`, `Check-AURA.bat`, `app/`, `scripts/`, `docs/`, `sample_audio/`, and a placeholder `diagnostic_report.txt`.
+3. **First Launch Check in the UI**: Runtime Diagnostics now includes GPU Ready, CUDA Ready, FFmpeg Ready, Microphone Ready, Output Folder, and ASR Model Load checks. Each failed item exposes Fix Guide, Copy Diagnostic Report, Open Setup Folder, and Retry Check actions beside the failed gate.
+
+The supported scope is practical: the portable ZIP is the preferred Windows onboarding artifact before a full installer. CUDA, cuDNN, Qt plugin, and audio-device behavior still need repeated validation on real Windows RTX machines before moving to PyInstaller, Nuitka, or an installer.
+
+## Previous Update (2026-05-29, v1.12.0)
 
 Project AURA has moved from an Ubuntu-focused refactor into a cross-platform RTX workstation foundation. The contribution in this update is practical: AURA now has a Windows native validation path, a shared runtime diagnostics layer, a workstation-oriented PyQt layout, Windows CI coverage, and a portable developer release path. The evidence is concrete: the local CUDA smoke check loaded the default `SoybeanMilk/faster-whisper-Breeze-ASR-25` model on `cuda/int8`, the ASR artifact smoke wrote raw/final/metrics transcript outputs, and both Ubuntu and Windows GitHub Actions completed successfully after the hosted Windows runner was given FFmpeg.
 
@@ -84,12 +96,15 @@ The final decision is intentionally hybrid: wall-clock scheduling belongs in the
 
 ## Current Working Version Changes
 
-`v1.12.0` turns the refactor from an Ubuntu RTX meeting-transcription workstation into a cross-platform validation foundation. The main goals are: keep ASR on the required RTX/CUDA path, make Windows native feasibility testable, centralize platform/runtime diagnostics, expose copyable diagnostic reports in the UI, preserve transcript artifact guarantees, and give Windows CI/portable packaging a concrete first lane.
+`v1.13.0` turns the Windows native validation foundation into a simpler Windows onboarding path. The main goals are: let Windows users run one check and one launch command, keep ASR on the required RTX/CUDA path, produce `diagnostic_report.txt` automatically, package a real portable ZIP layout, and expose first-launch readiness checks in the UI.
 
 ### User Workflow Changes
 
 - The primary transcription tab now uses a workstation layout: left-side workflow actions, top GPU/model/device status, central waveform/transcript workspace, right-side artifact/export/summary/settings controls, and a bottom runtime log.
+- Windows users can now launch with `Start-AURA.bat` / `Start-AURA.ps1`, which prepares `.venv`, installs dependencies, checks FFmpeg and NVIDIA driver visibility, runs the CUDA smoke test, writes `diagnostic_report.txt`, and starts the app.
+- Windows users can run `Check-AURA.bat` first to execute the same setup and RTX/CUDA validation flow without launching the UI.
 - Runtime Diagnostics can be refreshed from the UI and copied as a developer-ready report.
+- Runtime Diagnostics now includes a First Launch Check for GPU, CUDA, FFmpeg, microphone, output-folder writability, and ASR model load status, with Fix Guide buttons for failed gates.
 - Error dialogs for model loading, file transcription, and summary failures expose the same diagnostic report through details and a copy button.
 - The main transcription controls are simplified around the actual user actions: **Start/Stop Recording**, **Import Media**, optional **Cancel Import**, optional **Open Output Folder**, and **Summarize Current Transcript**.
 - Live recording can be armed from Advanced Settings to start at a selected wall-clock time. The same schedule can optionally auto-stop at a selected wall-clock time, including next-day stop times when the end time is earlier than the start time.
@@ -160,6 +175,17 @@ Existing advanced options remain available: live capture source, denoise mode, s
 
 Runtime Diagnostics now appears alongside these controls. It reports GPU detection, CUDA runtime status, ASR model load status, audio input/output status, output-folder writability, and includes a **Copy Diagnostic Report** action.
 
+The First Launch Check inside Runtime Diagnostics shows:
+
+- **GPU Ready**
+- **CUDA Ready**
+- **FFmpeg Ready**
+- **Microphone Ready**
+- **Output Folder**
+- **ASR Model Load**
+
+Failed checks expose **Fix Guide**, **Copy Diagnostic Report**, **Open Setup Folder**, and **Retry Check** actions beside the failed gate so users do not need to interpret raw PowerShell output first.
+
 Advanced Settings also includes scheduled live recording:
 
 - **Schedule recording start** turns the main recording button into **Schedule Recording** and starts live recording/transcription at the selected `HH:mm` wall-clock time.
@@ -187,11 +213,13 @@ Advanced Settings also includes scheduled live recording:
 
 - `docs/windows_setup.md` documents the Windows native setup path, including Python 3.11 venv creation, optional extras, GPU smoke testing, and app launch.
 - `docs/windows_known_issues.md` records the current Windows CUDA/audio/packaging boundaries.
+- Root-level `Start-AURA.ps1`, `Start-AURA.bat`, `Check-AURA.ps1`, and `Check-AURA.bat` provide the Windows onboarding entrypoints.
+- `scripts/build_windows_portable.ps1` now creates both `dist/aura-windows-portable/` and a versioned `dist/aura-windows-portable-v1.13.0.zip` with the onboarding scripts at the archive root.
 - `.github/workflows/windows.yml` adds hosted Windows checks for unit tests, PyQt import smoke, runtime-report smoke, and portable packaging smoke; the gated self-hosted RTX lane runs CUDA model-load and ASR artifact smoke tests.
 - `scripts/windows_asr_artifact_smoke.py` generates a tiny WAV, runs a CUDA/int8 ASR pass, and verifies raw/final/metrics transcript artifact output.
 - README workflow documentation now matches the simplified UI and automatic transcript-saving behavior.
 - `docs/architecture_decisions.md` records the first-principles ownership split for transcript artifacts, output policy, progress visibility, UI interaction policy, live capture ownership, and Traditional Chinese punctuation post-processing.
-- Tests now cover transcript artifact naming, raw/final/summary splitting, metrics JSON writing, FFmpeg progress parsing, CPU-count detection, live capture source selection, RMS-based source mixing, scheduled wall-clock calculation, no-voice auto-stop/trailing-trim helpers, Traditional Chinese punctuation post-processing, runtime diagnostics reporting, and propagation of normalization progress into the import pipeline.
+- Tests now cover transcript artifact naming, raw/final/summary splitting, metrics JSON writing, FFmpeg progress parsing, CPU-count detection, live capture source selection, RMS-based source mixing, scheduled wall-clock calculation, no-voice auto-stop/trailing-trim helpers, Traditional Chinese punctuation post-processing, runtime diagnostics reporting, first-launch check gates, and propagation of normalization progress into the import pipeline.
 
 ### Current Architecture Health
 
@@ -205,7 +233,7 @@ The guiding rule remains: if behavior can be tested without launching Qt, it sho
 
 ## Windows Native Runtime Path
 
-AURA now has a Windows native RTX validation path. The supported direction is to prove the CUDA runtime and `faster-whisper` model load first, keep platform differences in shared diagnostics modules, and use the portable developer release path before installer work.
+AURA now has a Windows native RTX validation and onboarding path. The supported direction is to prove the CUDA runtime and `faster-whisper` model load first, give users one-click check/start scripts, keep platform differences in shared diagnostics modules, and use the portable ZIP path before installer work.
 
 The implementation and remaining validation path are tracked in [`docs/windows_native_roadmap.md`](docs/windows_native_roadmap.md), [`docs/windows_setup.md`](docs/windows_setup.md), and [`docs/windows_known_issues.md`](docs/windows_known_issues.md).
 
@@ -225,7 +253,8 @@ The implementation and remaining validation path are tracked in [`docs/windows_n
 | Volume Normalization | Dynamically standardizes imported and recorded audio to a target dBFS, default `-20`, using a fast FFmpeg path when denoise is off. The FFmpeg path uses `CPU count - 6` worker threads, with a minimum of `1`, and reports clearly if CPU count cannot be detected. |
 | Progress Telemetry | Surfaces import normalization and processing stages in the status line and stores imported-file status events in processing metrics. |
 | Runtime Diagnostics | Reports GPU detection, CUDA runtime status, ASR model load status, FFmpeg, audio input/output devices, and output-folder writability through CLI scripts and the PyQt UI. |
-| Windows Native Validation | Provides Windows setup docs, GPU smoke checks, runtime reports, hosted Windows CI, gated self-hosted RTX smoke tests, and a portable developer release builder. |
+| Windows Onboarding | Provides `Start-AURA.bat`, `Check-AURA.bat`, automatic `.venv` preparation, dependency installation, diagnostic report writing, and a versioned portable ZIP layout. |
+| Windows Native Validation | Provides Windows setup docs, GPU smoke checks, runtime reports, hosted Windows CI, gated self-hosted RTX smoke tests, and a portable release builder. |
 | Asynchronous Architecture | `ModelLoaderThread` prevents UI freezing during initialization and compute-type switching. |
 | RTX/CUDA-only ASR | ASR model loading is pinned to `cuda`; CPU fallback is disabled so transcription never silently leaves the RTX GPU path. |
 | System Tray Integration | Minimizes to background with `QSystemTrayIcon`. |
@@ -241,6 +270,10 @@ The original project used a monolithic script. This repo keeps the behavior but 
 
 ```text
 project_aura_refactor/
+├── Check-AURA.bat
+├── Check-AURA.ps1
+├── Start-AURA.bat
+├── Start-AURA.ps1
 ├── pyproject.toml
 ├── README.md
 ├── requirements.txt
@@ -249,6 +282,9 @@ project_aura_refactor/
 │   ├── denoise_upgrade_plan.md
 │   ├── legacy_audio_assistant_v1.5.0.py
 │   ├── refactor_plan.md
+│   ├── windows_known_issues.md
+│   ├── windows_native_roadmap.md
+│   ├── windows_setup.md
 │   └── versioning.md
 ├── img/
 │   ├── image.png
@@ -287,6 +323,13 @@ project_aura_refactor/
 │       ├── splitter_tab.py
 │       ├── transcript_io.py      # Transcript artifact writing helpers
 │       └── transcription_tab.py
+├── scripts/
+│   ├── build_windows_portable.ps1
+│   ├── check_windows_runtime.ps1
+│   ├── run_aura_windows.ps1
+│   ├── runtime_report.py
+│   ├── windows_asr_artifact_smoke.py
+│   └── windows_gpu_smoke.py
 └── tests/
     ├── test_audio_capture.py
     ├── test_audio_normalization.py
@@ -307,6 +350,7 @@ project_aura_refactor/
 - Smart audio splitting is extracted into a testable pipeline service outside the Qt thread.
 - Runtime defaults and UI messages are centralized in testable modules.
 - Runtime diagnostics are centralized in `src/aura/system/` so scripts, ASR error handling, and the UI share the same platform facts.
+- Windows onboarding is now root-level and portable-friendly through `Check-AURA.bat`, `Start-AURA.bat`, automatic dependency preparation, and `diagnostic_report.txt`.
 - Imported-file volume normalization uses an FFmpeg fast path when denoise is off.
 - CPU count detection uses multiple probes and reports clearly when no CPU count can be detected.
 - ASR is now explicitly RTX/CUDA-only; CPU fallback is treated as a configuration error.
@@ -381,9 +425,17 @@ uv sync --extra punctuation
 
 Without this extra, AURA still applies safe Traditional Chinese punctuation cleanup through the built-in rule fallback.
 
-### Windows GPU Quick Check
+### Windows 3-Step Quick Start
 
-For Windows native RTX validation, follow [`docs/windows_setup.md`](docs/windows_setup.md), then run:
+For the Windows portable onboarding path:
+
+1. Install or update the NVIDIA driver.
+2. Unzip `aura-windows-portable-v1.13.0.zip`.
+3. Double-click `Check-AURA.bat`, then double-click `Start-AURA.bat`.
+
+`Check-AURA.bat` and `Start-AURA.bat` create `.venv`, install dependencies, check FFmpeg, check the NVIDIA driver, run the RTX/CUDA smoke path, and write `diagnostic_report.txt`.
+
+For developer-level Windows RTX validation, follow [`docs/windows_setup.md`](docs/windows_setup.md), then run:
 
 ```powershell
 nvidia-smi
@@ -649,7 +701,7 @@ make check PYTHON=/path/to/python
 
 Version bumps must follow the strict rule in [`docs/versioning.md`](docs/versioning.md). Use `make bump-version VERSION=X.Y.Z` to synchronize `pyproject.toml`, `src/aura/metadata.py`, and the README version rows in one dedicated version commit, then tag with the leading-`v` form such as `vX.Y.Z`.
 
-This update uses `v1.12.0` because it adds user-visible runtime diagnostics, Windows native validation workflows, and a revised workstation UI. The package metadata, runtime metadata, README version rows, and release date are synchronized for `2026-05-29`.
+This update uses `v1.13.0` because it adds Windows one-click onboarding scripts, a versioned portable ZIP layout, automatic diagnostic report generation, and the First Launch Check UI. The package metadata, runtime metadata, README version rows, and release date are synchronized for `2026-05-29`.
 
 ## Troubleshooting
 

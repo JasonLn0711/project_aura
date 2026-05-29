@@ -51,4 +51,10 @@ Use this sibling repository as the new maintainable Python codebase. Keep `recor
    - Move platform-specific CUDA, GPU, audio, FFmpeg, and dependency checks under `src/aura/system/` so UI and ASR code consume shared diagnostic results. Done with `platform.py`, `gpu_diagnostics.py`, `audio_diagnostics.py`, and `runtime_report.py`.
    - Keep CPU fallback disabled, but make runtime failures product-facing: the machine has not completed RTX/CUDA activation for AURA, and the diagnostic report should identify the missing layer. Done for ASR model loading and file transcription errors.
    - Add Windows hosted CI for non-GPU compatibility and a self-hosted Windows RTX runner for CUDA model-load and small-audio ASR smoke tests. Done; hosted Windows CI passed after adding FFmpeg setup, and the RTX lane is gated by `AURA_RUN_WINDOWS_RTX_SMOKE`.
-   - Build the first Windows release as a portable developer artifact before evaluating PyInstaller, Nuitka, or a full installer. Done as `scripts/build_windows_portable.ps1`; real Windows RTX release exercise remains the next validation step.
+   - Build the first Windows release as a portable developer artifact before evaluating PyInstaller, Nuitka, or a full installer. Done as `scripts/build_windows_portable.ps1`; `v1.13.0` strengthens this into a versioned portable ZIP layout.
+
+8. Windows user onboarding
+   - Reduce the Windows flow from developer commands to `Check-AURA.bat` and `Start-AURA.bat`. Done in `v1.13.0`; the PowerShell entrypoint creates `.venv`, installs dependencies, checks FFmpeg/NVIDIA, runs the GPU smoke test, writes `diagnostic_report.txt`, and launches the UI.
+   - Keep check-only and launch flows on the same code path. Done with `Start-AURA.ps1 -CheckOnly`, used by `Check-AURA.ps1`.
+   - Add UI-level First Launch Check gates while keeping readiness logic testable outside Qt. Done with `first_launch_checks()` in `src/aura/system/runtime_report.py` and display/actions in `src/aura/ui/transcription_tab.py`.
+   - Package the onboarding flow as `dist/aura-windows-portable-vX.Y.Z.zip`. Done in `v1.13.0`; installer work remains a later validation layer.

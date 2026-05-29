@@ -1,6 +1,6 @@
 # Windows Known Issues
 
-Last updated: 2026-05-29 for Project AURA `v1.12.0`.
+Last updated: 2026-05-29 for Project AURA `v1.13.0`.
 
 ## CUDA activation
 
@@ -18,8 +18,11 @@ system audio and system+microphone should show setup guidance when the device la
 
 ## Packaging
 
-The first Windows artifact is a portable developer release. A full installer should wait until CUDA runtime
+The first Windows artifact is a portable ZIP release. A full installer should wait until CUDA runtime
 checks and model-load smoke tests are stable on an RTX Windows machine.
 
 The portable builder creates `sample_audio/aura_smoke_1s.wav` for packaging and import smoke checks. Real
 speech samples should stay outside git and be attached only to release validation runs when licensing allows it.
+
+The `v1.13.0` portable ZIP is an onboarding artifact, not a full installer. `Start-AURA.bat` and
+`Check-AURA.bat` still require Python 3.11, FFmpeg, and a working NVIDIA driver to be installed on the host.

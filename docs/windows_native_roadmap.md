@@ -1,15 +1,17 @@
 # Windows Native RTX Roadmap
 
-## Current Status: Implemented In v1.12.0
+## Current Status: Implemented In v1.13.0
 
-As of `2026-05-29`, the Windows native foundation is implemented as a validation path:
+As of `2026-05-29`, the Windows native foundation is implemented as a validation and onboarding path:
 
 - `scripts/windows_gpu_smoke.py` checks `nvidia-smi`, Python imports, CUDA runtime visibility, cuBLAS/cuDNN, and `WhisperModel(..., device="cuda", compute_type="int8")`.
 - `scripts/runtime_report.py` produces a developer-facing report for OS, Python, GPU, CUDA, cuBLAS, cuDNN, `ctranslate2`, `faster-whisper`, FFmpeg, audio I/O, and output-folder writability.
 - `src/aura/system/platform.py`, `gpu_diagnostics.py`, `audio_diagnostics.py`, and `runtime_report.py` centralize platform/runtime facts.
-- The PyQt6 transcription tab now exposes Runtime Diagnostics, top GPU/model/device status, a workstation layout, copyable diagnostic reports, and a runtime log.
+- The PyQt6 transcription tab now exposes Runtime Diagnostics, First Launch Check gates, top GPU/model/device status, a workstation layout, copyable diagnostic reports, and a runtime log.
 - `.github/workflows/windows.yml` runs hosted Windows unit/import/PyQt/package/runtime checks. A gated self-hosted RTX job runs `windows_gpu_smoke.py` and `windows_asr_artifact_smoke.py`.
-- `scripts/build_windows_portable.ps1` prepares `dist/aura-windows-portable/` with setup docs, runtime checkers, known issues, and a generated sample WAV.
+- `Start-AURA.bat` / `Start-AURA.ps1` prepare `.venv`, install dependencies, check FFmpeg/NVIDIA, run the GPU smoke test, write `diagnostic_report.txt`, and launch the UI.
+- `Check-AURA.bat` / `Check-AURA.ps1` run the same setup and validation flow without launching the UI.
+- `scripts/build_windows_portable.ps1` prepares `dist/aura-windows-portable/` and `dist/aura-windows-portable-v1.13.0.zip` with root launch/check scripts, `app/`, `scripts/`, `docs/`, `sample_audio/`, and `diagnostic_report.txt`.
 
 The next validation layer is real Windows RTX hardware exercise with the self-hosted runner enabled.
 
@@ -54,7 +56,7 @@ Project AURA
 - Ubuntu 保持主要開發路徑；Windows 成為第一級驗證路徑。
 - ASR 維持 RTX/CUDA-only。CPU fallback 持續停用，讓產品行為不會悄悄離開預期的 GPU 路徑。
 - 平台差異集中在 `src/aura/system/` 與 diagnostics scripts，不散落在 UI 與 ASR code 裡。
-- Windows support 先以 runtime proof 成立，再進入 installer 工作。第一個 packaging 目標是 portable developer release。
+- Windows support 先以 runtime proof 成立，再進入 installer 工作。第一個 packaging 目標是 portable ZIP release。
 - Runtime failure 需要說清楚目前缺少哪一層 activation：NVIDIA driver、CUDA DLLs、cuBLAS/cuDNN、`ctranslate2`、FFmpeg 或 audio devices。
 
 ## Phase 1: Windows 可行性驗證
@@ -208,10 +210,11 @@ python -m aura
 
 交付物：
 
-- 建立第一個 portable dev release. Builder added in `v1.12.0`:
+- 建立第一個 portable dev release. Builder added in `v1.12.0`, ZIP layout strengthened in `v1.13.0`:
 
 ```text
 dist/aura-windows-portable/
+dist/aura-windows-portable-v1.13.0.zip
 ```
 
 - 評估 packaging engines：
@@ -219,13 +222,51 @@ dist/aura-windows-portable/
   - Nuitka: potentially stronger runtime packaging, with slower builds.
 - Installer 工作延後到 portable release 完成驗證之後。
 - Release artifact 包含：
+  - `Start-AURA.bat`
+  - `Check-AURA.bat`
   - app
   - setup guide
   - runtime checker
   - sample audio
   - known issues
+  - `diagnostic_report.txt`
 
 驗收：
 
 - Windows user 可以解壓縮 portable build、執行 runtime checker、啟動 AURA，並在回報前先檢查 known issues。
 - Packaging 不作為 Windows support 的第一個證據；runtime validation 才是第一層證據。
+
+## Phase 7: Windows User Onboarding
+
+目標是把 Windows 使用者流程從開發者命令串，收斂成「解壓縮、檢查、啟動」。
+
+交付物：
+
+- 新增 root-level 一鍵入口. Done in `v1.13.0`:
+  - `Start-AURA.ps1`
+  - `Start-AURA.bat`
+  - `Check-AURA.ps1`
+  - `Check-AURA.bat`
+- `Start-AURA.ps1` 自動處理：
+  - Python 3.11 檢查
+  - `.venv` 建立
+  - dependency install
+  - FFmpeg / ffprobe 檢查
+  - NVIDIA driver / `nvidia-smi` 檢查
+  - `windows_gpu_smoke.py`
+  - `diagnostic_report.txt`
+  - 成功後啟動 UI
+- UI First Launch Check. Done in `v1.13.0`:
+  - GPU Ready
+  - CUDA Ready
+  - FFmpeg Ready
+  - Microphone Ready
+  - Output Folder
+  - ASR Model Load
+  - failed gates expose Fix Guide, Copy Diagnostic Report, Open Setup Folder, and Retry Check.
+
+驗收：
+
+- 使用者可以用 `Check-AURA.bat` 先驗證工作站 readiness。
+- 使用者可以用 `Start-AURA.bat` 啟動；失敗時 root 會留下 `diagnostic_report.txt`。
+- UI 可以顯示目前卡在 GPU、CUDA、FFmpeg、microphone、output folder 或 ASR model load 哪一層。

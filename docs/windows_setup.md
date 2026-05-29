@@ -1,6 +1,6 @@
 # Windows Native Setup
 
-Last updated: 2026-05-29 for Project AURA `v1.12.0`.
+Last updated: 2026-05-29 for Project AURA `v1.13.0`.
 
 ## 目標
 
@@ -17,9 +17,31 @@ Kali 或 Docker。AURA 的 ASR 路徑維持 RTX/CUDA-only；CPU fallback 持續�
 - FFmpeg 已加入 `PATH`
 - 可用的 microphone 或 audio input device
 
-## 建議安裝流程
+## 一般使用者流程
 
-在 repo root 開啟 PowerShell：
+建議先使用 portable ZIP，不需要進入 WSL、Kali 或 Docker：
+
+1. 安裝或更新 NVIDIA driver，確認電腦有 RTX GPU。
+2. 解壓縮 `aura-windows-portable-v1.13.0.zip`。
+3. 雙擊 `Check-AURA.bat`。
+4. 雙擊 `Start-AURA.bat`。
+
+`Check-AURA.bat` 和 `Start-AURA.bat` 會自動執行：
+
+- 檢查 Python 3.11
+- 建立 `.venv`
+- 安裝 Project AURA dependencies
+- 檢查 FFmpeg / ffprobe
+- 檢查 NVIDIA driver / `nvidia-smi`
+- 執行 `windows_gpu_smoke.py`
+- 產生 `diagnostic_report.txt`
+- 啟動 UI（`Start-AURA.bat`）
+
+如果流程失敗，請把 `diagnostic_report.txt` 貼給開發者。
+
+## 開發者安裝流程
+
+在 repo root 開啟 PowerShell，仍可手動執行：
 
 ```powershell
 py -3.11 -m venv .venv
@@ -49,19 +71,38 @@ WhisperModel(MODEL_ID, device="cuda", compute_type="int8")
 
 ## Helper scripts
 
-檢查 runtime：
+一鍵檢查 runtime：
+
+```powershell
+.\Check-AURA.ps1
+```
+
+或雙擊：
+
+```text
+Check-AURA.bat
+```
+
+一鍵啟動 AURA：
+
+```powershell
+.\Start-AURA.ps1
+```
+
+或雙擊：
+
+```text
+Start-AURA.bat
+```
+
+舊的 scripts helper 仍保留，並委派到 root-level 使用者入口：
 
 ```powershell
 .\scripts\check_windows_runtime.ps1
-```
-
-啟動 AURA：
-
-```powershell
 .\scripts\run_aura_windows.ps1
 ```
 
-建立 portable developer release：
+建立 portable release：
 
 ```powershell
 .\scripts\build_windows_portable.ps1
@@ -71,6 +112,7 @@ WhisperModel(MODEL_ID, device="cuda", compute_type="int8")
 
 ```text
 dist/aura-windows-portable/
+dist/aura-windows-portable-v1.13.0.zip
 ```
 
 Self-hosted RTX smoke test：
@@ -84,12 +126,18 @@ python scripts/windows_asr_artifact_smoke.py
 
 ## Version note
 
-Windows native diagnostics, hosted Windows CI, the gated self-hosted RTX smoke path, the workstation UI layout,
-and the portable developer release builder are part of `v1.12.0`.
+Windows one-click onboarding scripts, automatic `diagnostic_report.txt`, the First Launch Check UI, and the
+versioned portable ZIP layout are part of `v1.13.0`.
 
 ## Diagnostic report
 
-如果啟動失敗，先執行：
+如果啟動失敗，先查看：
+
+```text
+diagnostic_report.txt
+```
+
+也可以手動執行：
 
 ```powershell
 python scripts/runtime_report.py
