@@ -31,6 +31,15 @@ class RuntimeDiagnostics:
         return self.audio.status_line
 
 
+@dataclass(frozen=True)
+class FirstLaunchCheck:
+    key: str
+    label: str
+    ready: bool
+    detail: str
+    fix_guidance: str
+
+
 def collect_runtime_diagnostics(asr_model_status: str = "not loaded") -> RuntimeDiagnostics:
     return RuntimeDiagnostics(
         platform=detect_runtime_platform(),
@@ -38,6 +47,56 @@ def collect_runtime_diagnostics(asr_model_status: str = "not loaded") -> Runtime
         audio=collect_audio_diagnostics(),
         asr_model_status=asr_model_status,
         output_folder_writable=os.access(os.getcwd(), os.W_OK),
+    )
+
+
+def first_launch_checks(diagnostics: RuntimeDiagnostics) -> tuple[FirstLaunchCheck, ...]:
+    ffmpeg_ready = bool(diagnostics.audio.ffmpeg_path or shutil.which("ffmpeg"))
+    model_status = diagnostics.asr_model_status.strip().lower()
+    model_ready = model_status.startswith("loaded")
+    return (
+        FirstLaunchCheck(
+            key="gpu",
+            label="GPU Ready",
+            ready=diagnostics.gpu.gpu_detected,
+            detail=diagnostics.gpu.nvidia_smi.output or diagnostics.gpu.nvidia_smi.error or "No GPU reported.",
+            fix_guidance="Install or update the NVIDIA driver, then confirm nvidia-smi lists the RTX GPU.",
+        ),
+        FirstLaunchCheck(
+            key="cuda",
+            label="CUDA Ready",
+            ready=diagnostics.gpu.cuda_ready,
+            detail=diagnostics.gpu.cuda_runtime_detail,
+            fix_guidance=diagnostics.gpu.activation_guidance,
+        ),
+        FirstLaunchCheck(
+            key="ffmpeg",
+            label="FFmpeg Ready",
+            ready=ffmpeg_ready,
+            detail=diagnostics.audio.ffmpeg_path or shutil.which("ffmpeg") or "ffmpeg is not on PATH.",
+            fix_guidance="Install FFmpeg and make sure both ffmpeg and ffprobe are available on PATH.",
+        ),
+        FirstLaunchCheck(
+            key="microphone",
+            label="Microphone Ready",
+            ready=bool(diagnostics.audio.input_devices),
+            detail=diagnostics.audio.status_line,
+            fix_guidance="Connect or enable a microphone/audio input device and allow Windows microphone access.",
+        ),
+        FirstLaunchCheck(
+            key="output",
+            label="Output Folder",
+            ready=diagnostics.output_folder_writable,
+            detail="Current working folder is writable." if diagnostics.output_folder_writable else "Current folder is not writable.",
+            fix_guidance="Choose or move AURA to a writable folder before recording or importing media.",
+        ),
+        FirstLaunchCheck(
+            key="asr_model",
+            label="ASR Model Load",
+            ready=model_ready,
+            detail=diagnostics.asr_model_status,
+            fix_guidance="Use Check-AURA.bat or reload the model after GPU/CUDA readiness is complete.",
+        ),
     )
 
 
@@ -72,9 +131,9 @@ def format_runtime_report(diagnostics: RuntimeDiagnostics) -> str:
         lines.append(f"- {label}: {'visible' if ready else 'missing'} ({detail})")
     lines.extend(
         [
-        f"- ASR model load status: {diagnostics.asr_model_status}",
-        f"- Current output folder writable: {'yes' if diagnostics.output_folder_writable else 'no'}",
-        f"- Activation guidance: {gpu.activation_guidance}",
+            f"- ASR model load status: {diagnostics.asr_model_status}",
+            f"- Current output folder writable: {'yes' if diagnostics.output_folder_writable else 'no'}",
+            f"- Activation guidance: {gpu.activation_guidance}",
             "",
             "Audio / FFmpeg",
             f"- FFmpeg: {audio.ffmpeg_path or shutil.which('ffmpeg') or 'missing'}",
@@ -88,6 +147,9 @@ def format_runtime_report(diagnostics: RuntimeDiagnostics) -> str:
         lines.append("- Input device names: " + "; ".join(audio.input_devices[:8]))
     if audio.output_devices:
         lines.append("- Output device names: " + "; ".join(audio.output_devices[:8]))
+    lines.extend(["", "First Launch Check"])
+    for check in first_launch_checks(diagnostics):
+        lines.append(f"- {check.label}: {'ready' if check.ready else 'needs attention'} ({check.detail})")
     return "\n".join(lines)
 
 

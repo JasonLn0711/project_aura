@@ -39,7 +39,12 @@ from aura.llm.threads import SummaryThread
 from aura.scheduling import milliseconds_until, next_wall_clock_datetime, stop_datetime_after_start
 from aura.settings import DEFAULT_SETTINGS
 from aura.system.platform import detect_runtime_platform
-from aura.system.runtime_report import build_runtime_report, collect_runtime_diagnostics, format_runtime_report
+from aura.system.runtime_report import (
+    build_runtime_report,
+    collect_runtime_diagnostics,
+    first_launch_checks,
+    format_runtime_report,
+)
 from aura.system.runtime_paths import remove_transcript_backup
 from aura.system.update_checker import UpdateCheckerThread
 from aura.ui.messages import UI_TEXT
@@ -89,6 +94,7 @@ class TranscriptionTab(QWidget):
         self.scheduled_stop_timer.timeout.connect(self.stop_scheduled_recording)
         self.asr_model_status = "not loaded"
         self.latest_runtime_report = ""
+        self.first_launch_guidance = {}
 
         self.current_folder = os.getcwd()
         self.current_filename = "transcript"
@@ -301,13 +307,57 @@ class TranscriptionTab(QWidget):
         diagnostics_layout.addWidget(self.runtime_audio_label)
         diagnostics_layout.addWidget(self.runtime_output_label)
 
+        first_launch_title = QLabel(self.strings.first_launch_title)
+        first_launch_title.setStyleSheet("font-weight: bold; color: #00bcd4;")
+        diagnostics_layout.addWidget(first_launch_title)
+        self.first_launch_check_labels = {}
+        self.first_launch_fix_buttons = {}
+        self.first_launch_action_buttons = {}
+        for key, label in (
+            ("gpu", "GPU Ready"),
+            ("cuda", "CUDA Ready"),
+            ("ffmpeg", "FFmpeg Ready"),
+            ("microphone", "Microphone Ready"),
+            ("output", "Output Folder"),
+            ("asr_model", "ASR Model Load"),
+        ):
+            row = QHBoxLayout()
+            status_label = QLabel(self.strings.first_launch_status.format(label=label, status="checking"))
+            fix_button = QPushButton(self.strings.first_launch_fix_guide)
+            fix_button.setEnabled(False)
+            fix_button.clicked.connect(lambda _checked=False, check_key=key: self.show_first_launch_fix(check_key))
+            copy_button = QPushButton(self.strings.runtime_copy_report)
+            copy_button.setEnabled(False)
+            copy_button.clicked.connect(self.copy_runtime_report)
+            setup_button = QPushButton(self.strings.first_launch_open_setup)
+            setup_button.setEnabled(False)
+            setup_button.clicked.connect(self.open_setup_folder)
+            retry_button = QPushButton(self.strings.first_launch_retry)
+            retry_button.setEnabled(False)
+            retry_button.clicked.connect(self.refresh_runtime_diagnostics)
+            row.addWidget(status_label, stretch=2)
+            row.addWidget(fix_button, stretch=0)
+            row.addWidget(copy_button, stretch=0)
+            row.addWidget(setup_button, stretch=0)
+            row.addWidget(retry_button, stretch=0)
+            diagnostics_layout.addLayout(row)
+            self.first_launch_check_labels[key] = status_label
+            self.first_launch_fix_buttons[key] = fix_button
+            self.first_launch_action_buttons[key] = (fix_button, copy_button, setup_button, retry_button)
+
         diagnostics_buttons = QHBoxLayout()
         self.btn_refresh_runtime = QPushButton(self.strings.runtime_refresh)
         self.btn_refresh_runtime.clicked.connect(self.refresh_runtime_diagnostics)
         self.btn_copy_runtime_report = QPushButton(self.strings.runtime_copy_report)
         self.btn_copy_runtime_report.clicked.connect(self.copy_runtime_report)
+        self.btn_open_setup_folder = QPushButton(self.strings.first_launch_open_setup)
+        self.btn_open_setup_folder.clicked.connect(self.open_setup_folder)
+        self.btn_retry_first_launch = QPushButton(self.strings.first_launch_retry)
+        self.btn_retry_first_launch.clicked.connect(self.refresh_runtime_diagnostics)
         diagnostics_buttons.addWidget(self.btn_refresh_runtime)
         diagnostics_buttons.addWidget(self.btn_copy_runtime_report)
+        diagnostics_buttons.addWidget(self.btn_open_setup_folder)
+        diagnostics_buttons.addWidget(self.btn_retry_first_launch)
         diagnostics_buttons.addStretch()
         diagnostics_layout.addLayout(diagnostics_buttons)
         settings_vbox.addLayout(diagnostics_layout)
@@ -1330,6 +1380,53 @@ class TranscriptionTab(QWidget):
                 status="yes" if diagnostics.output_folder_writable else "no"
             )
         )
+        self.update_first_launch_checks(diagnostics)
+
+    def update_first_launch_checks(self, diagnostics):
+        for check in first_launch_checks(diagnostics):
+            status = self.strings.first_launch_ready if check.ready else self.strings.first_launch_needs_attention
+            if check.key in self.first_launch_check_labels:
+                self.first_launch_check_labels[check.key].setText(
+                    self.strings.first_launch_status.format(label=check.label, status=status)
+                )
+                self.first_launch_check_labels[check.key].setToolTip(check.detail)
+            if check.key in self.first_launch_fix_buttons:
+                self.first_launch_fix_buttons[check.key].setEnabled(not check.ready)
+                self.first_launch_fix_buttons[check.key].setToolTip(check.fix_guidance)
+            for button in self.first_launch_action_buttons.get(check.key, ()):
+                button.setEnabled(not check.ready)
+            self.first_launch_guidance[check.key] = {
+                "label": check.label,
+                "detail": check.detail,
+                "fix_guidance": check.fix_guidance,
+            }
+
+    def show_first_launch_fix(self, key: str):
+        guidance = self.first_launch_guidance.get(key)
+        if not guidance:
+            self.refresh_runtime_diagnostics()
+            guidance = self.first_launch_guidance.get(key)
+        if not guidance:
+            return
+        QMessageBox.information(
+            self,
+            guidance["label"],
+            f"{guidance['detail']}\n\n{guidance['fix_guidance']}",
+        )
+
+    def setup_folder_path(self) -> Path:
+        current = Path(os.getcwd()).resolve()
+        candidates = [
+            current / "docs",
+            current.parent / "docs",
+        ]
+        for candidate in candidates:
+            if (candidate / "windows_setup.md").exists():
+                return candidate
+        return current
+
+    def open_setup_folder(self):
+        webbrowser.open(self.setup_folder_path().as_uri())
 
     def current_runtime_report(self) -> str:
         if not self.latest_runtime_report:

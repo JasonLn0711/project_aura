@@ -5,7 +5,7 @@ from aura.asr.threads import cuda_required_error
 from aura.system.audio_diagnostics import AudioDiagnostics
 from aura.system.gpu_diagnostics import CommandCheck, GpuDiagnostics, collect_gpu_diagnostics
 from aura.system.platform import LINUX_NATIVE, RuntimePlatform, platform_cuda_guidance
-from aura.system.runtime_report import RuntimeDiagnostics, format_runtime_report
+from aura.system.runtime_report import RuntimeDiagnostics, first_launch_checks, format_runtime_report
 
 
 class RuntimeDiagnosticsTests(unittest.TestCase):
@@ -72,7 +72,50 @@ class RuntimeDiagnosticsTests(unittest.TestCase):
         self.assertIn("GPU / CUDA", report)
         self.assertIn("Audio / FFmpeg", report)
         self.assertIn("ASR model load status: loaded on cuda/int8", report)
+        self.assertIn("First Launch Check", report)
         self.assertIn(platform_cuda_guidance(platform), report)
+
+    def test_first_launch_checks_cover_user_onboarding_gates(self):
+        platform = RuntimePlatform(
+            kind=LINUX_NATIVE,
+            system="Linux",
+            release="test",
+            machine="x86_64",
+            python_version="3.12",
+            is_windows=False,
+            is_wsl=False,
+            is_docker=False,
+        )
+        diagnostics = RuntimeDiagnostics(
+            platform=platform,
+            gpu=GpuDiagnostics(
+                nvidia_smi=CommandCheck("nvidia-smi", True, 0, "RTX", ""),
+                faster_whisper_importable=True,
+                faster_whisper_version="1.2.1",
+                ctranslate2_importable=True,
+                ctranslate2_version="4.7.1",
+                cuda_runtime_ready=True,
+                cuda_runtime_detail="ready",
+                cuda_libraries=(("CUDA runtime", True, "ready"),),
+                activation_guidance=platform_cuda_guidance(platform),
+            ),
+            audio=AudioDiagnostics(
+                ffmpeg_path="/usr/bin/ffmpeg",
+                pyaudio_available=True,
+                input_devices=("mic",),
+                output_devices=("speaker",),
+            ),
+            asr_model_status="loaded (cuda/int8)",
+            output_folder_writable=True,
+        )
+
+        checks = {check.key: check for check in first_launch_checks(diagnostics)}
+
+        self.assertEqual(
+            set(checks),
+            {"gpu", "cuda", "ffmpeg", "microphone", "output", "asr_model"},
+        )
+        self.assertTrue(all(check.ready for check in checks.values()))
 
 
 if __name__ == "__main__":
