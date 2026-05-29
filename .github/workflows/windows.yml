@@ -66,3 +66,6 @@ jobs:
 
       - name: Windows RTX GPU smoke
         run: python scripts/windows_gpu_smoke.py
+
+      - name: Windows RTX ASR artifact smoke
+        run: python scripts/windows_asr_artifact_smoke.py

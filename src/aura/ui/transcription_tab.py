@@ -38,6 +38,7 @@ from aura.llm.summary import SummarySettings
 from aura.llm.threads import SummaryThread
 from aura.scheduling import milliseconds_until, next_wall_clock_datetime, stop_datetime_after_start
 from aura.settings import DEFAULT_SETTINGS
+from aura.system.platform import detect_runtime_platform
 from aura.system.runtime_report import build_runtime_report, collect_runtime_diagnostics, format_runtime_report
 from aura.system.runtime_paths import remove_transcript_backup
 from aura.system.update_checker import UpdateCheckerThread
@@ -99,9 +100,15 @@ class TranscriptionTab(QWidget):
         info_layout = QHBoxLayout()
         self.status_label = QLabel(self.strings.status_waiting_gpu)
         self.status_label.setStyleSheet("font-weight: bold; color: #00bcd4; font-size: 14px;")
+        self.top_gpu_label = QLabel(self.strings.top_gpu_status.format(status="checking"))
+        self.top_model_label = QLabel(self.strings.top_model_status.format(status=self.asr_model_status))
+        self.top_device_label = QLabel(self.strings.top_device_status.format(status="not selected"))
         self.name_input = QLineEdit()
         self.name_input.setPlaceholderText(self.strings.recording_suffix_placeholder)
-        info_layout.addWidget(self.status_label, stretch=2)
+        info_layout.addWidget(self.status_label, stretch=3)
+        info_layout.addWidget(self.top_gpu_label, stretch=1)
+        info_layout.addWidget(self.top_model_label, stretch=1)
+        info_layout.addWidget(self.top_device_label, stretch=1)
         info_layout.addWidget(self.name_input, stretch=1)
         layout.addLayout(info_layout)
 
@@ -112,7 +119,6 @@ class TranscriptionTab(QWidget):
             "color: #00bcd4; min-height: 30px;"
         )
         self.btn_toggle_settings.clicked.connect(self.toggle_settings)
-        layout.addWidget(self.btn_toggle_settings)
 
         self.settings_container = QWidget()
         self.settings_container.setVisible(False)
@@ -163,9 +169,16 @@ class TranscriptionTab(QWidget):
         self.combo_live_capture.addItem(self.strings.live_capture_microphone, LIVE_CAPTURE_MICROPHONE)
         capture_index = self.combo_live_capture.findData(self.settings.live_capture_source)
         self.combo_live_capture.setCurrentIndex(capture_index if capture_index >= 0 else 0)
+        self.combo_live_capture.currentIndexChanged.connect(self.update_top_active_device)
+        self.combo_live_capture.currentIndexChanged.connect(self.update_capture_guidance)
         capture_layout.addWidget(self.combo_live_capture)
         capture_layout.addStretch()
         settings_vbox.addLayout(capture_layout)
+        self.capture_guidance_label = QLabel()
+        self.capture_guidance_label.setWordWrap(True)
+        self.capture_guidance_label.setStyleSheet("color: #ffb74d; font-size: 12px;")
+        settings_vbox.addWidget(self.capture_guidance_label)
+        self.update_capture_guidance()
 
         schedule_layout = QHBoxLayout()
         self.check_schedule_recording = QCheckBox(self.strings.schedule_recording_label)
@@ -298,24 +311,19 @@ class TranscriptionTab(QWidget):
         diagnostics_buttons.addStretch()
         diagnostics_layout.addLayout(diagnostics_buttons)
         settings_vbox.addLayout(diagnostics_layout)
-        layout.addWidget(self.settings_container)
 
         self.batch_progress = QProgressBar()
         self.batch_progress.setVisible(False)
-        layout.addWidget(self.batch_progress)
 
         self.plot_widget = pg.PlotWidget(title=self.strings.live_waveform_title)
         self.plot_widget.setYRange(-30000, 30000)
         self.plot_data = np.zeros(4000)
         self.curve = self.plot_widget.plot(self.plot_data, pen="c")
-        layout.addWidget(self.plot_widget, stretch=1)
 
         self.text_area = QTextEdit()
         self.text_area.setReadOnly(True)
         self.text_area.setFontPointSize(12)
-        layout.addWidget(self.text_area, stretch=2)
 
-        btn_layout = QHBoxLayout()
         self.btn_record = QPushButton(self.strings.start_recording)
         self.btn_record.clicked.connect(self.toggle_record)
         self.btn_record.setFixedHeight(50)
@@ -341,17 +349,50 @@ class TranscriptionTab(QWidget):
         self.btn_summary.clicked.connect(self.summarize_current_transcript)
         self.btn_summary.setFixedHeight(50)
 
-        btn_layout.addWidget(self.btn_record, stretch=2)
-        btn_layout.addWidget(self.btn_import, stretch=1)
-        btn_layout.addWidget(self.btn_cancel_import, stretch=1)
-        btn_layout.addWidget(self.btn_open_output_folder, stretch=1)
-        btn_layout.addWidget(self.btn_summary, stretch=1)
-        layout.addLayout(btn_layout)
+        self.btn_split_workspace = QPushButton(self.strings.open_split_workspace)
+        self.btn_split_workspace.clicked.connect(self.open_split_workspace)
+        self.btn_split_workspace.setFixedHeight(42)
 
         self.batch_hint = QLabel(self.strings.batch_hint)
         self.batch_hint.setWordWrap(True)
         self.batch_hint.setStyleSheet("color: #9e9e9e; font-size: 12px;")
-        layout.addWidget(self.batch_hint)
+
+        body_layout = QHBoxLayout()
+        body_layout.setSpacing(12)
+
+        workflow_layout = QVBoxLayout()
+        workflow_title = QLabel(self.strings.workstation_workflows_title)
+        workflow_title.setStyleSheet("font-weight: bold; color: #00bcd4;")
+        workflow_layout.addWidget(workflow_title)
+        workflow_layout.addWidget(self.btn_record)
+        workflow_layout.addWidget(self.btn_import)
+        workflow_layout.addWidget(self.btn_cancel_import)
+        workflow_layout.addWidget(self.btn_split_workspace)
+        workflow_layout.addWidget(self.btn_toggle_settings)
+        workflow_layout.addStretch()
+
+        transcript_layout = QVBoxLayout()
+        transcript_title = QLabel(self.strings.transcript_workspace_title)
+        transcript_title.setStyleSheet("font-weight: bold; color: #00bcd4;")
+        transcript_layout.addWidget(transcript_title)
+        transcript_layout.addWidget(self.batch_progress)
+        transcript_layout.addWidget(self.plot_widget, stretch=1)
+        transcript_layout.addWidget(self.text_area, stretch=3)
+        transcript_layout.addWidget(self.batch_hint)
+
+        artifact_layout = QVBoxLayout()
+        artifact_title = QLabel(self.strings.artifact_panel_title)
+        artifact_title.setStyleSheet("font-weight: bold; color: #00bcd4;")
+        artifact_layout.addWidget(artifact_title)
+        artifact_layout.addWidget(self.btn_open_output_folder)
+        artifact_layout.addWidget(self.btn_summary)
+        artifact_layout.addWidget(self.settings_container)
+        artifact_layout.addStretch()
+
+        body_layout.addLayout(workflow_layout, stretch=0)
+        body_layout.addLayout(transcript_layout, stretch=3)
+        body_layout.addLayout(artifact_layout, stretch=2)
+        layout.addLayout(body_layout, stretch=1)
 
         layout.addWidget(QLabel(self.strings.runtime_log_title))
         self.runtime_log = QTextEdit()
@@ -361,6 +402,7 @@ class TranscriptionTab(QWidget):
         layout.addWidget(self.runtime_log)
 
         self.apply_model_settings()
+        self.update_top_active_device()
         QTimer.singleShot(0, self.refresh_runtime_diagnostics)
         self.check_for_updates()
 
@@ -571,6 +613,35 @@ class TranscriptionTab(QWidget):
     def update_speaker_controls(self, enabled):
         self.spin_min_speakers.setEnabled(enabled)
         self.spin_max_speakers.setEnabled(enabled)
+
+    def update_top_active_device(self, *_):
+        if hasattr(self, "top_device_label"):
+            self.top_device_label.setText(
+                self.strings.top_device_status.format(status=self.selected_live_capture_source())
+            )
+
+    def update_capture_guidance(self, *_):
+        if not hasattr(self, "capture_guidance_label"):
+            return
+        platform_info = detect_runtime_platform()
+        selected_source = self.selected_live_capture_source()
+        needs_system_audio = selected_source in {LIVE_CAPTURE_SYSTEM, LIVE_CAPTURE_SYSTEM_MICROPHONE}
+        if platform_info.is_windows and needs_system_audio:
+            self.capture_guidance_label.setText(self.strings.windows_system_audio_guidance)
+            self.capture_guidance_label.setVisible(True)
+        else:
+            self.capture_guidance_label.clear()
+            self.capture_guidance_label.setVisible(False)
+
+    def open_split_workspace(self):
+        widget = self.parentWidget()
+        while widget is not None:
+            if hasattr(widget, "indexOf") and hasattr(widget, "setCurrentIndex"):
+                current_index = widget.indexOf(self)
+                if current_index >= 0 and current_index + 1 < widget.count():
+                    widget.setCurrentIndex(current_index + 1)
+                return
+            widget = widget.parentWidget()
 
     def file_import_active(self) -> bool:
         return (
@@ -1231,12 +1302,17 @@ class TranscriptionTab(QWidget):
             self.runtime_model_label.setText(
                 self.strings.runtime_model_status.format(status=self.asr_model_status)
             )
+        if hasattr(self, "top_model_label"):
+            self.top_model_label.setText(self.strings.top_model_status.format(status=self.asr_model_status))
 
     def refresh_runtime_diagnostics(self):
         diagnostics = collect_runtime_diagnostics(asr_model_status=self.asr_model_status)
         self.latest_runtime_report = format_runtime_report(diagnostics)
         self.runtime_gpu_label.setText(
             self.strings.runtime_gpu_status.format(status="yes" if diagnostics.gpu.gpu_detected else "no")
+        )
+        self.top_gpu_label.setText(
+            self.strings.top_gpu_status.format(status="ready" if diagnostics.gpu.gpu_detected else "not detected")
         )
         self.runtime_cuda_label.setText(
             self.strings.runtime_cuda_status.format(
@@ -1272,4 +1348,8 @@ class TranscriptionTab(QWidget):
         box.setWindowTitle(title)
         box.setText(message)
         box.setDetailedText(self.current_runtime_report())
+        copy_button = box.addButton(self.strings.runtime_copy_report, QMessageBox.ButtonRole.ActionRole)
         box.exec()
+        if box.clickedButton() is copy_button:
+            QApplication.clipboard().setText(self.current_runtime_report())
+            self.status_label.setText(self.strings.runtime_report_copied)

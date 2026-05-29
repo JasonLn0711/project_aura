@@ -91,6 +91,17 @@ class UIStrings:
     runtime_copy_report: str = "Copy Diagnostic Report"
     runtime_report_copied: str = "📋 Runtime diagnostic report copied to clipboard"
     runtime_log_title: str = "Runtime Log"
+    top_gpu_status: str = "GPU: {status}"
+    top_model_status: str = "Model: {status}"
+    top_device_status: str = "Device: {status}"
+    workstation_workflows_title: str = "Workflows"
+    transcript_workspace_title: str = "Transcript Workspace"
+    artifact_panel_title: str = "Artifacts / Export / Summary"
+    open_split_workspace: str = "✂️ Split Workspace"
+    windows_system_audio_guidance: str = (
+        "Windows system audio may require Stereo Mix, WASAPI loopback support, or a virtual audio cable. "
+        "Use Microphone when system audio is not exposed."
+    )
     live_waveform_title: str = "Live Waveform"
     start_recording: str = "🎙️ Start Recording"
     stop_recording: str = "🛑 Stop Recording"

@@ -18,3 +18,6 @@ system audio and system+microphone should show setup guidance when the device la
 
 The first Windows artifact is a portable developer release. A full installer should wait until CUDA runtime
 checks and model-load smoke tests are stable on an RTX Windows machine.
+
+The portable builder creates `sample_audio/aura_smoke_1s.wav` for packaging and import smoke checks. Real
+speech samples should stay outside git and be attached only to release validation runs when licensing allows it.

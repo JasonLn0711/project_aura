@@ -71,6 +71,15 @@ WhisperModel(MODEL_ID, device="cuda", compute_type="int8")
 dist/aura-windows-portable/
 ```
 
+Self-hosted RTX smoke test：
+
+```powershell
+python scripts/windows_asr_artifact_smoke.py
+```
+
+這個 smoke test 會產生一個很短的 WAV、用 CUDA/int8 跑一次 `faster-whisper`，並驗證
+`raw`、`final`、`metrics` transcript artifacts 都能寫出。
+
 ## Diagnostic report
 
 如果啟動失敗，先執行：
