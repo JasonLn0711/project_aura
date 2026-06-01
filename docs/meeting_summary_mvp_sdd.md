@@ -35,6 +35,10 @@ Compared with direct summarization, does Graph Knowledge + RAG improve:
 
 本 MVP 也刻意記錄一個研究選擇：SLM summary 可以有很多做法，包括 direct prompting、hierarchical summarization、map-reduce summarization、fine-tuned summarization model。這個 MVP 先嘗試 Graph Knowledge + RAG，原因是 ASR transcript 常常有雜訊、片段化、缺 speaker diarization；直接 summary 容易漏掉分散證據、合併不相關內容，或產生 transcript 沒有支持的結論。
 
+## Implementation Goal Prompt
+
+完整實作 prompt 存在 `docs/meeting_summary_mvp_goal_prompt.md`。下一次要從 SDD 進入實作時，先讀本文件確認 MVP 邊界，再把 goal prompt 交給 coding agent 執行。該 prompt 要求先完成 offline experiment harness、dry-run mode、schema/evidence checks、direct / vector RAG / graph RAG 六組設定與 validation，再考慮 PyQt UI integration。
+
 ## Input
 
 MVP input 是 ASR transcript，不需要 speaker label。

@@ -231,7 +231,7 @@ The project is still within a maintainable size for a desktop transcription tool
 
 The guiding rule remains: if behavior can be tested without launching Qt, it should live outside `src/aura/ui/`.
 
-The current meeting-summary MVP is tracked in [`docs/meeting_summary_mvp_sdd.md`](docs/meeting_summary_mvp_sdd.md). It defines a Graph Knowledge + RAG + INT8 SLM summary experiment over ASR transcripts without speaker diarization, ASR correction, full action-item ownership, or speaker attribution. The longer target architecture is tracked separately in [`docs/meeting_summary_target_architecture.md`](docs/meeting_summary_target_architecture.md).
+The current meeting-summary MVP is tracked in [`docs/meeting_summary_mvp_sdd.md`](docs/meeting_summary_mvp_sdd.md). It defines a Graph Knowledge + RAG + INT8 SLM summary experiment over ASR transcripts without speaker diarization, ASR correction, full action-item ownership, or speaker attribution. The implementation goal prompt is stored in [`docs/meeting_summary_mvp_goal_prompt.md`](docs/meeting_summary_mvp_goal_prompt.md). The longer target architecture is tracked separately in [`docs/meeting_summary_target_architecture.md`](docs/meeting_summary_target_architecture.md).
 
 ## Windows Native Runtime Path
 
@@ -283,6 +283,7 @@ project_aura_refactor/
 │   ├── architecture_decisions.md
 │   ├── denoise_upgrade_plan.md
 │   ├── legacy_audio_assistant_v1.5.0.py
+│   ├── meeting_summary_mvp_goal_prompt.md
 │   ├── meeting_summary_mvp_sdd.md
 │   ├── meeting_summary_target_architecture.md
 │   ├── refactor_plan.md
