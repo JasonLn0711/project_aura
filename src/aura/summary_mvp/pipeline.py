@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Any
 
 from aura.summary_mvp.chunking import build_sliding_window_chunks, build_time_chunks
-from aura.summary_mvp.embeddings import embed_chunks
+from aura.summary_mvp.embeddings import embed_chunks_with_backend
 from aura.summary_mvp.evaluation import evaluate_summaries, render_markdown_report
 from aura.summary_mvp.graph import build_evidence_graph
 from aura.summary_mvp.models import DEFAULT_MODEL_IDS, ModelRunnerConfig, run_model_or_dry_run
@@ -61,7 +61,7 @@ def _build_chunks(config: ExperimentConfig):
 
 def run_experiment(config: ExperimentConfig) -> dict[str, Any]:
     transcript, chunks = _build_chunks(config)
-    embeddings = embed_chunks(chunks)
+    embeddings = embed_chunks_with_backend(chunks)
     graph = build_evidence_graph(chunks)
 
     _write_json(config.output_dir / "chunks.json", [chunk.to_dict() for chunk in chunks])

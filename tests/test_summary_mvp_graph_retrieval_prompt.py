@@ -3,7 +3,7 @@ import unittest
 from pathlib import Path
 
 from aura.summary_mvp.chunking import build_time_chunks
-from aura.summary_mvp.embeddings import embed_chunks
+from aura.summary_mvp.embeddings import embed_chunks_with_backend
 from aura.summary_mvp.graph import build_evidence_graph
 from aura.summary_mvp.prompts import assemble_summary_prompt
 from aura.summary_mvp.retrieval import build_evidence_packets
@@ -17,7 +17,7 @@ class SummaryMvpGraphRetrievalPromptTests(unittest.TestCase):
     def setUp(self):
         transcript = load_transcript_payload(json.loads(FIXTURE.read_text(encoding="utf-8")))
         self.chunks = build_time_chunks(transcript, window_seconds=90)
-        self.embeddings = embed_chunks(self.chunks)
+        self.embeddings = embed_chunks_with_backend(self.chunks)
         self.graph = build_evidence_graph(self.chunks)
 
     def test_graph_contains_required_node_and_edge_types(self):

@@ -24,6 +24,11 @@ The dry-run evidence is stored under `outputs/summary_mvp/meeting_001_dry_run/`:
 - `evaluation_report.json`
 - `evaluation_report.md`
 
+Embedding behavior:
+
+- If `AURA_SUMMARY_MVP_EMBEDDING_MODEL` points to a locally available `sentence-transformers` model and the optional dependency is installed, the harness uses that local model for chunk embeddings.
+- Otherwise, it uses the deterministic hash embedding fallback so CI and dry-run validation do not require model downloads.
+
 ## Current Dry-Run Result
 
 Fixture: `tests/fixtures/asr_transcripts/synthetic_meeting_001.json`
