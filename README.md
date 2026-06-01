@@ -231,6 +231,8 @@ The project is still within a maintainable size for a desktop transcription tool
 
 The guiding rule remains: if behavior can be tested without launching Qt, it should live outside `src/aura/ui/`.
 
+The current meeting-summary MVP is tracked in [`docs/meeting_summary_mvp_sdd.md`](docs/meeting_summary_mvp_sdd.md). It defines a Graph Knowledge + RAG + INT8 SLM summary experiment over ASR transcripts without speaker diarization, ASR correction, full action-item ownership, or speaker attribution. The longer target architecture is tracked separately in [`docs/meeting_summary_target_architecture.md`](docs/meeting_summary_target_architecture.md).
+
 ## Windows Native Runtime Path
 
 AURA now has a Windows native RTX validation and onboarding path. The supported direction is to prove the CUDA runtime and `faster-whisper` model load first, give users one-click check/start scripts, keep platform differences in shared diagnostics modules, and use the portable ZIP path before installer work.
@@ -281,6 +283,8 @@ project_aura_refactor/
 │   ├── architecture_decisions.md
 │   ├── denoise_upgrade_plan.md
 │   ├── legacy_audio_assistant_v1.5.0.py
+│   ├── meeting_summary_mvp_sdd.md
+│   ├── meeting_summary_target_architecture.md
 │   ├── refactor_plan.md
 │   ├── windows_known_issues.md
 │   ├── windows_native_roadmap.md
@@ -609,6 +613,8 @@ The default model is `Qwen/Qwen3.5-9B`. AURA loads it through `transformers` wit
 5. risks, questions, and follow-up items
 
 If the optional summary dependencies are missing, the UI reports the install command instead of failing silently.
+
+The current summary MVP is broader than this direct local summary feature but narrower than the full target architecture. It is documented in [`docs/meeting_summary_mvp_sdd.md`](docs/meeting_summary_mvp_sdd.md): ASR transcript input, time/sliding-window chunking, chunk embedding, lightweight knowledge graph construction, graph-aware RAG retrieval, fixed JSON summary prompting, Qwen 3.5 9B INT8 and Gemma 4 E4B INT8 comparison, schema validation, and evidence support checking. It explicitly excludes speaker diarization, ASR correction, fine-tuning, action-item owner extraction, medical/legal conclusion generation, and autonomous decision-making.
 
 ## Denoise Behavior
 

@@ -11,6 +11,8 @@ Therefore, each layer has one owner:
 - `src/aura/asr/` owns transcription behavior and ASR worker orchestration.
 - `src/aura/diarization/` owns optional speaker diarization backends and timestamp-based speaker assignment.
 - `src/aura/llm/` owns optional local LLM post-processing such as transcript summaries.
+- `docs/meeting_summary_mvp_sdd.md` owns the current Graph Knowledge + RAG + INT8 SLM summary MVP design until it graduates into implementation modules.
+- Future evidence-grounded meeting-minutes work is tracked in `docs/meeting_summary_target_architecture.md`; it owns the target ASR Gate, evidence graph, graph-aware RAG, SLM structured inference, verifier, and evaluation design until those modules graduate into implementation.
 - `src/aura/audio/` owns audio capture, denoise, export, and splitting behavior.
 - `src/aura/scheduling.py` owns wall-clock scheduling calculations that can be tested without launching Qt.
 - `src/aura/system/` owns platform/runtime concerns such as CUDA, native audio stderr, runtime paths, and update checks.
@@ -27,6 +29,10 @@ The denoise policy is now explicit as presets: `off`, `light`, and `medium`. Adv
 Speaker diarization is an optional imported-file post-processing path. It intentionally stays outside the live recording loop, uses `pyannote.audio` behind an optional dependency boundary, and reconciles ASR segments with speaker turns by timestamp overlap.
 
 LLM summary is also optional post-processing. It runs after ASR output exists, loads Qwen3.5-9B through an optional dependency boundary, and forces summary prompts toward Taiwanese Traditional Chinese so summarization behavior is independent from the ASR language setting.
+
+The current summary MVP keeps the scope to the summary module. It takes ASR transcript as input and tests whether Graph Knowledge + RAG improves structured summary grounding for Qwen 3.5 9B INT8 and Gemma 4 E4B INT8 compared with direct summary and vector-only RAG. It deliberately excludes speaker diarization, ASR correction, owner-specific action items, fine-tuning, medical/legal conclusion generation, and autonomous decision-making.
+
+The target architecture extends this summary layer with evidence-grounded structured minutes. The design direction is ASR Gate plus evidence graph plus graph-aware RAG plus SLM plus verifier. The ASR Gate preserves original transcript spans, annotates suspicious content, proposes candidate corrections, and only allows conservative automatic replacement when evidence support is strong. This keeps ASR errors from becoming SLM hallucination seeds while preserving reviewable evidence for downstream structured minutes.
 
 Traditional Chinese punctuation restoration is a post-ASR readability layer, not an ASR decoding policy. From first principles, punctuation should improve the saved transcript without changing what the recognizer heard. Therefore `src/aura/asr/punctuation.py` owns Chinese-language/script detection, model-backed punctuation insertion, and deterministic fallback cleanup. File imports call it after ASR segments are collected and before diarization/formatting; live ASR calls it inside the transcriber thread; final recording save applies a no-model fallback so the UI thread never blocks on model download.
 
