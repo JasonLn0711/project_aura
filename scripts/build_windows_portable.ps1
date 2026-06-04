@@ -37,6 +37,7 @@ Copy-Item "pyproject.toml" (Join-Path $PortableRoot "app") -Force
 Copy-Item "README.md" (Join-Path $PortableRoot "app") -Force
 Copy-Item "LICENSE" (Join-Path $PortableRoot "app") -Force
 Copy-Item "src" (Join-Path $PortableRoot "app") -Recurse -Force
+Copy-Item "config" (Join-Path $PortableRoot "app") -Recurse -Force
 Copy-Item "docs\windows_setup.md" (Join-Path $PortableRoot "docs") -Force
 Copy-Item "docs\windows_known_issues.md" (Join-Path $PortableRoot "docs") -Force
 Copy-Item "scripts\runtime_report.py" (Join-Path $PortableRoot "scripts") -Force

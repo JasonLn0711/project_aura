@@ -1,0 +1,35 @@
+{
+  "audit_source": "reports/asr_fuzzy_correction_audit_report.json",
+  "audit_summary": {
+    "accepted_corrections": 216,
+    "high_risk_manual_review_required": true,
+    "rejected_candidates": 0,
+    "total_corrections": 216
+  },
+  "category_counts": {
+    "medical_terms": 1,
+    "organizations": 14,
+    "people": 15,
+    "technical_terms": 37
+  },
+  "contains_raw_context": false,
+  "guide_file": "reports/asr_fuzzy_manual_review_guide.md",
+  "queue_file": "reports/asr_fuzzy_manual_review_queue.csv",
+  "review_label_allowed_values": [
+    "ACCEPT",
+    "REJECT",
+    "UNSURE"
+  ],
+  "review_labels_blank": true,
+  "total_queue_rows": 67,
+  "watch_flag_counts": {
+    "alias": 37,
+    "high_risk:medical_terms": 1,
+    "high_risk:number": 5,
+    "high_risk:people": 15,
+    "medical_terms": 1,
+    "people": 15,
+    "score_85_to_94_99": 14,
+    "watch_term": 8
+  }
+}

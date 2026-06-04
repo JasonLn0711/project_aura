@@ -2,6 +2,8 @@ import json
 from pathlib import Path
 from typing import Any
 
+from asr_postprocess.fuzzy_corrector import DEFAULT_GLOSSARY_PATH, correct_transcript, write_correction_log
+
 
 SUMMARY_MARKER = "===== LLM Summary ====="
 
@@ -56,8 +58,10 @@ def transcript_artifact_paths(base_path: str | Path) -> dict[str, Path]:
         path = path.with_suffix("")
     return {
         "raw": path.with_name(f"{path.name}_raw.txt"),
+        "corrected": path.with_name(f"{path.name}_corrected.txt"),
         "final": path.with_name(f"{path.name}_final.txt"),
         "summary": path.with_name(f"{path.name}_summary.txt"),
+        "correction_log": path.with_name(f"{path.name}_correction_log.json"),
         "metrics": path.with_name(f"{path.name}_processing_metrics.json"),
     }
 
@@ -87,6 +91,8 @@ def write_transcript_artifacts(
     raw_transcript: str,
     summary_text: str | None = None,
     metrics: dict[str, Any] | None = None,
+    enable_glossary_correction: bool = True,
+    glossary_path: str | Path = DEFAULT_GLOSSARY_PATH,
 ) -> dict[str, Path]:
     paths = transcript_artifact_paths(base_path)
     saved: dict[str, Path] = {}
@@ -94,15 +100,31 @@ def write_transcript_artifacts(
     if write_transcript_file(paths["raw"], raw_transcript):
         saved["raw"] = paths["raw"]
 
+    transcript_for_final = raw_transcript
+    correction_log: list[dict[str, Any]] = []
+    if raw_transcript.strip() and enable_glossary_correction:
+        correction_result = correct_transcript(raw_transcript, glossary_path=glossary_path)
+        transcript_for_final = correction_result.corrected_transcript
+        correction_log = correction_result.correction_log
+        if write_transcript_file(paths["corrected"], transcript_for_final):
+            saved["corrected"] = paths["corrected"]
+        saved["correction_log"] = write_correction_log(paths["correction_log"], correction_log)
+
     summary = summary_text_for_save(summary_text or "")
     if summary and write_transcript_file(paths["summary"], summary):
         saved["summary"] = paths["summary"]
 
-    final_text = final_transcript_text(raw_transcript, summary)
+    final_text = final_transcript_text(transcript_for_final, summary)
     if write_transcript_file(paths["final"], final_text):
         saved["final"] = paths["final"]
 
     if metrics is not None:
+        metrics["glossary_correction"] = {
+            "enabled": enable_glossary_correction,
+            "llm_verification": False,
+            "correction_count": len(correction_log),
+            "method": "rapidfuzz",
+        }
         metrics_payload = dict(metrics)
         metrics_payload["outputs"] = {name: str(path) for name, path in saved.items()}
         saved["metrics"] = write_json_file(paths["metrics"], metrics_payload)
