@@ -51,14 +51,15 @@ The app is designed for professional meeting and lecture workflows. It includes 
 
 ## What We Updated Today (2026-06-04)
 
-Project AURA now has a practical daily meeting-summary path that turns the corrected transcript into structured meeting notes through the approved local Gemma 4 E4B Ollama runner. The contribution is operational: the user-facing **Summarize Current Transcript** action no longer depends on one-shot free-form summary generation. It now uses a parallel layered extraction pipeline, validates every structured field in Python, writes local artifacts only to an ignored output directory, and renders Markdown deterministically from the final JSON.
+Project AURA now has a practical daily meeting-summary path that turns the corrected transcript into structured meeting notes through the approved local Gemma 4 E4B Ollama runner. The contribution is operational: the user-facing **Summarize Current Transcript** action no longer depends on one-shot free-form summary generation or a manually pre-started LLM runtime. It now uses a parallel layered extraction pipeline, validates every structured field in Python, writes local artifacts only to an ignored output directory, renders Markdown deterministically from the final JSON, and performs a local Ollama runtime preflight before any LLM call.
 
-This update adds four durable capabilities:
+This update adds five durable capabilities:
 
 1. **Parallel layered summary extraction**: `src/summary/layered_summary_pipeline.py` runs Layer 1 extractors in parallel for topic/participants and executive/key-points, then runs Layer 2 extractors in parallel for decisions, action items/next steps, and open questions/risks. This replaces 9 sequential LLM calls and avoids a single oversized all-fields prompt.
-2. **Fixed local Gemma 4 E4B contract**: summary generation uses only the local Ollama tag `gemma4:e4b-it-q4_K_M` for base model `google/gemma-4-E4B-it`, with `temperature=0`, `num_ctx=32768`, and `stream=false`. AURA checks `http://localhost:11434/api/tags` before generation and fails clearly if the exact tag is unavailable. No cloud model, fallback model, or download path is introduced.
+2. **Fixed local Gemma 4 E4B contract**: summary generation uses only the local Ollama tag `gemma4:e4b-it-q4_K_M` for base model `google/gemma-4-E4B-it`, with `temperature=0`, `num_ctx=32768`, and `stream=false`. AURA checks `http://localhost:11434/api/tags` before generation and refuses fallback models or cloud calls.
 3. **Corrected-transcript-only input boundary**: the model receives only the current corrected transcript. Raw ASR text, `correction_log`, private audit logs, and review notes stay outside the prompt. This preserves the fuzzy-correction audit trail while keeping summary generation focused on the user-facing transcript.
 4. **Structured JSON source of truth**: every extractor has its own prompt, one-shot example, strict JSON shape, Python validation, and one repair attempt. Python merges the validated outputs into the final schema, validates the full summary, and renders Markdown without using the LLM for formatting.
+5. **Ollama runtime preflight and model-install guardrail**: `src/aura/llm/ollama_runtime.py` checks whether the local Ollama server is reachable, starts `ollama serve` when the server is unavailable, waits for `http://localhost:11434/api/tags`, verifies `gemma4:e4b-it-q4_K_M`, and separates missing-command, server-timeout, missing-model, pull-failure, and summary-failure states. If the model tag is missing, the UI shows a **Local Gemma model not installed** dialog with **Pull Model**, **Copy Command**, and **Cancel**. AURA never silently downloads a large model.
 
 The practical workflow is now:
 
@@ -81,6 +82,26 @@ Markdown meeting report
 ```
 
 The supported scope is a local, user-facing meeting-notes feature. It does not create a new research gate, benchmark, or claim about summary quality. The next validation layer is real daily use: lab meetings, advisor syncs, industry discussions, and course recordings should produce paste-ready notes that are easy to inspect and revise.
+
+The new runtime safety path is:
+
+```text
+Summarize Current Transcript
+↓
+Transcript content check
+↓
+Ollama localhost /api/tags preflight
+↓
+Start local ollama serve if needed
+↓
+Verify gemma4:e4b-it-q4_K_M
+↓
+If missing: Pull Model / Copy Command / Cancel
+↓
+Run layered summary only after the local runner is ready
+```
+
+The implementation is covered by focused runtime and UI-adjacent tests: `tests/test_ollama_runtime.py` validates server detection, command lookup, startup timeout, model-tag checks, pull success/failure, and localhost-only host policy; `tests/test_summary_ui_runtime.py` verifies that UI summary starts only after runtime-ready, model-missing does not call summary, and empty transcript does not start runtime.
 
 ## Previous Update (2026-05-29)
 
@@ -457,7 +478,7 @@ LLM summary is optional because it requires a local Ollama-served Gemma 4 E4B mo
 python -m pip install -e ".[summary]"
 ```
 
-The approved summary backend is the local Ollama tag `gemma4:e4b-it-q4_K_M`, corresponding to base model `google/gemma-4-E4B-it`. AURA checks `http://localhost:11434/api/tags` before generation and fails clearly if the exact tag is missing. It does not fall back to another model, download weights, or call cloud APIs.
+The approved summary backend is the local Ollama tag `gemma4:e4b-it-q4_K_M`, corresponding to base model `google/gemma-4-E4B-it`. Before generation, AURA runs a local runtime preflight: it checks `http://localhost:11434/api/tags`, starts `ollama serve` if the local server is not already running, waits for the localhost runner to become ready, and verifies the exact model tag. If the model is missing, AURA shows a local-model dialog with **Pull Model**, **Copy Command**, and **Cancel** actions. Model download is never silent, no fallback model is used, and no cloud API is called.
 
 Traditional Chinese punctuation restoration can use an optional local Hugging Face token-classification model:
 
@@ -661,6 +682,8 @@ The summary model contract is fixed:
 - fallback model: disabled
 
 When **Summarize Current Transcript** runs, AURA uses the current corrected transcript only. It does not send the raw transcript, correction log, audit logs, or review notes to the model.
+
+Before starting the LLM call, AURA performs a local Ollama preflight. If the localhost server is unavailable, AURA attempts to start `ollama serve` and waits for `http://localhost:11434/api/tags`. If the required `gemma4:e4b-it-q4_K_M` tag is missing, AURA asks before running `ollama pull gemma4:e4b-it-q4_K_M` or lets the user copy the command. Missing server, missing command, missing model tag, and pull failure are surfaced as separate runtime states.
 
 Summary generation uses parallel layered structured extraction instead of one-shot full-summary generation or 9 sequential field calls. AURA runs each layer in parallel against the same corrected transcript, then merges and validates the final JSON in Python:
 
