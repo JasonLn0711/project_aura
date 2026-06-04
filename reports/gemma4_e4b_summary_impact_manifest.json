@@ -1,0 +1,54 @@
+{
+  "cloud_calls": false,
+  "commit_raw_model_outputs": false,
+  "download_during_gate": false,
+  "endpoint": "http://127.0.0.1:11434",
+  "external_calls": false,
+  "fixed_model_id": "google/gemma-4-E4B-it",
+  "fp8_checkpoint": false,
+  "gate": "G4E4B-SummaryImpact",
+  "local_files_only": true,
+  "local_output_dir": "reports/gemma4_e4b_summary_impact/local_outputs",
+  "model": "Gemma 4 E4B",
+  "model_available": true,
+  "model_id": "google/gemma-4-E4B-it",
+  "model_source": "preloaded_local_cache",
+  "ollama_model": "gemma4:e4b-it-q4_K_M",
+  "precision_variant": "ollama_q4_K_M_local_tag",
+  "raw_email_pdf_read": false,
+  "raw_transcript_context_emitted": false,
+  "reason": "Ollama local model found: gemma4:e4b-it-q4_K_M",
+  "runner": "ollama",
+  "selected_artifact_sets": [
+    {
+      "corrected_transcript": "260526_1057_小lin說_一口氣搞清避稅天堂的資本遊戲/transcript_260526_1057_小lin說_一口氣搞清避稅天堂的資本遊戲_final.txt",
+      "correction_log": "reports/asr_fuzzy_correction_logs/034_transcript_260526_1057_小lin說_一口氣搞清避稅天堂的資本遊戲_raw_correction_log.json",
+      "file_id": "260526_1057_小lin說_一口氣搞清避稅天堂的資本遊戲/transcript_260526_1057_小lin說_一口氣搞清避稅天堂的資本遊戲",
+      "raw_transcript": "260526_1057_小lin說_一口氣搞清避稅天堂的資本遊戲/transcript_260526_1057_小lin說_一口氣搞清避稅天堂的資本遊戲_raw.txt"
+    },
+    {
+      "corrected_transcript": "260604_1419_record/transcript_260604_1419_record_final.txt",
+      "correction_log": "reports/asr_fuzzy_correction_logs/042_transcript_260604_1419_record_raw_correction_log.json",
+      "file_id": "260604_1419_record/transcript_260604_1419_record",
+      "raw_transcript": "260604_1419_record/transcript_260604_1419_record_raw.txt"
+    },
+    {
+      "corrected_transcript": "260519_1130_record/260519_1130_record_final.txt",
+      "correction_log": "reports/asr_fuzzy_correction_logs/022_260519_1130_record_raw_correction_log.json",
+      "file_id": "260519_1130_record/260519_1130_record",
+      "raw_transcript": "260519_1130_record/260519_1130_record_raw.txt"
+    },
+    {
+      "corrected_transcript": "260528_0839_record/260528_0839_record_final.txt",
+      "correction_log": "reports/asr_fuzzy_correction_logs/038_260528_0839_record_raw_correction_log.json",
+      "file_id": "260528_0839_record/260528_0839_record",
+      "raw_transcript": "260528_0839_record/260528_0839_record_raw.txt"
+    },
+    {
+      "corrected_transcript": "260604_1419_record/260604_1419_record_final.txt",
+      "correction_log": "reports/asr_fuzzy_correction_logs/040_260604_1419_record_raw_correction_log.json",
+      "file_id": "260604_1419_record/260604_1419_record",
+      "raw_transcript": "260604_1419_record/260604_1419_record_raw.txt"
+    }
+  ]
+}

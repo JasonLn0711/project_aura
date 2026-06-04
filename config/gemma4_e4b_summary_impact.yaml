@@ -1,0 +1,58 @@
+gate: G4E4B-SummaryImpact
+
+model:
+  name: gemma4_e4b
+  display_name: Gemma 4 E4B
+  model_id: google/gemma-4-E4B-it
+  base_model_id: google/gemma-4-E4B-it
+  local_only: true
+  allow_fallback_model: false
+  allow_download: false
+  runner: ollama
+  local_files_only: true
+  precision_variant: ollama_q4_K_M_local_tag
+  fp8_checkpoint: false
+  load_in_8bit: false
+  cuda_max_memory: 9GiB
+  cpu_max_memory: 96GiB
+  ollama_model: gemma4:e4b-it-q4_K_M
+  ollama_tag: gemma4:e4b-it-q4_K_M
+  ollama_host: http://127.0.0.1:11434
+
+generation:
+  temperature: 0.0
+  seed: 20260604
+  max_output_tokens: 256
+  timeout_sec: 180
+
+sample:
+  max_samples: 5
+  min_samples: 5
+  max_input_chars_per_transcript: 30000
+  artifact_roots:
+    - .
+  exclude_paths:
+    - reports/asr_summary_impact_sample
+    - reports/gemma4_e4b_summary_impact/local_outputs
+  prefer_categories:
+    - organizations
+    - technical_terms
+    - medical_terms
+    - people
+    - regulatory_terms
+
+privacy:
+  emit_raw_transcript_context: false
+  commit_raw_model_outputs: false
+  external_calls: false
+  cloud_calls: false
+  raw_email_pdf_read: false
+  local_summary_generation_allowed: true
+  commit_summary_text_allowed: false
+  commit_aggregate_report_allowed: true
+
+output:
+  local_output_dir: reports/gemma4_e4b_summary_impact/local_outputs
+  manifest_path: reports/gemma4_e4b_summary_impact_manifest.json
+  report_json_path: reports/gemma4_e4b_summary_impact_report.json
+  report_markdown_path: reports/gemma4_e4b_summary_impact_report.md

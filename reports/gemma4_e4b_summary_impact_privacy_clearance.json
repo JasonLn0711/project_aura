@@ -1,0 +1,11 @@
+{
+  "commit_aggregate_report_allowed": true,
+  "commit_summary_text_allowed": false,
+  "gate": "G4E4B-SummaryImpact",
+  "local_outputs_ignored": true,
+  "local_summary_generation_allowed": true,
+  "raw_transcript_review_required": false,
+  "raw_transcript_text_committed": false,
+  "reason": "Selected candidates are used only for local model-backed paired summary generation; no raw transcript or summary text may be committed.",
+  "selected_candidates": 5
+}
