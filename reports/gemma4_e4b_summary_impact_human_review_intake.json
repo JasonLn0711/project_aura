@@ -1,0 +1,38 @@
+{
+  "completed_packet_signature": {
+    "decision_changes": null,
+    "evaluated_files": 5,
+    "files_with_both_summaries": 5,
+    "hallucinated_entity_watch_count": null,
+    "summary_generation_failures": null
+  },
+  "current_gate_signature": {
+    "decision_changes": {
+      "domain_term_only": 3,
+      "manual_review_needed": 0,
+      "possible_semantic_change": 1
+    },
+    "evaluated_files": 4,
+    "files_with_both_summaries": 4,
+    "hallucinated_entity_watch_count": 3,
+    "summary_generation_failures": 1
+  },
+  "current_review_required": true,
+  "gate": "G4E4B-SummaryImpact",
+  "label_counts": {
+    "REJECT": 5
+  },
+  "packet_matches_current_gate": false,
+  "preferred_summary_counts": {
+    "tie": 5
+  },
+  "private_content_risk_counts": {
+    "none": 5
+  },
+  "quality_claim_allowed": false,
+  "review_applicability": "historical_empty_output_packet_only",
+  "review_intake": "aura_g4e4b_summary_impact_human_review_completed_20260604",
+  "review_rows": 5,
+  "safe_conclusion": "Completed review supports only a historical runtime/artifact-generation claim for an empty-output packet; it must not be applied to the current num_ctx=32768 gate result.",
+  "source_zip": "/home/jnln3799/Downloads/aura_g4e4b_summary_impact_human_review_completed_20260604.zip"
+}
