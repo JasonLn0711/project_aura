@@ -1,0 +1,44 @@
+{
+  "aggregate": {
+    "category_preservation": {
+      "medical_terms": {
+        "corrected_summary_terms": 0,
+        "raw_summary_terms": 0
+      },
+      "organizations": {
+        "corrected_summary_terms": 0,
+        "raw_summary_terms": 0
+      },
+      "people": {
+        "corrected_summary_terms": 0,
+        "raw_summary_terms": 0
+      },
+      "regulatory_terms": {
+        "corrected_summary_terms": 0,
+        "raw_summary_terms": 0
+      },
+      "technical_terms": {
+        "corrected_summary_terms": 0,
+        "raw_summary_terms": 0
+      }
+    },
+    "corrected_canonical_terms_in_summary": 0,
+    "discovered_complete_artifact_sets": 0,
+    "domain_term_delta": 0,
+    "evaluated_files": 0,
+    "files_with_both_summaries": 0,
+    "manual_review_term_leaks": 0,
+    "raw_asr_error_spans_in_summary": 0,
+    "rejected_or_denied_term_leaks": 0,
+    "total_corrected_summary_domain_terms": 0,
+    "total_raw_summary_domain_terms": 0
+  },
+  "per_file": [],
+  "scope": {
+    "claim_scope": "internal_quality_gate_not_final_empirical_claim",
+    "external_model_calls": false,
+    "mode": "audit_only_existing_artifacts",
+    "raw_email_or_pdf_read": false,
+    "raw_transcript_context_emitted": false
+  }
+}
