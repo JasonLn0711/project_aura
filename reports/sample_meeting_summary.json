@@ -1,7 +1,10 @@
 {
   "action_items": [],
   "decisions": [
-    "暫定先做離線實驗，schema validation 和 evidence support 比較完成後再看 PyQt 整合。"
+    {
+      "decision": "暫定先做離線實驗，schema validation 和 evidence support 比較完成後再看 PyQt 整合。",
+      "evidence_style": "explicit"
+    }
   ],
   "executive_summary": "會議聚焦英文版 demo、本地部署限制、法規素材整理，以及 direct/vector/graph RAG 摘要比較的下一步。",
   "key_points": [
@@ -10,6 +13,15 @@
     "法規素材需要整理 510k summary 與 TFDA 文件。"
   ],
   "meeting_topic": "英文版 demo、本地部署與摘要實驗規劃",
+  "metadata": {
+    "base_model_id": "google/gemma-4-E4B-it",
+    "cloud_calls": false,
+    "external_calls": false,
+    "model": "gemma4:e4b-it-q4_K_M",
+    "ollama_num_ctx": 32768,
+    "parallel_layered_generation": true,
+    "runner": "ollama"
+  },
   "next_steps": [
     "整理 510k summary、TFDA 文件，確認哪些內容可用於展示。"
   ],

@@ -49,7 +49,40 @@ The app is designed for professional meeting and lecture workflows. It includes 
 | Project Lead | Jason Chia-Sheng Lin (PhD. Student) |
 | License | MIT |
 
-## What We Updated Today (2026-05-29)
+## What We Updated Today (2026-06-04)
+
+Project AURA now has a practical daily meeting-summary path that turns the corrected transcript into structured meeting notes through the approved local Gemma 4 E4B Ollama runner. The contribution is operational: the user-facing **Summarize Current Transcript** action no longer depends on one-shot free-form summary generation. It now uses a parallel layered extraction pipeline, validates every structured field in Python, writes local artifacts only to an ignored output directory, and renders Markdown deterministically from the final JSON.
+
+This update adds four durable capabilities:
+
+1. **Parallel layered summary extraction**: `src/summary/layered_summary_pipeline.py` runs Layer 1 extractors in parallel for topic/participants and executive/key-points, then runs Layer 2 extractors in parallel for decisions, action items/next steps, and open questions/risks. This replaces 9 sequential LLM calls and avoids a single oversized all-fields prompt.
+2. **Fixed local Gemma 4 E4B contract**: summary generation uses only the local Ollama tag `gemma4:e4b-it-q4_K_M` for base model `google/gemma-4-E4B-it`, with `temperature=0`, `num_ctx=32768`, and `stream=false`. AURA checks `http://localhost:11434/api/tags` before generation and fails clearly if the exact tag is unavailable. No cloud model, fallback model, or download path is introduced.
+3. **Corrected-transcript-only input boundary**: the model receives only the current corrected transcript. Raw ASR text, `correction_log`, private audit logs, and review notes stay outside the prompt. This preserves the fuzzy-correction audit trail while keeping summary generation focused on the user-facing transcript.
+4. **Structured JSON source of truth**: every extractor has its own prompt, one-shot example, strict JSON shape, Python validation, and one repair attempt. Python merges the validated outputs into the final schema, validates the full summary, and renders Markdown without using the LLM for formatting.
+
+The practical workflow is now:
+
+```text
+Audio
+↓
+Breeze-ASR
+↓
+Raw Transcript
+↓
+Fuzzy Glossary Correction
+↓
+Corrected Transcript
+↓
+Local Gemma 4 E4B parallel layered extraction
+↓
+Validated JSON
+↓
+Markdown meeting report
+```
+
+The supported scope is a local, user-facing meeting-notes feature. It does not create a new research gate, benchmark, or claim about summary quality. The next validation layer is real daily use: lab meetings, advisor syncs, industry discussions, and course recordings should produce paste-ready notes that are easy to inspect and revise.
+
+## Previous Update (2026-05-29)
 
 Project AURA `v1.13.0` is the Windows User Onboarding Release. The contribution in this update is user-facing: Windows users can now start from a portable folder, run one check, launch one script, and get a copyable diagnostic report when the machine is not ready. The implementation keeps the same RTX/CUDA-only ASR policy while reducing the setup flow from a developer command sequence to `Start-AURA.bat` / `Start-AURA.ps1` and `Check-AURA.bat`.
 
@@ -418,13 +451,13 @@ export HUGGINGFACE_TOKEN=hf_your_token_here
 
 Before using the default `pyannote/speaker-diarization-community-1` model, accept its Hugging Face terms for your account.
 
-LLM summary is optional because it loads a local Gemma 4 E4B FP8 model:
+LLM summary is optional because it requires a local Ollama-served Gemma 4 E4B model:
 
 ```bash
 python -m pip install -e ".[summary]"
 ```
 
-The default summary backend is `vrfai/gemma-4-E4B-it-fp8`, an FP8-quantized Gemma 4 E4B checkpoint derived from `google/gemma-4-E4B-it`. AURA loads Gemma 4 through the Hugging Face `AutoProcessor` and `AutoModelForImageTextToText` path so the direct summary workflow can use the Gemma 4 family while keeping output constrained to Taiwanese Traditional Chinese.
+The approved summary backend is the local Ollama tag `gemma4:e4b-it-q4_K_M`, corresponding to base model `google/gemma-4-E4B-it`. AURA checks `http://localhost:11434/api/tags` before generation and fails clearly if the exact tag is missing. It does not fall back to another model, download weights, or call cloud APIs.
 
 Traditional Chinese punctuation restoration can use an optional local Hugging Face token-classification model:
 
@@ -536,7 +569,7 @@ For each transcript base name, AURA writes:
 | Traditional Chinese Punctuation | Enabled; model-backed path first tries `kotoba-speech/mmbert-base-zh-punctuation-320000`, then falls back to `p208p2002/zh-wiki-punctuation-restore` when the punctuation extra is installed |
 | Denoise | Off in UI by default |
 | Speaker Diarization | Off by default; imported-file range defaults to `2-6` speakers |
-| LLM Summary | Off by default; `vrfai/gemma-4-E4B-it-fp8` with pre-quantized FP8/NVFP8-style local inference when enabled |
+| LLM Summary | Off by default; local Ollama `gemma4:e4b-it-q4_K_M` parallel layered meeting summary extraction when enabled |
 
 ## Runtime Files
 
@@ -609,7 +642,7 @@ Known limits:
 
 ## LLM Summary Behavior
 
-LLM summary is an optional post-ASR workflow. It is intentionally separate from ASR so the app can still run on machines that do not have enough VRAM for a 9B model.
+LLM summary is an optional post-ASR workflow. It is intentionally separate from ASR so the app can still run transcription without the local Gemma 4 E4B Ollama runner.
 
 When enabled in Advanced Settings:
 
@@ -617,15 +650,36 @@ When enabled in Advanced Settings:
 - live recording schedules summary shortly after the user stops recording, giving the ASR queue a short drain window
 - the **Summarize Current Transcript** button can run summary manually on the current transcript area
 
-The default model is `vrfai/gemma-4-E4B-it-fp8`, an FP8-quantized Gemma 4 E4B checkpoint derived from `google/gemma-4-E4B-it`. AURA treats the `nvfp8` summary setting as a pre-quantized FP8/NVIDIA-style checkpoint path and loads Gemma 4 through `transformers` with `AutoProcessor` and `AutoModelForImageTextToText` instead of applying bitsandbytes int8 quantization. Summary prompts require output in Taiwanese Traditional Chinese and ask for:
+The summary model contract is fixed:
 
-1. one-sentence summary
-2. key points
-3. decisions and consensus
-4. action items with owner, task, and deadline when present
-5. risks, questions, and follow-up items
+- base model id: `google/gemma-4-E4B-it`
+- Ollama model tag: `gemma4:e4b-it-q4_K_M`
+- runner: `ollama`
+- context window: `32768`
+- external calls: `false`
+- cloud calls: `false`
+- fallback model: disabled
 
-If the optional summary dependencies are missing, the UI reports the install command instead of failing silently.
+When **Summarize Current Transcript** runs, AURA uses the current corrected transcript only. It does not send the raw transcript, correction log, audit logs, or review notes to the model.
+
+Summary generation uses parallel layered structured extraction instead of one-shot full-summary generation or 9 sequential field calls. AURA runs each layer in parallel against the same corrected transcript, then merges and validates the final JSON in Python:
+
+- Layer 1, parallel: `topic_participants` extracts `meeting_topic` and `participants`; `executive_key_points` extracts `executive_summary` and `key_points`.
+- Layer 2, parallel: `decisions` extracts explicit decisions; `actions_next_steps` extracts `action_items` and `next_steps`; `questions_risks` extracts `open_questions` and `risks`.
+
+Each extractor has a dedicated prompt, one-shot example, strict expected JSON shape, Python validation for each field, and one optional extractor-level format-repair attempt. Field types remain explicit:
+
+- `meeting_topic`: string
+- `participants`: list of strings
+- `executive_summary`: string
+- `key_points`: list of strings
+- `decisions`: list of explicit decision objects
+- `action_items`: list of task objects
+- `open_questions`: list of strings
+- `risks`: list of strings
+- `next_steps`: list of strings
+
+The final JSON is the source of truth. Markdown is rendered deterministically from that JSON, which keeps the report stable for Notion, GitHub, Google Docs, or email paste-in.
 
 ### Practical Meeting Summary Pipeline
 
@@ -638,7 +692,7 @@ PYTHONPATH=. uv run python scripts/generate_meeting_summary.py \
   --output-json reports/meeting_summary.json
 ```
 
-This practical pipeline uses only the corrected transcript as model input. It does not pass the correction log to Gemma, does not create research claims or benchmark metrics, and writes a paste-ready Markdown report with executive summary, key points, decisions, action items, open questions, risks, and next steps. The sample output is stored at [`reports/sample_meeting_summary.md`](reports/sample_meeting_summary.md).
+This practical pipeline uses only the corrected transcript as model input. It does not pass the correction log to Gemma, does not create research claims or benchmark metrics, and writes a paste-ready Markdown report with topic, participants, executive summary, key points, decisions, action items, open questions, risks, and next steps. Generated private outputs are written under ignored `local_outputs/meeting_summary/`; the public dry-run sample is stored at [`reports/sample_meeting_summary.md`](reports/sample_meeting_summary.md).
 
 The current summary MVP is broader than this direct local summary feature but narrower than the full target architecture. It is documented in [`docs/meeting_summary_mvp_sdd.md`](docs/meeting_summary_mvp_sdd.md): ASR transcript input, time/sliding-window chunking, chunk embedding, lightweight knowledge graph construction, graph-aware RAG retrieval, fixed JSON summary prompting, Qwen 3.5 9B INT8 and Gemma 4 E4B FP8 comparison, schema validation, and evidence support checking. It explicitly excludes speaker diarization, ASR correction, fine-tuning, action-item owner extraction, medical/legal conclusion generation, and autonomous decision-making.
 

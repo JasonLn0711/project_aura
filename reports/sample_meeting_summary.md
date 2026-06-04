@@ -1,6 +1,8 @@
 # Meeting Summary
 
-**Topic:** 英文版 demo、本地部署與摘要實驗規劃
+## Topic
+
+英文版 demo、本地部署與摘要實驗規劃
 
 ## Participants
 
