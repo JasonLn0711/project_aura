@@ -98,6 +98,7 @@ class RunnerConfig:
     cpu_max_memory: str
     ollama_model: str
     ollama_host: str
+    ollama_num_ctx: int
 
 
 def repo_relative(path: Path, base: Path = REPO_ROOT) -> str:
@@ -142,6 +143,7 @@ def runner_config(config: dict[str, Any]) -> RunnerConfig:
         cpu_max_memory=str(nested(config, "model", "cpu_max_memory", "96GiB")),
         ollama_model=str(nested(config, "model", "ollama_model", FIXED_OLLAMA_MODEL)),
         ollama_host=str(nested(config, "model", "ollama_host", "http://127.0.0.1:11434")).rstrip("/"),
+        ollama_num_ctx=int(nested(config, "generation", "ollama_num_ctx", 32768)),
     )
 
 
@@ -368,6 +370,7 @@ class OllamaGemmaRunner:
                     "temperature": self.config.temperature,
                     "seed": self.config.seed,
                     "num_predict": self.config.max_output_tokens,
+                    "num_ctx": self.config.ollama_num_ctx,
                 },
             },
             timeout=self.config.timeout_sec,
@@ -517,6 +520,24 @@ def domain_term_count(summary: dict[str, Any]) -> int:
     return sum(len(summary["domain_terms"].get(category, [])) for category in EVALUATED_CATEGORIES)
 
 
+def summary_has_content(summary: dict[str, Any]) -> bool:
+    if str(summary.get("executive_summary") or "").strip():
+        return True
+    for key in ("key_decisions", "action_items", "open_questions"):
+        values = summary.get(key)
+        if isinstance(values, list) and any(str(item).strip() for item in values):
+            return True
+    terms = summary.get("domain_terms")
+    if isinstance(terms, dict):
+        return any(
+            str(item).strip()
+            for values in terms.values()
+            if isinstance(values, list)
+            for item in values
+        )
+    return False
+
+
 def summary_search_text(summary: dict[str, Any]) -> str:
     chunks: list[str] = []
     for key in ("executive_summary", "key_decisions", "action_items", "open_questions"):
@@ -631,7 +652,9 @@ def aggregate_report(
     model_available: bool,
     reason: str,
     config: RunnerConfig,
+    generation_failures: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
+    generation_failures = generation_failures or []
     decision_changes = Counter(row["decision_change_category"] for row in rows if row["decision_change_category"])
     report = {
         "gate": GATE_NAME,
@@ -669,10 +692,14 @@ def aggregate_report(
         "hallucinated_entity_watch_count": sum(1 for row in rows if row["hallucinated_entity_watch"]),
         "claim_scope": "internal local model-backed summary-impact gate using google/gemma-4-E4B-it, not final empirical claim",
         "reason": reason,
+        "summary_generation_failures": len(generation_failures),
+        "generation_failures": generation_failures,
         "per_file": [safe_report_row(row) for row in rows],
     }
     return {field: report[field] for field in REQUIRED_REPORT_FIELDS} | {
         "reason": report["reason"],
+        "summary_generation_failures": report["summary_generation_failures"],
+        "generation_failures": report["generation_failures"],
         "per_file": report["per_file"],
     }
 
@@ -752,6 +779,7 @@ def render_markdown(report: dict[str, Any]) -> str:
             f"- Complete artifact sets: {report['complete_artifact_sets']}",
             f"- Evaluated files: {report['evaluated_files']}",
             f"- Files with both summaries: {report['files_with_both_summaries']}",
+            f"- Summary generation failures: {report.get('summary_generation_failures', 0)}",
             f"- Domain terms in raw summaries: {report['domain_terms_raw_summary']}",
             f"- Domain terms in corrected summaries: {report['domain_terms_corrected_summary']}",
             f"- Domain term delta: {report['domain_term_delta']}",
@@ -778,8 +806,9 @@ def run_model_backed_pairs(
     config: RunnerConfig,
     local_output_dir: Path,
     domain_terms: dict[str, list[str]],
-) -> list[dict[str, Any]]:
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
     rows: list[dict[str, Any]] = []
+    generation_failures: list[dict[str, Any]] = []
     local_output_dir.mkdir(parents=True, exist_ok=True)
     runner = build_runner(config)
     for artifact in selected:
@@ -799,8 +828,20 @@ def run_model_backed_pairs(
             json.dumps(corrected_summary, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
             encoding="utf-8",
         )
+        raw_has_content = summary_has_content(raw_summary)
+        corrected_has_content = summary_has_content(corrected_summary)
+        if not raw_has_content or not corrected_has_content:
+            generation_failures.append(
+                {
+                    "file_id": artifact.file_id,
+                    "reason": "empty_structured_summary",
+                    "raw_summary_has_content": raw_has_content,
+                    "corrected_summary_has_content": corrected_has_content,
+                }
+            )
+            continue
         rows.append(evaluate_pair(artifact, raw_summary, corrected_summary, domain_terms))
-    return rows
+    return rows, generation_failures
 
 
 def parse_args() -> argparse.Namespace:
@@ -860,10 +901,13 @@ def main() -> int:
     write_manifest(args.manifest, artifact_sets, model_available, reason, config, local_output_dir)
 
     rows: list[dict[str, Any]] = []
+    generation_failures: list[dict[str, Any]] = []
     if model_available:
         domain_terms = load_domain_terms()
         try:
-            rows = run_model_backed_pairs(artifact_sets, config, local_output_dir, domain_terms)
+            rows, generation_failures = run_model_backed_pairs(artifact_sets, config, local_output_dir, domain_terms)
+            if generation_failures:
+                reason = f"{reason}; {len(generation_failures)} artifact sets generated empty structured summaries"
         except Exception as exc:
             reason = f"Gemma 4 E4B local generation failed: {type(exc).__name__}: {exc}"
 
@@ -873,6 +917,7 @@ def main() -> int:
         model_available=model_available,
         reason=reason,
         config=config,
+        generation_failures=generation_failures,
     )
     if not model_available and "not found" in reason:
         report["reason"] = "Gemma 4 E4B local model not found"

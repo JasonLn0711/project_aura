@@ -23,6 +23,7 @@ from scripts.run_gemma4_e4b_summary_impact import (
     parse_summary_json,
     prompt_uses_correction_log,
     runner_config,
+    summary_has_content,
 )
 from scripts.evaluate_summary_impact import ArtifactSet, load_domain_terms
 
@@ -40,6 +41,8 @@ class Gemma4E4BSummaryImpactTests(unittest.TestCase):
         self.assertEqual(config.runner, "ollama")
         self.assertEqual(config.ollama_model, FIXED_OLLAMA_MODEL)
         self.assertEqual(config.precision_variant, "ollama_q4_K_M_local_tag")
+        self.assertEqual(config.max_output_tokens, 768)
+        self.assertEqual(config.ollama_num_ctx, 32768)
         self.assertFalse(config.allow_fallback_model)
         self.assertFalse(config.allow_download)
         self.assertTrue(config.local_files_only)
@@ -87,6 +90,14 @@ class Gemma4E4BSummaryImpactTests(unittest.TestCase):
             model_available=False,
             reason="Gemma 4 E4B local model not found",
             config=config,
+            generation_failures=[
+                {
+                    "file_id": "sample",
+                    "reason": "empty_structured_summary",
+                    "raw_summary_has_content": False,
+                    "corrected_summary_has_content": False,
+                }
+            ],
         )
         expected = {
             "gate",
@@ -127,6 +138,16 @@ class Gemma4E4BSummaryImpactTests(unittest.TestCase):
         self.assertEqual(report["ollama_model"], FIXED_OLLAMA_MODEL)
         self.assertFalse(report["fp8_checkpoint"])
         self.assertFalse(report["download_during_gate"])
+        self.assertEqual(report["summary_generation_failures"], 1)
+        self.assertEqual(report["generation_failures"][0]["reason"], "empty_structured_summary")
+
+    def test_empty_structured_summary_has_no_content(self) -> None:
+        self.assertFalse(summary_has_content(parse_summary_json("{}")))
+        self.assertTrue(summary_has_content(parse_summary_json(json.dumps({"executive_summary": "完成摘要"}))))
+        self.assertTrue(summary_has_content(parse_summary_json(json.dumps({"action_items": ["確認模型輸出"]}))))
+        self.assertTrue(
+            summary_has_content(parse_summary_json(json.dumps({"domain_terms": {"organizations": ["智德萬"]}})))
+        )
 
     def test_rejected_terms_do_not_count_as_improvements(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

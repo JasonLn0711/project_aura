@@ -22,8 +22,9 @@ model:
 generation:
   temperature: 0.0
   seed: 20260604
-  max_output_tokens: 256
+  max_output_tokens: 768
   timeout_sec: 180
+  ollama_num_ctx: 32768
 
 sample:
   max_samples: 5

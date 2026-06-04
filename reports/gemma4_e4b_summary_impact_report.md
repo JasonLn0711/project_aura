@@ -21,16 +21,17 @@ Gemma 4 E4B local model-backed ASR correction summary-impact gate.
 ## Result
 
 - Model available: true
-- Reason: Ollama local model found: gemma4:e4b-it-q4_K_M
+- Reason: Ollama local model found: gemma4:e4b-it-q4_K_M; 1 artifact sets generated empty structured summaries
 - Complete artifact sets: 5
-- Evaluated files: 5
-- Files with both summaries: 5
-- Domain terms in raw summaries: 0
-- Domain terms in corrected summaries: 0
-- Domain term delta: 0
+- Evaluated files: 4
+- Files with both summaries: 4
+- Summary generation failures: 1
+- Domain terms in raw summaries: 41
+- Domain terms in corrected summaries: 44
+- Domain term delta: 3
 - Raw ASR error spans in raw summaries: 0
 - Canonical terms in corrected summaries: 0
 - Rejected leakage: 0
 - Manual-review leakage: 0
-- Decision changes: {"domain_term_only": 0, "manual_review_needed": 0, "possible_semantic_change": 0}
-- Hallucinated entity watch count: 0
+- Decision changes: {"domain_term_only": 3, "manual_review_needed": 0, "possible_semantic_change": 1}
+- Hallucinated entity watch count: 3
