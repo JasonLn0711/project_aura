@@ -627,6 +627,19 @@ The default model is `vrfai/gemma-4-E4B-it-fp8`, an FP8-quantized Gemma 4 E4B ch
 
 If the optional summary dependencies are missing, the UI reports the install command instead of failing silently.
 
+### Practical Meeting Summary Pipeline
+
+For daily meeting notes, generate a Markdown report from the corrected transcript artifact:
+
+```bash
+PYTHONPATH=. uv run python scripts/generate_meeting_summary.py \
+  --transcript path/to/meeting_corrected.txt \
+  --output-md reports/meeting_summary.md \
+  --output-json reports/meeting_summary.json
+```
+
+This practical pipeline uses only the corrected transcript as model input. It does not pass the correction log to Gemma, does not create research claims or benchmark metrics, and writes a paste-ready Markdown report with executive summary, key points, decisions, action items, open questions, risks, and next steps. The sample output is stored at [`reports/sample_meeting_summary.md`](reports/sample_meeting_summary.md).
+
 The current summary MVP is broader than this direct local summary feature but narrower than the full target architecture. It is documented in [`docs/meeting_summary_mvp_sdd.md`](docs/meeting_summary_mvp_sdd.md): ASR transcript input, time/sliding-window chunking, chunk embedding, lightweight knowledge graph construction, graph-aware RAG retrieval, fixed JSON summary prompting, Qwen 3.5 9B INT8 and Gemma 4 E4B FP8 comparison, schema validation, and evidence support checking. It explicitly excludes speaker diarization, ASR correction, fine-tuning, action-item owner extraction, medical/legal conclusion generation, and autonomous decision-making.
 
 ## Denoise Behavior
