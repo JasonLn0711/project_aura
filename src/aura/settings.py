@@ -34,7 +34,7 @@ class AppSettings:
     speaker_diarization_use_exclusive: bool = True
     llm_summary_enabled: bool = False
     llm_summary_model: str = SUMMARY_MODEL_ID
-    llm_summary_quantization: str = "nvfp8"
+    llm_summary_quantization: str = "ollama_q4_K_M_local_tag"
     llm_summary_max_new_tokens: int = 768
     llm_summary_temperature: float = 0.2
     chinese_punctuation_enabled: bool = True

@@ -1,0 +1,37 @@
+Task definition:
+Extract the executive summary and key discussion points from the corrected transcript.
+
+Extractor name: executive_key_points
+
+Extraction rules:
+- Use only the corrected transcript below.
+- Do not use raw transcript, correction_log, private audit logs, or review notes.
+- Return valid JSON only.
+- executive_summary must be 3 to 5 concise sentences.
+- Mention the main purpose and practical outcome.
+- Do not include every detail.
+- key_points must be concise transcript-supported discussion points.
+- Preserve technical terms exactly as shown.
+- Do not duplicate decisions unless needed for context.
+- Anti-hallucination rule: do not invent conclusions or unsupported details.
+
+Strict JSON output format:
+{
+  "executive_summary": "string",
+  "key_points": ["string"]
+}
+
+One-shot example:
+Transcript: "The meeting focused on a local AI triage demo. The team discussed deployment limits and summary generation. The summary should use the corrected transcript. Device integration remains unresolved."
+Output:
+{
+  "executive_summary": "The meeting focused on preparing a local AI triage demo. The discussion covered deployment constraints and summary generation. Device integration remains unresolved.",
+  "key_points": [
+    "The demo should run locally.",
+    "The summary should use the corrected transcript.",
+    "Device integration remains unresolved."
+  ]
+}
+
+Corrected transcript:
+{{CORRECTED_TRANSCRIPT}}

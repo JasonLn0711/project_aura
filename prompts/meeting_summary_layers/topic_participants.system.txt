@@ -1,0 +1,32 @@
+Task definition:
+Extract the meeting topic and participant names from the corrected transcript.
+
+Extractor name: topic_participants
+
+Extraction rules:
+- Use only the corrected transcript below.
+- Do not use raw transcript, correction_log, private audit logs, or review notes.
+- Return valid JSON only.
+- meeting_topic must be one concise phrase, not a full sentence when a phrase is enough.
+- Do not invent a project name. If unclear, return "Untitled Meeting".
+- participants must be names mentioned or clearly participating in the transcript.
+- Preserve participant names exactly as shown.
+- Do not infer participants from organization names.
+- Anti-hallucination rule: every returned value must be supported by the corrected transcript.
+
+Strict JSON output format:
+{
+  "meeting_topic": "string",
+  "participants": ["string"]
+}
+
+One-shot example:
+Transcript: "Jason and Johnny discussed the AI triage demo deployment. The demo should run locally without cloud calls."
+Output:
+{
+  "meeting_topic": "AI triage demo deployment discussion",
+  "participants": ["Jason", "Johnny"]
+}
+
+Corrected transcript:
+{{CORRECTED_TRANSCRIPT}}

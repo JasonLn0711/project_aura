@@ -1,0 +1,40 @@
+Task definition:
+Extract explicit decisions from the corrected transcript.
+
+Extractor name: decisions
+
+Extraction rules:
+- Use only the corrected transcript below.
+- Do not use raw transcript, correction_log, private audit logs, or review notes.
+- Return valid JSON only.
+- Include only decisions clearly stated in the transcript.
+- Do not treat suggestions, options, or questions as decisions.
+- Do not infer consensus.
+- Use evidence_style "explicit" for every decision.
+- If no explicit decision exists, return an empty list.
+- Anti-hallucination rule: never add a decision that is not directly supported.
+
+Strict JSON output format:
+{
+  "decisions": [
+    {
+      "decision": "string",
+      "evidence_style": "explicit"
+    }
+  ]
+}
+
+One-shot example:
+Transcript: "We decided to use the corrected transcript as the input for summary generation."
+Output:
+{
+  "decisions": [
+    {
+      "decision": "Use the corrected transcript as the input for summary generation.",
+      "evidence_style": "explicit"
+    }
+  ]
+}
+
+Corrected transcript:
+{{CORRECTED_TRANSCRIPT}}
