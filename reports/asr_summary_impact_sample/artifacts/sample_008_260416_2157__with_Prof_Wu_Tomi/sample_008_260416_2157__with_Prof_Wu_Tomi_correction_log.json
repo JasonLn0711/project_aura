@@ -1,0 +1,82 @@
+[
+  {
+    "accepted": true,
+    "category": "technical_terms",
+    "corrected": "Liger",
+    "method": "sanitized_sample",
+    "original": "liger",
+    "review_status": "accepted",
+    "score": 100.0,
+    "span": "liger"
+  },
+  {
+    "accepted": true,
+    "category": "technical_terms",
+    "corrected": "FDA",
+    "method": "sanitized_sample",
+    "original": "fda",
+    "review_status": "accepted",
+    "score": 100.0,
+    "span": "fda"
+  },
+  {
+    "accepted": true,
+    "category": "technical_terms",
+    "corrected": "FDA",
+    "method": "sanitized_sample",
+    "original": "fda",
+    "review_status": "accepted",
+    "score": 100.0,
+    "span": "fda"
+  },
+  {
+    "accepted": true,
+    "category": "technical_terms",
+    "corrected": "FDA",
+    "method": "sanitized_sample",
+    "original": "fda",
+    "review_status": "accepted",
+    "score": 100.0,
+    "span": "fda"
+  },
+  {
+    "accepted": true,
+    "category": "technical_terms",
+    "corrected": "FDA",
+    "method": "sanitized_sample",
+    "original": "fda",
+    "review_status": "accepted",
+    "score": 100.0,
+    "span": "fda"
+  },
+  {
+    "accepted": true,
+    "category": "people",
+    "corrected": "Jason",
+    "method": "sanitized_sample",
+    "original": "jason",
+    "review_status": "accepted",
+    "score": 100.0,
+    "span": "jason"
+  },
+  {
+    "accepted": true,
+    "category": "technical_terms",
+    "corrected": "API",
+    "method": "sanitized_sample",
+    "original": "api",
+    "review_status": "accepted",
+    "score": 100.0,
+    "span": "api"
+  },
+  {
+    "accepted": false,
+    "category": "organizations",
+    "corrected": "智慧財產局",
+    "method": "sanitized_sample",
+    "original": "智慧財產",
+    "review_status": "denylist",
+    "score": 88.89,
+    "span": "智慧財產"
+  }
+]

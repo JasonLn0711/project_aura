@@ -1,0 +1,122 @@
+[
+  {
+    "accepted": true,
+    "category": "organizations",
+    "corrected": "智德萬",
+    "method": "sanitized_sample",
+    "original": "志德灣",
+    "review_status": "accepted",
+    "score": 100.0,
+    "span": "志德灣"
+  },
+  {
+    "accepted": true,
+    "category": "medical_terms",
+    "corrected": "SaMD",
+    "method": "sanitized_sample",
+    "original": "SAMD",
+    "review_status": "accepted",
+    "score": 100.0,
+    "span": "SAMD"
+  },
+  {
+    "accepted": true,
+    "category": "technical_terms",
+    "corrected": "Liger",
+    "method": "sanitized_sample",
+    "original": "liger",
+    "review_status": "accepted",
+    "score": 100.0,
+    "span": "liger"
+  },
+  {
+    "accepted": true,
+    "category": "technical_terms",
+    "corrected": "Liger",
+    "method": "sanitized_sample",
+    "original": "liger",
+    "review_status": "accepted",
+    "score": 100.0,
+    "span": "liger"
+  },
+  {
+    "accepted": true,
+    "category": "technical_terms",
+    "corrected": "Liger",
+    "method": "sanitized_sample",
+    "original": "liger",
+    "review_status": "accepted",
+    "score": 100.0,
+    "span": "liger"
+  },
+  {
+    "accepted": true,
+    "category": "technical_terms",
+    "corrected": "Liger",
+    "method": "sanitized_sample",
+    "original": "liger",
+    "review_status": "accepted",
+    "score": 100.0,
+    "span": "liger"
+  },
+  {
+    "accepted": true,
+    "category": "people",
+    "corrected": "Jason",
+    "method": "sanitized_sample",
+    "original": "jason",
+    "review_status": "accepted",
+    "score": 100.0,
+    "span": "jason"
+  },
+  {
+    "accepted": true,
+    "category": "people",
+    "corrected": "Jason",
+    "method": "sanitized_sample",
+    "original": "jason",
+    "review_status": "accepted",
+    "score": 100.0,
+    "span": "jason"
+  },
+  {
+    "accepted": true,
+    "category": "technical_terms",
+    "corrected": "ASR",
+    "method": "sanitized_sample",
+    "original": "asr",
+    "review_status": "accepted",
+    "score": 100.0,
+    "span": "asr"
+  },
+  {
+    "accepted": true,
+    "category": "technical_terms",
+    "corrected": "Pelvis",
+    "method": "sanitized_sample",
+    "original": "pelvis",
+    "review_status": "accepted",
+    "score": 100.0,
+    "span": "pelvis"
+  },
+  {
+    "accepted": true,
+    "category": "technical_terms",
+    "corrected": "Pelvis",
+    "method": "sanitized_sample",
+    "original": "pelvis",
+    "review_status": "accepted",
+    "score": 100.0,
+    "span": "pelvis"
+  },
+  {
+    "accepted": false,
+    "category": "organizations",
+    "corrected": "陽明醫院",
+    "method": "sanitized_sample",
+    "original": "陽明院",
+    "review_status": "manual_review_required",
+    "score": 85.71,
+    "span": "陽明院"
+  }
+]
