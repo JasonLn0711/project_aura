@@ -1,0 +1,76 @@
+{
+  "cloud_calls": false,
+  "complete_artifact_sets": 5,
+  "context_label_counts": {
+    "exclude_from_quality_claim": 1,
+    "summarizer_failure": 3
+  },
+  "context_review_rows": 4,
+  "current_review_label_counts": {
+    "ACCEPT": 1,
+    "REJECT": 1,
+    "UNSURE": 3
+  },
+  "current_review_preferred_summary_counts": {
+    "raw": 2,
+    "tie": 2,
+    "unsafe": 1
+  },
+  "decision": "Pipeline validity gate fails for quality-evidence expansion: no positive summary-impact evidence rows, summarizer/pipeline failures remain, and identical transcript pairs cannot support ASR-correction impact.",
+  "external_calls": false,
+  "gate": "G4E4B-PipelineValidity",
+  "human_review_required": false,
+  "identical_transcript_pairs": 3,
+  "invalid_paired_comparison_rows": 4,
+  "machine_evaluated_files": 4,
+  "next_gate": "Fix paired-output validity before collecting new quality evidence: exclude identical raw/corrected transcript pairs, require non-empty raw and corrected summaries, and rerun a small local-only sample.",
+  "overall_quality_improvement_claim_allowed": false,
+  "pipeline_valid_for_quality_evidence": false,
+  "positive_summary_impact_evidence_rows": 0,
+  "raw_transcript_text_emitted": false,
+  "review_completed": true,
+  "summary_generation_failures": 1,
+  "transcript_pair_status": [
+    {
+      "context_label": "summarizer_failure",
+      "corrected_transcript_bytes": 28949,
+      "corrected_transcript_exists": true,
+      "file_id": "260604_1419_record/transcript_260604_1419_record",
+      "raw_transcript_bytes": 28949,
+      "raw_transcript_exists": true,
+      "transcripts_identical": true,
+      "valid_paired_comparison": false
+    },
+    {
+      "context_label": "summarizer_failure",
+      "corrected_transcript_bytes": 8872,
+      "corrected_transcript_exists": true,
+      "file_id": "260528_0839_record/260528_0839_record",
+      "raw_transcript_bytes": 8872,
+      "raw_transcript_exists": true,
+      "transcripts_identical": true,
+      "valid_paired_comparison": false
+    },
+    {
+      "context_label": "summarizer_failure",
+      "corrected_transcript_bytes": 13098,
+      "corrected_transcript_exists": true,
+      "file_id": "260604_1419_record/260604_1419_record",
+      "raw_transcript_bytes": 13098,
+      "raw_transcript_exists": true,
+      "transcripts_identical": true,
+      "valid_paired_comparison": false
+    },
+    {
+      "context_label": "exclude_from_quality_claim",
+      "corrected_transcript_bytes": 25191,
+      "corrected_transcript_exists": true,
+      "file_id": "260526_1057_小lin說_一口氣搞清避稅天堂的資本遊戲/transcript_260526_1057_小lin說_一口氣搞清避稅天堂的資本遊戲",
+      "raw_transcript_bytes": 26053,
+      "raw_transcript_exists": true,
+      "transcripts_identical": false,
+      "valid_paired_comparison": false
+    }
+  ],
+  "upstream_gate": "G4E4B-SummaryImpact"
+}
