@@ -892,7 +892,7 @@ class TranscriptionTab(QWidget):
         if metrics is not None:
             metrics["save_started_at"] = self.timestamp_now()
         self.import_summary_pending = False
-        saved = write_transcript_artifacts(base_path, transcript, summary_text=summary)
+        saved = write_transcript_artifacts(base_path, transcript, summary_text=summary, metrics=metrics)
         if metrics is not None:
             self.add_stage_duration(metrics, "save_outputs", save_started)
             finished_metrics = self.finish_metrics(metrics)
@@ -1178,7 +1178,7 @@ class TranscriptionTab(QWidget):
             metrics["save_started_at"] = self.timestamp_now()
             if punctuation_result is not None and punctuation_result.backend != "skipped":
                 metrics["punctuation_restoration_backend"] = punctuation_result.backend
-        saved = write_transcript_artifacts(base_path, raw_transcript, summary_text=summary)
+        saved = write_transcript_artifacts(base_path, raw_transcript, summary_text=summary, metrics=metrics)
         if metrics is not None:
             self.add_stage_duration(metrics, "save_outputs", save_started)
             finished_metrics = self.finish_metrics(metrics)
