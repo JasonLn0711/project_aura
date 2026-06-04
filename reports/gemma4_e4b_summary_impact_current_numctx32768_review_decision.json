@@ -1,0 +1,65 @@
+{
+  "corrected_summaries_overall_preferred": false,
+  "decision_action_semantic_review_required": true,
+  "empty_raw_summary_generation_failure_affects_gate_validity": true,
+  "final_empirical_quality_claim_allowed": false,
+  "gate": "G4E4B-SummaryImpact",
+  "label_counts": {
+    "ACCEPT": 1,
+    "REJECT": 1,
+    "UNSURE": 3
+  },
+  "machine_gate_signature": {
+    "complete_artifact_sets": 5,
+    "decision_changes": {
+      "domain_term_only": 3,
+      "manual_review_needed": 0,
+      "possible_semantic_change": 1
+    },
+    "domain_term_delta": 3,
+    "evaluated_files": 4,
+    "files_with_both_summaries": 4,
+    "hallucinated_entity_watch_count": 3,
+    "manual_review_leakage": 0,
+    "rejected_leakage": 0,
+    "summary_generation_failures": 1
+  },
+  "next_gate": "Transcript/audio context review is required for semantic-change and UNSURE rows before any downstream summary-quality improvement claim.",
+  "preferred_summary_counts": {
+    "raw": 2,
+    "tie": 2,
+    "unsafe": 1
+  },
+  "private_content_risk_counts": {
+    "low": 5
+  },
+  "review": "current_numctx32768_completed",
+  "review_completed": true,
+  "review_packet": "aura_g4e4b_summary_impact_current_numctx32768_completed_review.zip",
+  "review_rows": 5,
+  "review_summary": {
+    "decision_action_semantic_review_required": true,
+    "empty_raw_summary_generation_failure_affects_gate_validity": true,
+    "preferred_summary_counts": {
+      "raw": 2,
+      "tie": 2,
+      "unsafe": 1
+    },
+    "private_content_risk_counts": {
+      "low": 5
+    },
+    "review_label_counts": {
+      "ACCEPT": 1,
+      "REJECT": 1,
+      "UNSURE": 3
+    },
+    "total_rows": 5
+  },
+  "safe_conclusion": "Human review completed for the current num_ctx=32768 packet. Corrected summaries are not overall preferred. The gate supports local runtime/artifact generation and reviewed safety boundary evidence only; it does not support a final empirical quality claim.",
+  "source_files_local_only": [
+    "/home/jnln3799/Downloads/human_annotation_sheet_current_numctx32768_completed.csv",
+    "/home/jnln3799/Downloads/human_annotation_sheet_current_numctx32768_review_summary.json",
+    "/home/jnln3799/Downloads/aura_g4e4b_summary_impact_current_numctx32768_completed_review.zip"
+  ],
+  "transcript_audio_review_required": true
+}
