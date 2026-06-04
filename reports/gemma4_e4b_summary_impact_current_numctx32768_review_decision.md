@@ -33,3 +33,12 @@
 Human review completed for the current num_ctx=32768 packet. Corrected summaries are not overall preferred. The gate supports local runtime/artifact generation and reviewed safety boundary evidence only; it does not support a final empirical quality claim.
 
 Next gate: transcript/audio context review is required for semantic-change and UNSURE rows before any downstream summary-quality improvement claim.
+## Transcript Context Follow-up
+
+- Transcript-context review completed: true
+- Context label counts: {"exclude_from_quality_claim": 1, "summarizer_failure": 3}
+- Positive summary-impact evidence rows: 0
+- Audio review required: false
+- Overall quality-improvement claim allowed: false
+
+Transcript-context review completed. No remaining row supports positive summary-impact evidence. Observed issues are summarizer/pipeline failure or invalid paired-comparison cases, not validated ASR-correction improvement. Final empirical quality-improvement claim remains disallowed.

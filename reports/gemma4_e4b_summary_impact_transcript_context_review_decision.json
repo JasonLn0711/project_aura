@@ -1,0 +1,49 @@
+{
+  "any_positive_summary_impact_evidence": false,
+  "audio_review_required": false,
+  "audio_review_required_count": 0,
+  "context_label_counts": {
+    "exclude_from_quality_claim": 1,
+    "summarizer_failure": 3
+  },
+  "current_review_label_counts": {
+    "ACCEPT": 1,
+    "REJECT": 1,
+    "UNSURE": 3
+  },
+  "current_review_preferred_summary_counts": {
+    "raw": 2,
+    "tie": 2,
+    "unsafe": 1
+  },
+  "denylist_or_manual_review_policy_change_required": false,
+  "final_gate_conclusion": "Transcript-context review completed. No remaining row supports positive summary-impact evidence. Observed issues are summarizer/pipeline failure or invalid paired-comparison cases, not validated ASR-correction improvement. Final empirical quality-improvement claim remains disallowed.",
+  "gate": "G4E4B-SummaryImpact",
+  "machine_gate_signature": {
+    "complete_artifact_sets": 5,
+    "decision_changes": {
+      "domain_term_only": 3,
+      "manual_review_needed": 0,
+      "possible_semantic_change": 1
+    },
+    "domain_term_delta": 3,
+    "evaluated_files": 4,
+    "files_with_both_summaries": 4,
+    "hallucinated_entity_watch_count": 3,
+    "manual_review_leakage": 0,
+    "rejected_leakage": 0,
+    "summary_generation_failures": 1
+  },
+  "next_gate": "Do not expand ASR correction or claim corrected-summary improvement from this gate. A future gate should first fix summarizer/pipeline paired-output validity before collecting new evidence.",
+  "overall_quality_improvement_claim_allowed": false,
+  "policy_recommendation": "No new denylist entries are supported by transcript context. Existing rejected/manual-review corrections should remain excluded/manual-only. Empty/variant summary rows should be treated as summarizer/pipeline failures or excluded from quality claims.",
+  "positive_summary_impact_evidence_rows": 0,
+  "review": "transcript_context_completed",
+  "review_completed": true,
+  "review_rows": 4,
+  "source_files_local_only": [
+    "/home/jnln3799/Downloads/transcript_audio_context_review_sheet_completed.csv",
+    "/home/jnln3799/Downloads/transcript_audio_context_review_summary.json",
+    "/home/jnln3799/Downloads/aura_g4e4b_summary_impact_transcript_context_completed_review.zip"
+  ]
+}
