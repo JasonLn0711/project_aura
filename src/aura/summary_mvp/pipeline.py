@@ -79,7 +79,8 @@ def run_experiment(config: ExperimentConfig) -> dict[str, Any]:
         packets_by_setting[setting_name] = [packet.to_dict() for packet in packets]
         prompts_by_setting[setting_name] = prompt
         model_id = config.qwen_model_id if model_key == "qwen" else config.gemma_model_id
-        runner_config = ModelRunnerConfig(dry_run=config.dry_run, model_id=model_id)
+        quantization = "int8" if model_key == "qwen" else "nvfp8"
+        runner_config = ModelRunnerConfig(dry_run=config.dry_run, model_id=model_id, quantization=quantization)
         try:
             summary, status = run_model_or_dry_run(setting_name, prompt, packets, runner_config)
         except Exception as exc:

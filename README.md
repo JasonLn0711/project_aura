@@ -121,17 +121,27 @@ Transcripts are now saved as a durable artifact set instead of one manually save
 
 ```text
 {base}_raw.txt
+{base}_corrected.txt
 {base}_final.txt
 {base}_summary.txt
+{base}_correction_log.json
 {base}_processing_metrics.json
 ```
 
 - `raw.txt` contains the ASR transcript only.
-- `final.txt` contains the transcript plus the LLM summary when a summary is available.
+- `corrected.txt` contains conservative glossary-corrected ASR output.
+- `final.txt` contains the corrected transcript plus the LLM summary when a summary is available.
 - `summary.txt` contains only the LLM summary and is written only when a summary is produced.
+- `correction_log.json` records each accepted fuzzy glossary correction.
 - `processing_metrics.json` records the workflow type, source path, output policy, output paths, total elapsed time, coarse stage durations, and imported-file status events.
 
 This split makes it possible to compare the original ASR output with the final user-facing transcript and audit where the file was saved.
+
+### ASR Post-Processing
+
+After Breeze-ASR-25 emits a transcript, AURA now runs a conservative domain-glossary fuzzy correction layer before summary generation. The glossary lives in [`config/domain_glossary.yaml`](config/domain_glossary.yaml), and the implementation is in [`src/asr_postprocess/fuzzy_corrector.py`](src/asr_postprocess/fuzzy_corrector.py).
+
+The first version uses `rapidfuzz`, does not use LLM verification, and only corrects high-confidence glossary terms. It preserves `{base}_raw.txt`, writes `{base}_corrected.txt`, writes `{base}_correction_log.json`, and uses the corrected transcript for `{base}_final.txt` and downstream summary. The detailed policy and next validation path are recorded in [`docs/asr_postprocess_fuzzy_glossary.md`](docs/asr_postprocess_fuzzy_glossary.md).
 
 ### Import And Batch Processing Changes
 
@@ -408,13 +418,13 @@ export HUGGINGFACE_TOKEN=hf_your_token_here
 
 Before using the default `pyannote/speaker-diarization-community-1` model, accept its Hugging Face terms for your account.
 
-LLM summary is optional because it loads a local 9B model:
+LLM summary is optional because it loads a local Gemma 4 E4B FP8 model:
 
 ```bash
 python -m pip install -e ".[summary]"
 ```
 
-The default summary backend is `Qwen/Qwen3.5-9B` loaded with `bitsandbytes` int8 quantization on CUDA when available.
+The default summary backend is `vrfai/gemma-4-E4B-it-fp8`, an FP8-quantized Gemma 4 E4B checkpoint derived from `google/gemma-4-E4B-it`. AURA loads Gemma 4 through the Hugging Face `AutoProcessor` and `AutoModelForImageTextToText` path so the direct summary workflow can use the Gemma 4 family while keeping output constrained to Taiwanese Traditional Chinese.
 
 Traditional Chinese punctuation restoration can use an optional local Hugging Face token-classification model:
 
@@ -479,8 +489,8 @@ The packaged entrypoints are defined in `pyproject.toml`:
 4. Click **Import Media** for batch transcription. Speaker diarization runs only on imported files when enabled.
    The import dialog lists common media containers including `mp3`, `mp4`, `m4a`, `wav`, `flac`, `mkv`, `mov`, `ogg`, `aac`, `wma`, `aiff`, `opus`, `webm`, `avi`, `m4v`, `3gp`, and `3g2`; the fallback **All Files** filter can still be used for other ffmpeg-supported media. Each imported transcript is auto-saved according to the selected transcript output policy.
    Use **Cancel Import** to stop the active import when possible and skip the remaining queue.
-5. Enable **Summarize transcript after ASR** or click **Summarize Current Transcript** to append a local Qwen summary.
-6. Click **Stop Recording** to finish live recording. The app waits for final ASR text, runs the optional summary if enabled, saves `{recording_name}_raw.txt`, `{recording_name}_final.txt`, optional `{recording_name}_summary.txt`, and `{recording_name}_processing_metrics.json`, then clears the transcript pane and temporary backup.
+5. Enable **Summarize transcript after ASR** or click **Summarize Current Transcript** to append a local Gemma 4 E4B summary.
+6. Click **Stop Recording** to finish live recording. The app waits for final ASR text, runs glossary correction and optional summary if enabled, saves `{recording_name}_raw.txt`, `{recording_name}_corrected.txt`, `{recording_name}_correction_log.json`, `{recording_name}_final.txt`, optional `{recording_name}_summary.txt`, and `{recording_name}_processing_metrics.json`, then clears the transcript pane and temporary backup.
 7. Use **Open Output Folder** after an auto-save to inspect the generated transcript artifacts.
 
 ### Transcript Output Policy
@@ -495,12 +505,14 @@ For each transcript base name, AURA writes:
 
 ```text
 {base}_raw.txt
+{base}_corrected.txt
+{base}_correction_log.json
 {base}_final.txt
 {base}_summary.txt                  # only when a summary is produced
 {base}_processing_metrics.json
 ```
 
-The metrics JSON includes output policy, source path, saved artifact paths, total elapsed time, coarse stage durations, and imported-file status events such as FFmpeg normalization progress.
+`final.txt` uses the corrected transcript plus optional summary. The metrics JSON includes output policy, source path, saved artifact paths, glossary correction status, total elapsed time, coarse stage durations, and imported-file status events such as FFmpeg normalization progress.
 
 ### Tab 2: Smart Splitter
 
@@ -524,7 +536,7 @@ The metrics JSON includes output policy, source path, saved artifact paths, tota
 | Traditional Chinese Punctuation | Enabled; model-backed path first tries `kotoba-speech/mmbert-base-zh-punctuation-320000`, then falls back to `p208p2002/zh-wiki-punctuation-restore` when the punctuation extra is installed |
 | Denoise | Off in UI by default |
 | Speaker Diarization | Off by default; imported-file range defaults to `2-6` speakers |
-| LLM Summary | Off by default; `Qwen/Qwen3.5-9B` with int8 quantization when enabled |
+| LLM Summary | Off by default; `vrfai/gemma-4-E4B-it-fp8` with pre-quantized FP8/NVFP8-style local inference when enabled |
 
 ## Runtime Files
 
@@ -605,7 +617,7 @@ When enabled in Advanced Settings:
 - live recording schedules summary shortly after the user stops recording, giving the ASR queue a short drain window
 - the **Summarize Current Transcript** button can run summary manually on the current transcript area
 
-The default model is `Qwen/Qwen3.5-9B`. AURA loads it through `transformers` with `bitsandbytes` `load_in_8bit=True`, so the intended default is local CUDA int8 inference. Summary prompts require output in Taiwanese Traditional Chinese and ask for:
+The default model is `vrfai/gemma-4-E4B-it-fp8`, an FP8-quantized Gemma 4 E4B checkpoint derived from `google/gemma-4-E4B-it`. AURA treats the `nvfp8` summary setting as a pre-quantized FP8/NVIDIA-style checkpoint path and loads Gemma 4 through `transformers` with `AutoProcessor` and `AutoModelForImageTextToText` instead of applying bitsandbytes int8 quantization. Summary prompts require output in Taiwanese Traditional Chinese and ask for:
 
 1. one-sentence summary
 2. key points
@@ -615,7 +627,7 @@ The default model is `Qwen/Qwen3.5-9B`. AURA loads it through `transformers` wit
 
 If the optional summary dependencies are missing, the UI reports the install command instead of failing silently.
 
-The current summary MVP is broader than this direct local summary feature but narrower than the full target architecture. It is documented in [`docs/meeting_summary_mvp_sdd.md`](docs/meeting_summary_mvp_sdd.md): ASR transcript input, time/sliding-window chunking, chunk embedding, lightweight knowledge graph construction, graph-aware RAG retrieval, fixed JSON summary prompting, Qwen 3.5 9B INT8 and Gemma 4 E4B INT8 comparison, schema validation, and evidence support checking. It explicitly excludes speaker diarization, ASR correction, fine-tuning, action-item owner extraction, medical/legal conclusion generation, and autonomous decision-making.
+The current summary MVP is broader than this direct local summary feature but narrower than the full target architecture. It is documented in [`docs/meeting_summary_mvp_sdd.md`](docs/meeting_summary_mvp_sdd.md): ASR transcript input, time/sliding-window chunking, chunk embedding, lightweight knowledge graph construction, graph-aware RAG retrieval, fixed JSON summary prompting, Qwen 3.5 9B INT8 and Gemma 4 E4B FP8 comparison, schema validation, and evidence support checking. It explicitly excludes speaker diarization, ASR correction, fine-tuning, action-item owner extraction, medical/legal conclusion generation, and autonomous decision-making.
 
 ## Denoise Behavior
 
@@ -667,7 +679,7 @@ Current coverage includes:
 - multi-chunk splitter workflow behavior using synthetic audio
 - runtime settings and UI message formatting defaults
 - speaker diarization timestamp assignment and speaker-count argument handling
-- LLM summary prompt and Qwen int8 default settings
+- LLM summary prompt and Gemma 4 E4B FP8 default settings
 - import smoke coverage for every `aura` package module
 - transcript artifact naming, final/raw/summary splitting, and metrics JSON writing
 - live capture PulseAudio/PipeWire source parsing, source selection, and system+microphone RMS mixing

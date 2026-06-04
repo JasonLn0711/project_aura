@@ -11,7 +11,7 @@ from aura.summary_mvp.schema import EvidencePacket
 
 DEFAULT_MODEL_IDS = {
     "qwen": "Qwen/Qwen3.5-9B",
-    "gemma": "google/gemma-4-E4B-it",
+    "gemma": "vrfai/gemma-4-E4B-it-fp8",
 }
 
 
@@ -23,6 +23,7 @@ class ModelRunError(RuntimeError):
 class ModelRunnerConfig:
     dry_run: bool = True
     model_id: str = ""
+    quantization: str = "int8"
     max_new_tokens: int = 1024
     temperature: float = 0.1
     require_idle_gpu: bool = True
@@ -116,28 +117,50 @@ def dry_run_summary(setting_name: str, packets: list[EvidencePacket]) -> dict[st
     }
 
 
-def run_transformers_int8(prompt: str, config: ModelRunnerConfig) -> str:
+def _is_gemma4_model(model_id: str) -> bool:
+    normalized = model_id.lower()
+    return "gemma-4" in normalized or "gemma4" in normalized
+
+
+def run_transformers_model(prompt: str, config: ModelRunnerConfig) -> str:
     available, reason = gpu_is_available(config.max_gpu_memory_percent)
     if config.require_idle_gpu and not available:
         raise ModelRunError(reason)
     try:
         import torch
-        from transformers import AutoModelForCausalLM, AutoModelForImageTextToText, AutoTokenizer, BitsAndBytesConfig
+        from transformers import AutoModelForCausalLM, AutoModelForImageTextToText, AutoProcessor, AutoTokenizer, BitsAndBytesConfig
     except ImportError as exc:
         raise ModelRunError("Missing optional summary dependencies. Install with `python -m pip install -e .[summary]`.") from exc
 
     if not torch.cuda.is_available():
-        raise ModelRunError("CUDA is not available for INT8 model execution.")
+        raise ModelRunError("CUDA is not available for local summary model execution.")
 
-    tokenizer = AutoTokenizer.from_pretrained(config.model_id, trust_remote_code=True)
-    model_class = AutoModelForImageTextToText if "gemma-4" in config.model_id.lower() else AutoModelForCausalLM
-    model = model_class.from_pretrained(
-        config.model_id,
-        device_map="auto",
-        trust_remote_code=True,
-        quantization_config=BitsAndBytesConfig(load_in_8bit=True),
-    )
-    inputs = tokenizer(prompt, return_tensors="pt").to(model.device)
+    model_kwargs = {
+        "device_map": "auto",
+        "trust_remote_code": True,
+    }
+    if config.quantization.lower() == "int8":
+        model_kwargs["quantization_config"] = BitsAndBytesConfig(load_in_8bit=True)
+    else:
+        model_kwargs["torch_dtype"] = "auto"
+
+    if _is_gemma4_model(config.model_id):
+        processor = AutoProcessor.from_pretrained(config.model_id, trust_remote_code=True)
+        model = AutoModelForImageTextToText.from_pretrained(config.model_id, **model_kwargs)
+        messages = [{"role": "user", "content": prompt}]
+        inputs = processor.apply_chat_template(
+            messages,
+            add_generation_prompt=True,
+            tokenize=True,
+            return_dict=True,
+            return_tensors="pt",
+        ).to(model.device)
+        decoder = processor
+    else:
+        tokenizer = AutoTokenizer.from_pretrained(config.model_id, trust_remote_code=True)
+        model = AutoModelForCausalLM.from_pretrained(config.model_id, **model_kwargs)
+        inputs = tokenizer(prompt, return_tensors="pt").to(model.device)
+        decoder = tokenizer
     output_ids = model.generate(
         **inputs,
         max_new_tokens=config.max_new_tokens,
@@ -145,7 +168,7 @@ def run_transformers_int8(prompt: str, config: ModelRunnerConfig) -> str:
         temperature=config.temperature,
     )
     generated = output_ids[0][inputs["input_ids"].shape[-1] :]
-    return tokenizer.decode(generated, skip_special_tokens=True).strip()
+    return decoder.decode(generated, skip_special_tokens=True).strip()
 
 
 def run_model_or_dry_run(
@@ -157,7 +180,7 @@ def run_model_or_dry_run(
     if config.dry_run:
         return dry_run_summary(setting_name, packets), "dry-run deterministic summary; no model loaded"
     try:
-        raw = run_transformers_int8(prompt, config)
-        return json.loads(raw), f"model-run completed with {config.model_id}"
+        raw = run_transformers_model(prompt, config)
+        return json.loads(raw), f"model-run completed with {config.model_id} ({config.quantization})"
     except json.JSONDecodeError as exc:
         raise ModelRunError(f"Model returned invalid JSON: {exc}") from exc

@@ -10,7 +10,7 @@ MVP-v0.1 定義如下：
 Input: ASR transcript
 Output: structured meeting summary
 Method: Graph Knowledge + RAG + INT8 SLM summary
-Models: Qwen 3.5 9B INT8, Gemma 4 E4B INT8
+Models: Qwen 3.5 9B INT8, Gemma 4 E4B FP8/NVFP8-style
 Not included: speaker diarization, ASR correction, full action item system, multi-speaker role attribution
 ```
 
@@ -250,7 +250,7 @@ Evidence packet:
 
 ```text
 Qwen 3.5 9B INT8
-Gemma 4 E4B INT8
+Gemma 4 E4B FP8/NVFP8-style
 ```
 
 Prompt contract:
@@ -348,7 +348,7 @@ ASR transcript -> chunks -> lightweight graph -> graph-aware RAG -> SLM summary
 
 ```text
 Qwen 3.5 9B INT8
-Gemma 4 E4B INT8
+Gemma 4 E4B FP8/NVFP8-style
 ```
 
 總共 6 個 settings：
@@ -428,7 +428,7 @@ v0.1 must include:
 - graph-aware retrieval
 - fixed JSON summary prompt
 - Qwen 3.5 9B INT8
-- Gemma 4 E4B INT8
+- Gemma 4 E4B FP8/NVFP8-style
 - direct vs vector RAG vs graph RAG comparison
 - schema validation
 - evidence support checking

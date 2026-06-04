@@ -16,7 +16,9 @@ class SummaryThread(QThread):
 
     def run(self):
         try:
-            self.status_updated.emit("🧠 Summarizing transcript with local Qwen3.5-9B int8...")
+            self.status_updated.emit(
+                f"🧠 Summarizing transcript with local {self.settings.model_id} {self.settings.quantization}..."
+            )
             summary = summarize_transcript(self.transcript, self.settings)
             if summary.strip():
                 self.summary_block = format_summary_block(summary)

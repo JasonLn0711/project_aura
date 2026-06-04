@@ -15,7 +15,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--dry-run", action="store_true", help="Use deterministic summaries and avoid model downloads.")
     parser.add_argument("--model-run", action="store_true", help="Attempt INT8 model execution.")
     parser.add_argument("--qwen-model-id", default="Qwen/Qwen3.5-9B")
-    parser.add_argument("--gemma-model-id", default="google/gemma-4-E4B-it")
+    parser.add_argument("--gemma-model-id", default="vrfai/gemma-4-E4B-it-fp8")
     parser.add_argument("--top-k", type=int, default=4)
     return parser.parse_args()
 

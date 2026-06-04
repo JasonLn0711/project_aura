@@ -31,7 +31,8 @@ class SettingsTests(unittest.TestCase):
         self.assertEqual(DEFAULT_SETTINGS.speaker_diarization_model, DIARIZATION_MODEL_ID)
         self.assertFalse(DEFAULT_SETTINGS.llm_summary_enabled)
         self.assertEqual(DEFAULT_SETTINGS.llm_summary_model, SUMMARY_MODEL_ID)
-        self.assertEqual(DEFAULT_SETTINGS.llm_summary_quantization, "int8")
+        self.assertIn("gemma-4-E4B-it-fp8", DEFAULT_SETTINGS.llm_summary_model)
+        self.assertEqual(DEFAULT_SETTINGS.llm_summary_quantization, "nvfp8")
         self.assertTrue(DEFAULT_SETTINGS.chinese_punctuation_enabled)
         self.assertEqual(DEFAULT_SETTINGS.chinese_punctuation_model, CHINESE_PUNCTUATION_MODEL_ID)
 

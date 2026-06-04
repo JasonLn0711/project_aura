@@ -62,12 +62,12 @@ Full dry-run metrics:
 The model IDs are configurable in the CLI and pipeline. The current defaults are:
 
 - Qwen: `Qwen/Qwen3.5-9B`
-- Gemma: `google/gemma-4-E4B-it`
+- Gemma: `vrfai/gemma-4-E4B-it-fp8`
 
 Current source check:
 
 - Hugging Face lists the official Qwen model as `Qwen/Qwen3.5-9B` and the Transformers docs page covers Qwen3.5 dense variants including `Qwen/Qwen3.5-9B`.
-- Hugging Face lists the official Gemma instruction-tuned E4B model as `google/gemma-4-E4B-it`; the model card uses the Transformers `AutoModelForImageTextToText` loading path and reports Apache 2.0 licensing for the Gemma 4 E4B family.
+- Hugging Face lists the official Gemma instruction-tuned E4B model as `google/gemma-4-E4B-it`; the FP8 checkpoint selected for local summary model-runs is `vrfai/gemma-4-E4B-it-fp8`, derived from the official Gemma 4 E4B instruction-tuned model and loaded through the Transformers `AutoProcessor` / `AutoModelForImageTextToText` path.
 
 The implementation keeps INT8 execution behind `--model-run`. Dry-run mode remains the default validation path and does not download models or allocate GPU memory.
 

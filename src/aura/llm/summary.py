@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 
 
-DEFAULT_SUMMARY_MODEL = "Qwen/Qwen3.5-9B"
+DEFAULT_SUMMARY_MODEL = "vrfai/gemma-4-E4B-it-fp8"
 DEFAULT_SUMMARY_LANGUAGE = "台灣繁體中文"
 
 
@@ -13,7 +13,7 @@ class SummaryDependencyError(RuntimeError):
 class SummarySettings:
     enabled: bool = False
     model_id: str = DEFAULT_SUMMARY_MODEL
-    quantization: str = "int8"
+    quantization: str = "nvfp8"
     device_map: str = "auto"
     max_new_tokens: int = 768
     temperature: float = 0.2
@@ -40,32 +40,43 @@ def build_summary_prompt(transcript: str, language: str = DEFAULT_SUMMARY_LANGUA
     )
 
 
+def _is_gemma4_model(model_id: str) -> bool:
+    normalized = model_id.lower()
+    return "gemma-4" in normalized or "gemma4" in normalized
+
+
 def _load_text_generation_model(settings: SummarySettings):
     try:
         import torch
-        from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
+        from transformers import AutoModelForCausalLM, AutoModelForImageTextToText, AutoProcessor, AutoTokenizer, BitsAndBytesConfig
     except ImportError as exc:
         raise SummaryDependencyError(
             "LLM summary requires optional dependencies. Install them with "
             "`python -m pip install -e .[summary]`."
         ) from exc
 
-    tokenizer = AutoTokenizer.from_pretrained(settings.model_id, trust_remote_code=True)
     model_kwargs = {
         "device_map": settings.device_map,
         "trust_remote_code": True,
     }
-    if settings.quantization == "int8":
+    quantization = settings.quantization.lower()
+    if quantization == "int8":
         model_kwargs["quantization_config"] = BitsAndBytesConfig(load_in_8bit=True)
     else:
-        model_kwargs["torch_dtype"] = torch.float16 if torch.cuda.is_available() else torch.float32
+        model_kwargs["torch_dtype"] = "auto" if torch.cuda.is_available() else torch.float32
 
+    if _is_gemma4_model(settings.model_id):
+        processor = AutoProcessor.from_pretrained(settings.model_id, trust_remote_code=True)
+        model = AutoModelForImageTextToText.from_pretrained(settings.model_id, **model_kwargs)
+        return processor, model
+
+    tokenizer = AutoTokenizer.from_pretrained(settings.model_id, trust_remote_code=True)
     model = AutoModelForCausalLM.from_pretrained(settings.model_id, **model_kwargs)
     return tokenizer, model
 
 
-def _tokens_for_prompt(tokenizer, prompt: str):
-    if hasattr(tokenizer, "apply_chat_template"):
+def _tokens_for_prompt(tokenizer_or_processor, prompt: str):
+    if hasattr(tokenizer_or_processor, "apply_chat_template"):
         messages = [
             {
                 "role": "system",
@@ -74,16 +85,24 @@ def _tokens_for_prompt(tokenizer, prompt: str):
             {"role": "user", "content": prompt},
         ]
         try:
-            return tokenizer.apply_chat_template(
+            return tokenizer_or_processor.apply_chat_template(
                 messages,
                 add_generation_prompt=True,
+                tokenize=True,
                 return_tensors="pt",
                 return_dict=True,
             )
         except TypeError:
-            text = tokenizer.apply_chat_template(messages, add_generation_prompt=True, tokenize=False)
-            return tokenizer(text, return_tensors="pt")
-    return tokenizer(prompt, return_tensors="pt")
+            legacy_messages = [
+                {
+                    "role": "system",
+                    "content": "你是專業會議紀錄整理助理，所有輸出必須是台灣繁體中文。",
+                },
+                {"role": "user", "content": prompt},
+            ]
+            text = tokenizer_or_processor.apply_chat_template(legacy_messages, add_generation_prompt=True, tokenize=False)
+            return tokenizer_or_processor(text, return_tensors="pt")
+    return tokenizer_or_processor(prompt, return_tensors="pt")
 
 
 def _decode_new_tokens(tokenizer, output_ids, input_length: int) -> str:
@@ -97,8 +116,8 @@ def summarize_transcript(transcript: str, settings: SummarySettings | None = Non
         return ""
 
     prompt = build_summary_prompt(transcript, settings.language)
-    tokenizer, model = _load_text_generation_model(settings)
-    inputs = _tokens_for_prompt(tokenizer, prompt)
+    tokenizer_or_processor, model = _load_text_generation_model(settings)
+    inputs = _tokens_for_prompt(tokenizer_or_processor, prompt)
     device = getattr(model, "device", None)
     if device is not None and hasattr(inputs, "to"):
         inputs = inputs.to(device)
@@ -110,7 +129,7 @@ def summarize_transcript(transcript: str, settings: SummarySettings | None = Non
     }
     output_ids = model.generate(**inputs, **generate_kwargs)
     input_length = inputs["input_ids"].shape[-1]
-    return _decode_new_tokens(tokenizer, output_ids, input_length)
+    return _decode_new_tokens(tokenizer_or_processor, output_ids, input_length)
 
 
 def format_summary_block(summary: str) -> str:

@@ -56,7 +56,7 @@ class UIStrings:
     speaker_max_label: str = "Max Speakers:"
     llm_summary_label: str = "Summarize transcript after ASR"
     llm_summary_tooltip: str = (
-        "Runs optional local Qwen3.5-9B summary after imported-file ASR finishes or shortly after recording stops. "
+        "Runs optional local Gemma 4 E4B FP8 summary after imported-file ASR finishes or shortly after recording stops. "
         "Output is constrained to Taiwanese Traditional Chinese."
     )
     llm_summary_button: str = "🧠 Summarize Current Transcript"

@@ -18,11 +18,12 @@ class SummaryTests(unittest.TestCase):
         self.assertIn("待辦事項", prompt)
         self.assertIn("[00:00:01] hello", prompt)
 
-    def test_summary_settings_default_to_qwen_int8(self):
+    def test_summary_settings_default_to_gemma4_nvfp8(self):
         settings = SummarySettings(enabled=True)
 
         self.assertEqual(settings.model_id, DEFAULT_SUMMARY_MODEL)
-        self.assertEqual(settings.quantization, "int8")
+        self.assertIn("gemma-4-E4B-it-fp8", settings.model_id)
+        self.assertEqual(settings.quantization, "nvfp8")
         self.assertEqual(settings.language, "台灣繁體中文")
 
     def test_transcript_content_detection(self):
