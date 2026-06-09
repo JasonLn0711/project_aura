@@ -8,8 +8,7 @@ from typing import Protocol
 
 from summary.field_schemas import (
     EXTRACTOR_FIELDS,
-    LAYER1_EXTRACTORS,
-    LAYER2_EXTRACTORS,
+    EXTRACTOR_NAMES,
     default_value,
     empty_summary,
     expected_extractor_schema,
@@ -129,16 +128,15 @@ def generate_layered_summary(
     validation_log: list[dict[str, object]] = []
     field_outputs: dict[str, object] = {}
 
-    for extractors in (LAYER1_EXTRACTORS, LAYER2_EXTRACTORS):
-        for extractor, value, log, raw_output in run_extractors_parallel(
-            extractors,
-            corrected_transcript,
-            client,
-            prompt_dir,
-        ):
-            summary.update(value)
-            validation_log.append(log.to_dict())
-            field_outputs[extractor] = raw_output
+    for extractor, value, log, raw_output in run_extractors_parallel(
+        EXTRACTOR_NAMES,
+        corrected_transcript,
+        client,
+        prompt_dir,
+    ):
+        summary.update(value)
+        validation_log.append(log.to_dict())
+        field_outputs[extractor] = raw_output
 
     summary["metadata"] = metadata()
     if not validate_final_summary(summary):

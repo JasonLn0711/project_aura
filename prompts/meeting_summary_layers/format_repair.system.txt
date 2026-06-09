@@ -17,17 +17,17 @@ Expected schema:
 Invalid output:
 {{INVALID_OUTPUT}}
 
-One-shot example:
+Minimal valid output example:
 Expected schema:
 {
   "meeting_topic": "string",
   "participants": ["string"]
 }
 Invalid output:
-Topic: AI triage demo
-Participants: Jason, Johnny
+Topic: Untitled Meeting
+Participants: none
 Output:
 {
-  "meeting_topic": "AI triage demo",
-  "participants": ["Jason", "Johnny"]
+  "meeting_topic": "Untitled Meeting",
+  "participants": []
 }

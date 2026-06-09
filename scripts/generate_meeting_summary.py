@@ -92,7 +92,7 @@ def write_outputs(summary: dict[str, Any], markdown_path: Path, json_path: Path)
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Generate parallel layered Project AURA meeting notes from a corrected transcript.")
+    parser = argparse.ArgumentParser(description="Generate parallel field-batch Project AURA meeting notes from a corrected transcript.")
     parser.add_argument("--transcript", type=Path, default=DEFAULT_SAMPLE_TRANSCRIPT)
     parser.add_argument("--output-md", type=Path, default=DEFAULT_REPORT_MD)
     parser.add_argument("--output-json", type=Path, default=DEFAULT_REPORT_JSON)

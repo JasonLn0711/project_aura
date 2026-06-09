@@ -1,1 +1,1 @@
-"""Parallel layered practical meeting summary pipeline."""
+"""Parallel field-batch practical meeting summary pipeline."""

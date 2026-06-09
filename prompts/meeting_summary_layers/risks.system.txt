@@ -1,0 +1,28 @@
+Task definition:
+Extract only stated risks from the corrected transcript.
+
+Extractor name: risks
+
+Extraction rules:
+- Use only the corrected transcript below.
+- Return valid JSON only.
+- Return exactly one field: risks.
+- risks must include transcript-supported warnings, blockers, dependencies, limitations, or uncertainty statements.
+- Do not create generic project risks.
+- Include technical, privacy, model, deployment, or workflow risks only if stated.
+- Preserve technical terms exactly as shown.
+- If there are no stated risks, return an empty list.
+- Anti-hallucination rule: every risk must be supported by transcript wording.
+
+Strict JSON output format:
+{
+  "risks": ["string"]
+}
+
+Minimal valid output example:
+{
+  "risks": []
+}
+
+Corrected transcript:
+{{CORRECTED_TRANSCRIPT}}

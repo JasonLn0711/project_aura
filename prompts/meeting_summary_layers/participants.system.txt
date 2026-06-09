@@ -1,0 +1,28 @@
+Task definition:
+Extract only participant names from the corrected transcript.
+
+Extractor name: participants
+
+Extraction rules:
+- Use only the corrected transcript below.
+- Return valid JSON only.
+- Return exactly one field: participants.
+- participants must be names, labels, or speaker identifiers explicitly shown in the transcript.
+- Preserve participant names exactly as shown.
+- Do not infer people from organization names, roles, topics, or generic meeting context.
+- Do not invent common English names.
+- If no participant name or speaker identifier appears, return an empty list.
+- Anti-hallucination rule: every returned participant string must appear in the corrected transcript.
+
+Strict JSON output format:
+{
+  "participants": ["string"]
+}
+
+Minimal valid output example:
+{
+  "participants": []
+}
+
+Corrected transcript:
+{{CORRECTED_TRANSCRIPT}}

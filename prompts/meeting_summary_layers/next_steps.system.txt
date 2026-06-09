@@ -1,0 +1,27 @@
+Task definition:
+Extract only practical next steps from the corrected transcript.
+
+Extractor name: next_steps
+
+Extraction rules:
+- Use only the corrected transcript below.
+- Return valid JSON only.
+- Return exactly one field: next_steps.
+- next_steps must be concise, ordered, and transcript-supported.
+- next_steps may overlap with action_items.
+- Do not invent owners, deadlines, people, customer names, or project titles.
+- If there are no practical next steps, return an empty list.
+- Anti-hallucination rule: every next step must be supported by transcript wording.
+
+Strict JSON output format:
+{
+  "next_steps": ["string"]
+}
+
+Minimal valid output example:
+{
+  "next_steps": []
+}
+
+Corrected transcript:
+{{CORRECTED_TRANSCRIPT}}

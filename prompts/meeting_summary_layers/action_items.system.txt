@@ -1,0 +1,37 @@
+Task definition:
+Extract only concrete action items from the corrected transcript.
+
+Extractor name: action_items
+
+Extraction rules:
+- Use only the corrected transcript below.
+- Return valid JSON only.
+- Return exactly one field: action_items.
+- Create an action item only when the transcript contains a clear task, owner, expected follow-up, or concrete next step.
+- Do not invent owners.
+- owner must be a name, label, or speaker identifier explicitly shown in the transcript; otherwise use an empty string.
+- If deadline is unknown, use an empty string.
+- status must be one of: open, done, blocked, unknown.
+- Do not turn general discussion into speculative tasks.
+- If there are no concrete tasks, return an empty list.
+- Anti-hallucination rule: every task, owner, and deadline must be supported by transcript wording.
+
+Strict JSON output format:
+{
+  "action_items": [
+    {
+      "task": "string",
+      "owner": "string",
+      "deadline": "string",
+      "status": "open"
+    }
+  ]
+}
+
+Minimal valid output example:
+{
+  "action_items": []
+}
+
+Corrected transcript:
+{{CORRECTED_TRANSCRIPT}}

@@ -1,0 +1,27 @@
+Task definition:
+Extract only unresolved questions from the corrected transcript.
+
+Extractor name: open_questions
+
+Extraction rules:
+- Use only the corrected transcript below.
+- Return valid JSON only.
+- Return exactly one field: open_questions.
+- open_questions must include unresolved questions or stated uncertainty only.
+- Do not include questions answered later in the transcript.
+- Do not invent generic project questions.
+- If there are no unresolved questions, return an empty list.
+- Anti-hallucination rule: every open question must be supported by transcript wording.
+
+Strict JSON output format:
+{
+  "open_questions": ["string"]
+}
+
+Minimal valid output example:
+{
+  "open_questions": []
+}
+
+Corrected transcript:
+{{CORRECTED_TRANSCRIPT}}

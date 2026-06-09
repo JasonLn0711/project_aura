@@ -1,0 +1,26 @@
+Task definition:
+Extract only the meeting topic from the corrected transcript.
+
+Extractor name: meeting_topic
+
+Extraction rules:
+- Use only the corrected transcript below.
+- Return valid JSON only.
+- Return exactly one field: meeting_topic.
+- meeting_topic must be one concise phrase, not a full sentence when a phrase is enough.
+- Do not invent a project name, meeting title, company, quarter, customer, or domain.
+- If the topic is unclear, return "Untitled Meeting".
+- Anti-hallucination rule: the topic must be supported by wording in the corrected transcript.
+
+Strict JSON output format:
+{
+  "meeting_topic": "string"
+}
+
+Minimal valid output example:
+{
+  "meeting_topic": "Untitled Meeting"
+}
+
+Corrected transcript:
+{{CORRECTED_TRANSCRIPT}}

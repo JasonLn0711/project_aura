@@ -30,11 +30,11 @@ def transcript_has_content(transcript: str) -> bool:
 def build_summary_prompt(transcript: str, language: str = DEFAULT_SUMMARY_LANGUAGE) -> str:
     """Compatibility helper for tests and diagnostics.
 
-    Runtime summary generation uses parallel layered extractor prompts under
+        Runtime summary generation uses parallel field extractor prompts under
     prompts/meeting_summary_layers/ instead of this one-shot prompt.
     """
     return (
-        "Project AURA meeting summary uses parallel layered extractor prompts, not one-shot full-summary generation.\n"
+        "Project AURA meeting summary uses parallel field extractor prompts, not one-shot full-summary generation.\n"
         f"Approved local runner: ollama model {OLLAMA_MODEL_TAG}; base model {DEFAULT_SUMMARY_MODEL}.\n"
         "Input policy: use corrected transcript only; do not include raw transcript or correction_log.\n"
         f"輸出語言：{language}\n\n"

@@ -21,15 +21,7 @@ FIELD_NAMES = (
     "risks",
     "next_steps",
 )
-LAYER1_EXTRACTORS = ("topic_participants", "executive_key_points")
-LAYER2_EXTRACTORS = ("decisions", "actions_next_steps", "questions_risks")
-EXTRACTOR_FIELDS = {
-    "topic_participants": ("meeting_topic", "participants"),
-    "executive_key_points": ("executive_summary", "key_points"),
-    "decisions": ("decisions",),
-    "actions_next_steps": ("action_items", "next_steps"),
-    "questions_risks": ("open_questions", "risks"),
-}
+EXTRACTOR_FIELDS = {field: (field,) for field in FIELD_NAMES}
 EXTRACTOR_NAMES = tuple(EXTRACTOR_FIELDS)
 LIST_STRING_FIELDS = {
     "participants",
@@ -90,7 +82,8 @@ def metadata() -> dict[str, Any]:
         "base_model_id": BASE_MODEL_ID,
         "runner": "ollama",
         "ollama_num_ctx": OLLAMA_NUM_CTX,
-        "parallel_layered_generation": True,
+        "parallel_field_generation": True,
+        "parallel_layered_generation": False,
         "external_calls": False,
         "cloud_calls": False,
     }
