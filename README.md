@@ -49,16 +49,16 @@ The app is designed for professional meeting and lecture workflows. It includes 
 | Project Lead | Jason Chia-Sheng Lin (PhD. Student) |
 | License | MIT |
 
-## What We Updated Today (2026-06-04)
+## Latest Update (2026-06-09)
 
-Project AURA now has a practical daily meeting-summary path that turns the corrected transcript into structured meeting notes through the approved local Gemma 4 E4B Ollama runner. The contribution is operational: the user-facing **Summarize Current Transcript** action no longer depends on one-shot free-form summary generation or a manually pre-started LLM runtime. It now uses a parallel layered extraction pipeline, validates every structured field in Python, writes local artifacts only to an ignored output directory, renders Markdown deterministically from the final JSON, and performs a local Ollama runtime preflight before any LLM call.
+Project AURA now has a more grounded daily meeting-summary path that turns the corrected transcript into structured meeting notes through the approved local Gemma 4 E4B Ollama runner. The 2026-06-09 correction removes the earlier Layer 1 / Layer 2 grouped prompts and runs the nine final summary fields as one parallel batch. The contribution is operational: **Summarize Current Transcript** no longer depends on one-shot free-form summary generation, grouped prompt examples, or a manually pre-started LLM runtime. It now runs nine field-level extractors in one parallel batch, validates every structured field in Python, writes local artifacts only to an ignored output directory, renders Markdown deterministically from the final JSON, and performs a local Ollama runtime preflight before any LLM call.
 
 This update adds five durable capabilities:
 
-1. **Parallel layered summary extraction**: `src/summary/layered_summary_pipeline.py` runs Layer 1 extractors in parallel for topic/participants and executive/key-points, then runs Layer 2 extractors in parallel for decisions, action items/next steps, and open questions/risks. This replaces 9 sequential LLM calls and avoids a single oversized all-fields prompt.
+1. **Parallel field-batch summary extraction**: `src/summary/layered_summary_pipeline.py` runs nine single-field extractors in one parallel batch: `meeting_topic`, `participants`, `executive_summary`, `key_points`, `decisions`, `action_items`, `open_questions`, `risks`, and `next_steps`. This removes the earlier Layer 1 / Layer 2 split, avoids a single oversized all-fields prompt, and reduces cross-field example leakage.
 2. **Fixed local Gemma 4 E4B contract**: summary generation uses only the local Ollama tag `gemma4:e4b-it-q4_K_M` for base model `google/gemma-4-E4B-it`, with `temperature=0`, `num_ctx=32768`, and `stream=false`. AURA checks `http://localhost:11434/api/tags` before generation and refuses fallback models or cloud calls.
 3. **Corrected-transcript-only input boundary**: the model receives only the current corrected transcript. Raw ASR text, `correction_log`, private audit logs, and review notes stay outside the prompt. This preserves the fuzzy-correction audit trail while keeping summary generation focused on the user-facing transcript.
-4. **Structured JSON source of truth**: every extractor has its own prompt, one-shot example, strict JSON shape, Python validation, and one repair attempt. Python merges the validated outputs into the final schema, validates the full summary, and renders Markdown without using the LLM for formatting.
+4. **Structured JSON source of truth**: every extractor has its own prompt, minimal valid output example, strict JSON shape, Python validation, and one repair attempt. Python merges the validated outputs into the final schema, validates the full summary, and renders Markdown without using the LLM for formatting.
 5. **Ollama runtime preflight and model-install guardrail**: `src/aura/llm/ollama_runtime.py` checks whether the local Ollama server is reachable, starts `ollama serve` when the server is unavailable, waits for `http://localhost:11434/api/tags`, verifies `gemma4:e4b-it-q4_K_M`, and separates missing-command, server-timeout, missing-model, pull-failure, and summary-failure states. If the model tag is missing, the UI shows a **Local Gemma model not installed** dialog with **Pull Model**, **Copy Command**, and **Cancel**. AURA never silently downloads a large model.
 
 The practical workflow is now:
@@ -74,7 +74,7 @@ Fuzzy Glossary Correction
 ↓
 Corrected Transcript
 ↓
-Local Gemma 4 E4B parallel layered extraction
+Local Gemma 4 E4B parallel field extraction
 ↓
 Validated JSON
 ↓
@@ -98,7 +98,7 @@ Verify gemma4:e4b-it-q4_K_M
 ↓
 If missing: Pull Model / Copy Command / Cancel
 ↓
-Run layered summary only after the local runner is ready
+Run field-batch summary only after the local runner is ready
 ```
 
 The implementation is covered by focused runtime and UI-adjacent tests: `tests/test_ollama_runtime.py` validates server detection, command lookup, startup timeout, model-tag checks, pull success/failure, and localhost-only host policy; `tests/test_summary_ui_runtime.py` verifies that UI summary starts only after runtime-ready, model-missing does not call summary, and empty transcript does not start runtime.
@@ -590,7 +590,7 @@ For each transcript base name, AURA writes:
 | Traditional Chinese Punctuation | Enabled; model-backed path first tries `kotoba-speech/mmbert-base-zh-punctuation-320000`, then falls back to `p208p2002/zh-wiki-punctuation-restore` when the punctuation extra is installed |
 | Denoise | Off in UI by default |
 | Speaker Diarization | Off by default; imported-file range defaults to `2-6` speakers |
-| LLM Summary | Off by default; local Ollama `gemma4:e4b-it-q4_K_M` parallel layered meeting summary extraction when enabled |
+| LLM Summary | Off by default; local Ollama `gemma4:e4b-it-q4_K_M` parallel field-batch meeting summary extraction when enabled |
 
 ## Runtime Files
 
@@ -685,12 +685,11 @@ When **Summarize Current Transcript** runs, AURA uses the current corrected tran
 
 Before starting the LLM call, AURA performs a local Ollama preflight. If the localhost server is unavailable, AURA attempts to start `ollama serve` and waits for `http://localhost:11434/api/tags`. If the required `gemma4:e4b-it-q4_K_M` tag is missing, AURA asks before running `ollama pull gemma4:e4b-it-q4_K_M` or lets the user copy the command. Missing server, missing command, missing model tag, and pull failure are surfaced as separate runtime states.
 
-Summary generation uses parallel layered structured extraction instead of one-shot full-summary generation or 9 sequential field calls. AURA runs each layer in parallel against the same corrected transcript, then merges and validates the final JSON in Python:
+Summary generation uses nine parallel single-field extractors instead of one-shot full-summary generation, two-layer grouped extraction, or 9 sequential field calls. AURA runs all nine field prompts in one parallel batch against the same corrected transcript, then merges and validates the final JSON in Python:
 
-- Layer 1, parallel: `topic_participants` extracts `meeting_topic` and `participants`; `executive_key_points` extracts `executive_summary` and `key_points`.
-- Layer 2, parallel: `decisions` extracts explicit decisions; `actions_next_steps` extracts `action_items` and `next_steps`; `questions_risks` extracts `open_questions` and `risks`.
+- Parallel batch: `meeting_topic`, `participants`, `executive_summary`, `key_points`, `decisions`, `action_items`, `open_questions`, `risks`, and `next_steps`.
 
-Each extractor has a dedicated prompt, one-shot example, strict expected JSON shape, Python validation for each field, and one optional extractor-level format-repair attempt. Field types remain explicit:
+Each extractor has a dedicated prompt, minimal valid output example, strict expected JSON shape, Python validation for each field, and one optional extractor-level format-repair attempt. Field types remain explicit:
 
 - `meeting_topic`: string
 - `participants`: list of strings

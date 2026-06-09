@@ -19,7 +19,8 @@
     "external_calls": false,
     "model": "gemma4:e4b-it-q4_K_M",
     "ollama_num_ctx": 32768,
-    "parallel_layered_generation": true,
+    "parallel_field_generation": true,
+    "parallel_layered_generation": false,
     "runner": "ollama"
   },
   "next_steps": [
