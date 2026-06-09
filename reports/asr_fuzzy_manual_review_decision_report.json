@@ -1,0 +1,24 @@
+{
+  "accepted_after_policy": 174,
+  "decision": "do_not_commit_as_is_until_policy_validated",
+  "denylist_rejections_after_policy": 22,
+  "manual_review_required_after_policy": 20,
+  "policy": {
+    "denylist": "Reviewed REJECT patterns are logged with accepted=false and do not modify transcript text.",
+    "manual_review_required": "Reviewed UNSURE patterns are logged with accepted=false and do not modify transcript text.",
+    "normalization_only": "Valid abbreviations are not treated as ASR corrections."
+  },
+  "rejected_candidates_after_policy": 42,
+  "reviewed_gate": {
+    "accept": 42,
+    "reject": 11,
+    "total_rows": 67,
+    "unsure": 14
+  },
+  "source_review_files": [
+    "reports/asr_fuzzy_manual_review_queue_reviewed.csv",
+    "reports/asr_fuzzy_manual_review_result_summary.json",
+    "reports/asr_fuzzy_manual_review_20260604_153546_reviewed.zip"
+  ],
+  "total_candidates_after_policy": 216
+}

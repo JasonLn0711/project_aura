@@ -53,30 +53,38 @@ class TranscriptIoTests(unittest.TestCase):
         paths = transcript_artifact_paths("/tmp/meeting.txt")
 
         self.assertEqual(paths["raw"], Path("/tmp/meeting_raw.txt"))
+        self.assertEqual(paths["corrected"], Path("/tmp/meeting_corrected.txt"))
         self.assertEqual(paths["final"], Path("/tmp/meeting_final.txt"))
         self.assertEqual(paths["summary"], Path("/tmp/meeting_summary.txt"))
+        self.assertEqual(paths["correction_log"], Path("/tmp/meeting_correction_log.json"))
         self.assertEqual(paths["metrics"], Path("/tmp/meeting_processing_metrics.json"))
 
-    def test_write_transcript_artifacts_writes_raw_final_summary_and_metrics(self):
+    def test_write_transcript_artifacts_writes_raw_corrected_final_summary_log_and_metrics(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             base = Path(tmpdir) / "meeting"
 
             saved = write_transcript_artifacts(
                 base,
-                "[00:00:01] hello",
+                "[00:00:01] 志德灣和 iMBS 開會",
                 f"\n\n{SUMMARY_MARKER}\n重點摘要",
                 metrics={"workflow": "unit", "outputs": {"ignored": Path("/tmp/old")}},
             )
 
-            self.assertEqual(set(saved), {"raw", "final", "summary", "metrics"})
-            self.assertEqual(saved["raw"].read_text(encoding="utf-8"), "[00:00:01] hello\n")
+            self.assertEqual(set(saved), {"raw", "corrected", "final", "summary", "correction_log", "metrics"})
+            self.assertEqual(saved["raw"].read_text(encoding="utf-8"), "[00:00:01] 志德灣和 iMBS 開會\n")
+            self.assertEqual(saved["corrected"].read_text(encoding="utf-8"), "[00:00:01] 智德萬和 iMVS 開會\n")
             self.assertEqual(saved["summary"].read_text(encoding="utf-8"), "重點摘要\n")
             self.assertEqual(
                 saved["final"].read_text(encoding="utf-8"),
-                f"[00:00:01] hello\n\n{SUMMARY_MARKER}\n重點摘要\n",
+                f"[00:00:01] 智德萬和 iMVS 開會\n\n{SUMMARY_MARKER}\n重點摘要\n",
             )
+            correction_log_text = saved["correction_log"].read_text(encoding="utf-8")
+            self.assertIn('"original": "志德灣"', correction_log_text)
+            self.assertIn('"corrected": "iMVS"', correction_log_text)
             metrics_text = saved["metrics"].read_text(encoding="utf-8")
             self.assertIn('"workflow": "unit"', metrics_text)
+            self.assertIn('"glossary_correction"', metrics_text)
+            self.assertIn('"correction_count": 2', metrics_text)
             self.assertIn("meeting_final.txt", metrics_text)
 
 

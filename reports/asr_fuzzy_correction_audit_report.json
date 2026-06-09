@@ -1,0 +1,4977 @@
+{
+  "accepted_corrections_all": [
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "Liger",
+      "high_risk_reasons": [],
+      "is_alias": false,
+      "original": "liger",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260416_2157__with_Prof_Wu_Tomi/260416_2157__with_Prof_Wu_Tomi.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "FDA",
+      "high_risk_reasons": [],
+      "is_alias": true,
+      "original": "fda",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260416_2157__with_Prof_Wu_Tomi/260416_2157__with_Prof_Wu_Tomi.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "FDA",
+      "high_risk_reasons": [],
+      "is_alias": true,
+      "original": "fda",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260416_2157__with_Prof_Wu_Tomi/260416_2157__with_Prof_Wu_Tomi.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "FDA",
+      "high_risk_reasons": [],
+      "is_alias": true,
+      "original": "fda",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260416_2157__with_Prof_Wu_Tomi/260416_2157__with_Prof_Wu_Tomi.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "FDA",
+      "high_risk_reasons": [],
+      "is_alias": true,
+      "original": "fda",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260416_2157__with_Prof_Wu_Tomi/260416_2157__with_Prof_Wu_Tomi.txt"
+    },
+    {
+      "accepted": true,
+      "category": "people",
+      "corrected": "Jason",
+      "high_risk_reasons": [
+        "people"
+      ],
+      "is_alias": false,
+      "original": "jason",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260416_2157__with_Prof_Wu_Tomi/260416_2157__with_Prof_Wu_Tomi.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "API",
+      "high_risk_reasons": [],
+      "is_alias": true,
+      "original": "api",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260416_2157__with_Prof_Wu_Tomi/260416_2157__with_Prof_Wu_Tomi.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "LLM",
+      "high_risk_reasons": [],
+      "is_alias": false,
+      "original": "llm",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260422_1415_114-2 生成式AI應用系統與工程 W9_1150422/260422_1415_114-2 生成式AI應用系統與工程 W9_1150422.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "LLM",
+      "high_risk_reasons": [],
+      "is_alias": false,
+      "original": "llm",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260422_1415_114-2 生成式AI應用系統與工程 W9_1150422/260422_1415_114-2 生成式AI應用系統與工程 W9_1150422.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "API",
+      "high_risk_reasons": [],
+      "is_alias": true,
+      "original": "api",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260422_1415_114-2 生成式AI應用系統與工程 W9_1150422/260422_1415_114-2 生成式AI應用系統與工程 W9_1150422.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "API",
+      "high_risk_reasons": [],
+      "is_alias": true,
+      "original": "api",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260422_1415_114-2 生成式AI應用系統與工程 W9_1150422/260422_1415_114-2 生成式AI應用系統與工程 W9_1150422.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "API",
+      "high_risk_reasons": [],
+      "is_alias": true,
+      "original": "api",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260422_1415_114-2 生成式AI應用系統與工程 W9_1150422/260422_1415_114-2 生成式AI應用系統與工程 W9_1150422.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "LLM",
+      "high_risk_reasons": [],
+      "is_alias": false,
+      "original": "llm",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260422_1415_114-2 生成式AI應用系統與工程 W9_1150422/260422_1415_114-2 生成式AI應用系統與工程 W9_1150422.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "LLM",
+      "high_risk_reasons": [],
+      "is_alias": false,
+      "original": "llm",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260422_1415_114-2 生成式AI應用系統與工程 W9_1150422/260422_1415_114-2 生成式AI應用系統與工程 W9_1150422.txt"
+    },
+    {
+      "accepted": true,
+      "category": "organizations",
+      "corrected": "NVIDIA",
+      "high_risk_reasons": [],
+      "is_alias": false,
+      "original": "nvidia",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260422_1415_114-2 生成式AI應用系統與工程 W9_1150422/260422_1415_114-2 生成式AI應用系統與工程 W9_1150422.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "GPU",
+      "high_risk_reasons": [],
+      "is_alias": false,
+      "original": "gpu",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260512_1302_record/260512_1302_record (minute).txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "LLM",
+      "high_risk_reasons": [],
+      "is_alias": false,
+      "original": "llm",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260512_1302_record/260512_1302_record (minute).txt"
+    },
+    {
+      "accepted": true,
+      "category": "people",
+      "corrected": "Jason",
+      "high_risk_reasons": [
+        "people"
+      ],
+      "is_alias": false,
+      "original": "jason",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260512_1302_record/260512_1302_record (minute).txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "Kiosk",
+      "high_risk_reasons": [],
+      "is_alias": true,
+      "original": "kiosk",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260512_1302_record/260512_1302_record (minute).txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "GPU",
+      "high_risk_reasons": [],
+      "is_alias": false,
+      "original": "gpu",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260512_1302_record/260512_1302_record.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "LLM",
+      "high_risk_reasons": [],
+      "is_alias": false,
+      "original": "llm",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260512_1302_record/260512_1302_record.txt"
+    },
+    {
+      "accepted": true,
+      "category": "people",
+      "corrected": "Jason",
+      "high_risk_reasons": [
+        "people"
+      ],
+      "is_alias": false,
+      "original": "jason",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260512_1302_record/260512_1302_record.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "Kiosk",
+      "high_risk_reasons": [],
+      "is_alias": true,
+      "original": "kiosk",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260512_1302_record/260512_1302_record.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "510(k)",
+      "high_risk_reasons": [
+        "number"
+      ],
+      "is_alias": true,
+      "original": "510k",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260512_2224_record/260512_2224_record.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "Kiosk",
+      "high_risk_reasons": [],
+      "is_alias": true,
+      "original": "kiosk",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260515_1259_kioskDiscussion/260515_1259_kioskDiscussion.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "Kiosk",
+      "high_risk_reasons": [],
+      "is_alias": true,
+      "original": "kiosk",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260515_1259_kioskDiscussion/260515_1259_kioskDiscussion.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "Kiosk",
+      "high_risk_reasons": [],
+      "is_alias": true,
+      "original": "kiosk",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260515_1259_kioskDiscussion/260515_1259_kioskDiscussion.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "Kiosk",
+      "high_risk_reasons": [],
+      "is_alias": true,
+      "original": "kiosk",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260515_1259_kioskDiscussion/260515_1259_kioskDiscussion.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "Kiosk",
+      "high_risk_reasons": [],
+      "is_alias": true,
+      "original": "kiosk",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260515_1259_kioskDiscussion/transcript_260515_1259_kioskDiscussion.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "Kiosk",
+      "high_risk_reasons": [],
+      "is_alias": true,
+      "original": "kiosk",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260515_1259_kioskDiscussion/transcript_260515_1259_kioskDiscussion.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "Kiosk",
+      "high_risk_reasons": [],
+      "is_alias": true,
+      "original": "kiosk",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260515_1259_kioskDiscussion/transcript_260515_1259_kioskDiscussion.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "Kiosk",
+      "high_risk_reasons": [],
+      "is_alias": true,
+      "original": "kiosk",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260515_1259_kioskDiscussion/transcript_260515_1259_kioskDiscussion.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "Kiosk",
+      "high_risk_reasons": [],
+      "is_alias": true,
+      "original": "kiosk",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260515_1259_kioskDiscussion/transcript_260515_1259_kioskDiscussion.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "Kiosk",
+      "high_risk_reasons": [],
+      "is_alias": true,
+      "original": "kiosk",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260515_1259_kioskDiscussion/transcript_260515_1259_kioskDiscussion.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "ASR",
+      "high_risk_reasons": [],
+      "is_alias": false,
+      "original": "asr",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260515_1358_withManyDiscussion/260515_1358_withManyDiscussion.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "ASR",
+      "high_risk_reasons": [],
+      "is_alias": false,
+      "original": "asr",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260515_1358_withManyDiscussion/260515_1358_withManyDiscussion.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "GPU",
+      "high_risk_reasons": [],
+      "is_alias": false,
+      "original": "gpu",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260515_1358_withManyDiscussion/260515_1358_withManyDiscussion.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "ASR",
+      "high_risk_reasons": [],
+      "is_alias": false,
+      "original": "asr",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260515_1358_withManyDiscussion/transcript_260515_1358_withManyDiscussion.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "ASR",
+      "high_risk_reasons": [],
+      "is_alias": false,
+      "original": "asr",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260515_1358_withManyDiscussion/transcript_260515_1358_withManyDiscussion.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "GPU",
+      "high_risk_reasons": [],
+      "is_alias": false,
+      "original": "gpu",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260515_1358_withManyDiscussion/transcript_260515_1358_withManyDiscussion.txt"
+    },
+    {
+      "accepted": true,
+      "category": "organizations",
+      "corrected": "智德萬",
+      "high_risk_reasons": [],
+      "is_alias": true,
+      "original": "志德灣",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260518_0902_lab_sync/260518_0902_lab_sync.txt"
+    },
+    {
+      "accepted": true,
+      "category": "medical_terms",
+      "corrected": "SaMD",
+      "high_risk_reasons": [
+        "medical_terms"
+      ],
+      "is_alias": false,
+      "original": "SAMD",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260518_0902_lab_sync/260518_0902_lab_sync.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "Liger",
+      "high_risk_reasons": [],
+      "is_alias": false,
+      "original": "liger",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260518_0902_lab_sync/260518_0902_lab_sync.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "Liger",
+      "high_risk_reasons": [],
+      "is_alias": false,
+      "original": "liger",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260518_0902_lab_sync/260518_0902_lab_sync.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "Liger",
+      "high_risk_reasons": [],
+      "is_alias": false,
+      "original": "liger",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260518_0902_lab_sync/260518_0902_lab_sync.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "Liger",
+      "high_risk_reasons": [],
+      "is_alias": false,
+      "original": "liger",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260518_0902_lab_sync/260518_0902_lab_sync.txt"
+    },
+    {
+      "accepted": true,
+      "category": "people",
+      "corrected": "Jason",
+      "high_risk_reasons": [
+        "people"
+      ],
+      "is_alias": false,
+      "original": "jason",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260518_0902_lab_sync/260518_0902_lab_sync.txt"
+    },
+    {
+      "accepted": true,
+      "category": "people",
+      "corrected": "Jason",
+      "high_risk_reasons": [
+        "people"
+      ],
+      "is_alias": false,
+      "original": "jason",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260518_0902_lab_sync/260518_0902_lab_sync.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "ASR",
+      "high_risk_reasons": [],
+      "is_alias": false,
+      "original": "asr",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260518_0902_lab_sync/260518_0902_lab_sync.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "Pelvis",
+      "high_risk_reasons": [],
+      "is_alias": false,
+      "original": "pelvis",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260518_0902_lab_sync/260518_0902_lab_sync.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "Pelvis",
+      "high_risk_reasons": [],
+      "is_alias": false,
+      "original": "pelvis",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260518_0902_lab_sync/260518_0902_lab_sync.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "TFDA",
+      "high_risk_reasons": [],
+      "is_alias": true,
+      "original": "tfda",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260518_0902_lab_sync/transcript_260518_0902_lab_sync.txt"
+    },
+    {
+      "accepted": true,
+      "category": "organizations",
+      "corrected": "智德萬",
+      "high_risk_reasons": [],
+      "is_alias": true,
+      "original": "志德灣",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260518_0902_lab_sync/transcript_260518_0902_lab_sync.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "GPU",
+      "high_risk_reasons": [],
+      "is_alias": false,
+      "original": "gpu",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260518_0902_lab_sync/transcript_260518_0902_lab_sync.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "510(k)",
+      "high_risk_reasons": [
+        "number"
+      ],
+      "is_alias": true,
+      "original": "510k",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260518_0902_lab_sync/transcript_260518_0902_lab_sync.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "Liger",
+      "high_risk_reasons": [],
+      "is_alias": false,
+      "original": "liger",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260518_0902_lab_sync/transcript_260518_0902_lab_sync.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "Liger",
+      "high_risk_reasons": [],
+      "is_alias": false,
+      "original": "liger",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260518_0902_lab_sync/transcript_260518_0902_lab_sync.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "Liger",
+      "high_risk_reasons": [],
+      "is_alias": false,
+      "original": "liger",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260518_0902_lab_sync/transcript_260518_0902_lab_sync.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "Liger",
+      "high_risk_reasons": [],
+      "is_alias": false,
+      "original": "liger",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260518_0902_lab_sync/transcript_260518_0902_lab_sync.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "TFDA",
+      "high_risk_reasons": [],
+      "is_alias": true,
+      "original": "tfda",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260518_0902_lab_sync/transcript_260518_0902_lab_sync.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "IRB",
+      "high_risk_reasons": [],
+      "is_alias": true,
+      "original": "irb",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260518_0902_lab_sync/transcript_260518_0902_lab_sync.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "IRB",
+      "high_risk_reasons": [],
+      "is_alias": true,
+      "original": "irb",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260518_0902_lab_sync/transcript_260518_0902_lab_sync.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "TFDA",
+      "high_risk_reasons": [],
+      "is_alias": true,
+      "original": "tfda",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260518_0902_lab_sync/transcript_260518_0902_lab_sync.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "TFDA",
+      "high_risk_reasons": [],
+      "is_alias": true,
+      "original": "tfda",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260518_0902_lab_sync/transcript_260518_0902_lab_sync.txt"
+    },
+    {
+      "accepted": true,
+      "category": "people",
+      "corrected": "Jason",
+      "high_risk_reasons": [
+        "people"
+      ],
+      "is_alias": false,
+      "original": "jason",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260518_0902_lab_sync/transcript_260518_0902_lab_sync.txt"
+    },
+    {
+      "accepted": true,
+      "category": "people",
+      "corrected": "Jason",
+      "high_risk_reasons": [
+        "people"
+      ],
+      "is_alias": false,
+      "original": "jason",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260518_0902_lab_sync/transcript_260518_0902_lab_sync.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "TFDA",
+      "high_risk_reasons": [],
+      "is_alias": true,
+      "original": "tfda",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260518_0902_lab_sync/transcript_260518_0902_lab_sync.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "Pelvis",
+      "high_risk_reasons": [],
+      "is_alias": false,
+      "original": "pelvis",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260518_0902_lab_sync/transcript_260518_0902_lab_sync.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "Pelvis",
+      "high_risk_reasons": [],
+      "is_alias": false,
+      "original": "pelvis",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260518_0902_lab_sync/transcript_260518_0902_lab_sync.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "API",
+      "high_risk_reasons": [],
+      "is_alias": true,
+      "original": "api",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260518_0902_lab_sync/transcript_260518_0902_lab_sync.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "KPI",
+      "high_risk_reasons": [],
+      "is_alias": false,
+      "original": "kpi",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260519_1042_record/260519_1042_record_final.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "KPI",
+      "high_risk_reasons": [],
+      "is_alias": false,
+      "original": "kpi",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260519_1042_record/260519_1042_record_raw.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "CPU",
+      "high_risk_reasons": [],
+      "is_alias": false,
+      "original": "cpu",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260520_1606_114-2 生成式AI應用系統與工程 W13_1150520/260520_1606_114-2 生成式AI應用系統與工程 W13_1150520_final.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "Spark",
+      "high_risk_reasons": [],
+      "is_alias": false,
+      "original": "spark",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260520_1606_114-2 生成式AI應用系統與工程 W13_1150520/260520_1606_114-2 生成式AI應用系統與工程 W13_1150520_final.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "Spark",
+      "high_risk_reasons": [],
+      "is_alias": false,
+      "original": "spark",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260520_1606_114-2 生成式AI應用系統與工程 W13_1150520/260520_1606_114-2 生成式AI應用系統與工程 W13_1150520_final.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "GPU",
+      "high_risk_reasons": [],
+      "is_alias": false,
+      "original": "gpu",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260520_1606_114-2 生成式AI應用系統與工程 W13_1150520/260520_1606_114-2 生成式AI應用系統與工程 W13_1150520_final.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "CPU",
+      "high_risk_reasons": [],
+      "is_alias": false,
+      "original": "cpu",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260520_1606_114-2 生成式AI應用系統與工程 W13_1150520/260520_1606_114-2 生成式AI應用系統與工程 W13_1150520_final.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "GPU",
+      "high_risk_reasons": [],
+      "is_alias": false,
+      "original": "gpu",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260520_1606_114-2 生成式AI應用系統與工程 W13_1150520/260520_1606_114-2 生成式AI應用系統與工程 W13_1150520_final.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "CPU",
+      "high_risk_reasons": [],
+      "is_alias": false,
+      "original": "cpu",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260520_1606_114-2 生成式AI應用系統與工程 W13_1150520/260520_1606_114-2 生成式AI應用系統與工程 W13_1150520_final.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "CPU",
+      "high_risk_reasons": [],
+      "is_alias": false,
+      "original": "cpu",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260520_1606_114-2 生成式AI應用系統與工程 W13_1150520/260520_1606_114-2 生成式AI應用系統與工程 W13_1150520_final.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "CPU",
+      "high_risk_reasons": [],
+      "is_alias": false,
+      "original": "cpu",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260520_1606_114-2 生成式AI應用系統與工程 W13_1150520/260520_1606_114-2 生成式AI應用系統與工程 W13_1150520_final.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "CPU",
+      "high_risk_reasons": [],
+      "is_alias": false,
+      "original": "cpu",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260520_1606_114-2 生成式AI應用系統與工程 W13_1150520/260520_1606_114-2 生成式AI應用系統與工程 W13_1150520_final.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "CPU",
+      "high_risk_reasons": [],
+      "is_alias": false,
+      "original": "cpu",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260520_1606_114-2 生成式AI應用系統與工程 W13_1150520/260520_1606_114-2 生成式AI應用系統與工程 W13_1150520_final.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "Spark",
+      "high_risk_reasons": [],
+      "is_alias": false,
+      "original": "spark",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260520_1606_114-2 生成式AI應用系統與工程 W13_1150520/260520_1606_114-2 生成式AI應用系統與工程 W13_1150520_final.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "CPU",
+      "high_risk_reasons": [],
+      "is_alias": false,
+      "original": "cpu",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260520_1606_114-2 生成式AI應用系統與工程 W13_1150520/260520_1606_114-2 生成式AI應用系統與工程 W13_1150520_raw.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "Spark",
+      "high_risk_reasons": [],
+      "is_alias": false,
+      "original": "spark",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260520_1606_114-2 生成式AI應用系統與工程 W13_1150520/260520_1606_114-2 生成式AI應用系統與工程 W13_1150520_raw.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "Spark",
+      "high_risk_reasons": [],
+      "is_alias": false,
+      "original": "spark",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260520_1606_114-2 生成式AI應用系統與工程 W13_1150520/260520_1606_114-2 生成式AI應用系統與工程 W13_1150520_raw.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "GPU",
+      "high_risk_reasons": [],
+      "is_alias": false,
+      "original": "gpu",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260520_1606_114-2 生成式AI應用系統與工程 W13_1150520/260520_1606_114-2 生成式AI應用系統與工程 W13_1150520_raw.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "CPU",
+      "high_risk_reasons": [],
+      "is_alias": false,
+      "original": "cpu",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260520_1606_114-2 生成式AI應用系統與工程 W13_1150520/260520_1606_114-2 生成式AI應用系統與工程 W13_1150520_raw.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "GPU",
+      "high_risk_reasons": [],
+      "is_alias": false,
+      "original": "gpu",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260520_1606_114-2 生成式AI應用系統與工程 W13_1150520/260520_1606_114-2 生成式AI應用系統與工程 W13_1150520_raw.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "CPU",
+      "high_risk_reasons": [],
+      "is_alias": false,
+      "original": "cpu",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260520_1606_114-2 生成式AI應用系統與工程 W13_1150520/260520_1606_114-2 生成式AI應用系統與工程 W13_1150520_raw.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "CPU",
+      "high_risk_reasons": [],
+      "is_alias": false,
+      "original": "cpu",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260520_1606_114-2 生成式AI應用系統與工程 W13_1150520/260520_1606_114-2 生成式AI應用系統與工程 W13_1150520_raw.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "CPU",
+      "high_risk_reasons": [],
+      "is_alias": false,
+      "original": "cpu",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260520_1606_114-2 生成式AI應用系統與工程 W13_1150520/260520_1606_114-2 生成式AI應用系統與工程 W13_1150520_raw.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "CPU",
+      "high_risk_reasons": [],
+      "is_alias": false,
+      "original": "cpu",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260520_1606_114-2 生成式AI應用系統與工程 W13_1150520/260520_1606_114-2 生成式AI應用系統與工程 W13_1150520_raw.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "CPU",
+      "high_risk_reasons": [],
+      "is_alias": false,
+      "original": "cpu",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260520_1606_114-2 生成式AI應用系統與工程 W13_1150520/260520_1606_114-2 生成式AI應用系統與工程 W13_1150520_raw.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "Spark",
+      "high_risk_reasons": [],
+      "is_alias": false,
+      "original": "spark",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260520_1606_114-2 生成式AI應用系統與工程 W13_1150520/260520_1606_114-2 生成式AI應用系統與工程 W13_1150520_raw.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "CPU",
+      "high_risk_reasons": [],
+      "is_alias": false,
+      "original": "cpu",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260520_2104_114-2 生成式AI應用系統與工程 W13_1150520/260520_2104_114-2 生成式AI應用系統與工程 W13_1150520_final.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "Spark",
+      "high_risk_reasons": [],
+      "is_alias": false,
+      "original": "spark",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260520_2104_114-2 生成式AI應用系統與工程 W13_1150520/260520_2104_114-2 生成式AI應用系統與工程 W13_1150520_final.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "CPU",
+      "high_risk_reasons": [],
+      "is_alias": false,
+      "original": "cpu",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260520_2104_114-2 生成式AI應用系統與工程 W13_1150520/260520_2104_114-2 生成式AI應用系統與工程 W13_1150520_final.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "CPU",
+      "high_risk_reasons": [],
+      "is_alias": false,
+      "original": "cpu",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260520_2104_114-2 生成式AI應用系統與工程 W13_1150520/260520_2104_114-2 生成式AI應用系統與工程 W13_1150520_final.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "Spark",
+      "high_risk_reasons": [],
+      "is_alias": false,
+      "original": "spark",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260520_2104_114-2 生成式AI應用系統與工程 W13_1150520/260520_2104_114-2 生成式AI應用系統與工程 W13_1150520_final.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "SQL",
+      "high_risk_reasons": [],
+      "is_alias": false,
+      "original": "sql",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260520_2104_114-2 生成式AI應用系統與工程 W13_1150520/260520_2104_114-2 生成式AI應用系統與工程 W13_1150520_final.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "CPU",
+      "high_risk_reasons": [],
+      "is_alias": false,
+      "original": "cpu",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260520_2104_114-2 生成式AI應用系統與工程 W13_1150520/260520_2104_114-2 生成式AI應用系統與工程 W13_1150520_final.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "CPU",
+      "high_risk_reasons": [],
+      "is_alias": false,
+      "original": "cpu",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260520_2104_114-2 生成式AI應用系統與工程 W13_1150520/260520_2104_114-2 生成式AI應用系統與工程 W13_1150520_raw.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "Spark",
+      "high_risk_reasons": [],
+      "is_alias": false,
+      "original": "spark",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260520_2104_114-2 生成式AI應用系統與工程 W13_1150520/260520_2104_114-2 生成式AI應用系統與工程 W13_1150520_raw.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "CPU",
+      "high_risk_reasons": [],
+      "is_alias": false,
+      "original": "cpu",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260520_2104_114-2 生成式AI應用系統與工程 W13_1150520/260520_2104_114-2 生成式AI應用系統與工程 W13_1150520_raw.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "CPU",
+      "high_risk_reasons": [],
+      "is_alias": false,
+      "original": "cpu",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260520_2104_114-2 生成式AI應用系統與工程 W13_1150520/260520_2104_114-2 生成式AI應用系統與工程 W13_1150520_raw.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "Spark",
+      "high_risk_reasons": [],
+      "is_alias": false,
+      "original": "spark",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260520_2104_114-2 生成式AI應用系統與工程 W13_1150520/260520_2104_114-2 生成式AI應用系統與工程 W13_1150520_raw.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "SQL",
+      "high_risk_reasons": [],
+      "is_alias": false,
+      "original": "sql",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260520_2104_114-2 生成式AI應用系統與工程 W13_1150520/260520_2104_114-2 生成式AI應用系統與工程 W13_1150520_raw.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "CPU",
+      "high_risk_reasons": [],
+      "is_alias": false,
+      "original": "cpu",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260520_2104_114-2 生成式AI應用系統與工程 W13_1150520/260520_2104_114-2 生成式AI應用系統與工程 W13_1150520_raw.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "AVM",
+      "high_risk_reasons": [],
+      "is_alias": false,
+      "original": "avm",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260525_0858_lab_sync/260525_0858_lab_sync_final.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "AVM",
+      "high_risk_reasons": [],
+      "is_alias": false,
+      "original": "avm",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260525_0858_lab_sync/260525_0858_lab_sync_final.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "AVM",
+      "high_risk_reasons": [],
+      "is_alias": false,
+      "original": "avm",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260525_0858_lab_sync/260525_0858_lab_sync_final.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "IRB",
+      "high_risk_reasons": [],
+      "is_alias": true,
+      "original": "irb",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260525_0858_lab_sync/260525_0858_lab_sync_final.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "IRB",
+      "high_risk_reasons": [],
+      "is_alias": true,
+      "original": "irb",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260525_0858_lab_sync/260525_0858_lab_sync_final.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "FDA",
+      "high_risk_reasons": [],
+      "is_alias": true,
+      "original": "fda",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260525_0858_lab_sync/260525_0858_lab_sync_final.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "KPI",
+      "high_risk_reasons": [],
+      "is_alias": false,
+      "original": "kpi",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260525_0858_lab_sync/260525_0858_lab_sync_final.txt"
+    },
+    {
+      "accepted": true,
+      "category": "organizations",
+      "corrected": "InnoVEX",
+      "high_risk_reasons": [],
+      "is_alias": false,
+      "original": "inovex",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 92.31,
+      "source_transcript": "260525_0858_lab_sync/260525_0858_lab_sync_final.txt"
+    },
+    {
+      "accepted": true,
+      "category": "organizations",
+      "corrected": "InnoVEX",
+      "high_risk_reasons": [],
+      "is_alias": false,
+      "original": "inovex",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 92.31,
+      "source_transcript": "260525_0858_lab_sync/260525_0858_lab_sync_final.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "KPI",
+      "high_risk_reasons": [],
+      "is_alias": false,
+      "original": "kpi",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260525_0858_lab_sync/260525_0858_lab_sync_final.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "AVM",
+      "high_risk_reasons": [],
+      "is_alias": false,
+      "original": "avm",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260525_0858_lab_sync/260525_0858_lab_sync_raw.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "AVM",
+      "high_risk_reasons": [],
+      "is_alias": false,
+      "original": "avm",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260525_0858_lab_sync/260525_0858_lab_sync_raw.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "AVM",
+      "high_risk_reasons": [],
+      "is_alias": false,
+      "original": "avm",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260525_0858_lab_sync/260525_0858_lab_sync_raw.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "IRB",
+      "high_risk_reasons": [],
+      "is_alias": true,
+      "original": "irb",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260525_0858_lab_sync/260525_0858_lab_sync_raw.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "IRB",
+      "high_risk_reasons": [],
+      "is_alias": true,
+      "original": "irb",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260525_0858_lab_sync/260525_0858_lab_sync_raw.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "FDA",
+      "high_risk_reasons": [],
+      "is_alias": true,
+      "original": "fda",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260525_0858_lab_sync/260525_0858_lab_sync_raw.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "KPI",
+      "high_risk_reasons": [],
+      "is_alias": false,
+      "original": "kpi",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260525_0858_lab_sync/260525_0858_lab_sync_raw.txt"
+    },
+    {
+      "accepted": true,
+      "category": "organizations",
+      "corrected": "InnoVEX",
+      "high_risk_reasons": [],
+      "is_alias": false,
+      "original": "inovex",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 92.31,
+      "source_transcript": "260525_0858_lab_sync/260525_0858_lab_sync_raw.txt"
+    },
+    {
+      "accepted": true,
+      "category": "organizations",
+      "corrected": "InnoVEX",
+      "high_risk_reasons": [],
+      "is_alias": false,
+      "original": "inovex",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 92.31,
+      "source_transcript": "260525_0858_lab_sync/260525_0858_lab_sync_raw.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "KPI",
+      "high_risk_reasons": [],
+      "is_alias": false,
+      "original": "kpi",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260525_0858_lab_sync/260525_0858_lab_sync_raw.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "AVM",
+      "high_risk_reasons": [],
+      "is_alias": false,
+      "original": "avm",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260525_0858_lab_sync/transcript_260525_0858_lab_sync_final.txt"
+    },
+    {
+      "accepted": true,
+      "category": "organizations",
+      "corrected": "InnoVEX",
+      "high_risk_reasons": [],
+      "is_alias": false,
+      "original": "innovex",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260525_0858_lab_sync/transcript_260525_0858_lab_sync_final.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "TFDA",
+      "high_risk_reasons": [],
+      "is_alias": true,
+      "original": "tfda",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260525_0858_lab_sync/transcript_260525_0858_lab_sync_final.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "TFDA",
+      "high_risk_reasons": [],
+      "is_alias": true,
+      "original": "tfda",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260525_0858_lab_sync/transcript_260525_0858_lab_sync_final.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "FDA",
+      "high_risk_reasons": [],
+      "is_alias": true,
+      "original": "fda",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260525_0858_lab_sync/transcript_260525_0858_lab_sync_final.txt"
+    },
+    {
+      "accepted": true,
+      "category": "people",
+      "corrected": "Jason",
+      "high_risk_reasons": [
+        "people"
+      ],
+      "is_alias": false,
+      "original": "jason",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260525_0858_lab_sync/transcript_260525_0858_lab_sync_final.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "KPI",
+      "high_risk_reasons": [],
+      "is_alias": false,
+      "original": "kpi",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260525_0858_lab_sync/transcript_260525_0858_lab_sync_final.txt"
+    },
+    {
+      "accepted": true,
+      "category": "people",
+      "corrected": "Jason",
+      "high_risk_reasons": [
+        "people"
+      ],
+      "is_alias": false,
+      "original": "jason",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260525_0858_lab_sync/transcript_260525_0858_lab_sync_final.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "KPI",
+      "high_risk_reasons": [],
+      "is_alias": false,
+      "original": "kpi",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260525_0858_lab_sync/transcript_260525_0858_lab_sync_final.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "FDA",
+      "high_risk_reasons": [],
+      "is_alias": true,
+      "original": "fda",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260525_0858_lab_sync/transcript_260525_0858_lab_sync_final.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "FDA",
+      "high_risk_reasons": [],
+      "is_alias": true,
+      "original": "fda",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260525_0858_lab_sync/transcript_260525_0858_lab_sync_final.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "FDA",
+      "high_risk_reasons": [],
+      "is_alias": true,
+      "original": "fda",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260525_0858_lab_sync/transcript_260525_0858_lab_sync_final.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "FDA",
+      "high_risk_reasons": [],
+      "is_alias": true,
+      "original": "fda",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260525_0858_lab_sync/transcript_260525_0858_lab_sync_final.txt"
+    },
+    {
+      "accepted": true,
+      "category": "organizations",
+      "corrected": "InnoVEX",
+      "high_risk_reasons": [],
+      "is_alias": false,
+      "original": "innovex",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260525_0858_lab_sync/transcript_260525_0858_lab_sync_final.txt"
+    },
+    {
+      "accepted": true,
+      "category": "organizations",
+      "corrected": "InnoVEX",
+      "high_risk_reasons": [],
+      "is_alias": false,
+      "original": "innovex",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260525_0858_lab_sync/transcript_260525_0858_lab_sync_final.txt"
+    },
+    {
+      "accepted": true,
+      "category": "organizations",
+      "corrected": "InnoVEX",
+      "high_risk_reasons": [],
+      "is_alias": false,
+      "original": "innovex",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260525_0858_lab_sync/transcript_260525_0858_lab_sync_final.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "KPI",
+      "high_risk_reasons": [],
+      "is_alias": false,
+      "original": "kpi",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260525_0858_lab_sync/transcript_260525_0858_lab_sync_final.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "AVM",
+      "high_risk_reasons": [],
+      "is_alias": false,
+      "original": "avm",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260525_0858_lab_sync/transcript_260525_0858_lab_sync_raw.txt"
+    },
+    {
+      "accepted": true,
+      "category": "organizations",
+      "corrected": "InnoVEX",
+      "high_risk_reasons": [],
+      "is_alias": false,
+      "original": "innovex",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260525_0858_lab_sync/transcript_260525_0858_lab_sync_raw.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "TFDA",
+      "high_risk_reasons": [],
+      "is_alias": true,
+      "original": "tfda",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260525_0858_lab_sync/transcript_260525_0858_lab_sync_raw.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "TFDA",
+      "high_risk_reasons": [],
+      "is_alias": true,
+      "original": "tfda",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260525_0858_lab_sync/transcript_260525_0858_lab_sync_raw.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "FDA",
+      "high_risk_reasons": [],
+      "is_alias": true,
+      "original": "fda",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260525_0858_lab_sync/transcript_260525_0858_lab_sync_raw.txt"
+    },
+    {
+      "accepted": true,
+      "category": "people",
+      "corrected": "Jason",
+      "high_risk_reasons": [
+        "people"
+      ],
+      "is_alias": false,
+      "original": "jason",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260525_0858_lab_sync/transcript_260525_0858_lab_sync_raw.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "KPI",
+      "high_risk_reasons": [],
+      "is_alias": false,
+      "original": "kpi",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260525_0858_lab_sync/transcript_260525_0858_lab_sync_raw.txt"
+    },
+    {
+      "accepted": true,
+      "category": "people",
+      "corrected": "Jason",
+      "high_risk_reasons": [
+        "people"
+      ],
+      "is_alias": false,
+      "original": "jason",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260525_0858_lab_sync/transcript_260525_0858_lab_sync_raw.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "KPI",
+      "high_risk_reasons": [],
+      "is_alias": false,
+      "original": "kpi",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260525_0858_lab_sync/transcript_260525_0858_lab_sync_raw.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "FDA",
+      "high_risk_reasons": [],
+      "is_alias": true,
+      "original": "fda",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260525_0858_lab_sync/transcript_260525_0858_lab_sync_raw.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "FDA",
+      "high_risk_reasons": [],
+      "is_alias": true,
+      "original": "fda",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260525_0858_lab_sync/transcript_260525_0858_lab_sync_raw.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "FDA",
+      "high_risk_reasons": [],
+      "is_alias": true,
+      "original": "fda",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260525_0858_lab_sync/transcript_260525_0858_lab_sync_raw.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "FDA",
+      "high_risk_reasons": [],
+      "is_alias": true,
+      "original": "fda",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260525_0858_lab_sync/transcript_260525_0858_lab_sync_raw.txt"
+    },
+    {
+      "accepted": true,
+      "category": "organizations",
+      "corrected": "InnoVEX",
+      "high_risk_reasons": [],
+      "is_alias": false,
+      "original": "innovex",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260525_0858_lab_sync/transcript_260525_0858_lab_sync_raw.txt"
+    },
+    {
+      "accepted": true,
+      "category": "organizations",
+      "corrected": "InnoVEX",
+      "high_risk_reasons": [],
+      "is_alias": false,
+      "original": "innovex",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260525_0858_lab_sync/transcript_260525_0858_lab_sync_raw.txt"
+    },
+    {
+      "accepted": true,
+      "category": "organizations",
+      "corrected": "InnoVEX",
+      "high_risk_reasons": [],
+      "is_alias": false,
+      "original": "innovex",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260525_0858_lab_sync/transcript_260525_0858_lab_sync_raw.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "KPI",
+      "high_risk_reasons": [],
+      "is_alias": false,
+      "original": "kpi",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260525_0858_lab_sync/transcript_260525_0858_lab_sync_raw.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "API",
+      "high_risk_reasons": [],
+      "is_alias": true,
+      "original": "api",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260526_1057_小lin說_一口氣搞清避稅天堂的資本遊戲/transcript_260526_1057_小lin說_一口氣搞清避稅天堂的資本遊戲_final (GPT).txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "API",
+      "high_risk_reasons": [],
+      "is_alias": true,
+      "original": "api",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260526_1057_小lin說_一口氣搞清避稅天堂的資本遊戲/transcript_260526_1057_小lin說_一口氣搞清避稅天堂的資本遊戲_final (gemini).txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "API",
+      "high_risk_reasons": [],
+      "is_alias": true,
+      "original": "api",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260526_1057_小lin說_一口氣搞清避稅天堂的資本遊戲/transcript_260526_1057_小lin說_一口氣搞清避稅天堂的資本遊戲_final.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "API",
+      "high_risk_reasons": [],
+      "is_alias": true,
+      "original": "api",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260526_1057_小lin說_一口氣搞清避稅天堂的資本遊戲/transcript_260526_1057_小lin說_一口氣搞清避稅天堂的資本遊戲_raw.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "Kiosk",
+      "high_risk_reasons": [],
+      "is_alias": true,
+      "original": "kiosk",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260527_1422_record/260527_1422_record_final.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "API",
+      "high_risk_reasons": [],
+      "is_alias": true,
+      "original": "api",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260527_1422_record/260527_1422_record_final.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "Kiosk",
+      "high_risk_reasons": [],
+      "is_alias": true,
+      "original": "kiosk",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260527_1422_record/260527_1422_record_raw.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "API",
+      "high_risk_reasons": [],
+      "is_alias": true,
+      "original": "api",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260527_1422_record/260527_1422_record_raw.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "API",
+      "high_risk_reasons": [],
+      "is_alias": true,
+      "original": "api",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260604_1419_record/transcript_260604_1419_record_final.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "API",
+      "high_risk_reasons": [],
+      "is_alias": true,
+      "original": "api",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260604_1419_record/transcript_260604_1419_record_raw.txt"
+    }
+  ],
+  "alias_accepted_corrections": [
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "FDA",
+      "high_risk_reasons": [],
+      "is_alias": true,
+      "original": "fda",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260416_2157__with_Prof_Wu_Tomi/260416_2157__with_Prof_Wu_Tomi.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "FDA",
+      "high_risk_reasons": [],
+      "is_alias": true,
+      "original": "fda",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260416_2157__with_Prof_Wu_Tomi/260416_2157__with_Prof_Wu_Tomi.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "FDA",
+      "high_risk_reasons": [],
+      "is_alias": true,
+      "original": "fda",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260416_2157__with_Prof_Wu_Tomi/260416_2157__with_Prof_Wu_Tomi.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "FDA",
+      "high_risk_reasons": [],
+      "is_alias": true,
+      "original": "fda",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260416_2157__with_Prof_Wu_Tomi/260416_2157__with_Prof_Wu_Tomi.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "API",
+      "high_risk_reasons": [],
+      "is_alias": true,
+      "original": "api",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260416_2157__with_Prof_Wu_Tomi/260416_2157__with_Prof_Wu_Tomi.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "API",
+      "high_risk_reasons": [],
+      "is_alias": true,
+      "original": "api",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260422_1415_114-2 生成式AI應用系統與工程 W9_1150422/260422_1415_114-2 生成式AI應用系統與工程 W9_1150422.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "API",
+      "high_risk_reasons": [],
+      "is_alias": true,
+      "original": "api",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260422_1415_114-2 生成式AI應用系統與工程 W9_1150422/260422_1415_114-2 生成式AI應用系統與工程 W9_1150422.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "API",
+      "high_risk_reasons": [],
+      "is_alias": true,
+      "original": "api",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260422_1415_114-2 生成式AI應用系統與工程 W9_1150422/260422_1415_114-2 生成式AI應用系統與工程 W9_1150422.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "Kiosk",
+      "high_risk_reasons": [],
+      "is_alias": true,
+      "original": "kiosk",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260512_1302_record/260512_1302_record (minute).txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "Kiosk",
+      "high_risk_reasons": [],
+      "is_alias": true,
+      "original": "kiosk",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260512_1302_record/260512_1302_record.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "510(k)",
+      "high_risk_reasons": [
+        "number"
+      ],
+      "is_alias": true,
+      "original": "510k",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260512_2224_record/260512_2224_record.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "Kiosk",
+      "high_risk_reasons": [],
+      "is_alias": true,
+      "original": "kiosk",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260515_1259_kioskDiscussion/260515_1259_kioskDiscussion.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "Kiosk",
+      "high_risk_reasons": [],
+      "is_alias": true,
+      "original": "kiosk",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260515_1259_kioskDiscussion/260515_1259_kioskDiscussion.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "Kiosk",
+      "high_risk_reasons": [],
+      "is_alias": true,
+      "original": "kiosk",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260515_1259_kioskDiscussion/260515_1259_kioskDiscussion.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "Kiosk",
+      "high_risk_reasons": [],
+      "is_alias": true,
+      "original": "kiosk",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260515_1259_kioskDiscussion/260515_1259_kioskDiscussion.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "Kiosk",
+      "high_risk_reasons": [],
+      "is_alias": true,
+      "original": "kiosk",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260515_1259_kioskDiscussion/transcript_260515_1259_kioskDiscussion.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "Kiosk",
+      "high_risk_reasons": [],
+      "is_alias": true,
+      "original": "kiosk",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260515_1259_kioskDiscussion/transcript_260515_1259_kioskDiscussion.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "Kiosk",
+      "high_risk_reasons": [],
+      "is_alias": true,
+      "original": "kiosk",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260515_1259_kioskDiscussion/transcript_260515_1259_kioskDiscussion.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "Kiosk",
+      "high_risk_reasons": [],
+      "is_alias": true,
+      "original": "kiosk",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260515_1259_kioskDiscussion/transcript_260515_1259_kioskDiscussion.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "Kiosk",
+      "high_risk_reasons": [],
+      "is_alias": true,
+      "original": "kiosk",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260515_1259_kioskDiscussion/transcript_260515_1259_kioskDiscussion.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "Kiosk",
+      "high_risk_reasons": [],
+      "is_alias": true,
+      "original": "kiosk",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260515_1259_kioskDiscussion/transcript_260515_1259_kioskDiscussion.txt"
+    },
+    {
+      "accepted": true,
+      "category": "organizations",
+      "corrected": "智德萬",
+      "high_risk_reasons": [],
+      "is_alias": true,
+      "original": "志德灣",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260518_0902_lab_sync/260518_0902_lab_sync.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "TFDA",
+      "high_risk_reasons": [],
+      "is_alias": true,
+      "original": "tfda",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260518_0902_lab_sync/transcript_260518_0902_lab_sync.txt"
+    },
+    {
+      "accepted": true,
+      "category": "organizations",
+      "corrected": "智德萬",
+      "high_risk_reasons": [],
+      "is_alias": true,
+      "original": "志德灣",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260518_0902_lab_sync/transcript_260518_0902_lab_sync.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "510(k)",
+      "high_risk_reasons": [
+        "number"
+      ],
+      "is_alias": true,
+      "original": "510k",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260518_0902_lab_sync/transcript_260518_0902_lab_sync.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "TFDA",
+      "high_risk_reasons": [],
+      "is_alias": true,
+      "original": "tfda",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260518_0902_lab_sync/transcript_260518_0902_lab_sync.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "IRB",
+      "high_risk_reasons": [],
+      "is_alias": true,
+      "original": "irb",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260518_0902_lab_sync/transcript_260518_0902_lab_sync.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "IRB",
+      "high_risk_reasons": [],
+      "is_alias": true,
+      "original": "irb",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260518_0902_lab_sync/transcript_260518_0902_lab_sync.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "TFDA",
+      "high_risk_reasons": [],
+      "is_alias": true,
+      "original": "tfda",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260518_0902_lab_sync/transcript_260518_0902_lab_sync.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "TFDA",
+      "high_risk_reasons": [],
+      "is_alias": true,
+      "original": "tfda",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260518_0902_lab_sync/transcript_260518_0902_lab_sync.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "TFDA",
+      "high_risk_reasons": [],
+      "is_alias": true,
+      "original": "tfda",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260518_0902_lab_sync/transcript_260518_0902_lab_sync.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "API",
+      "high_risk_reasons": [],
+      "is_alias": true,
+      "original": "api",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260518_0902_lab_sync/transcript_260518_0902_lab_sync.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "IRB",
+      "high_risk_reasons": [],
+      "is_alias": true,
+      "original": "irb",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260525_0858_lab_sync/260525_0858_lab_sync_final.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "IRB",
+      "high_risk_reasons": [],
+      "is_alias": true,
+      "original": "irb",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260525_0858_lab_sync/260525_0858_lab_sync_final.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "FDA",
+      "high_risk_reasons": [],
+      "is_alias": true,
+      "original": "fda",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260525_0858_lab_sync/260525_0858_lab_sync_final.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "IRB",
+      "high_risk_reasons": [],
+      "is_alias": true,
+      "original": "irb",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260525_0858_lab_sync/260525_0858_lab_sync_raw.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "IRB",
+      "high_risk_reasons": [],
+      "is_alias": true,
+      "original": "irb",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260525_0858_lab_sync/260525_0858_lab_sync_raw.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "FDA",
+      "high_risk_reasons": [],
+      "is_alias": true,
+      "original": "fda",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260525_0858_lab_sync/260525_0858_lab_sync_raw.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "TFDA",
+      "high_risk_reasons": [],
+      "is_alias": true,
+      "original": "tfda",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260525_0858_lab_sync/transcript_260525_0858_lab_sync_final.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "TFDA",
+      "high_risk_reasons": [],
+      "is_alias": true,
+      "original": "tfda",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260525_0858_lab_sync/transcript_260525_0858_lab_sync_final.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "FDA",
+      "high_risk_reasons": [],
+      "is_alias": true,
+      "original": "fda",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260525_0858_lab_sync/transcript_260525_0858_lab_sync_final.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "FDA",
+      "high_risk_reasons": [],
+      "is_alias": true,
+      "original": "fda",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260525_0858_lab_sync/transcript_260525_0858_lab_sync_final.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "FDA",
+      "high_risk_reasons": [],
+      "is_alias": true,
+      "original": "fda",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260525_0858_lab_sync/transcript_260525_0858_lab_sync_final.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "FDA",
+      "high_risk_reasons": [],
+      "is_alias": true,
+      "original": "fda",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260525_0858_lab_sync/transcript_260525_0858_lab_sync_final.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "FDA",
+      "high_risk_reasons": [],
+      "is_alias": true,
+      "original": "fda",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260525_0858_lab_sync/transcript_260525_0858_lab_sync_final.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "TFDA",
+      "high_risk_reasons": [],
+      "is_alias": true,
+      "original": "tfda",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260525_0858_lab_sync/transcript_260525_0858_lab_sync_raw.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "TFDA",
+      "high_risk_reasons": [],
+      "is_alias": true,
+      "original": "tfda",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260525_0858_lab_sync/transcript_260525_0858_lab_sync_raw.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "FDA",
+      "high_risk_reasons": [],
+      "is_alias": true,
+      "original": "fda",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260525_0858_lab_sync/transcript_260525_0858_lab_sync_raw.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "FDA",
+      "high_risk_reasons": [],
+      "is_alias": true,
+      "original": "fda",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260525_0858_lab_sync/transcript_260525_0858_lab_sync_raw.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "FDA",
+      "high_risk_reasons": [],
+      "is_alias": true,
+      "original": "fda",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260525_0858_lab_sync/transcript_260525_0858_lab_sync_raw.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "FDA",
+      "high_risk_reasons": [],
+      "is_alias": true,
+      "original": "fda",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260525_0858_lab_sync/transcript_260525_0858_lab_sync_raw.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "FDA",
+      "high_risk_reasons": [],
+      "is_alias": true,
+      "original": "fda",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260525_0858_lab_sync/transcript_260525_0858_lab_sync_raw.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "API",
+      "high_risk_reasons": [],
+      "is_alias": true,
+      "original": "api",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260526_1057_小lin說_一口氣搞清避稅天堂的資本遊戲/transcript_260526_1057_小lin說_一口氣搞清避稅天堂的資本遊戲_final (GPT).txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "API",
+      "high_risk_reasons": [],
+      "is_alias": true,
+      "original": "api",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260526_1057_小lin說_一口氣搞清避稅天堂的資本遊戲/transcript_260526_1057_小lin說_一口氣搞清避稅天堂的資本遊戲_final (gemini).txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "API",
+      "high_risk_reasons": [],
+      "is_alias": true,
+      "original": "api",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260526_1057_小lin說_一口氣搞清避稅天堂的資本遊戲/transcript_260526_1057_小lin說_一口氣搞清避稅天堂的資本遊戲_final.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "API",
+      "high_risk_reasons": [],
+      "is_alias": true,
+      "original": "api",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260526_1057_小lin說_一口氣搞清避稅天堂的資本遊戲/transcript_260526_1057_小lin說_一口氣搞清避稅天堂的資本遊戲_raw.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "Kiosk",
+      "high_risk_reasons": [],
+      "is_alias": true,
+      "original": "kiosk",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260527_1422_record/260527_1422_record_final.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "API",
+      "high_risk_reasons": [],
+      "is_alias": true,
+      "original": "api",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260527_1422_record/260527_1422_record_final.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "Kiosk",
+      "high_risk_reasons": [],
+      "is_alias": true,
+      "original": "kiosk",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260527_1422_record/260527_1422_record_raw.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "API",
+      "high_risk_reasons": [],
+      "is_alias": true,
+      "original": "api",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260527_1422_record/260527_1422_record_raw.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "API",
+      "high_risk_reasons": [],
+      "is_alias": true,
+      "original": "api",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260604_1419_record/transcript_260604_1419_record_final.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "API",
+      "high_risk_reasons": [],
+      "is_alias": true,
+      "original": "api",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260604_1419_record/transcript_260604_1419_record_raw.txt"
+    }
+  ],
+  "category_counts": {
+    "aliases": 62,
+    "medical_terms": 1,
+    "organizations": 15,
+    "people": 11,
+    "technical_terms": 147
+  },
+  "chinese_score_85_to_90_accepted": [],
+  "denylist_rejections": [
+    {
+      "accepted": false,
+      "category": "organizations",
+      "corrected": "國立陽明交通大學",
+      "high_risk_reasons": [],
+      "is_alias": true,
+      "original": "陽明交大",
+      "review_reason": "valid_abbreviation_normalization_only",
+      "review_status": "denylist",
+      "score": 100.0,
+      "source_transcript": "260416_2157__with_Prof_Wu_Tomi/260416_2157__with_Prof_Wu_Tomi (GPT).txt"
+    },
+    {
+      "accepted": false,
+      "category": "organizations",
+      "corrected": "國立陽明交通大學",
+      "high_risk_reasons": [],
+      "is_alias": true,
+      "original": "陽明交大",
+      "review_reason": "valid_abbreviation_normalization_only",
+      "review_status": "denylist",
+      "score": 100.0,
+      "source_transcript": "260416_2157__with_Prof_Wu_Tomi/260416_2157__with_Prof_Wu_Tomi (GPT).txt"
+    },
+    {
+      "accepted": false,
+      "category": "organizations",
+      "corrected": "智慧財產局",
+      "high_risk_reasons": [],
+      "is_alias": false,
+      "original": "智慧財產",
+      "review_reason": "original_valid_term_adds_institution",
+      "review_status": "denylist",
+      "score": 88.89,
+      "source_transcript": "260416_2157__with_Prof_Wu_Tomi/260416_2157__with_Prof_Wu_Tomi.txt"
+    },
+    {
+      "accepted": false,
+      "category": "organizations",
+      "corrected": "國立陽明交通大學",
+      "high_risk_reasons": [],
+      "is_alias": true,
+      "original": "陽明交大",
+      "review_reason": "valid_abbreviation_normalization_only",
+      "review_status": "denylist",
+      "score": 100.0,
+      "source_transcript": "260519_1042_record/260519_1042_record_raw (gemini).txt"
+    },
+    {
+      "accepted": false,
+      "category": "organizations",
+      "corrected": "InnoVEX",
+      "high_risk_reasons": [],
+      "is_alias": false,
+      "original": "innoVAX",
+      "review_reason": "possible_distinct_entity",
+      "review_status": "denylist",
+      "score": 85.71,
+      "source_transcript": "260525_0858_lab_sync/260525_0858_lab_sync_final.txt"
+    },
+    {
+      "accepted": false,
+      "category": "technical_terms",
+      "corrected": "Detector+",
+      "high_risk_reasons": [],
+      "is_alias": false,
+      "original": "detector",
+      "review_reason": "original_valid_term_adds_product_suffix",
+      "review_status": "denylist",
+      "score": 94.12,
+      "source_transcript": "260525_0858_lab_sync/260525_0858_lab_sync_final.txt"
+    },
+    {
+      "accepted": false,
+      "category": "technical_terms",
+      "corrected": "Detector+",
+      "high_risk_reasons": [],
+      "is_alias": false,
+      "original": "detector",
+      "review_reason": "original_valid_term_adds_product_suffix",
+      "review_status": "denylist",
+      "score": 94.12,
+      "source_transcript": "260525_0858_lab_sync/260525_0858_lab_sync_final.txt"
+    },
+    {
+      "accepted": false,
+      "category": "technical_terms",
+      "corrected": "Detector+",
+      "high_risk_reasons": [],
+      "is_alias": false,
+      "original": "detector",
+      "review_reason": "original_valid_term_adds_product_suffix",
+      "review_status": "denylist",
+      "score": 94.12,
+      "source_transcript": "260525_0858_lab_sync/260525_0858_lab_sync_final.txt"
+    },
+    {
+      "accepted": false,
+      "category": "organizations",
+      "corrected": "InnoVEX",
+      "high_risk_reasons": [],
+      "is_alias": false,
+      "original": "innoVAX",
+      "review_reason": "possible_distinct_entity",
+      "review_status": "denylist",
+      "score": 85.71,
+      "source_transcript": "260525_0858_lab_sync/260525_0858_lab_sync_raw.txt"
+    },
+    {
+      "accepted": false,
+      "category": "technical_terms",
+      "corrected": "Detector+",
+      "high_risk_reasons": [],
+      "is_alias": false,
+      "original": "detector",
+      "review_reason": "original_valid_term_adds_product_suffix",
+      "review_status": "denylist",
+      "score": 94.12,
+      "source_transcript": "260525_0858_lab_sync/260525_0858_lab_sync_raw.txt"
+    },
+    {
+      "accepted": false,
+      "category": "technical_terms",
+      "corrected": "Detector+",
+      "high_risk_reasons": [],
+      "is_alias": false,
+      "original": "detector",
+      "review_reason": "original_valid_term_adds_product_suffix",
+      "review_status": "denylist",
+      "score": 94.12,
+      "source_transcript": "260525_0858_lab_sync/260525_0858_lab_sync_raw.txt"
+    },
+    {
+      "accepted": false,
+      "category": "technical_terms",
+      "corrected": "Detector+",
+      "high_risk_reasons": [],
+      "is_alias": false,
+      "original": "detector",
+      "review_reason": "original_valid_term_adds_product_suffix",
+      "review_status": "denylist",
+      "score": 94.12,
+      "source_transcript": "260525_0858_lab_sync/260525_0858_lab_sync_raw.txt"
+    },
+    {
+      "accepted": false,
+      "category": "technical_terms",
+      "corrected": "Detector+",
+      "high_risk_reasons": [],
+      "is_alias": false,
+      "original": "detector",
+      "review_reason": "original_valid_term_adds_product_suffix",
+      "review_status": "denylist",
+      "score": 94.12,
+      "source_transcript": "260525_0858_lab_sync/transcript_260525_0858_lab_sync_final.txt"
+    },
+    {
+      "accepted": false,
+      "category": "technical_terms",
+      "corrected": "Detector+",
+      "high_risk_reasons": [],
+      "is_alias": false,
+      "original": "detector",
+      "review_reason": "original_valid_term_adds_product_suffix",
+      "review_status": "denylist",
+      "score": 94.12,
+      "source_transcript": "260525_0858_lab_sync/transcript_260525_0858_lab_sync_final.txt"
+    },
+    {
+      "accepted": false,
+      "category": "technical_terms",
+      "corrected": "Detector+",
+      "high_risk_reasons": [],
+      "is_alias": false,
+      "original": "detector",
+      "review_reason": "original_valid_term_adds_product_suffix",
+      "review_status": "denylist",
+      "score": 94.12,
+      "source_transcript": "260525_0858_lab_sync/transcript_260525_0858_lab_sync_final.txt"
+    },
+    {
+      "accepted": false,
+      "category": "technical_terms",
+      "corrected": "Detector+",
+      "high_risk_reasons": [],
+      "is_alias": false,
+      "original": "detector",
+      "review_reason": "original_valid_term_adds_product_suffix",
+      "review_status": "denylist",
+      "score": 94.12,
+      "source_transcript": "260525_0858_lab_sync/transcript_260525_0858_lab_sync_final.txt"
+    },
+    {
+      "accepted": false,
+      "category": "technical_terms",
+      "corrected": "Detector+",
+      "high_risk_reasons": [],
+      "is_alias": false,
+      "original": "detector",
+      "review_reason": "original_valid_term_adds_product_suffix",
+      "review_status": "denylist",
+      "score": 94.12,
+      "source_transcript": "260525_0858_lab_sync/transcript_260525_0858_lab_sync_raw.txt"
+    },
+    {
+      "accepted": false,
+      "category": "technical_terms",
+      "corrected": "Detector+",
+      "high_risk_reasons": [],
+      "is_alias": false,
+      "original": "detector",
+      "review_reason": "original_valid_term_adds_product_suffix",
+      "review_status": "denylist",
+      "score": 94.12,
+      "source_transcript": "260525_0858_lab_sync/transcript_260525_0858_lab_sync_raw.txt"
+    },
+    {
+      "accepted": false,
+      "category": "technical_terms",
+      "corrected": "Detector+",
+      "high_risk_reasons": [],
+      "is_alias": false,
+      "original": "detector",
+      "review_reason": "original_valid_term_adds_product_suffix",
+      "review_status": "denylist",
+      "score": 94.12,
+      "source_transcript": "260525_0858_lab_sync/transcript_260525_0858_lab_sync_raw.txt"
+    },
+    {
+      "accepted": false,
+      "category": "technical_terms",
+      "corrected": "Detector+",
+      "high_risk_reasons": [],
+      "is_alias": false,
+      "original": "detector",
+      "review_reason": "original_valid_term_adds_product_suffix",
+      "review_status": "denylist",
+      "score": 94.12,
+      "source_transcript": "260525_0858_lab_sync/transcript_260525_0858_lab_sync_raw.txt"
+    },
+    {
+      "accepted": false,
+      "category": "organizations",
+      "corrected": "NYCU",
+      "high_risk_reasons": [],
+      "is_alias": false,
+      "original": "nyc",
+      "review_reason": "possible_distinct_acronym",
+      "review_status": "denylist",
+      "score": 85.71,
+      "source_transcript": "260528_0839_record/260528_0839_record_final.txt"
+    },
+    {
+      "accepted": false,
+      "category": "organizations",
+      "corrected": "NYCU",
+      "high_risk_reasons": [],
+      "is_alias": false,
+      "original": "nyc",
+      "review_reason": "possible_distinct_acronym",
+      "review_status": "denylist",
+      "score": 85.71,
+      "source_transcript": "260528_0839_record/260528_0839_record_raw.txt"
+    }
+  ],
+  "high_risk_corrections": [
+    {
+      "accepted": true,
+      "category": "people",
+      "corrected": "Jason",
+      "high_risk_reasons": [
+        "people"
+      ],
+      "is_alias": false,
+      "original": "jason",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260416_2157__with_Prof_Wu_Tomi/260416_2157__with_Prof_Wu_Tomi.txt"
+    },
+    {
+      "accepted": true,
+      "category": "people",
+      "corrected": "Jason",
+      "high_risk_reasons": [
+        "people"
+      ],
+      "is_alias": false,
+      "original": "jason",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260512_1302_record/260512_1302_record (minute).txt"
+    },
+    {
+      "accepted": true,
+      "category": "people",
+      "corrected": "Jason",
+      "high_risk_reasons": [
+        "people"
+      ],
+      "is_alias": false,
+      "original": "jason",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260512_1302_record/260512_1302_record.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "510(k)",
+      "high_risk_reasons": [
+        "number"
+      ],
+      "is_alias": true,
+      "original": "510k",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260512_2224_record/260512_2224_record.txt"
+    },
+    {
+      "accepted": true,
+      "category": "medical_terms",
+      "corrected": "SaMD",
+      "high_risk_reasons": [
+        "medical_terms"
+      ],
+      "is_alias": false,
+      "original": "SAMD",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260518_0902_lab_sync/260518_0902_lab_sync.txt"
+    },
+    {
+      "accepted": true,
+      "category": "people",
+      "corrected": "Jason",
+      "high_risk_reasons": [
+        "people"
+      ],
+      "is_alias": false,
+      "original": "jason",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260518_0902_lab_sync/260518_0902_lab_sync.txt"
+    },
+    {
+      "accepted": true,
+      "category": "people",
+      "corrected": "Jason",
+      "high_risk_reasons": [
+        "people"
+      ],
+      "is_alias": false,
+      "original": "jason",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260518_0902_lab_sync/260518_0902_lab_sync.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "510(k)",
+      "high_risk_reasons": [
+        "number"
+      ],
+      "is_alias": true,
+      "original": "510k",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260518_0902_lab_sync/transcript_260518_0902_lab_sync.txt"
+    },
+    {
+      "accepted": true,
+      "category": "people",
+      "corrected": "Jason",
+      "high_risk_reasons": [
+        "people"
+      ],
+      "is_alias": false,
+      "original": "jason",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260518_0902_lab_sync/transcript_260518_0902_lab_sync.txt"
+    },
+    {
+      "accepted": true,
+      "category": "people",
+      "corrected": "Jason",
+      "high_risk_reasons": [
+        "people"
+      ],
+      "is_alias": false,
+      "original": "jason",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260518_0902_lab_sync/transcript_260518_0902_lab_sync.txt"
+    },
+    {
+      "accepted": true,
+      "category": "people",
+      "corrected": "Jason",
+      "high_risk_reasons": [
+        "people"
+      ],
+      "is_alias": false,
+      "original": "jason",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260525_0858_lab_sync/transcript_260525_0858_lab_sync_final.txt"
+    },
+    {
+      "accepted": true,
+      "category": "people",
+      "corrected": "Jason",
+      "high_risk_reasons": [
+        "people"
+      ],
+      "is_alias": false,
+      "original": "jason",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260525_0858_lab_sync/transcript_260525_0858_lab_sync_final.txt"
+    },
+    {
+      "accepted": true,
+      "category": "people",
+      "corrected": "Jason",
+      "high_risk_reasons": [
+        "people"
+      ],
+      "is_alias": false,
+      "original": "jason",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260525_0858_lab_sync/transcript_260525_0858_lab_sync_raw.txt"
+    },
+    {
+      "accepted": true,
+      "category": "people",
+      "corrected": "Jason",
+      "high_risk_reasons": [
+        "people"
+      ],
+      "is_alias": false,
+      "original": "jason",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260525_0858_lab_sync/transcript_260525_0858_lab_sync_raw.txt"
+    }
+  ],
+  "lowest_score_accepted_30": [
+    {
+      "accepted": true,
+      "category": "organizations",
+      "corrected": "InnoVEX",
+      "high_risk_reasons": [],
+      "is_alias": false,
+      "original": "inovex",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 92.31,
+      "source_transcript": "260525_0858_lab_sync/260525_0858_lab_sync_final.txt"
+    },
+    {
+      "accepted": true,
+      "category": "organizations",
+      "corrected": "InnoVEX",
+      "high_risk_reasons": [],
+      "is_alias": false,
+      "original": "inovex",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 92.31,
+      "source_transcript": "260525_0858_lab_sync/260525_0858_lab_sync_final.txt"
+    },
+    {
+      "accepted": true,
+      "category": "organizations",
+      "corrected": "InnoVEX",
+      "high_risk_reasons": [],
+      "is_alias": false,
+      "original": "inovex",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 92.31,
+      "source_transcript": "260525_0858_lab_sync/260525_0858_lab_sync_raw.txt"
+    },
+    {
+      "accepted": true,
+      "category": "organizations",
+      "corrected": "InnoVEX",
+      "high_risk_reasons": [],
+      "is_alias": false,
+      "original": "inovex",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 92.31,
+      "source_transcript": "260525_0858_lab_sync/260525_0858_lab_sync_raw.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "API",
+      "high_risk_reasons": [],
+      "is_alias": true,
+      "original": "api",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260416_2157__with_Prof_Wu_Tomi/260416_2157__with_Prof_Wu_Tomi.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "FDA",
+      "high_risk_reasons": [],
+      "is_alias": true,
+      "original": "fda",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260416_2157__with_Prof_Wu_Tomi/260416_2157__with_Prof_Wu_Tomi.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "FDA",
+      "high_risk_reasons": [],
+      "is_alias": true,
+      "original": "fda",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260416_2157__with_Prof_Wu_Tomi/260416_2157__with_Prof_Wu_Tomi.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "FDA",
+      "high_risk_reasons": [],
+      "is_alias": true,
+      "original": "fda",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260416_2157__with_Prof_Wu_Tomi/260416_2157__with_Prof_Wu_Tomi.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "FDA",
+      "high_risk_reasons": [],
+      "is_alias": true,
+      "original": "fda",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260416_2157__with_Prof_Wu_Tomi/260416_2157__with_Prof_Wu_Tomi.txt"
+    },
+    {
+      "accepted": true,
+      "category": "people",
+      "corrected": "Jason",
+      "high_risk_reasons": [
+        "people"
+      ],
+      "is_alias": false,
+      "original": "jason",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260416_2157__with_Prof_Wu_Tomi/260416_2157__with_Prof_Wu_Tomi.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "Liger",
+      "high_risk_reasons": [],
+      "is_alias": false,
+      "original": "liger",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260416_2157__with_Prof_Wu_Tomi/260416_2157__with_Prof_Wu_Tomi.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "API",
+      "high_risk_reasons": [],
+      "is_alias": true,
+      "original": "api",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260422_1415_114-2 生成式AI應用系統與工程 W9_1150422/260422_1415_114-2 生成式AI應用系統與工程 W9_1150422.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "API",
+      "high_risk_reasons": [],
+      "is_alias": true,
+      "original": "api",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260422_1415_114-2 生成式AI應用系統與工程 W9_1150422/260422_1415_114-2 生成式AI應用系統與工程 W9_1150422.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "API",
+      "high_risk_reasons": [],
+      "is_alias": true,
+      "original": "api",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260422_1415_114-2 生成式AI應用系統與工程 W9_1150422/260422_1415_114-2 生成式AI應用系統與工程 W9_1150422.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "LLM",
+      "high_risk_reasons": [],
+      "is_alias": false,
+      "original": "llm",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260422_1415_114-2 生成式AI應用系統與工程 W9_1150422/260422_1415_114-2 生成式AI應用系統與工程 W9_1150422.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "LLM",
+      "high_risk_reasons": [],
+      "is_alias": false,
+      "original": "llm",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260422_1415_114-2 生成式AI應用系統與工程 W9_1150422/260422_1415_114-2 生成式AI應用系統與工程 W9_1150422.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "LLM",
+      "high_risk_reasons": [],
+      "is_alias": false,
+      "original": "llm",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260422_1415_114-2 生成式AI應用系統與工程 W9_1150422/260422_1415_114-2 生成式AI應用系統與工程 W9_1150422.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "LLM",
+      "high_risk_reasons": [],
+      "is_alias": false,
+      "original": "llm",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260422_1415_114-2 生成式AI應用系統與工程 W9_1150422/260422_1415_114-2 生成式AI應用系統與工程 W9_1150422.txt"
+    },
+    {
+      "accepted": true,
+      "category": "organizations",
+      "corrected": "NVIDIA",
+      "high_risk_reasons": [],
+      "is_alias": false,
+      "original": "nvidia",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260422_1415_114-2 生成式AI應用系統與工程 W9_1150422/260422_1415_114-2 生成式AI應用系統與工程 W9_1150422.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "GPU",
+      "high_risk_reasons": [],
+      "is_alias": false,
+      "original": "gpu",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260512_1302_record/260512_1302_record (minute).txt"
+    },
+    {
+      "accepted": true,
+      "category": "people",
+      "corrected": "Jason",
+      "high_risk_reasons": [
+        "people"
+      ],
+      "is_alias": false,
+      "original": "jason",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260512_1302_record/260512_1302_record (minute).txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "Kiosk",
+      "high_risk_reasons": [],
+      "is_alias": true,
+      "original": "kiosk",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260512_1302_record/260512_1302_record (minute).txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "LLM",
+      "high_risk_reasons": [],
+      "is_alias": false,
+      "original": "llm",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260512_1302_record/260512_1302_record (minute).txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "GPU",
+      "high_risk_reasons": [],
+      "is_alias": false,
+      "original": "gpu",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260512_1302_record/260512_1302_record.txt"
+    },
+    {
+      "accepted": true,
+      "category": "people",
+      "corrected": "Jason",
+      "high_risk_reasons": [
+        "people"
+      ],
+      "is_alias": false,
+      "original": "jason",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260512_1302_record/260512_1302_record.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "Kiosk",
+      "high_risk_reasons": [],
+      "is_alias": true,
+      "original": "kiosk",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260512_1302_record/260512_1302_record.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "LLM",
+      "high_risk_reasons": [],
+      "is_alias": false,
+      "original": "llm",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260512_1302_record/260512_1302_record.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "510(k)",
+      "high_risk_reasons": [
+        "number"
+      ],
+      "is_alias": true,
+      "original": "510k",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260512_2224_record/260512_2224_record.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "Kiosk",
+      "high_risk_reasons": [],
+      "is_alias": true,
+      "original": "kiosk",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260515_1259_kioskDiscussion/260515_1259_kioskDiscussion.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "Kiosk",
+      "high_risk_reasons": [],
+      "is_alias": true,
+      "original": "kiosk",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260515_1259_kioskDiscussion/260515_1259_kioskDiscussion.txt"
+    }
+  ],
+  "manual_review_required": [
+    {
+      "accepted": false,
+      "category": "technical_terms",
+      "corrected": "510(k)",
+      "high_risk_reasons": [
+        "number"
+      ],
+      "is_alias": true,
+      "original": "5.0k",
+      "review_reason": "regulatory_numeric_context_required",
+      "review_status": "manual_review_required",
+      "score": 100.0,
+      "source_transcript": "260512_2224_record/260512_2224_record.txt"
+    },
+    {
+      "accepted": false,
+      "category": "technical_terms",
+      "corrected": "510(k)",
+      "high_risk_reasons": [
+        "number"
+      ],
+      "is_alias": true,
+      "original": "5.0k",
+      "review_reason": "regulatory_numeric_context_required",
+      "review_status": "manual_review_required",
+      "score": 100.0,
+      "source_transcript": "260512_2224_record/260512_2224_record.txt"
+    },
+    {
+      "accepted": false,
+      "category": "technical_terms",
+      "corrected": "510(k)",
+      "high_risk_reasons": [
+        "number"
+      ],
+      "is_alias": true,
+      "original": "5.0k",
+      "review_reason": "regulatory_numeric_context_required",
+      "review_status": "manual_review_required",
+      "score": 100.0,
+      "source_transcript": "260512_2224_record/260512_2224_record.txt"
+    },
+    {
+      "accepted": false,
+      "category": "organizations",
+      "corrected": "陽明醫院",
+      "high_risk_reasons": [],
+      "is_alias": false,
+      "original": "陽明院",
+      "review_reason": "context_required",
+      "review_status": "manual_review_required",
+      "score": 85.71,
+      "source_transcript": "260518_0902_lab_sync/260518_0902_lab_sync.txt"
+    },
+    {
+      "accepted": false,
+      "category": "organizations",
+      "corrected": "信義院外門診部",
+      "high_risk_reasons": [],
+      "is_alias": false,
+      "original": "個信義院外門診",
+      "review_reason": "context_required",
+      "review_status": "manual_review_required",
+      "score": 85.71,
+      "source_transcript": "260519_1042_record/260519_1042_record_raw (gemini).txt"
+    },
+    {
+      "accepted": false,
+      "category": "organizations",
+      "corrected": "信義院外門診部",
+      "high_risk_reasons": [],
+      "is_alias": false,
+      "original": "信義的院外門診部",
+      "review_reason": "context_required",
+      "review_status": "manual_review_required",
+      "score": 93.33,
+      "source_transcript": "260519_1042_record/260519_1042_record_raw (gemini).txt"
+    },
+    {
+      "accepted": false,
+      "category": "people",
+      "corrected": "Max",
+      "high_risk_reasons": [
+        "people"
+      ],
+      "is_alias": false,
+      "original": "max",
+      "review_reason": "person_name_or_common_word_context_required",
+      "review_status": "manual_review_required",
+      "score": 100.0,
+      "source_transcript": "260520_1606_114-2 生成式AI應用系統與工程 W13_1150520/260520_1606_114-2 生成式AI應用系統與工程 W13_1150520_final.txt"
+    },
+    {
+      "accepted": false,
+      "category": "people",
+      "corrected": "Max",
+      "high_risk_reasons": [
+        "people"
+      ],
+      "is_alias": false,
+      "original": "max",
+      "review_reason": "person_name_or_common_word_context_required",
+      "review_status": "manual_review_required",
+      "score": 100.0,
+      "source_transcript": "260520_1606_114-2 生成式AI應用系統與工程 W13_1150520/260520_1606_114-2 生成式AI應用系統與工程 W13_1150520_final.txt"
+    },
+    {
+      "accepted": false,
+      "category": "people",
+      "corrected": "Max",
+      "high_risk_reasons": [
+        "people"
+      ],
+      "is_alias": false,
+      "original": "max",
+      "review_reason": "person_name_or_common_word_context_required",
+      "review_status": "manual_review_required",
+      "score": 100.0,
+      "source_transcript": "260520_1606_114-2 生成式AI應用系統與工程 W13_1150520/260520_1606_114-2 生成式AI應用系統與工程 W13_1150520_raw.txt"
+    },
+    {
+      "accepted": false,
+      "category": "people",
+      "corrected": "Max",
+      "high_risk_reasons": [
+        "people"
+      ],
+      "is_alias": false,
+      "original": "max",
+      "review_reason": "person_name_or_common_word_context_required",
+      "review_status": "manual_review_required",
+      "score": 100.0,
+      "source_transcript": "260520_1606_114-2 生成式AI應用系統與工程 W13_1150520/260520_1606_114-2 生成式AI應用系統與工程 W13_1150520_raw.txt"
+    },
+    {
+      "accepted": false,
+      "category": "people",
+      "corrected": "Max",
+      "high_risk_reasons": [
+        "people"
+      ],
+      "is_alias": false,
+      "original": "max",
+      "review_reason": "person_name_or_common_word_context_required",
+      "review_status": "manual_review_required",
+      "score": 100.0,
+      "source_transcript": "260520_2104_114-2 生成式AI應用系統與工程 W13_1150520/260520_2104_114-2 生成式AI應用系統與工程 W13_1150520_final.txt"
+    },
+    {
+      "accepted": false,
+      "category": "people",
+      "corrected": "Max",
+      "high_risk_reasons": [
+        "people"
+      ],
+      "is_alias": false,
+      "original": "max",
+      "review_reason": "person_name_or_common_word_context_required",
+      "review_status": "manual_review_required",
+      "score": 100.0,
+      "source_transcript": "260520_2104_114-2 生成式AI應用系統與工程 W13_1150520/260520_2104_114-2 生成式AI應用系統與工程 W13_1150520_final.txt"
+    },
+    {
+      "accepted": false,
+      "category": "people",
+      "corrected": "Max",
+      "high_risk_reasons": [
+        "people"
+      ],
+      "is_alias": false,
+      "original": "max",
+      "review_reason": "person_name_or_common_word_context_required",
+      "review_status": "manual_review_required",
+      "score": 100.0,
+      "source_transcript": "260520_2104_114-2 生成式AI應用系統與工程 W13_1150520/260520_2104_114-2 生成式AI應用系統與工程 W13_1150520_raw.txt"
+    },
+    {
+      "accepted": false,
+      "category": "people",
+      "corrected": "Max",
+      "high_risk_reasons": [
+        "people"
+      ],
+      "is_alias": false,
+      "original": "max",
+      "review_reason": "person_name_or_common_word_context_required",
+      "review_status": "manual_review_required",
+      "score": 100.0,
+      "source_transcript": "260520_2104_114-2 生成式AI應用系統與工程 W13_1150520/260520_2104_114-2 生成式AI應用系統與工程 W13_1150520_raw.txt"
+    },
+    {
+      "accepted": false,
+      "category": "people",
+      "corrected": "Max",
+      "high_risk_reasons": [
+        "people"
+      ],
+      "is_alias": false,
+      "original": "max",
+      "review_reason": "person_name_or_common_word_context_required",
+      "review_status": "manual_review_required",
+      "score": 100.0,
+      "source_transcript": "260525_0858_lab_sync/260525_0858_lab_sync_final.txt"
+    },
+    {
+      "accepted": false,
+      "category": "people",
+      "corrected": "Max",
+      "high_risk_reasons": [
+        "people"
+      ],
+      "is_alias": false,
+      "original": "max",
+      "review_reason": "person_name_or_common_word_context_required",
+      "review_status": "manual_review_required",
+      "score": 100.0,
+      "source_transcript": "260525_0858_lab_sync/260525_0858_lab_sync_raw.txt"
+    },
+    {
+      "accepted": false,
+      "category": "people",
+      "corrected": "Max",
+      "high_risk_reasons": [
+        "people"
+      ],
+      "is_alias": false,
+      "original": "max",
+      "review_reason": "person_name_or_common_word_context_required",
+      "review_status": "manual_review_required",
+      "score": 100.0,
+      "source_transcript": "260526_1057_小lin說_一口氣搞清避稅天堂的資本遊戲/transcript_260526_1057_小lin說_一口氣搞清避稅天堂的資本遊戲_final.txt"
+    },
+    {
+      "accepted": false,
+      "category": "people",
+      "corrected": "Max",
+      "high_risk_reasons": [
+        "people"
+      ],
+      "is_alias": false,
+      "original": "max",
+      "review_reason": "person_name_or_common_word_context_required",
+      "review_status": "manual_review_required",
+      "score": 100.0,
+      "source_transcript": "260526_1057_小lin說_一口氣搞清避稅天堂的資本遊戲/transcript_260526_1057_小lin說_一口氣搞清避稅天堂的資本遊戲_raw.txt"
+    },
+    {
+      "accepted": false,
+      "category": "technical_terms",
+      "corrected": "510(k)",
+      "high_risk_reasons": [
+        "number"
+      ],
+      "is_alias": true,
+      "original": "50L510K",
+      "review_reason": "regulatory_numeric_context_required",
+      "review_status": "manual_review_required",
+      "score": 100.0,
+      "source_transcript": "260528_0839_record/260528_0839_record_final.txt"
+    },
+    {
+      "accepted": false,
+      "category": "technical_terms",
+      "corrected": "510(k)",
+      "high_risk_reasons": [
+        "number"
+      ],
+      "is_alias": true,
+      "original": "50L510K",
+      "review_reason": "regulatory_numeric_context_required",
+      "review_status": "manual_review_required",
+      "score": 100.0,
+      "source_transcript": "260528_0839_record/260528_0839_record_raw.txt"
+    }
+  ],
+  "medical_terms_accepted_corrections": [
+    {
+      "accepted": true,
+      "category": "medical_terms",
+      "corrected": "SaMD",
+      "high_risk_reasons": [
+        "medical_terms"
+      ],
+      "is_alias": false,
+      "original": "SAMD",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260518_0902_lab_sync/260518_0902_lab_sync.txt"
+    }
+  ],
+  "people_accepted_corrections": [
+    {
+      "accepted": true,
+      "category": "people",
+      "corrected": "Jason",
+      "high_risk_reasons": [
+        "people"
+      ],
+      "is_alias": false,
+      "original": "jason",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260416_2157__with_Prof_Wu_Tomi/260416_2157__with_Prof_Wu_Tomi.txt"
+    },
+    {
+      "accepted": true,
+      "category": "people",
+      "corrected": "Jason",
+      "high_risk_reasons": [
+        "people"
+      ],
+      "is_alias": false,
+      "original": "jason",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260512_1302_record/260512_1302_record (minute).txt"
+    },
+    {
+      "accepted": true,
+      "category": "people",
+      "corrected": "Jason",
+      "high_risk_reasons": [
+        "people"
+      ],
+      "is_alias": false,
+      "original": "jason",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260512_1302_record/260512_1302_record.txt"
+    },
+    {
+      "accepted": true,
+      "category": "people",
+      "corrected": "Jason",
+      "high_risk_reasons": [
+        "people"
+      ],
+      "is_alias": false,
+      "original": "jason",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260518_0902_lab_sync/260518_0902_lab_sync.txt"
+    },
+    {
+      "accepted": true,
+      "category": "people",
+      "corrected": "Jason",
+      "high_risk_reasons": [
+        "people"
+      ],
+      "is_alias": false,
+      "original": "jason",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260518_0902_lab_sync/260518_0902_lab_sync.txt"
+    },
+    {
+      "accepted": true,
+      "category": "people",
+      "corrected": "Jason",
+      "high_risk_reasons": [
+        "people"
+      ],
+      "is_alias": false,
+      "original": "jason",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260518_0902_lab_sync/transcript_260518_0902_lab_sync.txt"
+    },
+    {
+      "accepted": true,
+      "category": "people",
+      "corrected": "Jason",
+      "high_risk_reasons": [
+        "people"
+      ],
+      "is_alias": false,
+      "original": "jason",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260518_0902_lab_sync/transcript_260518_0902_lab_sync.txt"
+    },
+    {
+      "accepted": true,
+      "category": "people",
+      "corrected": "Jason",
+      "high_risk_reasons": [
+        "people"
+      ],
+      "is_alias": false,
+      "original": "jason",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260525_0858_lab_sync/transcript_260525_0858_lab_sync_final.txt"
+    },
+    {
+      "accepted": true,
+      "category": "people",
+      "corrected": "Jason",
+      "high_risk_reasons": [
+        "people"
+      ],
+      "is_alias": false,
+      "original": "jason",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260525_0858_lab_sync/transcript_260525_0858_lab_sync_final.txt"
+    },
+    {
+      "accepted": true,
+      "category": "people",
+      "corrected": "Jason",
+      "high_risk_reasons": [
+        "people"
+      ],
+      "is_alias": false,
+      "original": "jason",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260525_0858_lab_sync/transcript_260525_0858_lab_sync_raw.txt"
+    },
+    {
+      "accepted": true,
+      "category": "people",
+      "corrected": "Jason",
+      "high_risk_reasons": [
+        "people"
+      ],
+      "is_alias": false,
+      "original": "jason",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260525_0858_lab_sync/transcript_260525_0858_lab_sync_raw.txt"
+    }
+  ],
+  "rejected_candidates": [
+    {
+      "accepted": false,
+      "category": "organizations",
+      "corrected": "國立陽明交通大學",
+      "high_risk_reasons": [],
+      "is_alias": true,
+      "original": "陽明交大",
+      "review_reason": "valid_abbreviation_normalization_only",
+      "review_status": "denylist",
+      "score": 100.0,
+      "source_transcript": "260416_2157__with_Prof_Wu_Tomi/260416_2157__with_Prof_Wu_Tomi (GPT).txt"
+    },
+    {
+      "accepted": false,
+      "category": "organizations",
+      "corrected": "國立陽明交通大學",
+      "high_risk_reasons": [],
+      "is_alias": true,
+      "original": "陽明交大",
+      "review_reason": "valid_abbreviation_normalization_only",
+      "review_status": "denylist",
+      "score": 100.0,
+      "source_transcript": "260416_2157__with_Prof_Wu_Tomi/260416_2157__with_Prof_Wu_Tomi (GPT).txt"
+    },
+    {
+      "accepted": false,
+      "category": "organizations",
+      "corrected": "智慧財產局",
+      "high_risk_reasons": [],
+      "is_alias": false,
+      "original": "智慧財產",
+      "review_reason": "original_valid_term_adds_institution",
+      "review_status": "denylist",
+      "score": 88.89,
+      "source_transcript": "260416_2157__with_Prof_Wu_Tomi/260416_2157__with_Prof_Wu_Tomi.txt"
+    },
+    {
+      "accepted": false,
+      "category": "technical_terms",
+      "corrected": "510(k)",
+      "high_risk_reasons": [
+        "number"
+      ],
+      "is_alias": true,
+      "original": "5.0k",
+      "review_reason": "regulatory_numeric_context_required",
+      "review_status": "manual_review_required",
+      "score": 100.0,
+      "source_transcript": "260512_2224_record/260512_2224_record.txt"
+    },
+    {
+      "accepted": false,
+      "category": "technical_terms",
+      "corrected": "510(k)",
+      "high_risk_reasons": [
+        "number"
+      ],
+      "is_alias": true,
+      "original": "5.0k",
+      "review_reason": "regulatory_numeric_context_required",
+      "review_status": "manual_review_required",
+      "score": 100.0,
+      "source_transcript": "260512_2224_record/260512_2224_record.txt"
+    },
+    {
+      "accepted": false,
+      "category": "technical_terms",
+      "corrected": "510(k)",
+      "high_risk_reasons": [
+        "number"
+      ],
+      "is_alias": true,
+      "original": "5.0k",
+      "review_reason": "regulatory_numeric_context_required",
+      "review_status": "manual_review_required",
+      "score": 100.0,
+      "source_transcript": "260512_2224_record/260512_2224_record.txt"
+    },
+    {
+      "accepted": false,
+      "category": "organizations",
+      "corrected": "陽明醫院",
+      "high_risk_reasons": [],
+      "is_alias": false,
+      "original": "陽明院",
+      "review_reason": "context_required",
+      "review_status": "manual_review_required",
+      "score": 85.71,
+      "source_transcript": "260518_0902_lab_sync/260518_0902_lab_sync.txt"
+    },
+    {
+      "accepted": false,
+      "category": "organizations",
+      "corrected": "信義院外門診部",
+      "high_risk_reasons": [],
+      "is_alias": false,
+      "original": "個信義院外門診",
+      "review_reason": "context_required",
+      "review_status": "manual_review_required",
+      "score": 85.71,
+      "source_transcript": "260519_1042_record/260519_1042_record_raw (gemini).txt"
+    },
+    {
+      "accepted": false,
+      "category": "organizations",
+      "corrected": "信義院外門診部",
+      "high_risk_reasons": [],
+      "is_alias": false,
+      "original": "信義的院外門診部",
+      "review_reason": "context_required",
+      "review_status": "manual_review_required",
+      "score": 93.33,
+      "source_transcript": "260519_1042_record/260519_1042_record_raw (gemini).txt"
+    },
+    {
+      "accepted": false,
+      "category": "organizations",
+      "corrected": "國立陽明交通大學",
+      "high_risk_reasons": [],
+      "is_alias": true,
+      "original": "陽明交大",
+      "review_reason": "valid_abbreviation_normalization_only",
+      "review_status": "denylist",
+      "score": 100.0,
+      "source_transcript": "260519_1042_record/260519_1042_record_raw (gemini).txt"
+    },
+    {
+      "accepted": false,
+      "category": "people",
+      "corrected": "Max",
+      "high_risk_reasons": [
+        "people"
+      ],
+      "is_alias": false,
+      "original": "max",
+      "review_reason": "person_name_or_common_word_context_required",
+      "review_status": "manual_review_required",
+      "score": 100.0,
+      "source_transcript": "260520_1606_114-2 生成式AI應用系統與工程 W13_1150520/260520_1606_114-2 生成式AI應用系統與工程 W13_1150520_final.txt"
+    },
+    {
+      "accepted": false,
+      "category": "people",
+      "corrected": "Max",
+      "high_risk_reasons": [
+        "people"
+      ],
+      "is_alias": false,
+      "original": "max",
+      "review_reason": "person_name_or_common_word_context_required",
+      "review_status": "manual_review_required",
+      "score": 100.0,
+      "source_transcript": "260520_1606_114-2 生成式AI應用系統與工程 W13_1150520/260520_1606_114-2 生成式AI應用系統與工程 W13_1150520_final.txt"
+    },
+    {
+      "accepted": false,
+      "category": "people",
+      "corrected": "Max",
+      "high_risk_reasons": [
+        "people"
+      ],
+      "is_alias": false,
+      "original": "max",
+      "review_reason": "person_name_or_common_word_context_required",
+      "review_status": "manual_review_required",
+      "score": 100.0,
+      "source_transcript": "260520_1606_114-2 生成式AI應用系統與工程 W13_1150520/260520_1606_114-2 生成式AI應用系統與工程 W13_1150520_raw.txt"
+    },
+    {
+      "accepted": false,
+      "category": "people",
+      "corrected": "Max",
+      "high_risk_reasons": [
+        "people"
+      ],
+      "is_alias": false,
+      "original": "max",
+      "review_reason": "person_name_or_common_word_context_required",
+      "review_status": "manual_review_required",
+      "score": 100.0,
+      "source_transcript": "260520_1606_114-2 生成式AI應用系統與工程 W13_1150520/260520_1606_114-2 生成式AI應用系統與工程 W13_1150520_raw.txt"
+    },
+    {
+      "accepted": false,
+      "category": "people",
+      "corrected": "Max",
+      "high_risk_reasons": [
+        "people"
+      ],
+      "is_alias": false,
+      "original": "max",
+      "review_reason": "person_name_or_common_word_context_required",
+      "review_status": "manual_review_required",
+      "score": 100.0,
+      "source_transcript": "260520_2104_114-2 生成式AI應用系統與工程 W13_1150520/260520_2104_114-2 生成式AI應用系統與工程 W13_1150520_final.txt"
+    },
+    {
+      "accepted": false,
+      "category": "people",
+      "corrected": "Max",
+      "high_risk_reasons": [
+        "people"
+      ],
+      "is_alias": false,
+      "original": "max",
+      "review_reason": "person_name_or_common_word_context_required",
+      "review_status": "manual_review_required",
+      "score": 100.0,
+      "source_transcript": "260520_2104_114-2 生成式AI應用系統與工程 W13_1150520/260520_2104_114-2 生成式AI應用系統與工程 W13_1150520_final.txt"
+    },
+    {
+      "accepted": false,
+      "category": "people",
+      "corrected": "Max",
+      "high_risk_reasons": [
+        "people"
+      ],
+      "is_alias": false,
+      "original": "max",
+      "review_reason": "person_name_or_common_word_context_required",
+      "review_status": "manual_review_required",
+      "score": 100.0,
+      "source_transcript": "260520_2104_114-2 生成式AI應用系統與工程 W13_1150520/260520_2104_114-2 生成式AI應用系統與工程 W13_1150520_raw.txt"
+    },
+    {
+      "accepted": false,
+      "category": "people",
+      "corrected": "Max",
+      "high_risk_reasons": [
+        "people"
+      ],
+      "is_alias": false,
+      "original": "max",
+      "review_reason": "person_name_or_common_word_context_required",
+      "review_status": "manual_review_required",
+      "score": 100.0,
+      "source_transcript": "260520_2104_114-2 生成式AI應用系統與工程 W13_1150520/260520_2104_114-2 生成式AI應用系統與工程 W13_1150520_raw.txt"
+    },
+    {
+      "accepted": false,
+      "category": "organizations",
+      "corrected": "InnoVEX",
+      "high_risk_reasons": [],
+      "is_alias": false,
+      "original": "innoVAX",
+      "review_reason": "possible_distinct_entity",
+      "review_status": "denylist",
+      "score": 85.71,
+      "source_transcript": "260525_0858_lab_sync/260525_0858_lab_sync_final.txt"
+    },
+    {
+      "accepted": false,
+      "category": "technical_terms",
+      "corrected": "Detector+",
+      "high_risk_reasons": [],
+      "is_alias": false,
+      "original": "detector",
+      "review_reason": "original_valid_term_adds_product_suffix",
+      "review_status": "denylist",
+      "score": 94.12,
+      "source_transcript": "260525_0858_lab_sync/260525_0858_lab_sync_final.txt"
+    },
+    {
+      "accepted": false,
+      "category": "technical_terms",
+      "corrected": "Detector+",
+      "high_risk_reasons": [],
+      "is_alias": false,
+      "original": "detector",
+      "review_reason": "original_valid_term_adds_product_suffix",
+      "review_status": "denylist",
+      "score": 94.12,
+      "source_transcript": "260525_0858_lab_sync/260525_0858_lab_sync_final.txt"
+    },
+    {
+      "accepted": false,
+      "category": "technical_terms",
+      "corrected": "Detector+",
+      "high_risk_reasons": [],
+      "is_alias": false,
+      "original": "detector",
+      "review_reason": "original_valid_term_adds_product_suffix",
+      "review_status": "denylist",
+      "score": 94.12,
+      "source_transcript": "260525_0858_lab_sync/260525_0858_lab_sync_final.txt"
+    },
+    {
+      "accepted": false,
+      "category": "people",
+      "corrected": "Max",
+      "high_risk_reasons": [
+        "people"
+      ],
+      "is_alias": false,
+      "original": "max",
+      "review_reason": "person_name_or_common_word_context_required",
+      "review_status": "manual_review_required",
+      "score": 100.0,
+      "source_transcript": "260525_0858_lab_sync/260525_0858_lab_sync_final.txt"
+    },
+    {
+      "accepted": false,
+      "category": "organizations",
+      "corrected": "InnoVEX",
+      "high_risk_reasons": [],
+      "is_alias": false,
+      "original": "innoVAX",
+      "review_reason": "possible_distinct_entity",
+      "review_status": "denylist",
+      "score": 85.71,
+      "source_transcript": "260525_0858_lab_sync/260525_0858_lab_sync_raw.txt"
+    },
+    {
+      "accepted": false,
+      "category": "technical_terms",
+      "corrected": "Detector+",
+      "high_risk_reasons": [],
+      "is_alias": false,
+      "original": "detector",
+      "review_reason": "original_valid_term_adds_product_suffix",
+      "review_status": "denylist",
+      "score": 94.12,
+      "source_transcript": "260525_0858_lab_sync/260525_0858_lab_sync_raw.txt"
+    },
+    {
+      "accepted": false,
+      "category": "technical_terms",
+      "corrected": "Detector+",
+      "high_risk_reasons": [],
+      "is_alias": false,
+      "original": "detector",
+      "review_reason": "original_valid_term_adds_product_suffix",
+      "review_status": "denylist",
+      "score": 94.12,
+      "source_transcript": "260525_0858_lab_sync/260525_0858_lab_sync_raw.txt"
+    },
+    {
+      "accepted": false,
+      "category": "technical_terms",
+      "corrected": "Detector+",
+      "high_risk_reasons": [],
+      "is_alias": false,
+      "original": "detector",
+      "review_reason": "original_valid_term_adds_product_suffix",
+      "review_status": "denylist",
+      "score": 94.12,
+      "source_transcript": "260525_0858_lab_sync/260525_0858_lab_sync_raw.txt"
+    },
+    {
+      "accepted": false,
+      "category": "people",
+      "corrected": "Max",
+      "high_risk_reasons": [
+        "people"
+      ],
+      "is_alias": false,
+      "original": "max",
+      "review_reason": "person_name_or_common_word_context_required",
+      "review_status": "manual_review_required",
+      "score": 100.0,
+      "source_transcript": "260525_0858_lab_sync/260525_0858_lab_sync_raw.txt"
+    },
+    {
+      "accepted": false,
+      "category": "technical_terms",
+      "corrected": "Detector+",
+      "high_risk_reasons": [],
+      "is_alias": false,
+      "original": "detector",
+      "review_reason": "original_valid_term_adds_product_suffix",
+      "review_status": "denylist",
+      "score": 94.12,
+      "source_transcript": "260525_0858_lab_sync/transcript_260525_0858_lab_sync_final.txt"
+    },
+    {
+      "accepted": false,
+      "category": "technical_terms",
+      "corrected": "Detector+",
+      "high_risk_reasons": [],
+      "is_alias": false,
+      "original": "detector",
+      "review_reason": "original_valid_term_adds_product_suffix",
+      "review_status": "denylist",
+      "score": 94.12,
+      "source_transcript": "260525_0858_lab_sync/transcript_260525_0858_lab_sync_final.txt"
+    },
+    {
+      "accepted": false,
+      "category": "technical_terms",
+      "corrected": "Detector+",
+      "high_risk_reasons": [],
+      "is_alias": false,
+      "original": "detector",
+      "review_reason": "original_valid_term_adds_product_suffix",
+      "review_status": "denylist",
+      "score": 94.12,
+      "source_transcript": "260525_0858_lab_sync/transcript_260525_0858_lab_sync_final.txt"
+    },
+    {
+      "accepted": false,
+      "category": "technical_terms",
+      "corrected": "Detector+",
+      "high_risk_reasons": [],
+      "is_alias": false,
+      "original": "detector",
+      "review_reason": "original_valid_term_adds_product_suffix",
+      "review_status": "denylist",
+      "score": 94.12,
+      "source_transcript": "260525_0858_lab_sync/transcript_260525_0858_lab_sync_final.txt"
+    },
+    {
+      "accepted": false,
+      "category": "technical_terms",
+      "corrected": "Detector+",
+      "high_risk_reasons": [],
+      "is_alias": false,
+      "original": "detector",
+      "review_reason": "original_valid_term_adds_product_suffix",
+      "review_status": "denylist",
+      "score": 94.12,
+      "source_transcript": "260525_0858_lab_sync/transcript_260525_0858_lab_sync_raw.txt"
+    },
+    {
+      "accepted": false,
+      "category": "technical_terms",
+      "corrected": "Detector+",
+      "high_risk_reasons": [],
+      "is_alias": false,
+      "original": "detector",
+      "review_reason": "original_valid_term_adds_product_suffix",
+      "review_status": "denylist",
+      "score": 94.12,
+      "source_transcript": "260525_0858_lab_sync/transcript_260525_0858_lab_sync_raw.txt"
+    },
+    {
+      "accepted": false,
+      "category": "technical_terms",
+      "corrected": "Detector+",
+      "high_risk_reasons": [],
+      "is_alias": false,
+      "original": "detector",
+      "review_reason": "original_valid_term_adds_product_suffix",
+      "review_status": "denylist",
+      "score": 94.12,
+      "source_transcript": "260525_0858_lab_sync/transcript_260525_0858_lab_sync_raw.txt"
+    },
+    {
+      "accepted": false,
+      "category": "technical_terms",
+      "corrected": "Detector+",
+      "high_risk_reasons": [],
+      "is_alias": false,
+      "original": "detector",
+      "review_reason": "original_valid_term_adds_product_suffix",
+      "review_status": "denylist",
+      "score": 94.12,
+      "source_transcript": "260525_0858_lab_sync/transcript_260525_0858_lab_sync_raw.txt"
+    },
+    {
+      "accepted": false,
+      "category": "people",
+      "corrected": "Max",
+      "high_risk_reasons": [
+        "people"
+      ],
+      "is_alias": false,
+      "original": "max",
+      "review_reason": "person_name_or_common_word_context_required",
+      "review_status": "manual_review_required",
+      "score": 100.0,
+      "source_transcript": "260526_1057_小lin說_一口氣搞清避稅天堂的資本遊戲/transcript_260526_1057_小lin說_一口氣搞清避稅天堂的資本遊戲_final.txt"
+    },
+    {
+      "accepted": false,
+      "category": "people",
+      "corrected": "Max",
+      "high_risk_reasons": [
+        "people"
+      ],
+      "is_alias": false,
+      "original": "max",
+      "review_reason": "person_name_or_common_word_context_required",
+      "review_status": "manual_review_required",
+      "score": 100.0,
+      "source_transcript": "260526_1057_小lin說_一口氣搞清避稅天堂的資本遊戲/transcript_260526_1057_小lin說_一口氣搞清避稅天堂的資本遊戲_raw.txt"
+    },
+    {
+      "accepted": false,
+      "category": "technical_terms",
+      "corrected": "510(k)",
+      "high_risk_reasons": [
+        "number"
+      ],
+      "is_alias": true,
+      "original": "50L510K",
+      "review_reason": "regulatory_numeric_context_required",
+      "review_status": "manual_review_required",
+      "score": 100.0,
+      "source_transcript": "260528_0839_record/260528_0839_record_final.txt"
+    },
+    {
+      "accepted": false,
+      "category": "organizations",
+      "corrected": "NYCU",
+      "high_risk_reasons": [],
+      "is_alias": false,
+      "original": "nyc",
+      "review_reason": "possible_distinct_acronym",
+      "review_status": "denylist",
+      "score": 85.71,
+      "source_transcript": "260528_0839_record/260528_0839_record_final.txt"
+    },
+    {
+      "accepted": false,
+      "category": "technical_terms",
+      "corrected": "510(k)",
+      "high_risk_reasons": [
+        "number"
+      ],
+      "is_alias": true,
+      "original": "50L510K",
+      "review_reason": "regulatory_numeric_context_required",
+      "review_status": "manual_review_required",
+      "score": 100.0,
+      "source_transcript": "260528_0839_record/260528_0839_record_raw.txt"
+    },
+    {
+      "accepted": false,
+      "category": "organizations",
+      "corrected": "NYCU",
+      "high_risk_reasons": [],
+      "is_alias": false,
+      "original": "nyc",
+      "review_reason": "possible_distinct_acronym",
+      "review_status": "denylist",
+      "score": 85.71,
+      "source_transcript": "260528_0839_record/260528_0839_record_raw.txt"
+    }
+  ],
+  "scope": {
+    "correction_log_files_scanned": 42,
+    "generated_correction_log_files": 42,
+    "transcript_files_scanned": 42
+  },
+  "score_distribution": {
+    "100": 170,
+    "85-89.99": 0,
+    "90-94.99": 4,
+    "95-99.99": 0,
+    "<85": 0
+  },
+  "source_transcript_filenames": [
+    "260416_2157__with_Prof_Wu_Tomi/260416_2157__with_Prof_Wu_Tomi (GPT).txt",
+    "260416_2157__with_Prof_Wu_Tomi/260416_2157__with_Prof_Wu_Tomi.txt",
+    "260422_1415_114-2 生成式AI應用系統與工程 W9_1150422/260422_1415_114-2 生成式AI應用系統與工程 W9_1150422.txt",
+    "260512_1302_record/260512_1302_record (minute).txt",
+    "260512_1302_record/260512_1302_record.txt",
+    "260512_2224_record/260512_2224_record.txt",
+    "260515_1259_kioskDiscussion/260515_1259_kioskDiscussion.txt",
+    "260515_1259_kioskDiscussion/transcript_260515_1259_kioskDiscussion.txt",
+    "260515_1358_withManyDiscussion/260515_1358_withManyDiscussion.txt",
+    "260515_1358_withManyDiscussion/transcript_260515_1358_withManyDiscussion.txt",
+    "260518_0902_lab_sync/260518_0902_lab_sync.txt",
+    "260518_0902_lab_sync/transcript_260518_0902_lab_sync.txt",
+    "260519_1042_record/260519_1042_record_final.txt",
+    "260519_1042_record/260519_1042_record_raw (gemini).txt",
+    "260519_1042_record/260519_1042_record_raw.txt",
+    "260520_1606_114-2 生成式AI應用系統與工程 W13_1150520/260520_1606_114-2 生成式AI應用系統與工程 W13_1150520_final.txt",
+    "260520_1606_114-2 生成式AI應用系統與工程 W13_1150520/260520_1606_114-2 生成式AI應用系統與工程 W13_1150520_raw.txt",
+    "260520_2104_114-2 生成式AI應用系統與工程 W13_1150520/260520_2104_114-2 生成式AI應用系統與工程 W13_1150520_final.txt",
+    "260520_2104_114-2 生成式AI應用系統與工程 W13_1150520/260520_2104_114-2 生成式AI應用系統與工程 W13_1150520_raw.txt",
+    "260525_0858_lab_sync/260525_0858_lab_sync_final.txt",
+    "260525_0858_lab_sync/260525_0858_lab_sync_raw.txt",
+    "260525_0858_lab_sync/transcript_260525_0858_lab_sync_final.txt",
+    "260525_0858_lab_sync/transcript_260525_0858_lab_sync_raw.txt",
+    "260526_1057_小lin說_一口氣搞清避稅天堂的資本遊戲/transcript_260526_1057_小lin說_一口氣搞清避稅天堂的資本遊戲_final (GPT).txt",
+    "260526_1057_小lin說_一口氣搞清避稅天堂的資本遊戲/transcript_260526_1057_小lin說_一口氣搞清避稅天堂的資本遊戲_final (gemini).txt",
+    "260526_1057_小lin說_一口氣搞清避稅天堂的資本遊戲/transcript_260526_1057_小lin說_一口氣搞清避稅天堂的資本遊戲_final.txt",
+    "260526_1057_小lin說_一口氣搞清避稅天堂的資本遊戲/transcript_260526_1057_小lin說_一口氣搞清避稅天堂的資本遊戲_raw.txt",
+    "260527_1422_record/260527_1422_record_final.txt",
+    "260527_1422_record/260527_1422_record_raw.txt",
+    "260528_0839_record/260528_0839_record_final.txt",
+    "260528_0839_record/260528_0839_record_raw.txt",
+    "260604_1419_record/transcript_260604_1419_record_final.txt",
+    "260604_1419_record/transcript_260604_1419_record_raw.txt"
+  ],
+  "summary": {
+    "accepted_corrections": 174,
+    "high_risk_manual_review_required": true,
+    "rejected_candidates": 42,
+    "total_corrections": 216
+  },
+  "top_20_changes": [
+    {
+      "category": "technical_terms",
+      "corrected": "CPU",
+      "count": 22,
+      "original": "cpu"
+    },
+    {
+      "category": "technical_terms",
+      "corrected": "FDA",
+      "count": 16,
+      "original": "fda"
+    },
+    {
+      "category": "technical_terms",
+      "corrected": "Kiosk",
+      "count": 14,
+      "original": "kiosk"
+    },
+    {
+      "category": "technical_terms",
+      "corrected": "API",
+      "count": 13,
+      "original": "api"
+    },
+    {
+      "category": "technical_terms",
+      "corrected": "KPI",
+      "count": 12,
+      "original": "kpi"
+    },
+    {
+      "category": "people",
+      "corrected": "Jason",
+      "count": 11,
+      "original": "jason"
+    },
+    {
+      "category": "technical_terms",
+      "corrected": "Spark",
+      "count": 10,
+      "original": "spark"
+    },
+    {
+      "category": "technical_terms",
+      "corrected": "Liger",
+      "count": 9,
+      "original": "liger"
+    },
+    {
+      "category": "technical_terms",
+      "corrected": "GPU",
+      "count": 9,
+      "original": "gpu"
+    },
+    {
+      "category": "technical_terms",
+      "corrected": "TFDA",
+      "count": 9,
+      "original": "tfda"
+    },
+    {
+      "category": "technical_terms",
+      "corrected": "AVM",
+      "count": 8,
+      "original": "avm"
+    },
+    {
+      "category": "organizations",
+      "corrected": "InnoVEX",
+      "count": 8,
+      "original": "innovex"
+    },
+    {
+      "category": "technical_terms",
+      "corrected": "LLM",
+      "count": 6,
+      "original": "llm"
+    },
+    {
+      "category": "technical_terms",
+      "corrected": "IRB",
+      "count": 6,
+      "original": "irb"
+    },
+    {
+      "category": "technical_terms",
+      "corrected": "ASR",
+      "count": 5,
+      "original": "asr"
+    },
+    {
+      "category": "technical_terms",
+      "corrected": "Pelvis",
+      "count": 4,
+      "original": "pelvis"
+    },
+    {
+      "category": "organizations",
+      "corrected": "InnoVEX",
+      "count": 4,
+      "original": "inovex"
+    },
+    {
+      "category": "technical_terms",
+      "corrected": "510(k)",
+      "count": 2,
+      "original": "510k"
+    },
+    {
+      "category": "organizations",
+      "corrected": "智德萬",
+      "count": 2,
+      "original": "志德灣"
+    },
+    {
+      "category": "technical_terms",
+      "corrected": "SQL",
+      "count": 2,
+      "original": "sql"
+    }
+  ],
+  "watch_term_corrections": [
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "510(k)",
+      "high_risk_reasons": [
+        "number"
+      ],
+      "is_alias": true,
+      "original": "510k",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260512_2224_record/260512_2224_record.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "510(k)",
+      "high_risk_reasons": [
+        "number"
+      ],
+      "is_alias": true,
+      "original": "510k",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260518_0902_lab_sync/transcript_260518_0902_lab_sync.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "IRB",
+      "high_risk_reasons": [],
+      "is_alias": true,
+      "original": "irb",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260518_0902_lab_sync/transcript_260518_0902_lab_sync.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "IRB",
+      "high_risk_reasons": [],
+      "is_alias": true,
+      "original": "irb",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260518_0902_lab_sync/transcript_260518_0902_lab_sync.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "IRB",
+      "high_risk_reasons": [],
+      "is_alias": true,
+      "original": "irb",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260525_0858_lab_sync/260525_0858_lab_sync_final.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "IRB",
+      "high_risk_reasons": [],
+      "is_alias": true,
+      "original": "irb",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260525_0858_lab_sync/260525_0858_lab_sync_final.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "IRB",
+      "high_risk_reasons": [],
+      "is_alias": true,
+      "original": "irb",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260525_0858_lab_sync/260525_0858_lab_sync_raw.txt"
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "IRB",
+      "high_risk_reasons": [],
+      "is_alias": true,
+      "original": "irb",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "source_transcript": "260525_0858_lab_sync/260525_0858_lab_sync_raw.txt"
+    }
+  ]
+}

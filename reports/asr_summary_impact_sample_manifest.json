@@ -1,0 +1,314 @@
+{
+  "category_counts": {
+    "medical_terms": 1,
+    "organizations": 7,
+    "people": 5,
+    "technical_terms": 8
+  },
+  "cloud_model_calls": false,
+  "external_model_calls": false,
+  "generated_summaries_are_sanitized": true,
+  "minimum_requested_samples": 5,
+  "mode": "sanitized_from_correction_logs",
+  "raw_email_or_pdf_read": false,
+  "raw_transcript_context_emitted": false,
+  "sample_rows": [
+    {
+      "accepted_corrections": 11,
+      "categories": [
+        "medical_terms",
+        "organizations",
+        "people",
+        "technical_terms"
+      ],
+      "corrected_canonical_terms": [
+        "ASR",
+        "Jason",
+        "Liger",
+        "Pelvis",
+        "SaMD",
+        "智德萬"
+      ],
+      "corrected_transcript": "reports/asr_summary_impact_sample/artifacts/sample_001_260518_0902_lab_sync/sample_001_260518_0902_lab_sync_corrected.txt",
+      "correction_log": "reports/asr_summary_impact_sample/artifacts/sample_001_260518_0902_lab_sync/sample_001_260518_0902_lab_sync_correction_log.json",
+      "manual_review_terms_excluded_from_corrected_summary": [
+        "陽明醫院"
+      ],
+      "raw_error_spans": [
+        "SAMD",
+        "asr",
+        "jason",
+        "liger",
+        "pelvis",
+        "志德灣"
+      ],
+      "raw_transcript": "reports/asr_summary_impact_sample/artifacts/sample_001_260518_0902_lab_sync/sample_001_260518_0902_lab_sync_raw.txt",
+      "rejected_terms_excluded_from_corrected_summary": [],
+      "sample_id": "sample_001_260518_0902_lab_sync",
+      "sanitized": true,
+      "source_correction_log_file": "reports/asr_fuzzy_correction_logs/014_260518_0902_lab_sync_correction_log.json",
+      "source_transcript_file": "260518_0902_lab_sync/260518_0902_lab_sync.txt",
+      "summary_from_corrected": "reports/asr_summary_impact_sample/artifacts/sample_001_260518_0902_lab_sync/sample_001_260518_0902_lab_sync_corrected_summary.txt",
+      "summary_from_raw": "reports/asr_summary_impact_sample/artifacts/sample_001_260518_0902_lab_sync/sample_001_260518_0902_lab_sync_raw_summary.txt",
+      "summary_safe_accepted_corrections": 11
+    },
+    {
+      "accepted_corrections": 19,
+      "categories": [
+        "organizations",
+        "people",
+        "technical_terms"
+      ],
+      "corrected_canonical_terms": [
+        "510(k)",
+        "API",
+        "GPU",
+        "IRB",
+        "Jason",
+        "Liger",
+        "Pelvis",
+        "TFDA",
+        "智德萬"
+      ],
+      "corrected_transcript": "reports/asr_summary_impact_sample/artifacts/sample_002_transcript_260518_0902_lab_sync/sample_002_transcript_260518_0902_lab_sync_corrected.txt",
+      "correction_log": "reports/asr_summary_impact_sample/artifacts/sample_002_transcript_260518_0902_lab_sync/sample_002_transcript_260518_0902_lab_sync_correction_log.json",
+      "manual_review_terms_excluded_from_corrected_summary": [],
+      "raw_error_spans": [
+        "510k",
+        "api",
+        "gpu",
+        "irb",
+        "jason",
+        "liger",
+        "pelvis",
+        "tfda",
+        "志德灣"
+      ],
+      "raw_transcript": "reports/asr_summary_impact_sample/artifacts/sample_002_transcript_260518_0902_lab_sync/sample_002_transcript_260518_0902_lab_sync_raw.txt",
+      "rejected_terms_excluded_from_corrected_summary": [],
+      "sample_id": "sample_002_transcript_260518_0902_lab_sync",
+      "sanitized": true,
+      "source_correction_log_file": "reports/asr_fuzzy_correction_logs/015_transcript_260518_0902_lab_sync_correction_log.json",
+      "source_transcript_file": "260518_0902_lab_sync/transcript_260518_0902_lab_sync.txt",
+      "summary_from_corrected": "reports/asr_summary_impact_sample/artifacts/sample_002_transcript_260518_0902_lab_sync/sample_002_transcript_260518_0902_lab_sync_corrected_summary.txt",
+      "summary_from_raw": "reports/asr_summary_impact_sample/artifacts/sample_002_transcript_260518_0902_lab_sync/sample_002_transcript_260518_0902_lab_sync_raw_summary.txt",
+      "summary_safe_accepted_corrections": 19
+    },
+    {
+      "accepted_corrections": 17,
+      "categories": [
+        "organizations",
+        "people",
+        "technical_terms"
+      ],
+      "corrected_canonical_terms": [
+        "AVM",
+        "FDA",
+        "InnoVEX",
+        "Jason",
+        "KPI",
+        "TFDA"
+      ],
+      "corrected_transcript": "reports/asr_summary_impact_sample/artifacts/sample_003_transcript_260525_0858_lab_sync_final/sample_003_transcript_260525_0858_lab_sync_final_corrected.txt",
+      "correction_log": "reports/asr_summary_impact_sample/artifacts/sample_003_transcript_260525_0858_lab_sync_final/sample_003_transcript_260525_0858_lab_sync_final_correction_log.json",
+      "manual_review_terms_excluded_from_corrected_summary": [],
+      "raw_error_spans": [
+        "avm",
+        "fda",
+        "innovex",
+        "jason",
+        "kpi",
+        "tfda"
+      ],
+      "raw_transcript": "reports/asr_summary_impact_sample/artifacts/sample_003_transcript_260525_0858_lab_sync_final/sample_003_transcript_260525_0858_lab_sync_final_raw.txt",
+      "rejected_terms_excluded_from_corrected_summary": [
+        "Detector+"
+      ],
+      "sample_id": "sample_003_transcript_260525_0858_lab_sync_final",
+      "sanitized": true,
+      "source_correction_log_file": "reports/asr_fuzzy_correction_logs/029_transcript_260525_0858_lab_sync_final_correction_log.json",
+      "source_transcript_file": "260525_0858_lab_sync/transcript_260525_0858_lab_sync_final.txt",
+      "summary_from_corrected": "reports/asr_summary_impact_sample/artifacts/sample_003_transcript_260525_0858_lab_sync_final/sample_003_transcript_260525_0858_lab_sync_final_corrected_summary.txt",
+      "summary_from_raw": "reports/asr_summary_impact_sample/artifacts/sample_003_transcript_260525_0858_lab_sync_final/sample_003_transcript_260525_0858_lab_sync_final_raw_summary.txt",
+      "summary_safe_accepted_corrections": 17
+    },
+    {
+      "accepted_corrections": 17,
+      "categories": [
+        "organizations",
+        "people",
+        "technical_terms"
+      ],
+      "corrected_canonical_terms": [
+        "AVM",
+        "FDA",
+        "InnoVEX",
+        "Jason",
+        "KPI",
+        "TFDA"
+      ],
+      "corrected_transcript": "reports/asr_summary_impact_sample/artifacts/sample_004_transcript_260525_0858_lab_sync_raw/sample_004_transcript_260525_0858_lab_sync_raw_corrected.txt",
+      "correction_log": "reports/asr_summary_impact_sample/artifacts/sample_004_transcript_260525_0858_lab_sync_raw/sample_004_transcript_260525_0858_lab_sync_raw_correction_log.json",
+      "manual_review_terms_excluded_from_corrected_summary": [],
+      "raw_error_spans": [
+        "avm",
+        "fda",
+        "innovex",
+        "jason",
+        "kpi",
+        "tfda"
+      ],
+      "raw_transcript": "reports/asr_summary_impact_sample/artifacts/sample_004_transcript_260525_0858_lab_sync_raw/sample_004_transcript_260525_0858_lab_sync_raw_raw.txt",
+      "rejected_terms_excluded_from_corrected_summary": [
+        "Detector+"
+      ],
+      "sample_id": "sample_004_transcript_260525_0858_lab_sync_raw",
+      "sanitized": true,
+      "source_correction_log_file": "reports/asr_fuzzy_correction_logs/030_transcript_260525_0858_lab_sync_raw_correction_log.json",
+      "source_transcript_file": "260525_0858_lab_sync/transcript_260525_0858_lab_sync_raw.txt",
+      "summary_from_corrected": "reports/asr_summary_impact_sample/artifacts/sample_004_transcript_260525_0858_lab_sync_raw/sample_004_transcript_260525_0858_lab_sync_raw_corrected_summary.txt",
+      "summary_from_raw": "reports/asr_summary_impact_sample/artifacts/sample_004_transcript_260525_0858_lab_sync_raw/sample_004_transcript_260525_0858_lab_sync_raw_raw_summary.txt",
+      "summary_safe_accepted_corrections": 17
+    },
+    {
+      "accepted_corrections": 10,
+      "categories": [
+        "organizations",
+        "technical_terms"
+      ],
+      "corrected_canonical_terms": [
+        "AVM",
+        "FDA",
+        "IRB",
+        "KPI"
+      ],
+      "corrected_transcript": "reports/asr_summary_impact_sample/artifacts/sample_005_260525_0858_lab_sync_final/sample_005_260525_0858_lab_sync_final_corrected.txt",
+      "correction_log": "reports/asr_summary_impact_sample/artifacts/sample_005_260525_0858_lab_sync_final/sample_005_260525_0858_lab_sync_final_correction_log.json",
+      "manual_review_terms_excluded_from_corrected_summary": [
+        "Max"
+      ],
+      "raw_error_spans": [
+        "avm",
+        "fda",
+        "irb",
+        "kpi"
+      ],
+      "raw_transcript": "reports/asr_summary_impact_sample/artifacts/sample_005_260525_0858_lab_sync_final/sample_005_260525_0858_lab_sync_final_raw.txt",
+      "rejected_terms_excluded_from_corrected_summary": [
+        "Detector+",
+        "InnoVEX"
+      ],
+      "sample_id": "sample_005_260525_0858_lab_sync_final",
+      "sanitized": true,
+      "source_correction_log_file": "reports/asr_fuzzy_correction_logs/027_260525_0858_lab_sync_final_correction_log.json",
+      "source_transcript_file": "260525_0858_lab_sync/260525_0858_lab_sync_final.txt",
+      "summary_from_corrected": "reports/asr_summary_impact_sample/artifacts/sample_005_260525_0858_lab_sync_final/sample_005_260525_0858_lab_sync_final_corrected_summary.txt",
+      "summary_from_raw": "reports/asr_summary_impact_sample/artifacts/sample_005_260525_0858_lab_sync_final/sample_005_260525_0858_lab_sync_final_raw_summary.txt",
+      "summary_safe_accepted_corrections": 8
+    },
+    {
+      "accepted_corrections": 10,
+      "categories": [
+        "organizations",
+        "technical_terms"
+      ],
+      "corrected_canonical_terms": [
+        "AVM",
+        "FDA",
+        "IRB",
+        "KPI"
+      ],
+      "corrected_transcript": "reports/asr_summary_impact_sample/artifacts/sample_006_260525_0858_lab_sync_raw/sample_006_260525_0858_lab_sync_raw_corrected.txt",
+      "correction_log": "reports/asr_summary_impact_sample/artifacts/sample_006_260525_0858_lab_sync_raw/sample_006_260525_0858_lab_sync_raw_correction_log.json",
+      "manual_review_terms_excluded_from_corrected_summary": [
+        "Max"
+      ],
+      "raw_error_spans": [
+        "avm",
+        "fda",
+        "irb",
+        "kpi"
+      ],
+      "raw_transcript": "reports/asr_summary_impact_sample/artifacts/sample_006_260525_0858_lab_sync_raw/sample_006_260525_0858_lab_sync_raw_raw.txt",
+      "rejected_terms_excluded_from_corrected_summary": [
+        "Detector+",
+        "InnoVEX"
+      ],
+      "sample_id": "sample_006_260525_0858_lab_sync_raw",
+      "sanitized": true,
+      "source_correction_log_file": "reports/asr_fuzzy_correction_logs/028_260525_0858_lab_sync_raw_correction_log.json",
+      "source_transcript_file": "260525_0858_lab_sync/260525_0858_lab_sync_raw.txt",
+      "summary_from_corrected": "reports/asr_summary_impact_sample/artifacts/sample_006_260525_0858_lab_sync_raw/sample_006_260525_0858_lab_sync_raw_corrected_summary.txt",
+      "summary_from_raw": "reports/asr_summary_impact_sample/artifacts/sample_006_260525_0858_lab_sync_raw/sample_006_260525_0858_lab_sync_raw_raw_summary.txt",
+      "summary_safe_accepted_corrections": 8
+    },
+    {
+      "accepted_corrections": 8,
+      "categories": [
+        "organizations",
+        "technical_terms"
+      ],
+      "corrected_canonical_terms": [
+        "API",
+        "LLM",
+        "NVIDIA"
+      ],
+      "corrected_transcript": "reports/asr_summary_impact_sample/artifacts/sample_007_260422_1415_114-2_AI_W9_1150422/sample_007_260422_1415_114-2_AI_W9_1150422_corrected.txt",
+      "correction_log": "reports/asr_summary_impact_sample/artifacts/sample_007_260422_1415_114-2_AI_W9_1150422/sample_007_260422_1415_114-2_AI_W9_1150422_correction_log.json",
+      "manual_review_terms_excluded_from_corrected_summary": [],
+      "raw_error_spans": [
+        "api",
+        "llm",
+        "nvidia"
+      ],
+      "raw_transcript": "reports/asr_summary_impact_sample/artifacts/sample_007_260422_1415_114-2_AI_W9_1150422/sample_007_260422_1415_114-2_AI_W9_1150422_raw.txt",
+      "rejected_terms_excluded_from_corrected_summary": [],
+      "sample_id": "sample_007_260422_1415_114-2_AI_W9_1150422",
+      "sanitized": true,
+      "source_correction_log_file": "reports/asr_fuzzy_correction_logs/005_260422_1415_114-2 生成式AI應用系統與工程 W9_1150422_correction_log.json",
+      "source_transcript_file": "260422_1415_114-2 生成式AI應用系統與工程 W9_1150422/260422_1415_114-2 生成式AI應用系統與工程 W9_1150422.txt",
+      "summary_from_corrected": "reports/asr_summary_impact_sample/artifacts/sample_007_260422_1415_114-2_AI_W9_1150422/sample_007_260422_1415_114-2_AI_W9_1150422_corrected_summary.txt",
+      "summary_from_raw": "reports/asr_summary_impact_sample/artifacts/sample_007_260422_1415_114-2_AI_W9_1150422/sample_007_260422_1415_114-2_AI_W9_1150422_raw_summary.txt",
+      "summary_safe_accepted_corrections": 8
+    },
+    {
+      "accepted_corrections": 7,
+      "categories": [
+        "people",
+        "technical_terms"
+      ],
+      "corrected_canonical_terms": [
+        "API",
+        "FDA",
+        "Jason",
+        "Liger"
+      ],
+      "corrected_transcript": "reports/asr_summary_impact_sample/artifacts/sample_008_260416_2157__with_Prof_Wu_Tomi/sample_008_260416_2157__with_Prof_Wu_Tomi_corrected.txt",
+      "correction_log": "reports/asr_summary_impact_sample/artifacts/sample_008_260416_2157__with_Prof_Wu_Tomi/sample_008_260416_2157__with_Prof_Wu_Tomi_correction_log.json",
+      "manual_review_terms_excluded_from_corrected_summary": [],
+      "raw_error_spans": [
+        "api",
+        "fda",
+        "jason",
+        "liger"
+      ],
+      "raw_transcript": "reports/asr_summary_impact_sample/artifacts/sample_008_260416_2157__with_Prof_Wu_Tomi/sample_008_260416_2157__with_Prof_Wu_Tomi_raw.txt",
+      "rejected_terms_excluded_from_corrected_summary": [
+        "智慧財產局"
+      ],
+      "sample_id": "sample_008_260416_2157__with_Prof_Wu_Tomi",
+      "sanitized": true,
+      "source_correction_log_file": "reports/asr_fuzzy_correction_logs/003_260416_2157__with_Prof_Wu_Tomi_correction_log.json",
+      "source_transcript_file": "260416_2157__with_Prof_Wu_Tomi/260416_2157__with_Prof_Wu_Tomi.txt",
+      "summary_from_corrected": "reports/asr_summary_impact_sample/artifacts/sample_008_260416_2157__with_Prof_Wu_Tomi/sample_008_260416_2157__with_Prof_Wu_Tomi_corrected_summary.txt",
+      "summary_from_raw": "reports/asr_summary_impact_sample/artifacts/sample_008_260416_2157__with_Prof_Wu_Tomi/sample_008_260416_2157__with_Prof_Wu_Tomi_raw_summary.txt",
+      "summary_safe_accepted_corrections": 7
+    }
+  ],
+  "selected_samples": 8,
+  "summary_generation": {
+    "local_model_inference_used": false,
+    "missing_summary_generation_dependencies": [],
+    "status": "sanitized_deterministic_term_level_sample"
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "total_rows": 4,
+  "label_counts": {
+    "summarizer_failure": 3,
+    "exclude_from_quality_claim": 1
+  },
+  "positive_summary_impact_evidence_rows": 0,
+  "any_positive_summary_impact_evidence": false,
+  "audio_review_required": false,
+  "audio_review_required_count": 0,
+  "denylist_or_manual_review_policy_change_required": false,
+  "policy_recommendation": "No new denylist entries are supported by transcript context. Existing rejected/manual-review corrections should remain excluded/manual-only. Empty/variant summary rows should be treated as summarizer/pipeline failures or excluded from quality claims.",
+  "overall_quality_improvement_claim_allowed": false,
+  "notes": [
+    "Rows with identical raw/corrected transcripts cannot support ASR-correction impact claims.",
+    "The empty raw structured summary row prevents a valid paired comparison.",
+    "No raw transcript text is reproduced in this summary."
+  ]
+}

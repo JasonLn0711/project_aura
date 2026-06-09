@@ -1,0 +1,15 @@
+sample:
+  max_samples: 8
+  min_samples: 5
+  mode: sanitized_from_correction_logs
+  source_log_dir: reports/asr_fuzzy_correction_logs
+  output_dir: reports/asr_summary_impact_sample/artifacts
+  include_categories:
+    - organizations
+    - technical_terms
+    - medical_terms
+    - people
+  exclude_raw_email_or_pdf_content: true
+  emit_raw_transcript_context: false
+  external_model_calls: false
+  cloud_model_calls: false

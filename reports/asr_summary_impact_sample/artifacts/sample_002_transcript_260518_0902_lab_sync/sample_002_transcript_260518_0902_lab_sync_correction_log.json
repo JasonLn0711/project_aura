@@ -1,0 +1,192 @@
+[
+  {
+    "accepted": true,
+    "category": "technical_terms",
+    "corrected": "TFDA",
+    "method": "sanitized_sample",
+    "original": "tfda",
+    "review_status": "accepted",
+    "score": 100.0,
+    "span": "tfda"
+  },
+  {
+    "accepted": true,
+    "category": "organizations",
+    "corrected": "智德萬",
+    "method": "sanitized_sample",
+    "original": "志德灣",
+    "review_status": "accepted",
+    "score": 100.0,
+    "span": "志德灣"
+  },
+  {
+    "accepted": true,
+    "category": "technical_terms",
+    "corrected": "GPU",
+    "method": "sanitized_sample",
+    "original": "gpu",
+    "review_status": "accepted",
+    "score": 100.0,
+    "span": "gpu"
+  },
+  {
+    "accepted": true,
+    "category": "technical_terms",
+    "corrected": "510(k)",
+    "method": "sanitized_sample",
+    "original": "510k",
+    "review_status": "accepted",
+    "score": 100.0,
+    "span": "510k"
+  },
+  {
+    "accepted": true,
+    "category": "technical_terms",
+    "corrected": "Liger",
+    "method": "sanitized_sample",
+    "original": "liger",
+    "review_status": "accepted",
+    "score": 100.0,
+    "span": "liger"
+  },
+  {
+    "accepted": true,
+    "category": "technical_terms",
+    "corrected": "Liger",
+    "method": "sanitized_sample",
+    "original": "liger",
+    "review_status": "accepted",
+    "score": 100.0,
+    "span": "liger"
+  },
+  {
+    "accepted": true,
+    "category": "technical_terms",
+    "corrected": "Liger",
+    "method": "sanitized_sample",
+    "original": "liger",
+    "review_status": "accepted",
+    "score": 100.0,
+    "span": "liger"
+  },
+  {
+    "accepted": true,
+    "category": "technical_terms",
+    "corrected": "Liger",
+    "method": "sanitized_sample",
+    "original": "liger",
+    "review_status": "accepted",
+    "score": 100.0,
+    "span": "liger"
+  },
+  {
+    "accepted": true,
+    "category": "technical_terms",
+    "corrected": "TFDA",
+    "method": "sanitized_sample",
+    "original": "tfda",
+    "review_status": "accepted",
+    "score": 100.0,
+    "span": "tfda"
+  },
+  {
+    "accepted": true,
+    "category": "technical_terms",
+    "corrected": "IRB",
+    "method": "sanitized_sample",
+    "original": "irb",
+    "review_status": "accepted",
+    "score": 100.0,
+    "span": "irb"
+  },
+  {
+    "accepted": true,
+    "category": "technical_terms",
+    "corrected": "IRB",
+    "method": "sanitized_sample",
+    "original": "irb",
+    "review_status": "accepted",
+    "score": 100.0,
+    "span": "irb"
+  },
+  {
+    "accepted": true,
+    "category": "technical_terms",
+    "corrected": "TFDA",
+    "method": "sanitized_sample",
+    "original": "tfda",
+    "review_status": "accepted",
+    "score": 100.0,
+    "span": "tfda"
+  },
+  {
+    "accepted": true,
+    "category": "technical_terms",
+    "corrected": "TFDA",
+    "method": "sanitized_sample",
+    "original": "tfda",
+    "review_status": "accepted",
+    "score": 100.0,
+    "span": "tfda"
+  },
+  {
+    "accepted": true,
+    "category": "people",
+    "corrected": "Jason",
+    "method": "sanitized_sample",
+    "original": "jason",
+    "review_status": "accepted",
+    "score": 100.0,
+    "span": "jason"
+  },
+  {
+    "accepted": true,
+    "category": "people",
+    "corrected": "Jason",
+    "method": "sanitized_sample",
+    "original": "jason",
+    "review_status": "accepted",
+    "score": 100.0,
+    "span": "jason"
+  },
+  {
+    "accepted": true,
+    "category": "technical_terms",
+    "corrected": "TFDA",
+    "method": "sanitized_sample",
+    "original": "tfda",
+    "review_status": "accepted",
+    "score": 100.0,
+    "span": "tfda"
+  },
+  {
+    "accepted": true,
+    "category": "technical_terms",
+    "corrected": "Pelvis",
+    "method": "sanitized_sample",
+    "original": "pelvis",
+    "review_status": "accepted",
+    "score": 100.0,
+    "span": "pelvis"
+  },
+  {
+    "accepted": true,
+    "category": "technical_terms",
+    "corrected": "Pelvis",
+    "method": "sanitized_sample",
+    "original": "pelvis",
+    "review_status": "accepted",
+    "score": 100.0,
+    "span": "pelvis"
+  },
+  {
+    "accepted": true,
+    "category": "technical_terms",
+    "corrected": "API",
+    "method": "sanitized_sample",
+    "original": "api",
+    "review_status": "accepted",
+    "score": 100.0,
+    "span": "api"
+  }
+]

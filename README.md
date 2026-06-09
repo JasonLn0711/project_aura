@@ -49,7 +49,61 @@ The app is designed for professional meeting and lecture workflows. It includes 
 | Project Lead | Jason Chia-Sheng Lin (PhD. Student) |
 | License | MIT |
 
-## What We Updated Today (2026-05-29)
+## Latest Update (2026-06-09)
+
+Project AURA now has a more grounded daily meeting-summary path that turns the corrected transcript into structured meeting notes through the approved local Gemma 4 E4B Ollama runner. The 2026-06-09 correction removes the earlier Layer 1 / Layer 2 grouped prompts and runs the nine final summary fields as one parallel batch. The contribution is operational: **Summarize Current Transcript** no longer depends on one-shot free-form summary generation, grouped prompt examples, or a manually pre-started LLM runtime. It now runs nine field-level extractors in one parallel batch, validates every structured field in Python, writes local artifacts only to an ignored output directory, renders Markdown deterministically from the final JSON, and performs a local Ollama runtime preflight before any LLM call.
+
+This update adds five durable capabilities:
+
+1. **Parallel field-batch summary extraction**: `src/summary/layered_summary_pipeline.py` runs nine single-field extractors in one parallel batch: `meeting_topic`, `participants`, `executive_summary`, `key_points`, `decisions`, `action_items`, `open_questions`, `risks`, and `next_steps`. This removes the earlier Layer 1 / Layer 2 split, avoids a single oversized all-fields prompt, and reduces cross-field example leakage.
+2. **Fixed local Gemma 4 E4B contract**: summary generation uses only the local Ollama tag `gemma4:e4b-it-q4_K_M` for base model `google/gemma-4-E4B-it`, with `temperature=0`, `num_ctx=32768`, and `stream=false`. AURA checks `http://localhost:11434/api/tags` before generation and refuses fallback models or cloud calls.
+3. **Corrected-transcript-only input boundary**: the model receives only the current corrected transcript. Raw ASR text, `correction_log`, private audit logs, and review notes stay outside the prompt. This preserves the fuzzy-correction audit trail while keeping summary generation focused on the user-facing transcript.
+4. **Structured JSON source of truth**: every extractor has its own prompt, minimal valid output example, strict JSON shape, Python validation, and one repair attempt. Python merges the validated outputs into the final schema, validates the full summary, and renders Markdown without using the LLM for formatting.
+5. **Ollama runtime preflight and model-install guardrail**: `src/aura/llm/ollama_runtime.py` checks whether the local Ollama server is reachable, starts `ollama serve` when the server is unavailable, waits for `http://localhost:11434/api/tags`, verifies `gemma4:e4b-it-q4_K_M`, and separates missing-command, server-timeout, missing-model, pull-failure, and summary-failure states. If the model tag is missing, the UI shows a **Local Gemma model not installed** dialog with **Pull Model**, **Copy Command**, and **Cancel**. AURA never silently downloads a large model.
+
+The practical workflow is now:
+
+```text
+Audio
+↓
+Breeze-ASR
+↓
+Raw Transcript
+↓
+Fuzzy Glossary Correction
+↓
+Corrected Transcript
+↓
+Local Gemma 4 E4B parallel field extraction
+↓
+Validated JSON
+↓
+Markdown meeting report
+```
+
+The supported scope is a local, user-facing meeting-notes feature. It does not create a new research gate, benchmark, or claim about summary quality. The next validation layer is real daily use: lab meetings, advisor syncs, industry discussions, and course recordings should produce paste-ready notes that are easy to inspect and revise.
+
+The new runtime safety path is:
+
+```text
+Summarize Current Transcript
+↓
+Transcript content check
+↓
+Ollama localhost /api/tags preflight
+↓
+Start local ollama serve if needed
+↓
+Verify gemma4:e4b-it-q4_K_M
+↓
+If missing: Pull Model / Copy Command / Cancel
+↓
+Run field-batch summary only after the local runner is ready
+```
+
+The implementation is covered by focused runtime and UI-adjacent tests: `tests/test_ollama_runtime.py` validates server detection, command lookup, startup timeout, model-tag checks, pull success/failure, and localhost-only host policy; `tests/test_summary_ui_runtime.py` verifies that UI summary starts only after runtime-ready, model-missing does not call summary, and empty transcript does not start runtime.
+
+## Previous Update (2026-05-29)
 
 Project AURA `v1.13.0` is the Windows User Onboarding Release. The contribution in this update is user-facing: Windows users can now start from a portable folder, run one check, launch one script, and get a copyable diagnostic report when the machine is not ready. The implementation keeps the same RTX/CUDA-only ASR policy while reducing the setup flow from a developer command sequence to `Start-AURA.bat` / `Start-AURA.ps1` and `Check-AURA.bat`.
 
@@ -121,17 +175,27 @@ Transcripts are now saved as a durable artifact set instead of one manually save
 
 ```text
 {base}_raw.txt
+{base}_corrected.txt
 {base}_final.txt
 {base}_summary.txt
+{base}_correction_log.json
 {base}_processing_metrics.json
 ```
 
 - `raw.txt` contains the ASR transcript only.
-- `final.txt` contains the transcript plus the LLM summary when a summary is available.
+- `corrected.txt` contains conservative glossary-corrected ASR output.
+- `final.txt` contains the corrected transcript plus the LLM summary when a summary is available.
 - `summary.txt` contains only the LLM summary and is written only when a summary is produced.
+- `correction_log.json` records each accepted fuzzy glossary correction.
 - `processing_metrics.json` records the workflow type, source path, output policy, output paths, total elapsed time, coarse stage durations, and imported-file status events.
 
 This split makes it possible to compare the original ASR output with the final user-facing transcript and audit where the file was saved.
+
+### ASR Post-Processing
+
+After Breeze-ASR-25 emits a transcript, AURA now runs a conservative domain-glossary fuzzy correction layer before summary generation. The glossary lives in [`config/domain_glossary.yaml`](config/domain_glossary.yaml), and the implementation is in [`src/asr_postprocess/fuzzy_corrector.py`](src/asr_postprocess/fuzzy_corrector.py).
+
+The first version uses `rapidfuzz`, does not use LLM verification, and only corrects high-confidence glossary terms. It preserves `{base}_raw.txt`, writes `{base}_corrected.txt`, writes `{base}_correction_log.json`, and uses the corrected transcript for `{base}_final.txt` and downstream summary. The detailed policy and next validation path are recorded in [`docs/asr_postprocess_fuzzy_glossary.md`](docs/asr_postprocess_fuzzy_glossary.md).
 
 ### Import And Batch Processing Changes
 
@@ -408,13 +472,13 @@ export HUGGINGFACE_TOKEN=hf_your_token_here
 
 Before using the default `pyannote/speaker-diarization-community-1` model, accept its Hugging Face terms for your account.
 
-LLM summary is optional because it loads a local 9B model:
+LLM summary is optional because it requires a local Ollama-served Gemma 4 E4B model:
 
 ```bash
 python -m pip install -e ".[summary]"
 ```
 
-The default summary backend is `Qwen/Qwen3.5-9B` loaded with `bitsandbytes` int8 quantization on CUDA when available.
+The approved summary backend is the local Ollama tag `gemma4:e4b-it-q4_K_M`, corresponding to base model `google/gemma-4-E4B-it`. Before generation, AURA runs a local runtime preflight: it checks `http://localhost:11434/api/tags`, starts `ollama serve` if the local server is not already running, waits for the localhost runner to become ready, and verifies the exact model tag. If the model is missing, AURA shows a local-model dialog with **Pull Model**, **Copy Command**, and **Cancel** actions. Model download is never silent, no fallback model is used, and no cloud API is called.
 
 Traditional Chinese punctuation restoration can use an optional local Hugging Face token-classification model:
 
@@ -479,8 +543,8 @@ The packaged entrypoints are defined in `pyproject.toml`:
 4. Click **Import Media** for batch transcription. Speaker diarization runs only on imported files when enabled.
    The import dialog lists common media containers including `mp3`, `mp4`, `m4a`, `wav`, `flac`, `mkv`, `mov`, `ogg`, `aac`, `wma`, `aiff`, `opus`, `webm`, `avi`, `m4v`, `3gp`, and `3g2`; the fallback **All Files** filter can still be used for other ffmpeg-supported media. Each imported transcript is auto-saved according to the selected transcript output policy.
    Use **Cancel Import** to stop the active import when possible and skip the remaining queue.
-5. Enable **Summarize transcript after ASR** or click **Summarize Current Transcript** to append a local Qwen summary.
-6. Click **Stop Recording** to finish live recording. The app waits for final ASR text, runs the optional summary if enabled, saves `{recording_name}_raw.txt`, `{recording_name}_final.txt`, optional `{recording_name}_summary.txt`, and `{recording_name}_processing_metrics.json`, then clears the transcript pane and temporary backup.
+5. Enable **Summarize transcript after ASR** or click **Summarize Current Transcript** to append a local Gemma 4 E4B summary.
+6. Click **Stop Recording** to finish live recording. The app waits for final ASR text, runs glossary correction and optional summary if enabled, saves `{recording_name}_raw.txt`, `{recording_name}_corrected.txt`, `{recording_name}_correction_log.json`, `{recording_name}_final.txt`, optional `{recording_name}_summary.txt`, and `{recording_name}_processing_metrics.json`, then clears the transcript pane and temporary backup.
 7. Use **Open Output Folder** after an auto-save to inspect the generated transcript artifacts.
 
 ### Transcript Output Policy
@@ -495,12 +559,14 @@ For each transcript base name, AURA writes:
 
 ```text
 {base}_raw.txt
+{base}_corrected.txt
+{base}_correction_log.json
 {base}_final.txt
 {base}_summary.txt                  # only when a summary is produced
 {base}_processing_metrics.json
 ```
 
-The metrics JSON includes output policy, source path, saved artifact paths, total elapsed time, coarse stage durations, and imported-file status events such as FFmpeg normalization progress.
+`final.txt` uses the corrected transcript plus optional summary. The metrics JSON includes output policy, source path, saved artifact paths, glossary correction status, total elapsed time, coarse stage durations, and imported-file status events such as FFmpeg normalization progress.
 
 ### Tab 2: Smart Splitter
 
@@ -524,7 +590,7 @@ The metrics JSON includes output policy, source path, saved artifact paths, tota
 | Traditional Chinese Punctuation | Enabled; model-backed path first tries `kotoba-speech/mmbert-base-zh-punctuation-320000`, then falls back to `p208p2002/zh-wiki-punctuation-restore` when the punctuation extra is installed |
 | Denoise | Off in UI by default |
 | Speaker Diarization | Off by default; imported-file range defaults to `2-6` speakers |
-| LLM Summary | Off by default; `Qwen/Qwen3.5-9B` with int8 quantization when enabled |
+| LLM Summary | Off by default; local Ollama `gemma4:e4b-it-q4_K_M` parallel field-batch meeting summary extraction when enabled |
 
 ## Runtime Files
 
@@ -597,7 +663,7 @@ Known limits:
 
 ## LLM Summary Behavior
 
-LLM summary is an optional post-ASR workflow. It is intentionally separate from ASR so the app can still run on machines that do not have enough VRAM for a 9B model.
+LLM summary is an optional post-ASR workflow. It is intentionally separate from ASR so the app can still run transcription without the local Gemma 4 E4B Ollama runner.
 
 When enabled in Advanced Settings:
 
@@ -605,17 +671,52 @@ When enabled in Advanced Settings:
 - live recording schedules summary shortly after the user stops recording, giving the ASR queue a short drain window
 - the **Summarize Current Transcript** button can run summary manually on the current transcript area
 
-The default model is `Qwen/Qwen3.5-9B`. AURA loads it through `transformers` with `bitsandbytes` `load_in_8bit=True`, so the intended default is local CUDA int8 inference. Summary prompts require output in Taiwanese Traditional Chinese and ask for:
+The summary model contract is fixed:
 
-1. one-sentence summary
-2. key points
-3. decisions and consensus
-4. action items with owner, task, and deadline when present
-5. risks, questions, and follow-up items
+- base model id: `google/gemma-4-E4B-it`
+- Ollama model tag: `gemma4:e4b-it-q4_K_M`
+- runner: `ollama`
+- context window: `32768`
+- external calls: `false`
+- cloud calls: `false`
+- fallback model: disabled
 
-If the optional summary dependencies are missing, the UI reports the install command instead of failing silently.
+When **Summarize Current Transcript** runs, AURA uses the current corrected transcript only. It does not send the raw transcript, correction log, audit logs, or review notes to the model.
 
-The current summary MVP is broader than this direct local summary feature but narrower than the full target architecture. It is documented in [`docs/meeting_summary_mvp_sdd.md`](docs/meeting_summary_mvp_sdd.md): ASR transcript input, time/sliding-window chunking, chunk embedding, lightweight knowledge graph construction, graph-aware RAG retrieval, fixed JSON summary prompting, Qwen 3.5 9B INT8 and Gemma 4 E4B INT8 comparison, schema validation, and evidence support checking. It explicitly excludes speaker diarization, ASR correction, fine-tuning, action-item owner extraction, medical/legal conclusion generation, and autonomous decision-making.
+Before starting the LLM call, AURA performs a local Ollama preflight. If the localhost server is unavailable, AURA attempts to start `ollama serve` and waits for `http://localhost:11434/api/tags`. If the required `gemma4:e4b-it-q4_K_M` tag is missing, AURA asks before running `ollama pull gemma4:e4b-it-q4_K_M` or lets the user copy the command. Missing server, missing command, missing model tag, and pull failure are surfaced as separate runtime states.
+
+Summary generation uses nine parallel single-field extractors instead of one-shot full-summary generation, two-layer grouped extraction, or 9 sequential field calls. AURA runs all nine field prompts in one parallel batch against the same corrected transcript, then merges and validates the final JSON in Python:
+
+- Parallel batch: `meeting_topic`, `participants`, `executive_summary`, `key_points`, `decisions`, `action_items`, `open_questions`, `risks`, and `next_steps`.
+
+Each extractor has a dedicated prompt, minimal valid output example, strict expected JSON shape, Python validation for each field, and one optional extractor-level format-repair attempt. Field types remain explicit:
+
+- `meeting_topic`: string
+- `participants`: list of strings
+- `executive_summary`: string
+- `key_points`: list of strings
+- `decisions`: list of explicit decision objects
+- `action_items`: list of task objects
+- `open_questions`: list of strings
+- `risks`: list of strings
+- `next_steps`: list of strings
+
+The final JSON is the source of truth. Markdown is rendered deterministically from that JSON, which keeps the report stable for Notion, GitHub, Google Docs, or email paste-in.
+
+### Practical Meeting Summary Pipeline
+
+For daily meeting notes, generate a Markdown report from the corrected transcript artifact:
+
+```bash
+PYTHONPATH=. uv run python scripts/generate_meeting_summary.py \
+  --transcript path/to/meeting_corrected.txt \
+  --output-md reports/meeting_summary.md \
+  --output-json reports/meeting_summary.json
+```
+
+This practical pipeline uses only the corrected transcript as model input. It does not pass the correction log to Gemma, does not create research claims or benchmark metrics, and writes a paste-ready Markdown report with topic, participants, executive summary, key points, decisions, action items, open questions, risks, and next steps. Generated private outputs are written under ignored `local_outputs/meeting_summary/`; the public dry-run sample is stored at [`reports/sample_meeting_summary.md`](reports/sample_meeting_summary.md).
+
+The current summary MVP is broader than this direct local summary feature but narrower than the full target architecture. It is documented in [`docs/meeting_summary_mvp_sdd.md`](docs/meeting_summary_mvp_sdd.md): ASR transcript input, time/sliding-window chunking, chunk embedding, lightweight knowledge graph construction, graph-aware RAG retrieval, fixed JSON summary prompting, Qwen 3.5 9B INT8 and Gemma 4 E4B FP8 comparison, schema validation, and evidence support checking. It explicitly excludes speaker diarization, ASR correction, fine-tuning, action-item owner extraction, medical/legal conclusion generation, and autonomous decision-making.
 
 ## Denoise Behavior
 
@@ -667,7 +768,7 @@ Current coverage includes:
 - multi-chunk splitter workflow behavior using synthetic audio
 - runtime settings and UI message formatting defaults
 - speaker diarization timestamp assignment and speaker-count argument handling
-- LLM summary prompt and Qwen int8 default settings
+- LLM summary prompt and Gemma 4 E4B FP8 default settings
 - import smoke coverage for every `aura` package module
 - transcript artifact naming, final/raw/summary splitting, and metrics JSON writing
 - live capture PulseAudio/PipeWire source parsing, source selection, and system+microphone RMS mixing

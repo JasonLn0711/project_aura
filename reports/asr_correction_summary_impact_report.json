@@ -1,0 +1,566 @@
+{
+  "aggregate": {
+    "category_preservation": {
+      "medical_terms": {
+        "corrected_summary_terms": 1,
+        "raw_summary_terms": 1
+      },
+      "organizations": {
+        "corrected_summary_terms": 5,
+        "raw_summary_terms": 3
+      },
+      "people": {
+        "corrected_summary_terms": 5,
+        "raw_summary_terms": 5
+      },
+      "regulatory_terms": {
+        "corrected_summary_terms": 13,
+        "raw_summary_terms": 13
+      },
+      "technical_terms": {
+        "corrected_summary_terms": 31,
+        "raw_summary_terms": 30
+      }
+    },
+    "corrected_canonical_terms_in_summary": 42,
+    "discovered_complete_artifact_sets": 8,
+    "domain_term_delta": 3,
+    "evaluated_files": 8,
+    "files_with_both_summaries": 8,
+    "manual_review_term_leaks": 0,
+    "raw_asr_error_spans_in_summary": 42,
+    "rejected_or_denied_term_leaks": 0,
+    "total_corrected_summary_domain_terms": 55,
+    "total_raw_summary_domain_terms": 52
+  },
+  "per_file": [
+    {
+      "corrected_canonical_terms_in_summary": [
+        "ASR",
+        "Jason",
+        "Liger",
+        "Pelvis",
+        "SaMD",
+        "智德萬"
+      ],
+      "corrected_summary_domain_term_count": 7,
+      "corrected_summary_introduced_terms": {
+        "medical_terms": [],
+        "organizations": [],
+        "people": [],
+        "regulatory_terms": [],
+        "technical_terms": []
+      },
+      "corrected_summary_terms": {
+        "medical_terms": [
+          "SaMD"
+        ],
+        "organizations": [
+          "智德萬"
+        ],
+        "people": [
+          "Jason"
+        ],
+        "regulatory_terms": [
+          "SaMD"
+        ],
+        "technical_terms": [
+          "ASR",
+          "Liger",
+          "Pelvis"
+        ]
+      },
+      "domain_term_delta": 1,
+      "file_id": "reports/asr_summary_impact_sample/artifacts/sample_001_260518_0902_lab_sync/sample_001_260518_0902_lab_sync",
+      "has_corrected_summary": true,
+      "has_raw_summary": true,
+      "manual_review_terms_in_corrected_summary": [],
+      "raw_asr_error_spans_in_summary": [
+        "SAMD",
+        "asr",
+        "jason",
+        "liger",
+        "pelvis",
+        "志德灣"
+      ],
+      "raw_summary_domain_term_count": 6,
+      "raw_summary_terms": {
+        "medical_terms": [
+          "SaMD"
+        ],
+        "organizations": [],
+        "people": [
+          "Jason"
+        ],
+        "regulatory_terms": [
+          "SaMD"
+        ],
+        "technical_terms": [
+          "ASR",
+          "Liger",
+          "Pelvis"
+        ]
+      },
+      "rejected_or_denied_terms_in_corrected_summary": []
+    },
+    {
+      "corrected_canonical_terms_in_summary": [
+        "510(k)",
+        "API",
+        "GPU",
+        "IRB",
+        "Jason",
+        "Liger",
+        "Pelvis",
+        "TFDA",
+        "智德萬"
+      ],
+      "corrected_summary_domain_term_count": 12,
+      "corrected_summary_introduced_terms": {
+        "medical_terms": [],
+        "organizations": [],
+        "people": [],
+        "regulatory_terms": [],
+        "technical_terms": []
+      },
+      "corrected_summary_terms": {
+        "medical_terms": [],
+        "organizations": [
+          "智德萬"
+        ],
+        "people": [
+          "Jason"
+        ],
+        "regulatory_terms": [
+          "510(k)",
+          "IRB",
+          "TFDA"
+        ],
+        "technical_terms": [
+          "510(k)",
+          "API",
+          "GPU",
+          "IRB",
+          "Liger",
+          "Pelvis",
+          "TFDA"
+        ]
+      },
+      "domain_term_delta": 2,
+      "file_id": "reports/asr_summary_impact_sample/artifacts/sample_002_transcript_260518_0902_lab_sync/sample_002_transcript_260518_0902_lab_sync",
+      "has_corrected_summary": true,
+      "has_raw_summary": true,
+      "manual_review_terms_in_corrected_summary": [],
+      "raw_asr_error_spans_in_summary": [
+        "510k",
+        "api",
+        "gpu",
+        "irb",
+        "jason",
+        "liger",
+        "pelvis",
+        "tfda",
+        "志德灣"
+      ],
+      "raw_summary_domain_term_count": 10,
+      "raw_summary_terms": {
+        "medical_terms": [],
+        "organizations": [],
+        "people": [
+          "Jason"
+        ],
+        "regulatory_terms": [
+          "510k",
+          "IRB",
+          "TFDA"
+        ],
+        "technical_terms": [
+          "API",
+          "GPU",
+          "IRB",
+          "Liger",
+          "Pelvis",
+          "TFDA"
+        ]
+      },
+      "rejected_or_denied_terms_in_corrected_summary": []
+    },
+    {
+      "corrected_canonical_terms_in_summary": [
+        "AVM",
+        "FDA",
+        "InnoVEX",
+        "Jason",
+        "KPI",
+        "TFDA"
+      ],
+      "corrected_summary_domain_term_count": 8,
+      "corrected_summary_introduced_terms": {
+        "medical_terms": [],
+        "organizations": [],
+        "people": [],
+        "regulatory_terms": [],
+        "technical_terms": []
+      },
+      "corrected_summary_terms": {
+        "medical_terms": [],
+        "organizations": [
+          "InnoVEX"
+        ],
+        "people": [
+          "Jason"
+        ],
+        "regulatory_terms": [
+          "FDA",
+          "TFDA"
+        ],
+        "technical_terms": [
+          "AVM",
+          "FDA",
+          "KPI",
+          "TFDA"
+        ]
+      },
+      "domain_term_delta": 0,
+      "file_id": "reports/asr_summary_impact_sample/artifacts/sample_003_transcript_260525_0858_lab_sync_final/sample_003_transcript_260525_0858_lab_sync_final",
+      "has_corrected_summary": true,
+      "has_raw_summary": true,
+      "manual_review_terms_in_corrected_summary": [],
+      "raw_asr_error_spans_in_summary": [
+        "avm",
+        "fda",
+        "innovex",
+        "jason",
+        "kpi",
+        "tfda"
+      ],
+      "raw_summary_domain_term_count": 8,
+      "raw_summary_terms": {
+        "medical_terms": [],
+        "organizations": [
+          "InnoVEX"
+        ],
+        "people": [
+          "Jason"
+        ],
+        "regulatory_terms": [
+          "FDA",
+          "TFDA"
+        ],
+        "technical_terms": [
+          "AVM",
+          "FDA",
+          "KPI",
+          "TFDA"
+        ]
+      },
+      "rejected_or_denied_terms_in_corrected_summary": []
+    },
+    {
+      "corrected_canonical_terms_in_summary": [
+        "AVM",
+        "FDA",
+        "InnoVEX",
+        "Jason",
+        "KPI",
+        "TFDA"
+      ],
+      "corrected_summary_domain_term_count": 8,
+      "corrected_summary_introduced_terms": {
+        "medical_terms": [],
+        "organizations": [],
+        "people": [],
+        "regulatory_terms": [],
+        "technical_terms": []
+      },
+      "corrected_summary_terms": {
+        "medical_terms": [],
+        "organizations": [
+          "InnoVEX"
+        ],
+        "people": [
+          "Jason"
+        ],
+        "regulatory_terms": [
+          "FDA",
+          "TFDA"
+        ],
+        "technical_terms": [
+          "AVM",
+          "FDA",
+          "KPI",
+          "TFDA"
+        ]
+      },
+      "domain_term_delta": 0,
+      "file_id": "reports/asr_summary_impact_sample/artifacts/sample_004_transcript_260525_0858_lab_sync_raw/sample_004_transcript_260525_0858_lab_sync_raw",
+      "has_corrected_summary": true,
+      "has_raw_summary": true,
+      "manual_review_terms_in_corrected_summary": [],
+      "raw_asr_error_spans_in_summary": [
+        "avm",
+        "fda",
+        "innovex",
+        "jason",
+        "kpi",
+        "tfda"
+      ],
+      "raw_summary_domain_term_count": 8,
+      "raw_summary_terms": {
+        "medical_terms": [],
+        "organizations": [
+          "InnoVEX"
+        ],
+        "people": [
+          "Jason"
+        ],
+        "regulatory_terms": [
+          "FDA",
+          "TFDA"
+        ],
+        "technical_terms": [
+          "AVM",
+          "FDA",
+          "KPI",
+          "TFDA"
+        ]
+      },
+      "rejected_or_denied_terms_in_corrected_summary": []
+    },
+    {
+      "corrected_canonical_terms_in_summary": [
+        "AVM",
+        "FDA",
+        "IRB",
+        "KPI"
+      ],
+      "corrected_summary_domain_term_count": 6,
+      "corrected_summary_introduced_terms": {
+        "medical_terms": [],
+        "organizations": [],
+        "people": [],
+        "regulatory_terms": [],
+        "technical_terms": []
+      },
+      "corrected_summary_terms": {
+        "medical_terms": [],
+        "organizations": [],
+        "people": [],
+        "regulatory_terms": [
+          "FDA",
+          "IRB"
+        ],
+        "technical_terms": [
+          "AVM",
+          "FDA",
+          "IRB",
+          "KPI"
+        ]
+      },
+      "domain_term_delta": 0,
+      "file_id": "reports/asr_summary_impact_sample/artifacts/sample_005_260525_0858_lab_sync_final/sample_005_260525_0858_lab_sync_final",
+      "has_corrected_summary": true,
+      "has_raw_summary": true,
+      "manual_review_terms_in_corrected_summary": [],
+      "raw_asr_error_spans_in_summary": [
+        "avm",
+        "fda",
+        "irb",
+        "kpi"
+      ],
+      "raw_summary_domain_term_count": 6,
+      "raw_summary_terms": {
+        "medical_terms": [],
+        "organizations": [],
+        "people": [],
+        "regulatory_terms": [
+          "FDA",
+          "IRB"
+        ],
+        "technical_terms": [
+          "AVM",
+          "FDA",
+          "IRB",
+          "KPI"
+        ]
+      },
+      "rejected_or_denied_terms_in_corrected_summary": []
+    },
+    {
+      "corrected_canonical_terms_in_summary": [
+        "AVM",
+        "FDA",
+        "IRB",
+        "KPI"
+      ],
+      "corrected_summary_domain_term_count": 6,
+      "corrected_summary_introduced_terms": {
+        "medical_terms": [],
+        "organizations": [],
+        "people": [],
+        "regulatory_terms": [],
+        "technical_terms": []
+      },
+      "corrected_summary_terms": {
+        "medical_terms": [],
+        "organizations": [],
+        "people": [],
+        "regulatory_terms": [
+          "FDA",
+          "IRB"
+        ],
+        "technical_terms": [
+          "AVM",
+          "FDA",
+          "IRB",
+          "KPI"
+        ]
+      },
+      "domain_term_delta": 0,
+      "file_id": "reports/asr_summary_impact_sample/artifacts/sample_006_260525_0858_lab_sync_raw/sample_006_260525_0858_lab_sync_raw",
+      "has_corrected_summary": true,
+      "has_raw_summary": true,
+      "manual_review_terms_in_corrected_summary": [],
+      "raw_asr_error_spans_in_summary": [
+        "avm",
+        "fda",
+        "irb",
+        "kpi"
+      ],
+      "raw_summary_domain_term_count": 6,
+      "raw_summary_terms": {
+        "medical_terms": [],
+        "organizations": [],
+        "people": [],
+        "regulatory_terms": [
+          "FDA",
+          "IRB"
+        ],
+        "technical_terms": [
+          "AVM",
+          "FDA",
+          "IRB",
+          "KPI"
+        ]
+      },
+      "rejected_or_denied_terms_in_corrected_summary": []
+    },
+    {
+      "corrected_canonical_terms_in_summary": [
+        "API",
+        "LLM",
+        "NVIDIA"
+      ],
+      "corrected_summary_domain_term_count": 3,
+      "corrected_summary_introduced_terms": {
+        "medical_terms": [],
+        "organizations": [],
+        "people": [],
+        "regulatory_terms": [],
+        "technical_terms": []
+      },
+      "corrected_summary_terms": {
+        "medical_terms": [],
+        "organizations": [
+          "NVIDIA"
+        ],
+        "people": [],
+        "regulatory_terms": [],
+        "technical_terms": [
+          "API",
+          "LLM"
+        ]
+      },
+      "domain_term_delta": 0,
+      "file_id": "reports/asr_summary_impact_sample/artifacts/sample_007_260422_1415_114-2_AI_W9_1150422/sample_007_260422_1415_114-2_AI_W9_1150422",
+      "has_corrected_summary": true,
+      "has_raw_summary": true,
+      "manual_review_terms_in_corrected_summary": [],
+      "raw_asr_error_spans_in_summary": [
+        "api",
+        "llm",
+        "nvidia"
+      ],
+      "raw_summary_domain_term_count": 3,
+      "raw_summary_terms": {
+        "medical_terms": [],
+        "organizations": [
+          "NVIDIA"
+        ],
+        "people": [],
+        "regulatory_terms": [],
+        "technical_terms": [
+          "API",
+          "LLM"
+        ]
+      },
+      "rejected_or_denied_terms_in_corrected_summary": []
+    },
+    {
+      "corrected_canonical_terms_in_summary": [
+        "API",
+        "FDA",
+        "Jason",
+        "Liger"
+      ],
+      "corrected_summary_domain_term_count": 5,
+      "corrected_summary_introduced_terms": {
+        "medical_terms": [],
+        "organizations": [],
+        "people": [],
+        "regulatory_terms": [],
+        "technical_terms": []
+      },
+      "corrected_summary_terms": {
+        "medical_terms": [],
+        "organizations": [],
+        "people": [
+          "Jason"
+        ],
+        "regulatory_terms": [
+          "FDA"
+        ],
+        "technical_terms": [
+          "API",
+          "FDA",
+          "Liger"
+        ]
+      },
+      "domain_term_delta": 0,
+      "file_id": "reports/asr_summary_impact_sample/artifacts/sample_008_260416_2157__with_Prof_Wu_Tomi/sample_008_260416_2157__with_Prof_Wu_Tomi",
+      "has_corrected_summary": true,
+      "has_raw_summary": true,
+      "manual_review_terms_in_corrected_summary": [],
+      "raw_asr_error_spans_in_summary": [
+        "api",
+        "fda",
+        "jason",
+        "liger"
+      ],
+      "raw_summary_domain_term_count": 5,
+      "raw_summary_terms": {
+        "medical_terms": [],
+        "organizations": [],
+        "people": [
+          "Jason"
+        ],
+        "regulatory_terms": [
+          "FDA"
+        ],
+        "technical_terms": [
+          "API",
+          "FDA",
+          "Liger"
+        ]
+      },
+      "rejected_or_denied_terms_in_corrected_summary": []
+    }
+  ],
+  "scope": {
+    "claim_scope": "internal_quality_gate_not_final_empirical_claim",
+    "external_model_calls": false,
+    "mode": "audit_only_existing_artifacts",
+    "raw_email_or_pdf_read": false,
+    "raw_transcript_context_emitted": false
+  }
+}

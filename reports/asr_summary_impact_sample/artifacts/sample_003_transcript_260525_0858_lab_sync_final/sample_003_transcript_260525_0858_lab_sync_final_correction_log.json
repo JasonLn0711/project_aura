@@ -1,0 +1,212 @@
+[
+  {
+    "accepted": true,
+    "category": "technical_terms",
+    "corrected": "AVM",
+    "method": "sanitized_sample",
+    "original": "avm",
+    "review_status": "accepted",
+    "score": 100.0,
+    "span": "avm"
+  },
+  {
+    "accepted": true,
+    "category": "organizations",
+    "corrected": "InnoVEX",
+    "method": "sanitized_sample",
+    "original": "innovex",
+    "review_status": "accepted",
+    "score": 100.0,
+    "span": "innovex"
+  },
+  {
+    "accepted": true,
+    "category": "technical_terms",
+    "corrected": "TFDA",
+    "method": "sanitized_sample",
+    "original": "tfda",
+    "review_status": "accepted",
+    "score": 100.0,
+    "span": "tfda"
+  },
+  {
+    "accepted": true,
+    "category": "technical_terms",
+    "corrected": "TFDA",
+    "method": "sanitized_sample",
+    "original": "tfda",
+    "review_status": "accepted",
+    "score": 100.0,
+    "span": "tfda"
+  },
+  {
+    "accepted": true,
+    "category": "technical_terms",
+    "corrected": "FDA",
+    "method": "sanitized_sample",
+    "original": "fda",
+    "review_status": "accepted",
+    "score": 100.0,
+    "span": "fda"
+  },
+  {
+    "accepted": true,
+    "category": "people",
+    "corrected": "Jason",
+    "method": "sanitized_sample",
+    "original": "jason",
+    "review_status": "accepted",
+    "score": 100.0,
+    "span": "jason"
+  },
+  {
+    "accepted": true,
+    "category": "technical_terms",
+    "corrected": "KPI",
+    "method": "sanitized_sample",
+    "original": "kpi",
+    "review_status": "accepted",
+    "score": 100.0,
+    "span": "kpi"
+  },
+  {
+    "accepted": true,
+    "category": "people",
+    "corrected": "Jason",
+    "method": "sanitized_sample",
+    "original": "jason",
+    "review_status": "accepted",
+    "score": 100.0,
+    "span": "jason"
+  },
+  {
+    "accepted": true,
+    "category": "technical_terms",
+    "corrected": "KPI",
+    "method": "sanitized_sample",
+    "original": "kpi",
+    "review_status": "accepted",
+    "score": 100.0,
+    "span": "kpi"
+  },
+  {
+    "accepted": true,
+    "category": "technical_terms",
+    "corrected": "FDA",
+    "method": "sanitized_sample",
+    "original": "fda",
+    "review_status": "accepted",
+    "score": 100.0,
+    "span": "fda"
+  },
+  {
+    "accepted": true,
+    "category": "technical_terms",
+    "corrected": "FDA",
+    "method": "sanitized_sample",
+    "original": "fda",
+    "review_status": "accepted",
+    "score": 100.0,
+    "span": "fda"
+  },
+  {
+    "accepted": true,
+    "category": "technical_terms",
+    "corrected": "FDA",
+    "method": "sanitized_sample",
+    "original": "fda",
+    "review_status": "accepted",
+    "score": 100.0,
+    "span": "fda"
+  },
+  {
+    "accepted": true,
+    "category": "technical_terms",
+    "corrected": "FDA",
+    "method": "sanitized_sample",
+    "original": "fda",
+    "review_status": "accepted",
+    "score": 100.0,
+    "span": "fda"
+  },
+  {
+    "accepted": true,
+    "category": "organizations",
+    "corrected": "InnoVEX",
+    "method": "sanitized_sample",
+    "original": "innovex",
+    "review_status": "accepted",
+    "score": 100.0,
+    "span": "innovex"
+  },
+  {
+    "accepted": true,
+    "category": "organizations",
+    "corrected": "InnoVEX",
+    "method": "sanitized_sample",
+    "original": "innovex",
+    "review_status": "accepted",
+    "score": 100.0,
+    "span": "innovex"
+  },
+  {
+    "accepted": true,
+    "category": "organizations",
+    "corrected": "InnoVEX",
+    "method": "sanitized_sample",
+    "original": "innovex",
+    "review_status": "accepted",
+    "score": 100.0,
+    "span": "innovex"
+  },
+  {
+    "accepted": true,
+    "category": "technical_terms",
+    "corrected": "KPI",
+    "method": "sanitized_sample",
+    "original": "kpi",
+    "review_status": "accepted",
+    "score": 100.0,
+    "span": "kpi"
+  },
+  {
+    "accepted": false,
+    "category": "technical_terms",
+    "corrected": "Detector+",
+    "method": "sanitized_sample",
+    "original": "detector",
+    "review_status": "denylist",
+    "score": 94.12,
+    "span": "detector"
+  },
+  {
+    "accepted": false,
+    "category": "technical_terms",
+    "corrected": "Detector+",
+    "method": "sanitized_sample",
+    "original": "detector",
+    "review_status": "denylist",
+    "score": 94.12,
+    "span": "detector"
+  },
+  {
+    "accepted": false,
+    "category": "technical_terms",
+    "corrected": "Detector+",
+    "method": "sanitized_sample",
+    "original": "detector",
+    "review_status": "denylist",
+    "score": 94.12,
+    "span": "detector"
+  },
+  {
+    "accepted": false,
+    "category": "technical_terms",
+    "corrected": "Detector+",
+    "method": "sanitized_sample",
+    "original": "detector",
+    "review_status": "denylist",
+    "score": 94.12,
+    "span": "detector"
+  }
+]

@@ -1,0 +1,152 @@
+[
+  {
+    "accepted": true,
+    "category": "technical_terms",
+    "corrected": "AVM",
+    "method": "sanitized_sample",
+    "original": "avm",
+    "review_status": "accepted",
+    "score": 100.0,
+    "span": "avm"
+  },
+  {
+    "accepted": true,
+    "category": "technical_terms",
+    "corrected": "AVM",
+    "method": "sanitized_sample",
+    "original": "avm",
+    "review_status": "accepted",
+    "score": 100.0,
+    "span": "avm"
+  },
+  {
+    "accepted": true,
+    "category": "technical_terms",
+    "corrected": "AVM",
+    "method": "sanitized_sample",
+    "original": "avm",
+    "review_status": "accepted",
+    "score": 100.0,
+    "span": "avm"
+  },
+  {
+    "accepted": true,
+    "category": "technical_terms",
+    "corrected": "IRB",
+    "method": "sanitized_sample",
+    "original": "irb",
+    "review_status": "accepted",
+    "score": 100.0,
+    "span": "irb"
+  },
+  {
+    "accepted": true,
+    "category": "technical_terms",
+    "corrected": "IRB",
+    "method": "sanitized_sample",
+    "original": "irb",
+    "review_status": "accepted",
+    "score": 100.0,
+    "span": "irb"
+  },
+  {
+    "accepted": true,
+    "category": "technical_terms",
+    "corrected": "FDA",
+    "method": "sanitized_sample",
+    "original": "fda",
+    "review_status": "accepted",
+    "score": 100.0,
+    "span": "fda"
+  },
+  {
+    "accepted": true,
+    "category": "technical_terms",
+    "corrected": "KPI",
+    "method": "sanitized_sample",
+    "original": "kpi",
+    "review_status": "accepted",
+    "score": 100.0,
+    "span": "kpi"
+  },
+  {
+    "accepted": true,
+    "category": "organizations",
+    "corrected": "InnoVEX",
+    "method": "sanitized_sample",
+    "original": "inovex",
+    "review_status": "accepted",
+    "score": 92.31,
+    "span": "inovex"
+  },
+  {
+    "accepted": true,
+    "category": "organizations",
+    "corrected": "InnoVEX",
+    "method": "sanitized_sample",
+    "original": "inovex",
+    "review_status": "accepted",
+    "score": 92.31,
+    "span": "inovex"
+  },
+  {
+    "accepted": true,
+    "category": "technical_terms",
+    "corrected": "KPI",
+    "method": "sanitized_sample",
+    "original": "kpi",
+    "review_status": "accepted",
+    "score": 100.0,
+    "span": "kpi"
+  },
+  {
+    "accepted": false,
+    "category": "organizations",
+    "corrected": "InnoVEX",
+    "method": "sanitized_sample",
+    "original": "innoVAX",
+    "review_status": "denylist",
+    "score": 85.71,
+    "span": "innoVAX"
+  },
+  {
+    "accepted": false,
+    "category": "technical_terms",
+    "corrected": "Detector+",
+    "method": "sanitized_sample",
+    "original": "detector",
+    "review_status": "denylist",
+    "score": 94.12,
+    "span": "detector"
+  },
+  {
+    "accepted": false,
+    "category": "technical_terms",
+    "corrected": "Detector+",
+    "method": "sanitized_sample",
+    "original": "detector",
+    "review_status": "denylist",
+    "score": 94.12,
+    "span": "detector"
+  },
+  {
+    "accepted": false,
+    "category": "technical_terms",
+    "corrected": "Detector+",
+    "method": "sanitized_sample",
+    "original": "detector",
+    "review_status": "denylist",
+    "score": 94.12,
+    "span": "detector"
+  },
+  {
+    "accepted": false,
+    "category": "people",
+    "corrected": "Max",
+    "method": "sanitized_sample",
+    "original": "max",
+    "review_status": "manual_review_required",
+    "score": 100.0,
+    "span": "max"
+  }
+]

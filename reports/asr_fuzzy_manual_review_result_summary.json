@@ -1,0 +1,13 @@
+{
+  "total_rows": 67,
+  "label_counts": {
+    "REJECT": 11,
+    "ACCEPT": 42,
+    "UNSURE": 14
+  },
+  "reject_rows": 11,
+  "unsure_rows": 14,
+  "accept_rows": 42,
+  "decision": "do_not_commit_as_is",
+  "recommendation": "Add denylist/normalization separation for REJECT rows and route UNSURE rows to manual review behavior."
+}

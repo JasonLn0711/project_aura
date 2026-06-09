@@ -1,0 +1,30 @@
+{
+  "meeting_id": "meeting_001",
+  "asr_transcript": [
+    {
+      "start": "00:00:01",
+      "end": "00:00:28",
+      "text": "今天主要討論英文版 demo 還有 all in one device 的本地部署，逐字稿有一點雜訊但大方向是 demo 要能穩定呈現。"
+    },
+    {
+      "start": "00:00:29",
+      "end": "00:01:05",
+      "text": "如果沒有 GPU，完整 LLM 在本地跑可能不實際，所以先測 INT8 小模型和摘要 evidence chunk 的可追溯性。"
+    },
+    {
+      "start": "00:01:06",
+      "end": "00:01:42",
+      "text": "法規素材方面需要整理 510k summary、TFDA 文件，先把哪些內容可用於展示確認清楚。"
+    },
+    {
+      "start": "00:01:43",
+      "end": "00:02:15",
+      "text": "暫定結論是先做離線實驗，不接 PyQt 介面，等 schema validation 和 evidence support 比較完成後再看整合。"
+    },
+    {
+      "start": "00:02:16",
+      "end": "00:02:46",
+      "text": "還要確認 Friday meeting 前能不能產出 graph RAG、vector RAG 和 direct summary 的比較表，這部分仍然不確定。"
+    }
+  ]
+}

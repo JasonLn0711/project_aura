@@ -35,7 +35,7 @@ from aura.audio.capture import AudioRecorderThread
 from aura.audio.export import normalize_wav_to_mp3
 from aura.config import CHUNK_MS, LIVE_CAPTURE_MICROPHONE, LIVE_CAPTURE_SYSTEM, LIVE_CAPTURE_SYSTEM_MICROPHONE
 from aura.llm.summary import SummarySettings
-from aura.llm.threads import SummaryThread
+from aura.llm.threads import OllamaPullThread, OllamaRuntimeThread, SummaryThread
 from aura.scheduling import milliseconds_until, next_wall_clock_datetime, stop_datetime_after_start
 from aura.settings import DEFAULT_SETTINGS
 from aura.system.platform import detect_runtime_platform
@@ -73,6 +73,10 @@ class TranscriptionTab(QWidget):
         self.pending_files = []
         self.model_loader = None
         self.summary_thread = None
+        self.ollama_runtime_thread = None
+        self.ollama_pull_thread = None
+        self.ollama_server_process = None
+        self.ollama_server_started_by_aura = False
         self.total_batch_count = 0
         self.update_checker = None
         self.transcript_revision = 0
@@ -868,7 +872,7 @@ class TranscriptionTab(QWidget):
             self.import_summary_pending = True
             if metrics is not None:
                 metrics["llm_summary_started_at"] = self.timestamp_now()
-            self.start_summary(
+            self.prepare_llm_runtime_then_summarize(
                 transcript,
                 finished_callback=lambda: self.finish_import_artifacts(
                     base_path,
@@ -892,7 +896,7 @@ class TranscriptionTab(QWidget):
         if metrics is not None:
             metrics["save_started_at"] = self.timestamp_now()
         self.import_summary_pending = False
-        saved = write_transcript_artifacts(base_path, transcript, summary_text=summary)
+        saved = write_transcript_artifacts(base_path, transcript, summary_text=summary, metrics=metrics)
         if metrics is not None:
             self.add_stage_duration(metrics, "save_outputs", save_started)
             finished_metrics = self.finish_metrics(metrics)
@@ -1136,7 +1140,7 @@ class TranscriptionTab(QWidget):
             if self.current_recording_metrics is not None:
                 self.current_recording_metrics["llm_summary_started_at"] = self.timestamp_now()
                 self.current_recording_metrics["_llm_summary_started_perf"] = time.perf_counter()
-            self.start_summary(
+            self.prepare_llm_runtime_then_summarize(
                 self.transcript_without_summary(),
                 finished_callback=lambda: self.save_and_clear_recording_transcript(
                     summary_holder["text"] or getattr(self.summary_thread, "summary_block", "")
@@ -1178,7 +1182,7 @@ class TranscriptionTab(QWidget):
             metrics["save_started_at"] = self.timestamp_now()
             if punctuation_result is not None and punctuation_result.backend != "skipped":
                 metrics["punctuation_restoration_backend"] = punctuation_result.backend
-        saved = write_transcript_artifacts(base_path, raw_transcript, summary_text=summary)
+        saved = write_transcript_artifacts(base_path, raw_transcript, summary_text=summary, metrics=metrics)
         if metrics is not None:
             self.add_stage_duration(metrics, "save_outputs", save_started)
             finished_metrics = self.finish_metrics(metrics)
@@ -1215,6 +1219,9 @@ class TranscriptionTab(QWidget):
             and not self.finalize_recording_pending
             and not self.scheduled_recording_pending
             and self.recorder_thread is None
+            and not (self.summary_thread and self.summary_thread.isRunning())
+            and not (self.ollama_runtime_thread and self.ollama_runtime_thread.isRunning())
+            and not (self.ollama_pull_thread and self.ollama_pull_thread.isRunning())
         )
 
     @pyqtSlot(np.ndarray)
@@ -1259,7 +1266,107 @@ class TranscriptionTab(QWidget):
         return content.strip()
 
     def summarize_current_transcript(self):
-        self.start_summary(self.transcript_without_summary())
+        transcript = self.transcript_without_summary()
+        self.prepare_llm_runtime_then_summarize(transcript)
+
+    def prepare_llm_runtime_then_summarize(self, transcript: str, finished_callback=None, summary_ready_callback=None):
+        if not transcript.strip():
+            if finished_callback:
+                QTimer.singleShot(0, finished_callback)
+            return
+        if self.summary_thread and self.summary_thread.isRunning():
+            if finished_callback:
+                self.summary_thread.finished.connect(finished_callback)
+            return
+        if self.ollama_runtime_thread and self.ollama_runtime_thread.isRunning():
+            return
+        if self.ollama_pull_thread and self.ollama_pull_thread.isRunning():
+            return
+
+        self.btn_summary.setEnabled(False)
+        self.ollama_runtime_thread = OllamaRuntimeThread()
+        self.ollama_runtime_thread.status_updated.connect(self.update_status_only)
+        self.ollama_runtime_thread.server_process_started.connect(self.on_ollama_server_process_started)
+        self.ollama_runtime_thread.ready.connect(
+            lambda transcript=transcript, finished_callback=finished_callback, summary_ready_callback=summary_ready_callback: self.start_summary(
+                transcript,
+                finished_callback=finished_callback,
+                summary_ready_callback=summary_ready_callback,
+            )
+        )
+        self.ollama_runtime_thread.model_missing.connect(
+            lambda model_tag, transcript=transcript, finished_callback=finished_callback, summary_ready_callback=summary_ready_callback: self.on_ollama_model_missing(
+                model_tag,
+                transcript,
+                finished_callback=finished_callback,
+                summary_ready_callback=summary_ready_callback,
+            )
+        )
+        self.ollama_runtime_thread.failed.connect(
+            lambda err_msg, finished_callback=finished_callback: self.on_ollama_runtime_failed(
+                err_msg,
+                finished_callback=finished_callback,
+            )
+        )
+        self.ollama_runtime_thread.finished.connect(self.update_summary_button_state)
+        self.ollama_runtime_thread.start()
+
+    @pyqtSlot(object)
+    def on_ollama_server_process_started(self, process):
+        self.ollama_server_process = process
+        self.ollama_server_started_by_aura = True
+
+    @pyqtSlot(str)
+    def on_ollama_runtime_failed(self, err_msg: str, finished_callback=None):
+        self.show_diagnostic_error(self.strings.summary_failed, err_msg)
+        if finished_callback:
+            QTimer.singleShot(0, finished_callback)
+
+    def on_ollama_model_missing(self, model_tag: str, transcript: str, finished_callback=None, summary_ready_callback=None):
+        command = f"ollama pull {model_tag}"
+        message = QMessageBox(self)
+        message.setIcon(QMessageBox.Icon.Warning)
+        message.setWindowTitle(self.strings.ollama_model_missing_title)
+        message.setText(self.strings.ollama_model_missing_message.format(model_tag=model_tag))
+        pull_button = message.addButton(self.strings.ollama_pull_model, QMessageBox.ButtonRole.AcceptRole)
+        copy_button = message.addButton(self.strings.ollama_copy_command, QMessageBox.ButtonRole.ActionRole)
+        cancel_button = message.addButton(self.strings.ollama_cancel, QMessageBox.ButtonRole.RejectRole)
+        message.setDefaultButton(pull_button)
+        message.exec()
+        clicked = message.clickedButton()
+        if clicked is pull_button:
+            self.pull_ollama_model_then_summarize(
+                model_tag,
+                transcript,
+                finished_callback=finished_callback,
+                summary_ready_callback=summary_ready_callback,
+            )
+            return
+        if clicked is copy_button:
+            QApplication.clipboard().setText(command)
+            self.update_status_only(self.strings.ollama_pull_command_copied)
+        if (clicked in (copy_button, cancel_button) or clicked is None) and finished_callback:
+            QTimer.singleShot(0, finished_callback)
+
+    def pull_ollama_model_then_summarize(self, model_tag: str, transcript: str, finished_callback=None, summary_ready_callback=None):
+        self.btn_summary.setEnabled(False)
+        self.ollama_pull_thread = OllamaPullThread(model_tag)
+        self.ollama_pull_thread.status_updated.connect(self.update_status_only)
+        self.ollama_pull_thread.pulled.connect(
+            lambda transcript=transcript, finished_callback=finished_callback, summary_ready_callback=summary_ready_callback: self.prepare_llm_runtime_then_summarize(
+                transcript,
+                finished_callback=finished_callback,
+                summary_ready_callback=summary_ready_callback,
+            )
+        )
+        self.ollama_pull_thread.failed.connect(
+            lambda err_msg, finished_callback=finished_callback: self.on_ollama_runtime_failed(
+                err_msg,
+                finished_callback=finished_callback,
+            )
+        )
+        self.ollama_pull_thread.finished.connect(self.update_summary_button_state)
+        self.ollama_pull_thread.start()
 
     def summarize_after_live_asr_idle(self):
         if self.transcriber_thread.is_idle():
@@ -1346,6 +1453,17 @@ class TranscriptionTab(QWidget):
         if self.summary_thread and self.summary_thread.isRunning():
             self.summary_thread.quit()
             self.summary_thread.wait(2000)
+        if self.ollama_runtime_thread and self.ollama_runtime_thread.isRunning():
+            self.ollama_runtime_thread.quit()
+            self.ollama_runtime_thread.wait(2000)
+        if self.ollama_pull_thread and self.ollama_pull_thread.isRunning():
+            self.ollama_pull_thread.quit()
+            self.ollama_pull_thread.wait(2000)
+        if self.ollama_server_started_by_aura and self.ollama_server_process is not None:
+            if self.ollama_server_process.poll() is None:
+                self.ollama_server_process.terminate()
+            self.ollama_server_process = None
+            self.ollama_server_started_by_aura = False
 
     def update_runtime_model_status(self):
         if hasattr(self, "runtime_model_label"):

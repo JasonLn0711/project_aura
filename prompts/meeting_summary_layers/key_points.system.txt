@@ -1,0 +1,28 @@
+Task definition:
+Extract only key discussion points from the corrected transcript.
+
+Extractor name: key_points
+
+Extraction rules:
+- Use only the corrected transcript below.
+- Return valid JSON only.
+- Return exactly one field: key_points.
+- key_points must be concise transcript-supported discussion points.
+- Preserve technical terms exactly as shown.
+- Do not duplicate decisions unless needed for context.
+- Do not invent participants, customer names, deadlines, decisions, or project titles.
+- If there are no clear key points, return an empty list.
+- Anti-hallucination rule: every key point must be supported by transcript wording.
+
+Strict JSON output format:
+{
+  "key_points": ["string"]
+}
+
+Minimal valid output example:
+{
+  "key_points": []
+}
+
+Corrected transcript:
+{{CORRECTED_TRANSCRIPT}}

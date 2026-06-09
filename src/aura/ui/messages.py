@@ -56,7 +56,7 @@ class UIStrings:
     speaker_max_label: str = "Max Speakers:"
     llm_summary_label: str = "Summarize transcript after ASR"
     llm_summary_tooltip: str = (
-        "Runs optional local Qwen3.5-9B summary after imported-file ASR finishes or shortly after recording stops. "
+        "Runs optional local Gemma 4 E4B FP8 summary after imported-file ASR finishes or shortly after recording stops. "
         "Output is constrained to Taiwanese Traditional Chinese."
     )
     llm_summary_button: str = "🧠 Summarize Current Transcript"
@@ -132,6 +132,16 @@ class UIStrings:
     summary_already_running: str = "A transcript summary is already running. Please wait for it to finish before importing files."
     file_transcription_failed: str = "File Transcription Failed"
     summary_failed: str = "LLM Summary Failed"
+    ollama_model_missing_title: str = "Local Gemma model not installed"
+    ollama_model_missing_message: str = (
+        "AURA found Ollama, but the required local model is not installed:\n\n"
+        "{model_tag}\n\n"
+        "This model is required for local transcript summary. AURA will not use a fallback model or cloud API."
+    )
+    ollama_pull_model: str = "Pull Model"
+    ollama_copy_command: str = "Copy Command"
+    ollama_cancel: str = "Cancel"
+    ollama_pull_command_copied: str = "📋 Ollama pull command copied to clipboard"
     transcript_artifacts_saved: str = "💾 Transcript artifacts saved: {file_path} ({elapsed_seconds:.1f}s)"
     transcript_artifacts_saved_remaining_skipped: str = (
         "💾 Transcript artifacts saved: {file_path} ({elapsed_seconds:.1f}s); remaining imports skipped"

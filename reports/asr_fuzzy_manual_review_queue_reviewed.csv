@@ -1,0 +1,68 @@
+source_file,category,original,corrected,score,watch_flag,review_label,review_note
+260416_2157__with_Prof_Wu_Tomi/260416_2157__with_Prof_Wu_Tomi (GPT).txt,organizations,陽明交大,國立陽明交通大學,100.0,alias,REJECT,"Original is a valid abbreviation; treat as normalization, not ASR correction."
+260416_2157__with_Prof_Wu_Tomi/260416_2157__with_Prof_Wu_Tomi.txt,organizations,智慧財產,智慧財產局,88.89,score_85_to_94_99,REJECT,Original is a valid term; correction adds an institution.
+260416_2157__with_Prof_Wu_Tomi/260416_2157__with_Prof_Wu_Tomi.txt,people,jason,Jason,100.0,people;high_risk:people,ACCEPT,
+260416_2157__with_Prof_Wu_Tomi/260416_2157__with_Prof_Wu_Tomi.txt,technical_terms,api,API,100.0,alias,ACCEPT,
+260416_2157__with_Prof_Wu_Tomi/260416_2157__with_Prof_Wu_Tomi.txt,technical_terms,fda,FDA,100.0,alias,ACCEPT,
+260422_1415_114-2 生成式AI應用系統與工程 W9_1150422/260422_1415_114-2 生成式AI應用系統與工程 W9_1150422.txt,technical_terms,api,API,100.0,alias,ACCEPT,
+260512_1302_record/260512_1302_record (minute).txt,people,jason,Jason,100.0,people;high_risk:people,ACCEPT,
+260512_1302_record/260512_1302_record (minute).txt,technical_terms,kiosk,Kiosk,100.0,alias,ACCEPT,
+260512_1302_record/260512_1302_record.txt,people,jason,Jason,100.0,people;high_risk:people,ACCEPT,
+260512_1302_record/260512_1302_record.txt,technical_terms,kiosk,Kiosk,100.0,alias,ACCEPT,
+260512_2224_record/260512_2224_record.txt,technical_terms,5.0k,510(k),100.0,alias;watch_term;high_risk:number,UNSURE,High-risk numeric/regulatory correction; requires context or audio.
+260512_2224_record/260512_2224_record.txt,technical_terms,510k,510(k),100.0,alias;watch_term;high_risk:number,ACCEPT,
+260515_1259_kioskDiscussion/260515_1259_kioskDiscussion.txt,technical_terms,kiosk,Kiosk,100.0,alias,ACCEPT,
+260515_1259_kioskDiscussion/transcript_260515_1259_kioskDiscussion.txt,technical_terms,kiosk,Kiosk,100.0,alias,ACCEPT,
+260518_0902_lab_sync/260518_0902_lab_sync.txt,medical_terms,SAMD,SaMD,100.0,medical_terms;high_risk:medical_terms,ACCEPT,
+260518_0902_lab_sync/260518_0902_lab_sync.txt,organizations,志德灣,智德萬,100.0,alias,ACCEPT,
+260518_0902_lab_sync/260518_0902_lab_sync.txt,organizations,陽明院,陽明醫院,85.71,score_85_to_94_99,UNSURE,"Organization correction may be valid, but requires context."
+260518_0902_lab_sync/260518_0902_lab_sync.txt,people,jason,Jason,100.0,people;high_risk:people,ACCEPT,
+260518_0902_lab_sync/transcript_260518_0902_lab_sync.txt,organizations,志德灣,智德萬,100.0,alias,ACCEPT,
+260518_0902_lab_sync/transcript_260518_0902_lab_sync.txt,people,jason,Jason,100.0,people;high_risk:people,ACCEPT,
+260518_0902_lab_sync/transcript_260518_0902_lab_sync.txt,technical_terms,510k,510(k),100.0,alias;watch_term;high_risk:number,ACCEPT,
+260518_0902_lab_sync/transcript_260518_0902_lab_sync.txt,technical_terms,api,API,100.0,alias,ACCEPT,
+260518_0902_lab_sync/transcript_260518_0902_lab_sync.txt,technical_terms,irb,IRB,100.0,alias;watch_term,ACCEPT,
+260518_0902_lab_sync/transcript_260518_0902_lab_sync.txt,technical_terms,tfda,TFDA,100.0,alias,ACCEPT,
+260519_1042_record/260519_1042_record_raw (gemini).txt,organizations,信義的院外門診部,信義院外門診部,93.33,score_85_to_94_99,UNSURE,"Organization correction may be valid, but requires context."
+260519_1042_record/260519_1042_record_raw (gemini).txt,organizations,個信義院外門診,信義院外門診部,85.71,score_85_to_94_99,UNSURE,"Organization correction may be valid, but requires context."
+260519_1042_record/260519_1042_record_raw (gemini).txt,organizations,陽明交大,國立陽明交通大學,100.0,alias,REJECT,"Original is a valid abbreviation; treat as normalization, not ASR correction."
+260520_1606_114-2 生成式AI應用系統與工程 W13_1150520/260520_1606_114-2 生成式AI應用系統與工程 W13_1150520_final.txt,people,max,Max,100.0,people;high_risk:people,UNSURE,Could be a common word or a person name; requires context.
+260520_1606_114-2 生成式AI應用系統與工程 W13_1150520/260520_1606_114-2 生成式AI應用系統與工程 W13_1150520_raw.txt,people,max,Max,100.0,people;high_risk:people,UNSURE,Could be a common word or a person name; requires context.
+260520_2104_114-2 生成式AI應用系統與工程 W13_1150520/260520_2104_114-2 生成式AI應用系統與工程 W13_1150520_final.txt,people,max,Max,100.0,people;high_risk:people,UNSURE,Could be a common word or a person name; requires context.
+260520_2104_114-2 生成式AI應用系統與工程 W13_1150520/260520_2104_114-2 生成式AI應用系統與工程 W13_1150520_raw.txt,people,max,Max,100.0,people;high_risk:people,UNSURE,Could be a common word or a person name; requires context.
+260525_0858_lab_sync/260525_0858_lab_sync_final.txt,organizations,innoVAX,InnoVEX,85.71,score_85_to_94_99,REJECT,Original could be a distinct valid name; correction changes entity.
+260525_0858_lab_sync/260525_0858_lab_sync_final.txt,organizations,inovex,InnoVEX,92.31,score_85_to_94_99,ACCEPT,
+260525_0858_lab_sync/260525_0858_lab_sync_final.txt,people,max,Max,100.0,people;high_risk:people,UNSURE,Could be a common word or a person name; requires context.
+260525_0858_lab_sync/260525_0858_lab_sync_final.txt,technical_terms,detector,Detector+,94.12,score_85_to_94_99,REJECT,Original is valid; correction adds product suffix without context.
+260525_0858_lab_sync/260525_0858_lab_sync_final.txt,technical_terms,fda,FDA,100.0,alias,ACCEPT,
+260525_0858_lab_sync/260525_0858_lab_sync_final.txt,technical_terms,irb,IRB,100.0,alias;watch_term,ACCEPT,
+260525_0858_lab_sync/260525_0858_lab_sync_raw.txt,organizations,innoVAX,InnoVEX,85.71,score_85_to_94_99,REJECT,Original could be a distinct valid name; correction changes entity.
+260525_0858_lab_sync/260525_0858_lab_sync_raw.txt,organizations,inovex,InnoVEX,92.31,score_85_to_94_99,ACCEPT,
+260525_0858_lab_sync/260525_0858_lab_sync_raw.txt,people,max,Max,100.0,people;high_risk:people,UNSURE,Could be a common word or a person name; requires context.
+260525_0858_lab_sync/260525_0858_lab_sync_raw.txt,technical_terms,detector,Detector+,94.12,score_85_to_94_99,REJECT,Original is valid; correction adds product suffix without context.
+260525_0858_lab_sync/260525_0858_lab_sync_raw.txt,technical_terms,fda,FDA,100.0,alias,ACCEPT,
+260525_0858_lab_sync/260525_0858_lab_sync_raw.txt,technical_terms,irb,IRB,100.0,alias;watch_term,ACCEPT,
+260525_0858_lab_sync/transcript_260525_0858_lab_sync_final.txt,people,jason,Jason,100.0,people;high_risk:people,ACCEPT,
+260525_0858_lab_sync/transcript_260525_0858_lab_sync_final.txt,technical_terms,detector,Detector+,94.12,score_85_to_94_99,REJECT,Original is valid; correction adds product suffix without context.
+260525_0858_lab_sync/transcript_260525_0858_lab_sync_final.txt,technical_terms,fda,FDA,100.0,alias,ACCEPT,
+260525_0858_lab_sync/transcript_260525_0858_lab_sync_final.txt,technical_terms,tfda,TFDA,100.0,alias,ACCEPT,
+260525_0858_lab_sync/transcript_260525_0858_lab_sync_raw.txt,people,jason,Jason,100.0,people;high_risk:people,ACCEPT,
+260525_0858_lab_sync/transcript_260525_0858_lab_sync_raw.txt,technical_terms,detector,Detector+,94.12,score_85_to_94_99,REJECT,Original is valid; correction adds product suffix without context.
+260525_0858_lab_sync/transcript_260525_0858_lab_sync_raw.txt,technical_terms,fda,FDA,100.0,alias,ACCEPT,
+260525_0858_lab_sync/transcript_260525_0858_lab_sync_raw.txt,technical_terms,tfda,TFDA,100.0,alias,ACCEPT,
+260526_1057_小lin說_一口氣搞清避稅天堂的資本遊戲/transcript_260526_1057_小lin說_一口氣搞清避稅天堂的資本遊戲_final (GPT).txt,technical_terms,api,API,100.0,alias,ACCEPT,
+260526_1057_小lin說_一口氣搞清避稅天堂的資本遊戲/transcript_260526_1057_小lin說_一口氣搞清避稅天堂的資本遊戲_final (gemini).txt,technical_terms,api,API,100.0,alias,ACCEPT,
+260526_1057_小lin說_一口氣搞清避稅天堂的資本遊戲/transcript_260526_1057_小lin說_一口氣搞清避稅天堂的資本遊戲_final.txt,people,max,Max,100.0,people;high_risk:people,UNSURE,Could be a common word or a person name; requires context.
+260526_1057_小lin說_一口氣搞清避稅天堂的資本遊戲/transcript_260526_1057_小lin說_一口氣搞清避稅天堂的資本遊戲_final.txt,technical_terms,api,API,100.0,alias,ACCEPT,
+260526_1057_小lin說_一口氣搞清避稅天堂的資本遊戲/transcript_260526_1057_小lin說_一口氣搞清避稅天堂的資本遊戲_raw.txt,people,max,Max,100.0,people;high_risk:people,UNSURE,Could be a common word or a person name; requires context.
+260526_1057_小lin說_一口氣搞清避稅天堂的資本遊戲/transcript_260526_1057_小lin說_一口氣搞清避稅天堂的資本遊戲_raw.txt,technical_terms,api,API,100.0,alias,ACCEPT,
+260527_1422_record/260527_1422_record_final.txt,technical_terms,api,API,100.0,alias,ACCEPT,
+260527_1422_record/260527_1422_record_final.txt,technical_terms,kiosk,Kiosk,100.0,alias,ACCEPT,
+260527_1422_record/260527_1422_record_raw.txt,technical_terms,api,API,100.0,alias,ACCEPT,
+260527_1422_record/260527_1422_record_raw.txt,technical_terms,kiosk,Kiosk,100.0,alias,ACCEPT,
+260528_0839_record/260528_0839_record_final.txt,organizations,nyc,NYCU,85.71,score_85_to_94_99,REJECT,Original is a valid acronym; NYCU correction requires context.
+260528_0839_record/260528_0839_record_final.txt,technical_terms,50L510K,510(k),100.0,alias;watch_term;high_risk:number,UNSURE,High-risk numeric/regulatory correction; requires context or audio.
+260528_0839_record/260528_0839_record_raw.txt,organizations,nyc,NYCU,85.71,score_85_to_94_99,REJECT,Original is a valid acronym; NYCU correction requires context.
+260528_0839_record/260528_0839_record_raw.txt,technical_terms,50L510K,510(k),100.0,alias;watch_term;high_risk:number,UNSURE,High-risk numeric/regulatory correction; requires context or audio.
+260604_1419_record/transcript_260604_1419_record_final.txt,technical_terms,api,API,100.0,alias,ACCEPT,
+260604_1419_record/transcript_260604_1419_record_raw.txt,technical_terms,api,API,100.0,alias,ACCEPT,

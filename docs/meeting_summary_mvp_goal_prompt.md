@@ -166,7 +166,7 @@ Required pipeline:
 
 7. Add INT8 model runners:
    - Qwen 3.5 9B INT8
-   - Gemma 4 E4B INT8
+   - Gemma 4 E4B FP8/NVFP8-style
 
    Before downloading or hardcoding model IDs, verify the exact local/official model identifiers and license/runtime requirements. Keep model IDs configurable.
    If the models cannot run in the current environment, preserve the pipeline, tests, and dry-run mode, and report the exact blocker.

@@ -1,0 +1,373 @@
+settings:
+  llm_verification: false
+  method: rapidfuzz
+  thresholds:
+    organizations: 85
+    medical_terms: 92
+    technical_terms: 90
+    people: 90
+
+correction_policy:
+  denylist:
+    organizations:
+      - original: 陽明交大
+        corrected: 國立陽明交通大學
+        reason: valid_abbreviation_normalization_only
+      - original: 智慧財產
+        corrected: 智慧財產局
+        reason: original_valid_term_adds_institution
+      - original: innoVAX
+        corrected: InnoVEX
+        reason: possible_distinct_entity
+      - original: nyc
+        corrected: NYCU
+        reason: possible_distinct_acronym
+    technical_terms:
+      - original: detector
+        corrected: Detector+
+        reason: original_valid_term_adds_product_suffix
+  manual_review_required:
+    organizations:
+      - original: 陽明院
+        corrected: 陽明醫院
+        reason: context_required
+      - original: 信義的院外門診部
+        corrected: 信義院外門診部
+        reason: context_required
+      - original: 個信義院外門診
+        corrected: 信義院外門診部
+        reason: context_required
+    technical_terms:
+      - original: 5.0k
+        corrected: 510(k)
+        reason: regulatory_numeric_context_required
+      - original: 50L510K
+        corrected: 510(k)
+        reason: regulatory_numeric_context_required
+    people:
+      - original: max
+        corrected: Max
+        reason: person_name_or_common_word_context_required
+
+organizations:
+  - 智德萬
+  - 智德萬生醫科技股份有限公司
+  - 慧誠智醫
+  - 國立陽明交通大學
+  - 陽明交通大學
+  - NYCU
+  - 臺北市立聯合醫院
+  - 台北市立聯合醫院
+  - 聯醫
+  - 北市聯醫
+  - 衛生局
+  - 北市衛生局
+  - 北榮
+  - 台北榮總
+  - 中榮
+  - 新光
+  - 三總
+  - 花慈
+  - 附醫
+  - 榮科
+  - 仁愛
+  - 仁愛醫院
+  - 陽明醫院
+  - 陽明院區
+  - 中興醫院
+  - 信義院外門診部
+  - 智慧財產局
+  - 國衛院
+  - NVIDIA
+  - MIAI
+  - Mutuomics
+  - 杏創生物科技股份有限公司
+  - 杏創生技
+  - Taipei City Hospital
+  - College of Biomedical Sciences and Engineering
+  - Center for Smart Health and Medicine
+  - 台北陽明校區
+  - 圖資大樓
+  - InnoVEX
+  - AItewan
+  - National Yang Ming Chiao Tung University
+
+medical_terms:
+  - 血氧
+  - 血壓
+  - 收縮壓
+  - 舒張壓
+  - 體溫
+  - 耳溫
+  - 心跳
+  - 體重
+  - 身高
+  - 呼吸急促
+  - 胸悶
+  - 急診檢傷
+  - 急診分流
+  - 檢傷
+  - 主訴
+  - vital sign
+  - 病史
+  - 慢性病
+  - 生命徵象
+  - 泌尿科
+  - 住院醫師
+  - urgent care
+  - PSA
+  - 醫材
+  - SaMD
+  - 細胞精準醫療
+  - 細胞檢測
+  - 細胞檢測技術
+  - 實體腫瘤
+  - 免疫細胞
+  - 流式細胞儀
+  - Flow Cytometry
+  - 臨床數據
+  - 細胞數據
+  - 疾病預測
+  - 治療反應評估
+  - 個人化醫療決策
+  - 精準醫療預測平台
+  - 智慧精準醫療平台
+  - 生醫影像
+  - 生醫影像AI軟體
+  - 腦瘤圈註
+  - 腦瘤圈註產品
+  - 腦瘤分類
+  - 腦瘤偵測
+  - T1W腦瘤偵測
+  - 肺分割模型
+  - 淋巴腺圈註
+  - Prostate 淋巴腺圈註
+  - 取證
+  - 取證文件
+  - 取證規劃表
+  - IRB計劃書
+  - 細胞檢測電子目錄
+  - 細胞檢測報告範本
+
+technical_terms:
+  - Breeze-ASR
+  - Breeze-ASR-25
+  - Gemma
+  - Qwen
+  - RAG
+  - LLM
+  - ASR
+  - iMVS
+  - 510(k)
+  - FDA
+  - TFDA
+  - IRB
+  - MOU
+  - CRM
+  - KPI
+  - API
+  - CUDA
+  - cuDNN
+  - cuBLAS
+  - RTX
+  - GPU
+  - CPU
+  - SQL
+  - Spark
+  - machine learning
+  - edge
+  - mini box
+  - all-in-one
+  - Kiosk
+  - DKB type
+  - PyQt
+  - PyQt6
+  - faster-whisper
+  - Gamma Knife
+  - Elekta
+  - graph RAG
+  - vector RAG
+  - embedding
+  - predicate device
+  - DeepFilterNet3
+  - ClearerVoice-Studio
+  - DeepBT
+  - DeepBT Detector A+
+  - Detector+
+  - Detector A+
+  - AI manager
+  - AI manager+Liger UI
+  - Liger
+  - Liger UI
+  - DeepAorta
+  - LDCT
+  - LDCT CAC
+  - LDCT nodule detection
+  - LDCT/CT nodule detection
+  - CT nodule detection
+  - CT lung cancer tracker
+  - CT PE
+  - Thoracic Aorta
+  - AVM
+  - MR brain segmentation and WMH
+  - WMH
+  - Pelvis
+  - T1W
+  - AI workflow engineer
+  - Biomedical data engineer
+  - Medical informatics engineer
+  - LLM healthcare engineer
+  - AI串流管理平台
+  - AI管理平台
+  - AI 與細胞檢測數據分析模型建立
+  - 臨床資料與多維度數據整合
+  - 產學合作計畫
+  - 共同研究論文
+  - 技術成果發表
+  - DeepBT腦瘤AI與Liger
+  - Ceremap Demo
+  - TAVI
+  - EEG
+  - NVIDIA 討論會
+
+people:
+  - 冠廷
+  - 多寶
+  - 俊邑
+  - 冠宇
+  - 吳老師
+  - Tomi
+  - Kevin
+  - 美如主任
+  - 許副院長
+  - Jason
+  - 佳聖
+  - 華珍
+  - 靖中
+  - 朝威
+  - 至懿
+  - 芊穎
+  - 佳瑜
+  - 詩諭
+  - 薇安
+  - 永霖
+  - 詩庭
+  - 愷萱
+  - 育維
+  - 唯愷
+  - 蕥瑄
+  - 育德
+  - 宜辰
+  - 啟文
+  - 陳昕
+  - 家聖
+  - 冠昱
+  - 駿亦
+  - 陳靖中
+  - 陳耘加
+  - 陳稚均
+  - 陳永霖
+  - 陳妡
+  - 陳子璇
+  - 邱華彥
+  - 辜筱倫
+  - 賴佳瑜
+  - 許桓瑜
+  - 許朝威
+  - 王廷瑋
+  - 游乙倢
+  - 洪佳聖
+  - 楊蕥瑄
+  - 林家聖
+  - 李唯愷
+  - 李佩昕
+  - 戴詩庭
+  - 孫宜辰
+  - 呂東益
+  - 吳冠廷
+  - 黃詩諭
+  - 高子凱
+  - 小愷
+  - 子琁
+  - 李晏
+  - HwayenChiu
+  - Yu-Te Wu
+  - 吳育德
+  - 李函睿主任
+  - 郭主任
+  - 蔡昇宗部長
+  - 許富順醫師
+  - 陳一瑋醫師
+  - 姚主任
+  - 陳正豐主任
+  - 江崇芬
+  - Sara 江
+  - Sara
+  - 顏肇宏
+  - 顏肇宏博士
+  - 顏博士
+  - 楊慕華副校長
+  - 楊博士
+  - Max
+
+aliases:
+  organizations:
+    智德萬:
+      - 志德灣
+      - 智德灣
+      - 志德萬
+    慧誠智醫:
+      - 會成智醫
+      - 慧成智醫
+      - 會誠智醫
+    國立陽明交通大學:
+      - 國立陽明交大
+      - 陽明交大
+    臺北市立聯合醫院:
+      - 台北市立聯合醫院
+      - 臺北聯醫
+      - 台北聯醫
+      - 北市聯醫
+    北榮:
+      - 台北榮總
+    杏創生物科技股份有限公司:
+      - 杏創生技
+    InnoVEX:
+      - InnoVox
+  technical_terms:
+    iMVS:
+      - iMBS
+      - IMBS
+      - IMVS
+    Gemma:
+      - Gamma
+      - gemma
+    Breeze-ASR:
+      - Breeze ASR
+      - breeze-asr
+    510(k):
+      - 510k
+      - five ten k
+      - Five Ten K
+      - 5.0k
+      - 50L510K
+    Kiosk:
+      - kiosk
+    API:
+      - api
+    TFDA:
+      - tfda
+    FDA:
+      - fda
+    IRB:
+      - I R B
+      - IR B
+      - irb
+    CT lung cancer tracker:
+      - CT lunger cancer tracker
+    AI manager:
+      - AI Manager
+      - ai manager
+    Liger UI:
+      - Liger介面
+      - Liger 介面

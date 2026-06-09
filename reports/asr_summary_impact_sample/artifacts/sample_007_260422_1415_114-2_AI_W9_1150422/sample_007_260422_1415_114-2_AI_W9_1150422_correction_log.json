@@ -1,0 +1,82 @@
+[
+  {
+    "accepted": true,
+    "category": "technical_terms",
+    "corrected": "LLM",
+    "method": "sanitized_sample",
+    "original": "llm",
+    "review_status": "accepted",
+    "score": 100.0,
+    "span": "llm"
+  },
+  {
+    "accepted": true,
+    "category": "technical_terms",
+    "corrected": "LLM",
+    "method": "sanitized_sample",
+    "original": "llm",
+    "review_status": "accepted",
+    "score": 100.0,
+    "span": "llm"
+  },
+  {
+    "accepted": true,
+    "category": "technical_terms",
+    "corrected": "API",
+    "method": "sanitized_sample",
+    "original": "api",
+    "review_status": "accepted",
+    "score": 100.0,
+    "span": "api"
+  },
+  {
+    "accepted": true,
+    "category": "technical_terms",
+    "corrected": "API",
+    "method": "sanitized_sample",
+    "original": "api",
+    "review_status": "accepted",
+    "score": 100.0,
+    "span": "api"
+  },
+  {
+    "accepted": true,
+    "category": "technical_terms",
+    "corrected": "API",
+    "method": "sanitized_sample",
+    "original": "api",
+    "review_status": "accepted",
+    "score": 100.0,
+    "span": "api"
+  },
+  {
+    "accepted": true,
+    "category": "technical_terms",
+    "corrected": "LLM",
+    "method": "sanitized_sample",
+    "original": "llm",
+    "review_status": "accepted",
+    "score": 100.0,
+    "span": "llm"
+  },
+  {
+    "accepted": true,
+    "category": "technical_terms",
+    "corrected": "LLM",
+    "method": "sanitized_sample",
+    "original": "llm",
+    "review_status": "accepted",
+    "score": 100.0,
+    "span": "llm"
+  },
+  {
+    "accepted": true,
+    "category": "organizations",
+    "corrected": "NVIDIA",
+    "method": "sanitized_sample",
+    "original": "nvidia",
+    "review_status": "accepted",
+    "score": 100.0,
+    "span": "nvidia"
+  }
+]

@@ -1,0 +1,100 @@
+{
+  "canonical_terms_in_corrected_summaries": 0,
+  "claim_scope": "internal local model-backed summary-impact gate using google/gemma-4-E4B-it, not final empirical claim",
+  "cloud_calls": false,
+  "complete_artifact_sets": 5,
+  "decision_changes": {
+    "domain_term_only": 3,
+    "manual_review_needed": 0,
+    "possible_semantic_change": 1
+  },
+  "domain_term_delta": 3,
+  "domain_terms_corrected_summary": 44,
+  "domain_terms_raw_summary": 41,
+  "download_during_gate": false,
+  "endpoint": "http://127.0.0.1:11434",
+  "evaluated_files": 4,
+  "external_calls": false,
+  "files_with_both_summaries": 4,
+  "fixed_model_id": "google/gemma-4-E4B-it",
+  "fp8_checkpoint": false,
+  "gate": "G4E4B-SummaryImpact",
+  "generation_failures": [
+    {
+      "corrected_summary_has_content": true,
+      "file_id": "260526_1057_小lin說_一口氣搞清避稅天堂的資本遊戲/transcript_260526_1057_小lin說_一口氣搞清避稅天堂的資本遊戲",
+      "raw_summary_has_content": false,
+      "reason": "empty_structured_summary"
+    }
+  ],
+  "hallucinated_entity_watch_count": 3,
+  "local_files_only": true,
+  "manual_review_leakage": 0,
+  "model": "Gemma 4 E4B",
+  "model_available": true,
+  "model_id": "google/gemma-4-E4B-it",
+  "model_source": "preloaded_local_cache",
+  "ollama_model": "gemma4:e4b-it-q4_K_M",
+  "per_file": [
+    {
+      "canonical_terms_in_corrected_summary_count": 0,
+      "corrected_summary_domain_terms": 12,
+      "decision_change_category": "domain_term_only",
+      "domain_term_delta": 0,
+      "file_id": "260604_1419_record/transcript_260604_1419_record",
+      "hallucinated_entity_watch": true,
+      "hallucinated_entity_watch_count": 2,
+      "manual_review_leakage_count": 0,
+      "raw_asr_error_spans_in_raw_summary_count": 0,
+      "raw_summary_domain_terms": 12,
+      "rejected_leakage_count": 0
+    },
+    {
+      "canonical_terms_in_corrected_summary_count": 0,
+      "corrected_summary_domain_terms": 3,
+      "decision_change_category": "domain_term_only",
+      "domain_term_delta": 0,
+      "file_id": "260519_1130_record/260519_1130_record",
+      "hallucinated_entity_watch": false,
+      "hallucinated_entity_watch_count": 0,
+      "manual_review_leakage_count": 0,
+      "raw_asr_error_spans_in_raw_summary_count": 0,
+      "raw_summary_domain_terms": 3,
+      "rejected_leakage_count": 0
+    },
+    {
+      "canonical_terms_in_corrected_summary_count": 0,
+      "corrected_summary_domain_terms": 17,
+      "decision_change_category": "possible_semantic_change",
+      "domain_term_delta": 2,
+      "file_id": "260528_0839_record/260528_0839_record",
+      "hallucinated_entity_watch": true,
+      "hallucinated_entity_watch_count": 10,
+      "manual_review_leakage_count": 0,
+      "raw_asr_error_spans_in_raw_summary_count": 0,
+      "raw_summary_domain_terms": 15,
+      "rejected_leakage_count": 0
+    },
+    {
+      "canonical_terms_in_corrected_summary_count": 0,
+      "corrected_summary_domain_terms": 12,
+      "decision_change_category": "domain_term_only",
+      "domain_term_delta": 1,
+      "file_id": "260604_1419_record/260604_1419_record",
+      "hallucinated_entity_watch": true,
+      "hallucinated_entity_watch_count": 6,
+      "manual_review_leakage_count": 0,
+      "raw_asr_error_spans_in_raw_summary_count": 0,
+      "raw_summary_domain_terms": 11,
+      "rejected_leakage_count": 0
+    }
+  ],
+  "precision_variant": "ollama_q4_K_M_local_tag",
+  "raw_asr_error_spans_in_raw_summaries": 0,
+  "raw_email_pdf_read": false,
+  "raw_transcript_context_emitted": false,
+  "reason": "Ollama local model found: gemma4:e4b-it-q4_K_M; 1 artifact sets generated empty structured summaries",
+  "rejected_leakage": 0,
+  "runner": "ollama",
+  "summary_generation_failures": 1
+}

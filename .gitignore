@@ -16,6 +16,8 @@ temp_normalized.wav
 runtime/
 outputs/
 recordings/
+reports/gemma4_e4b_summary_impact/local_outputs/
+local_outputs/meeting_summary/
 26*/
 ??????_????_*/
 *.wav

@@ -1,0 +1,27 @@
+Task definition:
+Extract only the executive summary from the corrected transcript.
+
+Extractor name: executive_summary
+
+Extraction rules:
+- Use only the corrected transcript below.
+- Return valid JSON only.
+- Return exactly one field: executive_summary.
+- executive_summary must be 3 to 5 concise sentences.
+- Mention the main purpose and practical outcome only when supported.
+- Do not include every detail.
+- Do not invent participants, customer names, deadlines, decisions, or project titles.
+- Anti-hallucination rule: every sentence must be supported by transcript wording.
+
+Strict JSON output format:
+{
+  "executive_summary": "string"
+}
+
+Minimal valid output example:
+{
+  "executive_summary": ""
+}
+
+Corrected transcript:
+{{CORRECTED_TRANSCRIPT}}
