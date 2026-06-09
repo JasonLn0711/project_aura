@@ -12,10 +12,10 @@ from aura.llm.summary import (
 
 
 class SummaryTests(unittest.TestCase):
-    def test_summary_prompt_documents_parallel_layered_runtime(self):
+    def test_summary_prompt_documents_parallel_field_runtime(self):
         prompt = build_summary_prompt("[00:00:01] hello")
 
-        self.assertIn("parallel layered extractor", prompt)
+        self.assertIn("parallel field extractor", prompt)
         self.assertIn("gemma4:e4b-it-q4_K_M", prompt)
         self.assertIn("corrected transcript only", prompt)
         self.assertIn("correction_log", prompt)

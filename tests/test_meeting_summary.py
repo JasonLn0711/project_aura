@@ -20,7 +20,8 @@ class PracticalMeetingSummaryTests(unittest.TestCase):
         self.assertEqual(summary["metadata"]["model"], OLLAMA_MODEL_TAG)
         self.assertEqual(summary["metadata"]["base_model_id"], BASE_MODEL_ID)
         self.assertEqual(summary["metadata"]["ollama_num_ctx"], OLLAMA_NUM_CTX)
-        self.assertTrue(summary["metadata"]["parallel_layered_generation"])
+        self.assertTrue(summary["metadata"]["parallel_field_generation"])
+        self.assertFalse(summary["metadata"]["parallel_layered_generation"])
         self.assertFalse(summary["metadata"]["external_calls"])
         self.assertFalse(summary["metadata"]["cloud_calls"])
 

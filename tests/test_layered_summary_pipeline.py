@@ -12,8 +12,6 @@ from summary.field_schemas import (
     BASE_MODEL_ID,
     EXTRACTOR_FIELDS,
     EXTRACTOR_NAMES,
-    LAYER1_EXTRACTORS,
-    LAYER2_EXTRACTORS,
     OLLAMA_MODEL_TAG,
     OLLAMA_NUM_CTX,
     validate_extractor_value,
@@ -32,14 +30,19 @@ from summary.ollama_gemma4_client import OllamaGemma4Client, OllamaGemmaConfig, 
 
 
 VALID_OUTPUTS = {
-    "topic_participants": {"meeting_topic": "Topic", "participants": ["Jason"]},
-    "executive_key_points": {"executive_summary": "A concise summary.", "key_points": ["Point"]},
+    "meeting_topic": {"meeting_topic": "Topic"},
+    "participants": {"participants": ["Jason"]},
+    "executive_summary": {"executive_summary": "A concise summary."},
+    "key_points": {"key_points": ["Point"]},
     "decisions": {"decisions": [{"decision": "Use corrected transcript.", "evidence_style": "explicit"}]},
-    "actions_next_steps": {
+    "action_items": {
         "action_items": [{"task": "Render Markdown.", "owner": "", "deadline": "", "status": "open"}],
+    },
+    "open_questions": {"open_questions": ["Question?"]},
+    "risks": {"risks": ["Risk"]},
+    "next_steps": {
         "next_steps": ["Next"],
     },
-    "questions_risks": {"open_questions": ["Question?"], "risks": ["Risk"]},
 }
 
 
@@ -69,43 +72,33 @@ class FakeClient:
 
 
 class LayeredSummaryPipelineTests(unittest.TestCase):
-    def test_layer1_runs_parallel(self) -> None:
+    def test_all_nine_extractors_run_in_one_parallel_batch(self) -> None:
         client = FakeClient(delay_sec=0.08)
         started = time.monotonic()
 
-        run_extractors_parallel(LAYER1_EXTRACTORS, "corrected transcript", client)
+        run_extractors_parallel(EXTRACTOR_NAMES, "corrected transcript", client)
         elapsed = time.monotonic() - started
 
-        self.assertEqual(len(client.prompts), 2)
-        self.assertLess(elapsed, 0.15)
-
-    def test_layer2_runs_parallel(self) -> None:
-        client = FakeClient(delay_sec=0.08)
-        started = time.monotonic()
-
-        run_extractors_parallel(LAYER2_EXTRACTORS, "corrected transcript", client)
-        elapsed = time.monotonic() - started
-
-        self.assertEqual(len(client.prompts), 3)
-        self.assertLess(elapsed, 0.17)
+        self.assertEqual(len(client.prompts), 9)
+        self.assertLess(elapsed, 0.18)
 
     def test_uses_corrected_transcript_only(self) -> None:
-        prompt = build_extractor_prompt("topic_participants", "CORRECTED_TRANSCRIPT_SENTINEL")
+        prompt = build_extractor_prompt("meeting_topic", "CORRECTED_TRANSCRIPT_SENTINEL")
 
         self.assertIn("CORRECTED_TRANSCRIPT_SENTINEL", prompt)
         self.assertNotIn("RAW_TRANSCRIPT_SENTINEL", prompt)
         self.assertNotIn("CORRECTION_LOG_SENTINEL", prompt)
 
     def test_raw_transcript_not_sent_to_model(self) -> None:
-        client = FakeClient({"topic_participants": VALID_OUTPUTS["topic_participants"]})
-        extract_with_repair("topic_participants", "CORRECTED_ONLY_SENTINEL", client)
+        client = FakeClient({"meeting_topic": VALID_OUTPUTS["meeting_topic"]})
+        extract_with_repair("meeting_topic", "CORRECTED_ONLY_SENTINEL", client)
 
         self.assertIn("CORRECTED_ONLY_SENTINEL", client.prompts[0])
         self.assertNotIn("RAW_TRANSCRIPT_SENTINEL", client.prompts[0])
 
     def test_correction_log_not_sent_to_model(self) -> None:
-        client = FakeClient({"questions_risks": VALID_OUTPUTS["questions_risks"]})
-        extract_with_repair("questions_risks", "CORRECTED_TRANSCRIPT_SENTINEL", client)
+        client = FakeClient({"risks": VALID_OUTPUTS["risks"]})
+        extract_with_repair("risks", "CORRECTED_TRANSCRIPT_SENTINEL", client)
 
         self.assertNotIn("CORRECTION_LOG_JSON_SENTINEL", client.prompts[0])
         self.assertNotIn("PRIVATE_AUDIT_LOG_SENTINEL", client.prompts[0])
@@ -142,16 +135,16 @@ class LayeredSummaryPipelineTests(unittest.TestCase):
         with self.assertRaises(OllamaGemmaError):
             OllamaGemma4Client(OllamaGemmaConfig(model="other:model"))
 
-    def test_each_layer_prompt_exists(self) -> None:
+    def test_each_field_prompt_exists(self) -> None:
         for extractor in EXTRACTOR_NAMES:
             self.assertTrue((DEFAULT_LAYER_PROMPT_DIR / f"{extractor}.system.txt").exists())
         self.assertTrue((DEFAULT_LAYER_PROMPT_DIR / "format_repair.system.txt").exists())
 
-    def test_each_layer_prompt_has_one_shot(self) -> None:
+    def test_each_field_prompt_has_minimal_example(self) -> None:
         for path in DEFAULT_LAYER_PROMPT_DIR.glob("*.system.txt"):
-            self.assertIn("One-shot example", path.read_text(encoding="utf-8"))
+            self.assertIn("Minimal valid output example", path.read_text(encoding="utf-8"))
 
-    def test_each_layer_prompt_is_distinct(self) -> None:
+    def test_each_field_prompt_is_distinct(self) -> None:
         prompts = {
             path.name: path.read_text(encoding="utf-8")
             for path in DEFAULT_LAYER_PROMPT_DIR.glob("*.system.txt")
@@ -160,8 +153,8 @@ class LayeredSummaryPipelineTests(unittest.TestCase):
 
         self.assertEqual(len(set(prompts.values())), len(prompts))
 
-    def test_layer_output_validation(self) -> None:
-        value, result = validate_extractor_value("actions_next_steps", VALID_OUTPUTS["actions_next_steps"])
+    def test_field_output_validation(self) -> None:
+        value, result = validate_extractor_value("action_items", VALID_OUTPUTS["action_items"])
 
         self.assertTrue(result.valid)
         self.assertEqual(value["action_items"][0]["status"], "open")
@@ -169,20 +162,7 @@ class LayeredSummaryPipelineTests(unittest.TestCase):
     def test_all_extractors_cover_final_fields_once(self) -> None:
         covered = [field for fields in EXTRACTOR_FIELDS.values() for field in fields]
 
-        self.assertEqual(
-            covered,
-            [
-                "meeting_topic",
-                "participants",
-                "executive_summary",
-                "key_points",
-                "decisions",
-                "action_items",
-                "next_steps",
-                "open_questions",
-                "risks",
-            ],
-        )
+        self.assertEqual(covered, list(EXTRACTOR_NAMES))
 
     def test_meeting_topic_must_be_string(self) -> None:
         _, result = validate_field_value("meeting_topic", {"meeting_topic": ["bad"]})
@@ -210,8 +190,8 @@ class LayeredSummaryPipelineTests(unittest.TestCase):
         self.assertFalse(result.valid)
 
     def test_format_repair_runs_once(self) -> None:
-        client = FakeClient(["not json", json.dumps(VALID_OUTPUTS["topic_participants"])])
-        value, log, _ = extract_with_repair("topic_participants", "Jason joined.", client)
+        client = FakeClient(["not json", json.dumps(VALID_OUTPUTS["participants"])])
+        value, log, _ = extract_with_repair("participants", "Jason joined.", client)
 
         self.assertEqual(value["participants"], ["Jason"])
         self.assertTrue(log.repaired)
@@ -219,9 +199,8 @@ class LayeredSummaryPipelineTests(unittest.TestCase):
 
     def test_failed_repair_uses_default_values(self) -> None:
         client = FakeClient(["not json", "still not json"])
-        value, log, _ = extract_with_repair("topic_participants", "Jason joined.", client)
+        value, log, _ = extract_with_repair("participants", "Jason joined.", client)
 
-        self.assertEqual(value["meeting_topic"], "Untitled Meeting")
         self.assertEqual(value["participants"], [])
         self.assertFalse(log.valid)
         self.assertEqual(len(client.prompts), 2)
@@ -231,8 +210,9 @@ class LayeredSummaryPipelineTests(unittest.TestCase):
         result = generate_layered_summary("corrected transcript", client=client)
 
         self.assertTrue(validate_final_summary(result.summary))
-        self.assertTrue(result.summary["metadata"]["parallel_layered_generation"])
-        self.assertEqual(len(client.prompts), 5)
+        self.assertTrue(result.summary["metadata"]["parallel_field_generation"])
+        self.assertFalse(result.summary["metadata"]["parallel_layered_generation"])
+        self.assertEqual(len(client.prompts), 9)
         self.assertEqual(set(result.field_outputs), set(EXTRACTOR_NAMES))
 
     def test_markdown_rendered_from_json(self) -> None:
