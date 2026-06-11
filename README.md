@@ -470,6 +470,10 @@ python -m pip install -e ".[diarization]"
 export HUGGINGFACE_TOKEN=hf_your_token_here
 ```
 
+For local development, AURA also reads `/home/jnclaw/.codex/secrets/project-aura-hf.env`
+when `HF_TOKEN` / `HUGGINGFACE_TOKEN` is not already set. This keeps `uv run aura`
+usable without storing tokens in the repository.
+
 Before using the default `pyannote/speaker-diarization-community-1` model, accept its Hugging Face terms for your account.
 
 LLM summary is optional because it requires a local Ollama-served Gemma 4 E4B model:

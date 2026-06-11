@@ -5,7 +5,12 @@ from aura.asr.threads import cuda_required_error
 from aura.system.audio_diagnostics import AudioDiagnostics
 from aura.system.gpu_diagnostics import CommandCheck, GpuDiagnostics, collect_gpu_diagnostics
 from aura.system.platform import LINUX_NATIVE, RuntimePlatform, platform_cuda_guidance
-from aura.system.runtime_report import RuntimeDiagnostics, first_launch_checks, format_runtime_report
+from aura.system.runtime_report import (
+    DiarizationDiagnostics,
+    RuntimeDiagnostics,
+    first_launch_checks,
+    format_runtime_report,
+)
 
 
 class RuntimeDiagnosticsTests(unittest.TestCase):
@@ -71,9 +76,95 @@ class RuntimeDiagnosticsTests(unittest.TestCase):
         self.assertIn("Project AURA Runtime Diagnostic Report", report)
         self.assertIn("GPU / CUDA", report)
         self.assertIn("Audio / FFmpeg", report)
+        self.assertIn("Optional Speaker Diarization", report)
         self.assertIn("ASR model load status: loaded on cuda/int8", report)
         self.assertIn("First Launch Check", report)
-        self.assertIn(platform_cuda_guidance(platform), report)
+        self.assertIn("- Activation status: complete", report)
+        self.assertNotIn("- Activation guidance:", report)
+
+    def test_runtime_report_surfaces_diarization_setup_status(self):
+        platform = RuntimePlatform(
+            kind=LINUX_NATIVE,
+            system="Linux",
+            release="test",
+            machine="x86_64",
+            python_version="3.12",
+            is_windows=False,
+            is_wsl=False,
+            is_docker=False,
+        )
+        gpu = GpuDiagnostics(
+            nvidia_smi=CommandCheck("nvidia-smi", True, 0, "RTX, 1.0, 16 GiB", ""),
+            faster_whisper_importable=True,
+            faster_whisper_version="1.2.1",
+            ctranslate2_importable=True,
+            ctranslate2_version="4.7.1",
+            cuda_runtime_ready=True,
+            cuda_runtime_detail="bundled",
+            cuda_libraries=(("CUDA runtime", True, "bundled"),),
+            activation_guidance=platform_cuda_guidance(platform),
+        )
+        audio = AudioDiagnostics(
+            ffmpeg_path="/usr/bin/ffmpeg",
+            pyaudio_available=True,
+            input_devices=("mic",),
+            output_devices=("speaker",),
+        )
+
+        report = format_runtime_report(
+            RuntimeDiagnostics(
+                platform=platform,
+                gpu=gpu,
+                audio=audio,
+                diarization=DiarizationDiagnostics(
+                    pyannote_available=False,
+                    torch_available=False,
+                    torch_cuda_available=False,
+                    token_available=False,
+                ),
+                asr_model_status="loaded on cuda/int8",
+            )
+        )
+
+        self.assertIn("- pyannote.audio import: missing", report)
+        self.assertIn("- torch import: missing", report)
+        self.assertIn("- Hugging Face token: missing", report)
+        self.assertIn("Diarization status: needs setup: pyannote.audio, torch", report)
+
+    def test_runtime_report_keeps_activation_guidance_when_cuda_incomplete(self):
+        platform = RuntimePlatform(
+            kind=LINUX_NATIVE,
+            system="Linux",
+            release="test",
+            machine="x86_64",
+            python_version="3.12",
+            is_windows=False,
+            is_wsl=False,
+            is_docker=False,
+        )
+        gpu = GpuDiagnostics(
+            nvidia_smi=CommandCheck("nvidia-smi", True, 0, "RTX, 1.0, 16 GiB", ""),
+            faster_whisper_importable=True,
+            faster_whisper_version="1.2.1",
+            ctranslate2_importable=True,
+            ctranslate2_version="4.7.1",
+            cuda_runtime_ready=False,
+            cuda_runtime_detail="missing cudnn",
+            cuda_libraries=(("cuDNN", False, "not found"),),
+            activation_guidance=platform_cuda_guidance(platform),
+        )
+        audio = AudioDiagnostics(
+            ffmpeg_path="/usr/bin/ffmpeg",
+            pyaudio_available=True,
+            input_devices=("mic",),
+            output_devices=("speaker",),
+        )
+
+        report = format_runtime_report(
+            RuntimeDiagnostics(platform=platform, gpu=gpu, audio=audio, asr_model_status="not loaded")
+        )
+
+        self.assertIn(f"- Activation guidance: {platform_cuda_guidance(platform)}", report)
 
     def test_first_launch_checks_cover_user_onboarding_gates(self):
         platform = RuntimePlatform(

@@ -1,13 +1,18 @@
+import importlib.util
 import os
+import shlex
 from dataclasses import dataclass
 from pathlib import Path
 
 from aura.diarization.speaker_assignment import SpeakerTurn
+from aura.system.cuda import preload_cuda_runtime_libraries
 
 
 DEFAULT_DIARIZATION_MODEL = "pyannote/speaker-diarization-community-1"
 HUGGINGFACE_TOKEN_ENV = "HUGGINGFACE_TOKEN"
 HF_TOKEN_ENV = "HF_TOKEN"
+AURA_HF_TOKEN_FILE_ENV = "AURA_HF_TOKEN_FILE"
+DEFAULT_HF_TOKEN_SECRET_PATH = Path.home() / ".codex" / "secrets" / "project-aura-hf.env"
 
 
 class DiarizationDependencyError(RuntimeError):
@@ -30,8 +35,69 @@ class DiarizationSettings:
             raise ValueError("max_speakers must be greater than or equal to min_speakers")
 
 
+def _token_from_env_file(path: Path) -> str | None:
+    try:
+        lines = path.read_text(encoding="utf-8").splitlines()
+    except OSError:
+        return None
+
+    for line in lines:
+        stripped = line.strip()
+        if not stripped or stripped.startswith("#"):
+            continue
+        try:
+            parts = shlex.split(stripped, posix=True)
+        except ValueError:
+            continue
+        if parts and parts[0] == "export":
+            parts = parts[1:]
+        for part in parts:
+            if "=" not in part:
+                continue
+            key, value = part.split("=", 1)
+            if key in {HUGGINGFACE_TOKEN_ENV, HF_TOKEN_ENV} and value:
+                return value
+    return None
+
+
+def local_hf_token_secret_paths() -> tuple[Path, ...]:
+    configured_path = os.environ.get(AURA_HF_TOKEN_FILE_ENV)
+    if configured_path:
+        return (Path(configured_path).expanduser(),)
+    return (DEFAULT_HF_TOKEN_SECRET_PATH,)
+
+
 def huggingface_token() -> str | None:
-    return os.environ.get(HUGGINGFACE_TOKEN_ENV) or os.environ.get(HF_TOKEN_ENV)
+    token = os.environ.get(HUGGINGFACE_TOKEN_ENV) or os.environ.get(HF_TOKEN_ENV)
+    if token:
+        return token
+    for path in local_hf_token_secret_paths():
+        token = _token_from_env_file(path)
+        if token:
+            return token
+    return None
+
+
+def pyannote_audio_available() -> bool:
+    try:
+        return importlib.util.find_spec("pyannote.audio") is not None
+    except ModuleNotFoundError:
+        return False
+
+
+def validate_diarization_runtime(settings: DiarizationSettings):
+    if not settings.enabled:
+        return
+    if not pyannote_audio_available():
+        raise DiarizationDependencyError(
+            "Speaker diarization requires the optional `pyannote.audio` dependency. "
+            "Install it with `python -m pip install -e .[diarization]`."
+        )
+    if not huggingface_token():
+        raise DiarizationDependencyError(
+            "Speaker diarization requires a Hugging Face access token. "
+            f"Set `{HUGGINGFACE_TOKEN_ENV}` or `{HF_TOKEN_ENV}` after accepting the pyannote model terms."
+        )
 
 
 def pipeline_kwargs(settings: DiarizationSettings) -> dict:
@@ -44,20 +110,13 @@ def pipeline_kwargs(settings: DiarizationSettings) -> dict:
 
 
 def _load_pyannote_pipeline(settings: DiarizationSettings):
-    try:
-        from pyannote.audio import Pipeline
-    except ImportError as exc:
-        raise DiarizationDependencyError(
-            "Speaker diarization requires the optional `pyannote.audio` dependency. "
-            "Install it with `python -m pip install -e .[diarization]`."
-        ) from exc
+    validate_diarization_runtime(settings)
 
+    if settings.device == "cuda":
+        preload_cuda_runtime_libraries()
+
+    from pyannote.audio import Pipeline
     token = huggingface_token()
-    if not token:
-        raise DiarizationDependencyError(
-            "Speaker diarization requires a Hugging Face access token. "
-            f"Set `{HUGGINGFACE_TOKEN_ENV}` or `{HF_TOKEN_ENV}` after accepting the pyannote model terms."
-        )
 
     pipeline = Pipeline.from_pretrained(settings.model_id, token=token)
 
@@ -95,8 +154,15 @@ def speaker_turns_from_annotation(annotation) -> list[SpeakerTurn]:
     return turns
 
 
+def pipeline_audio_input(audio_path: str | Path):
+    import torchaudio
+
+    waveform, sample_rate = torchaudio.load(str(audio_path))
+    return {"waveform": waveform, "sample_rate": sample_rate}
+
+
 def diarize_audio_file(audio_path: str | Path, settings: DiarizationSettings) -> list[SpeakerTurn]:
     pipeline = _load_pyannote_pipeline(settings)
-    output = pipeline(str(audio_path), **pipeline_kwargs(settings))
+    output = pipeline(pipeline_audio_input(audio_path), **pipeline_kwargs(settings))
     annotation = _annotation_from_output(output, settings.use_exclusive)
     return speaker_turns_from_annotation(annotation)

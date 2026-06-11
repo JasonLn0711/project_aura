@@ -17,8 +17,9 @@ dependencies = [
   "faster-whisper>=1.2.1",
   "noisereduce>=3.0.3",
   "numpy>=2.0",
-  "nvidia-cublas-cu12>=12.9.1.4; platform_system == 'Linux' and platform_machine == 'x86_64'",
-  "nvidia-cudnn-cu12>=9.19.0.56; platform_system == 'Linux' and platform_machine == 'x86_64'",
+  "nvidia-cublas-cu12==12.8.4.1; platform_system == 'Linux' and platform_machine == 'x86_64'",
+  "nvidia-cudnn-cu12==9.19.0.56; platform_system == 'Linux' and platform_machine == 'x86_64'",
+  "nvidia-npp-cu12==12.4.1.87; platform_system == 'Linux' and platform_machine == 'x86_64'",
   "pyaudio>=0.2.14",
   "pydub>=0.25.1",
   "pyyaml>=6.0",
@@ -34,7 +35,9 @@ dependencies = [
 [project.optional-dependencies]
 diarization = [
   "pyannote.audio>=4.0",
-  "torch>=2.0",
+  "torch>=2.11,<2.12",
+  "torchaudio>=2.11,<2.12",
+  "torchcodec>=0.11,<0.12",
 ]
 summary = [
   "accelerate>=1.0",
@@ -56,6 +59,22 @@ project-aura = "aura.app:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.uv.sources]
+torch = [
+  { index = "pytorch-cu128", marker = "sys_platform == 'linux' or sys_platform == 'win32'" },
+]
+torchaudio = [
+  { index = "pytorch-cu128", marker = "sys_platform == 'linux' or sys_platform == 'win32'" },
+]
+torchcodec = [
+  { index = "pytorch-cu128", marker = "sys_platform == 'linux' or sys_platform == 'win32'" },
+]
+
+[[tool.uv.index]]
+name = "pytorch-cu128"
+url = "https://download.pytorch.org/whl/cu128"
+explicit = true
 
 [tool.pytest.ini_options]
 pythonpath = ["src"]
