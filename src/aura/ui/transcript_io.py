@@ -63,6 +63,8 @@ def transcript_artifact_paths(base_path: str | Path) -> dict[str, Path]:
         "summary": path.with_name(f"{path.name}_summary.txt"),
         "correction_log": path.with_name(f"{path.name}_correction_log.json"),
         "metrics": path.with_name(f"{path.name}_processing_metrics.json"),
+        "event_log": path.with_name(f"{path.name}_event_log.json"),
+        "runtime_log": path.with_name(f"{path.name}_runtime.log"),
     }
 
 
@@ -84,6 +86,22 @@ def write_json_file(file_path: str | Path, payload: dict[str, Any]) -> Path:
         encoding="utf-8",
     )
     return path
+
+
+def event_log_payload(metrics: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "workflow": metrics.get("workflow"),
+        "source_path": metrics.get("source_path"),
+        "base_path": metrics.get("base_path"),
+        "started_at": metrics.get("started_at"),
+        "finished_at": metrics.get("finished_at"),
+        "runtime_config": metrics.get("recording_runtime_config") or metrics.get("runtime_config") or {},
+        "events": metrics.get("status_events", []),
+    }
+
+
+def write_event_log_file(base_path: str | Path, metrics: dict[str, Any]) -> Path:
+    return write_json_file(transcript_artifact_paths(base_path)["event_log"], event_log_payload(metrics))
 
 
 def write_transcript_artifacts(
@@ -125,6 +143,8 @@ def write_transcript_artifacts(
             "correction_count": len(correction_log),
             "method": "rapidfuzz",
         }
+        if metrics.get("status_events"):
+            saved["event_log"] = write_event_log_file(base_path, metrics)
         metrics_payload = dict(metrics)
         metrics_payload["outputs"] = {name: str(path) for name, path in saved.items()}
         saved["metrics"] = write_json_file(paths["metrics"], metrics_payload)

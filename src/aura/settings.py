@@ -22,6 +22,9 @@ class AppSettings:
     beam_size: int = 5
     language: str | None = "zh"
     live_capture_source: str = DEFAULT_LIVE_CAPTURE_SOURCE
+    live_max_segment_len_sec: float = 16.0
+    live_energy_gate_rms: float = 1000.0
+    recording_audio_format: str = "m4a"
     file_initial_prompt: str | None = DEFAULT_PROMPT
     live_initial_prompt: str | None = DEFAULT_LIVE_PROMPT
     denoise_enabled: bool = False

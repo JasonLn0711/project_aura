@@ -7,6 +7,7 @@ from aura.audio.normalization import (
     detect_cpu_count,
     ffmpeg_cpu_args,
     gain_for_target_dbfs,
+    normalization_filter_chain,
     normalization_cpu_status,
     normalization_thread_count,
     parse_out_time_ms,
@@ -31,6 +32,9 @@ class AudioNormalizationTests(unittest.TestCase):
     def test_gain_for_silent_or_unknown_audio_is_noop(self):
         self.assertEqual(gain_for_target_dbfs(None, -20.0), 0.0)
         self.assertEqual(gain_for_target_dbfs(-math.inf, -20.0), 0.0)
+
+    def test_normalization_filter_chain_limits_peaks_after_gain(self):
+        self.assertEqual(normalization_filter_chain(3.25), "volume=3.250dB,alimiter=limit=0.95")
 
     def test_normalization_thread_count_reserves_six_cpus(self):
         self.assertEqual(normalization_thread_count(cpu_count=16), 10)

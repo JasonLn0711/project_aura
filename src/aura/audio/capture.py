@@ -21,6 +21,7 @@ from aura.config import (
     SAMPLE_RATE,
     VAD_LEVEL,
 )
+from aura.settings import DEFAULT_SETTINGS
 from aura.system.native_audio import no_alsa_err, suppress_native_stderr
 
 logger = logging.getLogger(__name__)
@@ -29,6 +30,7 @@ MIX_ACTIVE_RMS_FLOOR = 80.0
 MIX_MIN_GAIN = 0.5
 MIX_MAX_GAIN = 3.0
 MIX_HEADROOM = 0.8
+ENERGY_BRIDGE_MS = 120
 NO_VOICE_AUTO_STOP_MINUTES = 20
 
 
@@ -224,6 +226,21 @@ def should_auto_stop_for_no_voice(no_voice_frames: int, limit_frames: int) -> bo
     return limit_frames > 0 and no_voice_frames >= limit_frames
 
 
+def should_treat_frame_as_speech(
+    vad_is_speech: bool,
+    frame_rms_value: float,
+    has_active_segment: bool,
+    consecutive_vad_miss_frames: int,
+    energy_gate_rms: float,
+    max_energy_bridge_frames: int,
+) -> bool:
+    if vad_is_speech:
+        return True
+    if not has_active_segment or max_energy_bridge_frames <= 0:
+        return False
+    return consecutive_vad_miss_frames <= max_energy_bridge_frames and frame_rms_value >= energy_gate_rms
+
+
 def trim_trailing_unvoiced_frames(frames: list[bytes], voiced_flags: list[bool]) -> tuple[list[bytes], int]:
     if len(frames) != len(voiced_flags):
         raise ValueError("frames and voiced_flags must have the same length")
@@ -345,6 +362,8 @@ class AudioRecorderThread(QThread):
         enable_denoise=False,
         denoise_preset=None,
         capture_mode=DEFAULT_LIVE_CAPTURE_SOURCE,
+        max_segment_len_sec=DEFAULT_SETTINGS.live_max_segment_len_sec,
+        energy_gate_rms=DEFAULT_SETTINGS.live_energy_gate_rms,
     ):
         super().__init__()
         self.filename = filename
@@ -357,8 +376,8 @@ class AudioRecorderThread(QThread):
         self.full_frames = []
         self.full_frame_voice_flags = []
         self.min_speech_len_sec = 0.5
-        self.max_segment_len_sec = 8.0
-        self.energy_gate_rms = 550.0
+        self.max_segment_len_sec = float(max_segment_len_sec)
+        self.energy_gate_rms = float(energy_gate_rms)
         self.no_voice_auto_stop_minutes = NO_VOICE_AUTO_STOP_MINUTES
         self.auto_stopped_for_no_voice = False
         self.trimmed_trailing_no_voice_frames = 0
@@ -461,7 +480,9 @@ class AudioRecorderThread(QThread):
         speech_buffer = []
         min_silence_frames = int((1000 / CHUNK_MS) * self.min_speech_len_sec)
         max_speech_frames = int((1000 / CHUNK_MS) * self.max_segment_len_sec)
+        max_energy_bridge_frames = frames_for_duration_seconds(ENERGY_BRIDGE_MS / 1000)
         no_voice_auto_stop_frames = frames_for_duration_seconds(self.no_voice_auto_stop_minutes * 60)
+        consecutive_vad_miss_frames = 0
 
         while self.running:
             try:
@@ -470,11 +491,20 @@ class AudioRecorderThread(QThread):
 
                 self.waveform_signal.emit(np_data)
 
-                is_speech = self.vad.is_speech(vad_data, SAMPLE_RATE)
-                if not is_speech:
-                    frame_rms = float(np.sqrt(np.mean(np_data.astype(np.float32) ** 2)))
-                    if frame_rms >= self.energy_gate_rms:
-                        is_speech = True
+                vad_is_speech = self.vad.is_speech(vad_data, SAMPLE_RATE)
+                frame_rms_value = float(np.sqrt(np.mean(np_data.astype(np.float32) ** 2)))
+                if vad_is_speech:
+                    consecutive_vad_miss_frames = 0
+                else:
+                    consecutive_vad_miss_frames += 1
+                is_speech = should_treat_frame_as_speech(
+                    vad_is_speech=vad_is_speech,
+                    frame_rms_value=frame_rms_value,
+                    has_active_segment=bool(speech_buffer),
+                    consecutive_vad_miss_frames=consecutive_vad_miss_frames,
+                    energy_gate_rms=self.energy_gate_rms,
+                    max_energy_bridge_frames=max_energy_bridge_frames,
+                )
 
                 self.full_frames.append(vad_data)
                 self.full_frame_voice_flags.append(is_speech)

@@ -4,10 +4,12 @@ from pathlib import Path
 
 from aura.ui.transcript_io import (
     SUMMARY_MARKER,
+    event_log_payload,
     final_transcript_text,
     split_transcript_sections,
     transcript_artifact_paths,
     transcript_text_for_save,
+    write_event_log_file,
     write_transcript_artifacts,
     write_transcript_file,
 )
@@ -58,6 +60,8 @@ class TranscriptIoTests(unittest.TestCase):
         self.assertEqual(paths["summary"], Path("/tmp/meeting_summary.txt"))
         self.assertEqual(paths["correction_log"], Path("/tmp/meeting_correction_log.json"))
         self.assertEqual(paths["metrics"], Path("/tmp/meeting_processing_metrics.json"))
+        self.assertEqual(paths["event_log"], Path("/tmp/meeting_event_log.json"))
+        self.assertEqual(paths["runtime_log"], Path("/tmp/meeting_runtime.log"))
 
     def test_write_transcript_artifacts_writes_raw_corrected_final_summary_log_and_metrics(self):
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -67,10 +71,17 @@ class TranscriptIoTests(unittest.TestCase):
                 base,
                 "[00:00:01] 志德灣和 iMBS 開會",
                 f"\n\n{SUMMARY_MARKER}\n重點摘要",
-                metrics={"workflow": "unit", "outputs": {"ignored": Path("/tmp/old")}},
+                metrics={
+                    "workflow": "unit",
+                    "outputs": {"ignored": Path("/tmp/old")},
+                    "status_events": [{"timestamp": "2026-06-11T17:00:00+08:00", "message": "started"}],
+                },
             )
 
-            self.assertEqual(set(saved), {"raw", "corrected", "final", "summary", "correction_log", "metrics"})
+            self.assertEqual(
+                set(saved),
+                {"raw", "corrected", "final", "summary", "correction_log", "metrics", "event_log"},
+            )
             self.assertEqual(saved["raw"].read_text(encoding="utf-8"), "[00:00:01] 志德灣和 iMBS 開會\n")
             self.assertEqual(saved["corrected"].read_text(encoding="utf-8"), "[00:00:01] 智德萬和 iMVS 開會\n")
             self.assertEqual(saved["summary"].read_text(encoding="utf-8"), "重點摘要\n")
@@ -86,6 +97,36 @@ class TranscriptIoTests(unittest.TestCase):
             self.assertIn('"glossary_correction"', metrics_text)
             self.assertIn('"correction_count": 2', metrics_text)
             self.assertIn("meeting_final.txt", metrics_text)
+            event_log_text = saved["event_log"].read_text(encoding="utf-8")
+            self.assertIn('"events"', event_log_text)
+            self.assertIn('"message": "started"', event_log_text)
+
+    def test_write_event_log_file_writes_recording_events_and_runtime_config(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            base = Path(tmpdir) / "recording"
+            metrics = {
+                "workflow": "recording",
+                "source_path": str(base.with_suffix(".wav")),
+                "base_path": str(base),
+                "started_at": "2026-06-11T17:00:00+08:00",
+                "recording_runtime_config": {"live_max_segment_len_sec": 16.0, "live_energy_gate_rms": 1000.0},
+                "status_events": [
+                    {
+                        "timestamp": "2026-06-11T17:00:01+08:00",
+                        "category": "live_asr_telemetry",
+                        "queue_backlog": False,
+                    }
+                ],
+            }
+
+            path = write_event_log_file(base, metrics)
+
+            self.assertEqual(path, Path(tmpdir) / "recording_event_log.json")
+            payload = event_log_payload(metrics)
+            self.assertEqual(payload["runtime_config"]["live_energy_gate_rms"], 1000.0)
+            text = path.read_text(encoding="utf-8")
+            self.assertIn('"workflow": "recording"', text)
+            self.assertIn('"category": "live_asr_telemetry"', text)
 
 
 if __name__ == "__main__":

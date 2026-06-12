@@ -32,7 +32,7 @@ from aura.asr.punctuation import restore_chinese_punctuation_for_transcript
 from aura.asr.threads import FileTranscriberThread, ModelLoaderThread, TranscriberThread
 from aura.audio.denoise import DEFAULT_ACTIVE_DENOISE_PRESET, OFF_DENOISE_PRESET, normalize_denoise_preset
 from aura.audio.capture import AudioRecorderThread
-from aura.audio.export import normalize_wav_to_mp3
+from aura.audio.export import normalize_wav_to_recording_audio, recording_audio_format_spec
 from aura.config import CHUNK_MS, LIVE_CAPTURE_MICROPHONE, LIVE_CAPTURE_SYSTEM, LIVE_CAPTURE_SYSTEM_MICROPHONE
 from aura.llm.summary import SummarySettings
 from aura.llm.threads import OllamaPullThread, OllamaRuntimeThread, SummaryThread
@@ -52,6 +52,7 @@ from aura.ui.transcript_io import (
     split_transcript_sections,
     transcript_artifact_paths,
     write_json_file,
+    write_event_log_file,
     write_transcript_artifacts,
 )
 
@@ -68,6 +69,7 @@ class TranscriptionTab(QWidget):
         self.transcriber_thread = TranscriberThread()
         self.transcriber_thread.text_updated.connect(self.update_log)
         self.transcriber_thread.status_updated.connect(self.update_status_only)
+        self.transcriber_thread.telemetry_updated.connect(self.on_live_asr_telemetry)
         self.transcriber_thread.start()
         self.executor = ThreadPoolExecutor(max_workers=2)
         self.pending_files = []
@@ -85,6 +87,8 @@ class TranscriptionTab(QWidget):
         self.import_summary_pending = False
         self.current_import_metrics = None
         self.current_recording_metrics = None
+        self.recording_log_handler = None
+        self.recording_log_path = None
         self.last_output_folder = None
         self.custom_output_folder = os.path.join(os.getcwd(), "outputs", "transcripts")
         self.scheduled_recording_pending = False
@@ -241,6 +245,18 @@ class TranscriptionTab(QWidget):
         output_layout.addWidget(self.output_folder_label, stretch=1)
         settings_vbox.addLayout(output_layout)
         self.update_output_folder_controls()
+
+        recording_audio_layout = QHBoxLayout()
+        recording_audio_layout.addWidget(QLabel(self.strings.recording_audio_format_label))
+        self.combo_recording_audio_format = QComboBox()
+        self.combo_recording_audio_format.setToolTip(self.strings.recording_audio_format_tooltip)
+        self.combo_recording_audio_format.addItem(self.strings.recording_audio_m4a, "m4a")
+        self.combo_recording_audio_format.addItem(self.strings.recording_audio_mp3, "mp3")
+        recording_audio_index = self.combo_recording_audio_format.findData(self.settings.recording_audio_format)
+        self.combo_recording_audio_format.setCurrentIndex(recording_audio_index if recording_audio_index >= 0 else 0)
+        recording_audio_layout.addWidget(self.combo_recording_audio_format)
+        recording_audio_layout.addStretch()
+        settings_vbox.addLayout(recording_audio_layout)
 
         norm_layout = QHBoxLayout()
         norm_layout.addWidget(QLabel(self.strings.target_volume_label))
@@ -491,6 +507,11 @@ class TranscriptionTab(QWidget):
             return "same"
         return self.combo_output_policy.currentData() or "same"
 
+    def selected_recording_audio_format(self) -> str:
+        if not hasattr(self, "combo_recording_audio_format"):
+            return self.settings.recording_audio_format
+        return self.combo_recording_audio_format.currentData() or "m4a"
+
     def session_output_folder(self) -> str:
         return os.path.join(os.getcwd(), "outputs", "transcripts")
 
@@ -563,6 +584,54 @@ class TranscriptionTab(QWidget):
         if metrics is None or started_perf is None:
             return
         metrics.setdefault("stage_durations_seconds", {})[stage] = round(time.perf_counter() - started_perf, 3)
+
+    def recording_log_active(self) -> bool:
+        return self.current_recording_metrics is not None
+
+    def append_recording_event(self, category: str, message: str, **fields):
+        if not self.recording_log_active():
+            return
+        metrics = self.current_recording_metrics
+        event = {
+            "timestamp": self.timestamp_now(),
+            "category": category,
+            "message": str(message),
+        }
+        event.update(fields)
+        metrics.setdefault("status_events", []).append(event)
+
+    def append_event_to_metrics(self, metrics: dict | None, category: str, message: str, **fields):
+        if metrics is None:
+            return
+        event = {
+            "timestamp": self.timestamp_now(),
+            "category": category,
+            "message": str(message),
+        }
+        event.update(fields)
+        metrics.setdefault("status_events", []).append(event)
+
+    def start_recording_runtime_log(self, base_path: str):
+        self.close_recording_runtime_log()
+        runtime_log_path = transcript_artifact_paths(base_path)["runtime_log"]
+        runtime_log_path.parent.mkdir(parents=True, exist_ok=True)
+        handler = logging.FileHandler(runtime_log_path, encoding="utf-8")
+        handler.setLevel(logging.INFO)
+        handler.setFormatter(logging.Formatter("%(asctime)s %(levelname)s [%(name)s] %(message)s"))
+        logging.getLogger().addHandler(handler)
+        self.recording_log_handler = handler
+        self.recording_log_path = runtime_log_path
+        logger.info("Recording runtime log started: %s", runtime_log_path)
+
+    def close_recording_runtime_log(self):
+        handler = self.recording_log_handler
+        if handler is None:
+            return
+        logger.info("Recording runtime log finished: %s", self.recording_log_path)
+        logging.getLogger().removeHandler(handler)
+        handler.close()
+        self.recording_log_handler = None
+        self.recording_log_path = None
 
     def import_file(self):
         if self.transcriber_thread.model is None:
@@ -900,6 +969,9 @@ class TranscriptionTab(QWidget):
         if metrics is not None:
             self.add_stage_duration(metrics, "save_outputs", save_started)
             finished_metrics = self.finish_metrics(metrics)
+            saved["event_log"] = transcript_artifact_paths(base_path)["event_log"]
+            finished_metrics["outputs"] = {name: str(path) for name, path in saved.items()}
+            saved["event_log"] = write_event_log_file(base_path, finished_metrics)
             finished_metrics["outputs"] = {name: str(path) for name, path in saved.items()}
             metrics_path = transcript_artifact_paths(base_path)["metrics"]
             saved["metrics"] = write_json_file(metrics_path, finished_metrics)
@@ -967,9 +1039,35 @@ class TranscriptionTab(QWidget):
             f"{full_path}.wav",
             self.default_transcript_base_path(),
         )
+        self.start_recording_runtime_log(self.default_transcript_base_path())
         self.current_recording_metrics["recording_started_at"] = self.timestamp_now()
         self.current_recording_metrics["recording_start_trigger"] = trigger
         self.current_recording_metrics["capture_source"] = self.selected_live_capture_source()
+        recording_runtime_config = {
+            "asr_model_id": self.settings.model_id,
+            "asr_device": self.settings.device,
+            "asr_compute_type": self.settings.compute_type,
+            "beam_size": self.spin_beam.value(),
+            "language": self.combo_lang.currentData(),
+            "initial_prompt_configured": bool(self.prompt_input.text()),
+            "capture_source": self.selected_live_capture_source(),
+            "live_max_segment_len_sec": self.settings.live_max_segment_len_sec,
+            "live_energy_gate_rms": self.settings.live_energy_gate_rms,
+            "denoise_enabled": self.denoise_enabled(),
+            "denoise_preset": self.selected_denoise_preset(),
+            "target_dbfs": float(self.spin_norm.value()),
+            "recording_audio_format": self.selected_recording_audio_format(),
+            "chinese_punctuation_enabled": self.settings.chinese_punctuation_enabled,
+            "llm_summary_enabled": self.check_llm_summary.isChecked(),
+            "llm_summary_model": self.settings.llm_summary_model,
+            "output_folder": self.current_folder,
+        }
+        self.current_recording_metrics["recording_runtime_config"] = recording_runtime_config
+        self.append_recording_event(
+            "recording_runtime_config",
+            "Recording runtime configuration captured.",
+            **recording_runtime_config,
+        )
         if trigger == "scheduled":
             self.current_recording_metrics["scheduled_start_at"] = (
                 self.scheduled_start_at.isoformat(timespec="seconds") if self.scheduled_start_at else None
@@ -990,6 +1088,8 @@ class TranscriptionTab(QWidget):
             enable_denoise=self.denoise_enabled(),
             denoise_preset=self.selected_denoise_preset(),
             capture_mode=self.selected_live_capture_source(),
+            max_segment_len_sec=self.settings.live_max_segment_len_sec,
+            energy_gate_rms=self.settings.live_energy_gate_rms,
         )
         recorder_thread = self.recorder_thread
         recorder_thread.waveform_signal.connect(self.update_plot)
@@ -1001,6 +1101,7 @@ class TranscriptionTab(QWidget):
         self.btn_import.setEnabled(False)
         self.btn_reload_model.setEnabled(False)
         self.recorder_thread.start()
+        self.append_recording_event("recording_started", f"Recording started: {base_name}")
 
         self.update_record_button_label()
         self.update_schedule_controls()
@@ -1048,6 +1149,7 @@ class TranscriptionTab(QWidget):
                 "recording_capture",
                 self.current_recording_metrics.get("_started_perf"),
             )
+            self.append_recording_event("recording_stop_requested", f"Recording stop requested: {trigger}")
         self.scheduled_start_at = None
         self.scheduled_stop_at = None
         self.update_record_button_label()
@@ -1135,11 +1237,13 @@ class TranscriptionTab(QWidget):
                 "final_asr_drain",
                 self.current_recording_metrics.get("_stop_requested_perf"),
             )
+            self.append_recording_event("final_asr_idle", "Live ASR queue drained before saving artifacts.")
         if self.check_llm_summary.isChecked() and self.transcript_without_summary():
             summary_holder = {"text": ""}
             if self.current_recording_metrics is not None:
                 self.current_recording_metrics["llm_summary_started_at"] = self.timestamp_now()
                 self.current_recording_metrics["_llm_summary_started_perf"] = time.perf_counter()
+                self.append_recording_event("llm_summary_started", "LLM summary started for recording transcript.")
             self.prepare_llm_runtime_then_summarize(
                 self.transcript_without_summary(),
                 finished_callback=lambda: self.save_and_clear_recording_transcript(
@@ -1159,6 +1263,7 @@ class TranscriptionTab(QWidget):
         if metrics is not None and metrics.get("_llm_summary_started_perf") is not None:
             self.add_stage_duration(metrics, "llm_summary", metrics.get("_llm_summary_started_perf"))
             metrics["llm_summary_finished_at"] = self.timestamp_now()
+            self.append_event_to_metrics(metrics, "llm_summary_finished", "LLM summary finished for recording transcript.")
 
         raw_transcript, summary = split_transcript_sections(self.text_area.toPlainText())
         punctuation_result = None
@@ -1171,6 +1276,20 @@ class TranscriptionTab(QWidget):
             raw_transcript = punctuation_result.text
         summary = summary_override or summary
         if not raw_transcript and not summary:
+            if metrics is not None:
+                self.append_event_to_metrics(metrics, "save_skipped", "No transcript or summary content to save.")
+                finished_metrics = self.finish_metrics(metrics)
+                base_path = self.default_transcript_base_path()
+                runtime_log_path = transcript_artifact_paths(base_path)["runtime_log"]
+                self.close_recording_runtime_log()
+                event_log_path = write_event_log_file(base_path, finished_metrics)
+                outputs = dict(finished_metrics.get("outputs", {}))
+                outputs["event_log"] = str(event_log_path)
+                if runtime_log_path.exists():
+                    outputs["runtime_log"] = str(runtime_log_path)
+                finished_metrics["outputs"] = outputs
+                metrics_path = transcript_artifact_paths(base_path)["metrics"]
+                write_json_file(metrics_path, finished_metrics)
             self.status_label.setText(self.strings.no_content_to_save)
             self.current_recording_metrics = None
             self.restore_post_recording_controls()
@@ -1182,11 +1301,29 @@ class TranscriptionTab(QWidget):
             metrics["save_started_at"] = self.timestamp_now()
             if punctuation_result is not None and punctuation_result.backend != "skipped":
                 metrics["punctuation_restoration_backend"] = punctuation_result.backend
+            self.append_event_to_metrics(metrics, "save_started", "Saving recording transcript artifacts.")
         saved = write_transcript_artifacts(base_path, raw_transcript, summary_text=summary, metrics=metrics)
         if metrics is not None:
             self.add_stage_duration(metrics, "save_outputs", save_started)
             finished_metrics = self.finish_metrics(metrics)
-            finished_metrics["outputs"] = {name: str(path) for name, path in saved.items()}
+            runtime_log_path = transcript_artifact_paths(base_path)["runtime_log"]
+            self.close_recording_runtime_log()
+            saved["event_log"] = transcript_artifact_paths(base_path)["event_log"]
+            if runtime_log_path.exists():
+                saved["runtime_log"] = runtime_log_path
+            output_paths = dict(finished_metrics.get("outputs", {}))
+            output_paths.update({name: str(path) for name, path in saved.items()})
+            finished_metrics["outputs"] = output_paths
+            self.append_event_to_metrics(
+                finished_metrics,
+                "save_finished",
+                "Recording transcript artifacts saved.",
+                outputs=dict(finished_metrics["outputs"]),
+            )
+            saved["event_log"] = write_event_log_file(base_path, finished_metrics)
+            output_paths = dict(finished_metrics.get("outputs", {}))
+            output_paths.update({name: str(path) for name, path in saved.items()})
+            finished_metrics["outputs"] = output_paths
             metrics_path = transcript_artifact_paths(base_path)["metrics"]
             saved["metrics"] = write_json_file(metrics_path, finished_metrics)
         final_path = saved.get("final") or saved.get("raw")
@@ -1241,13 +1378,26 @@ class TranscriptionTab(QWidget):
     def update_log(self, text):
         self.text_area.append(text)
         self.text_area.verticalScrollBar().setValue(self.text_area.verticalScrollBar().maximum())
+        if self.recording_log_active():
+            self.append_recording_event("live_transcript_update", "Live transcript text appended.", text=text)
 
     @pyqtSlot(str)
     def update_status_only(self, text):
         self.status_label.setText(text)
+        self.append_recording_event("status", text)
         if hasattr(self, "runtime_log"):
             self.runtime_log.append(f"{datetime.datetime.now().strftime('%H:%M:%S')} {text}")
             self.runtime_log.verticalScrollBar().setValue(self.runtime_log.verticalScrollBar().maximum())
+
+    @pyqtSlot(object)
+    def on_live_asr_telemetry(self, telemetry):
+        if not isinstance(telemetry, dict):
+            self.append_recording_event("live_asr_telemetry", str(telemetry))
+            return
+        fields = dict(telemetry)
+        category = fields.pop("category", "live_asr_telemetry")
+        message = fields.pop("message", "Live ASR telemetry captured.")
+        self.append_recording_event(category, message, **fields)
 
     def summary_settings(self) -> SummarySettings:
         return SummarySettings(
@@ -1432,16 +1582,66 @@ class TranscriptionTab(QWidget):
     @pyqtSlot(str)
     def process_audio(self, wav_path):
         if "Hardware mounting failed" in wav_path or "No audio recorded" in wav_path:
+            self.append_recording_event("recording_audio_unavailable", wav_path)
             return
-        self.executor.submit(self._normalization_task, wav_path, float(self.spin_norm.value()))
+        metrics = self.current_recording_metrics
+        base_path = self.default_transcript_base_path() if metrics is not None else None
+        target_dbfs = float(self.spin_norm.value())
+        runtime_config = metrics.get("recording_runtime_config", {}) if metrics is not None else {}
+        audio_format = runtime_config.get("recording_audio_format") or self.selected_recording_audio_format()
+        audio_spec = recording_audio_format_spec(audio_format)
+        self.append_event_to_metrics(
+            metrics,
+            "recording_audio_export_started",
+            "Recording audio export started.",
+            audio_format=audio_format,
+            codec=audio_spec.codec,
+            wav_path=wav_path,
+            target_dbfs=target_dbfs,
+        )
+        self.executor.submit(self._normalization_task, wav_path, target_dbfs, audio_format, metrics, base_path)
 
-    def _normalization_task(self, wav_path, target_dbfs):
+    def _normalization_task(self, wav_path, target_dbfs, audio_format="m4a", metrics=None, base_path=None):
+        audio_spec = recording_audio_format_spec(audio_format)
         try:
-            normalize_wav_to_mp3(wav_path, target_dbfs)
+            audio_path = normalize_wav_to_recording_audio(wav_path, target_dbfs, audio_format)
+            if metrics is not None:
+                metrics["recording_audio_path"] = str(audio_path)
+                metrics["recording_audio_format"] = audio_format
+                metrics["recording_audio_codec"] = audio_spec.codec
+                metrics["recording_audio_export_finished_at"] = self.timestamp_now()
+                metrics.setdefault("outputs", {})["recording_audio"] = str(audio_path)
+            self.append_event_to_metrics(
+                metrics,
+                "recording_audio_export_finished",
+                "Recording audio export finished.",
+                audio_format=audio_format,
+                codec=audio_spec.codec,
+                wav_path=wav_path,
+                audio_path=str(audio_path),
+                target_dbfs=target_dbfs,
+            )
+            if base_path and metrics is not None:
+                write_event_log_file(base_path, metrics)
+                write_json_file(transcript_artifact_paths(base_path)["metrics"], metrics)
         except Exception as e:
             logger.exception("Recording normalization failed: %s", e)
+            self.append_event_to_metrics(
+                metrics,
+                "recording_audio_export_failed",
+                "Recording audio export failed.",
+                audio_format=audio_format,
+                codec=audio_spec.codec,
+                wav_path=wav_path,
+                target_dbfs=target_dbfs,
+                error=str(e),
+            )
+            if base_path and metrics is not None:
+                write_event_log_file(base_path, metrics)
+                write_json_file(transcript_artifact_paths(base_path)["metrics"], metrics)
 
     def stop_threads(self):
+        self.close_recording_runtime_log()
         self.scheduled_start_timer.stop()
         self.scheduled_stop_timer.stop()
         self.transcriber_thread.stop()

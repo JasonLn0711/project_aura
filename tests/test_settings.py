@@ -24,6 +24,9 @@ class SettingsTests(unittest.TestCase):
         self.assertEqual(DEFAULT_SETTINGS.compute_type, "int8")
         self.assertEqual(DEFAULT_SETTINGS.file_initial_prompt, DEFAULT_PROMPT)
         self.assertEqual(DEFAULT_SETTINGS.live_initial_prompt, DEFAULT_LIVE_PROMPT)
+        self.assertEqual(DEFAULT_SETTINGS.live_max_segment_len_sec, 16.0)
+        self.assertEqual(DEFAULT_SETTINGS.live_energy_gate_rms, 1000.0)
+        self.assertEqual(DEFAULT_SETTINGS.recording_audio_format, "m4a")
         self.assertEqual(DEFAULT_SETTINGS.denoise_preset, "off")
         self.assertFalse(DEFAULT_SETTINGS.speaker_diarization_enabled)
         self.assertEqual(DEFAULT_SETTINGS.speaker_min_speakers, 2)
@@ -37,12 +40,19 @@ class SettingsTests(unittest.TestCase):
         self.assertEqual(DEFAULT_SETTINGS.chinese_punctuation_model, CHINESE_PUNCTUATION_MODEL_ID)
 
     def test_custom_settings_can_override_runtime_defaults(self):
-        settings = AppSettings(device="cpu", compute_type="int8", language=None, target_dbfs=-18.0)
+        settings = AppSettings(
+            device="cpu",
+            compute_type="int8",
+            language=None,
+            target_dbfs=-18.0,
+            recording_audio_format="mp3",
+        )
 
         self.assertEqual(settings.device, "cpu")
         self.assertEqual(settings.compute_type, "int8")
         self.assertIsNone(settings.language)
         self.assertEqual(settings.target_dbfs, -18.0)
+        self.assertEqual(settings.recording_audio_format, "mp3")
 
     def test_ui_strings_format_dynamic_status_messages(self):
         strings = UIStrings()
