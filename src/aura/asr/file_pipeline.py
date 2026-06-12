@@ -9,7 +9,7 @@ from pydub import AudioSegment
 from aura.audio.denoise import OFF_DENOISE_PRESET, normalize_denoise_preset, reduce_audio_segment_noise
 from aura.audio.normalization import FfmpegUnavailable, normalize_media_to_wav, normalization_cpu_status
 from aura.asr.punctuation import restore_chinese_punctuation, should_restore_traditional_chinese_punctuation
-from aura.diarization.pyannote_pipeline import DiarizationSettings, diarize_audio_file
+from aura.diarization.pyannote_pipeline import DiarizationSettings, diarize_audio_file, validate_diarization_runtime
 from aura.diarization.speaker_assignment import TranscriptSegment, assign_speakers
 from aura.settings import DEFAULT_SETTINGS
 from aura.system.cuda import is_cuda_runtime_error
@@ -247,6 +247,8 @@ def transcribe_file(
     temp_path = temp_normalized_path(worker_id)
     lines = []
     try:
+        if diarization_runner is None:
+            validate_diarization_runtime(settings.diarization)
         prepared_path = prepare_import_audio(
             file_path=file_path,
             settings=settings,
