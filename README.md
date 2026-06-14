@@ -49,7 +49,36 @@ The app is designed for professional meeting and lecture workflows. It includes 
 | Project Lead | Jason Chia-Sheng Lin (PhD. Student) |
 | License | MIT |
 
-## Latest Update (2026-06-09)
+## Latest Update (2026-06-11)
+
+Project AURA now records each live recording as a reviewable execution package, not only as transcript text. The contribution in this update is operational observability: every recording folder now preserves both a raw runtime log and a structured event log, while live ASR exposes enough telemetry to distinguish normal verbose logging from real latency buildup. The recording audio export path now defaults to clearer M4A/AAC output while retaining MP3 as a legacy compatibility option.
+
+This update adds five durable capabilities:
+
+1. **Per-recording runtime logs**: each recording folder now includes `{base}_runtime.log`, a Python logging capture for that recording session. This preserves third-party logger lines such as `faster_whisper` processing-duration messages alongside AURA's own runtime events.
+2. **Structured recording event logs**: each recording folder now includes `{base}_event_log.json`. The event log records UI status updates, live transcript updates, live ASR telemetry, recording start/stop events, final ASR drain, optional summary activity, save stages, and recording audio export start/finish/failure events.
+3. **Live ASR telemetry**: every live ASR chunk reports `chunk_duration`, `queue_size`, `asr_elapsed`, `realtime_factor`, and `queue_backlog`. This makes it possible to tell whether AURA is merely producing normal logs or whether ASR is falling behind the capture queue.
+4. **Live capture tuning for noisy environments**: the live maximum segment length is now configurable through settings and defaults to `16.0` seconds. The live energy gate is also settings-owned and defaults to `1000.0` RMS, so background system audio and room noise are less likely to force premature ASR segmentation.
+5. **M4A/AAC recording export**: recorded WAV normalization now defaults to `M4A / AAC-LC 96k`, which preserves clearer meeting speech at practical file sizes. Advanced Settings can still select `MP3 / LAME VBR q0` for legacy workflows, and both paths apply the limiter after gain adjustment.
+
+The supported scope is practical debugging and daily use. AURA now leaves enough evidence in the recording folder to inspect what happened after the meeting: which runtime settings were used, whether ASR queued up, whether recording audio export completed, where every artifact was written, and which stage consumed time. This is especially important for diagnosing live recordings that sound degraded, transcribe slowly, or produce many `faster_whisper` processing lines.
+
+The recording artifact set now includes:
+
+```text
+{base}_raw.txt
+{base}_corrected.txt
+{base}_final.txt
+{base}_summary.txt
+{base}_correction_log.json
+{base}_processing_metrics.json
+{base}_event_log.json
+{base}_runtime.log
+```
+
+The implementation is covered by focused tests for transcript artifact naming, event-log writing, structured live ASR telemetry, live segment/gate defaults, M4A/AAC recording export, MP3 legacy export, normalization limiter behavior, and import smoke coverage.
+
+## Previous Update (2026-06-09)
 
 Project AURA now has a more grounded daily meeting-summary path that turns the corrected transcript into structured meeting notes through the approved local Gemma 4 E4B Ollama runner. The 2026-06-09 correction removes the earlier Layer 1 / Layer 2 grouped prompts and runs the nine final summary fields as one parallel batch. The contribution is operational: **Summarize Current Transcript** no longer depends on one-shot free-form summary generation, grouped prompt examples, or a manually pre-started LLM runtime. It now runs nine field-level extractors in one parallel batch, validates every structured field in Python, writes local artifacts only to an ignored output directory, renders Markdown deterministically from the final JSON, and performs a local Ollama runtime preflight before any LLM call.
 
@@ -137,7 +166,7 @@ Before today, AURA already had the essential professional workflow: live recordi
 Today we added two safety rails:
 
 1. **Scheduled live recording**: AURA can now arm a recording for a specific wall-clock `HH:mm` start time, with an optional `HH:mm` auto-stop time. If the selected time has already passed today, AURA rolls it to the next matching time. If the stop time is earlier than the start time, AURA treats it as a next-day stop.
-2. **No-voice failsafe**: if live capture detects no human voice for 20 continuous minutes, AURA automatically stops the recording and trims the final no-voice audio from the saved WAV/MP3 path. This prevents forgotten recordings from turning into long silent files.
+2. **No-voice failsafe**: if live capture detects no human voice for 20 continuous minutes, AURA automatically stops the recording and trims the final no-voice audio before exporting the selected recording format. This prevents forgotten recordings from turning into long silent files.
 
 We compared four implementation paths before choosing this design:
 
@@ -180,6 +209,8 @@ Transcripts are now saved as a durable artifact set instead of one manually save
 {base}_summary.txt
 {base}_correction_log.json
 {base}_processing_metrics.json
+{base}_event_log.json
+{base}_runtime.log
 ```
 
 - `raw.txt` contains the ASR transcript only.
@@ -187,7 +218,9 @@ Transcripts are now saved as a durable artifact set instead of one manually save
 - `final.txt` contains the corrected transcript plus the LLM summary when a summary is available.
 - `summary.txt` contains only the LLM summary and is written only when a summary is produced.
 - `correction_log.json` records each accepted fuzzy glossary correction.
-- `processing_metrics.json` records the workflow type, source path, output policy, output paths, total elapsed time, coarse stage durations, and imported-file status events.
+- `processing_metrics.json` records the workflow type, source path, output policy, output paths, total elapsed time, coarse stage durations, runtime configuration, and status-event summary.
+- `event_log.json` records structured per-run events. For live recordings, it includes runtime configuration, UI status updates, live transcript updates, ASR telemetry, recording start/stop events, final ASR drain, optional summary activity, save stages, and recording audio export status.
+- `runtime.log` records raw Python logging for the recording session, including third-party logger lines such as `faster_whisper` processing-duration messages.
 
 This split makes it possible to compare the original ASR output with the final user-facing transcript and audit where the file was saved.
 
@@ -213,8 +246,11 @@ The first version uses `rapidfuzz`, does not use LLM verification, and only corr
 - When PulseAudio/PipeWire source discovery is unavailable, the app reports the fallback and records from the default PyAudio/Pulse input instead of failing silently.
 - System-audio plus microphone capture is mixed before VAD/ASR as 16 kHz mono `int16` frames.
 - Mixed live capture now applies RMS-based active-source balancing. Silent/background-only chunks are ignored, active sources receive limited gain, and mix headroom is preserved so microphone speech and system audio do not clip or drown each other out.
+- Live ASR segmentation now uses a settings-owned maximum segment length, default `16.0` seconds, so long speech runs are less fragmented while still bounded for live feedback.
+- The live energy gate is settings-owned and defaults to `1000.0` RMS. This raises the background-noise threshold from the earlier hard-coded value and makes future tuning easier without editing recorder internals.
 - If no voice-like live audio is detected for 20 continuous minutes, the capture layer stops the recording and removes the final no-voice tail before the WAV is normalized/exported.
 - The selected live capture mode is stored in recording metrics as `capture_source`.
+- Recording audio export now defaults to `M4A / AAC-LC 96k`, with `MP3 / LAME VBR q0` available from Advanced Settings for legacy compatibility. Both export paths use the FFmpeg-first normalization path and apply a limiter after gain adjustment.
 
 ### ASR, GPU, And Readability Changes
 
@@ -235,7 +271,7 @@ Advanced Settings now includes a transcript output policy:
 - **Project outputs/transcripts folder**: writes transcript artifacts under `outputs/transcripts/` in this repo.
 - **Custom folder**: writes all transcript artifacts to a user-selected folder.
 
-Existing advanced options remain available: live capture source, denoise mode, speaker diarization, LLM summary, target volume normalization, beam size, initial prompt, language, compute precision, output policy, and model reload.
+Existing advanced options remain available: live capture source, denoise mode, speaker diarization, LLM summary, recording audio format, target volume normalization, beam size, initial prompt, language, compute precision, output policy, and model reload.
 
 Runtime Diagnostics now appears alongside these controls. It reports GPU detection, CUDA runtime status, ASR model load status, audio input/output status, output-folder writability, and includes a **Copy Diagnostic Report** action.
 
@@ -260,6 +296,8 @@ Advanced Settings also includes scheduled live recording:
 
 - Import normalization progress is surfaced in the status line, including CPU thread budget, FFmpeg volume-analysis pass, detected mean volume, gain amount, export progress percentage, and completion.
 - Imported-file status events are retained in `processing_metrics.json`, so users can inspect what happened after the run finishes.
+- Live ASR telemetry is emitted for each live chunk: `chunk_duration`, `queue_size`, `asr_elapsed`, `realtime_factor`, and `queue_backlog`. These fields identify whether live ASR is keeping up with capture or accumulating delay.
+- Live recording folders now retain `{base}_event_log.json` for structured events and `{base}_runtime.log` for raw Python logging. The raw log captures `faster_whisper` processing lines, while the structured log keeps per-recording settings, transcript updates, status events, ASR telemetry, summary stages, save stages, and recording audio export outcomes.
 - FFmpeg normalization uses a multi-core CPU policy of `CPU count - 6` threads, with a minimum of `1`.
 - CPU count detection tries multiple probes and reports clearly if CPU count cannot be detected.
 - ASR remains RTX/CUDA-only. CPU fallback is disabled so transcription never silently leaves the GPU path.
@@ -283,7 +321,7 @@ Advanced Settings also includes scheduled live recording:
 - `scripts/windows_asr_artifact_smoke.py` generates a tiny WAV, runs a CUDA/int8 ASR pass, and verifies raw/final/metrics transcript artifact output.
 - README workflow documentation now matches the simplified UI and automatic transcript-saving behavior.
 - `docs/architecture_decisions.md` records the first-principles ownership split for transcript artifacts, output policy, progress visibility, UI interaction policy, live capture ownership, and Traditional Chinese punctuation post-processing.
-- Tests now cover transcript artifact naming, raw/final/summary splitting, metrics JSON writing, FFmpeg progress parsing, CPU-count detection, live capture source selection, RMS-based source mixing, scheduled wall-clock calculation, no-voice auto-stop/trailing-trim helpers, Traditional Chinese punctuation post-processing, runtime diagnostics reporting, first-launch check gates, and propagation of normalization progress into the import pipeline.
+- Tests now cover transcript artifact naming, raw/final/summary splitting, metrics JSON writing, event-log writing, structured live ASR telemetry, FFmpeg progress parsing, M4A/AAC recording export, MP3 legacy export, normalization limiter behavior, CPU-count detection, live capture source selection, RMS-based source mixing, live segment/gate defaults, scheduled wall-clock calculation, no-voice auto-stop/trailing-trim helpers, Traditional Chinese punctuation post-processing, runtime diagnostics reporting, first-launch check gates, and propagation of normalization progress into the import pipeline.
 
 ### Current Architecture Health
 
@@ -311,13 +349,14 @@ The implementation and remaining validation path are tracked in [`docs/windows_n
 | Scheduled Live Recording | Optional wall-clock scheduled start for live recording/transcription, with optional wall-clock auto-stop and normal transcript artifact finalization. |
 | No-Voice Failsafe | Automatically stops live recording after 20 continuous minutes without detected human voice and trims the trailing no-voice audio before export. |
 | Batch Transcription | Import multiple audio/video files with queue scheduling, cancellation, serialized optional summaries, and progress tracking. |
-| Transcript Artifacts | Auto-saves raw transcript, final transcript, optional summary, and processing metrics JSON to the selected output policy. |
+| Transcript Artifacts | Auto-saves raw transcript, corrected/final transcript, optional summary, correction log, processing metrics, structured event log, and recording runtime log to the selected output policy. |
 | Traditional Chinese Punctuation | Detects Traditional Chinese ASR output and restores readable full-width punctuation after ASR, using a local model when available and rule fallback when not. |
 | System + Mic Capture | Uses PulseAudio/PipeWire monitor and microphone sources when available, mixes them to mono, balances active source RMS levels, and reports fallback behavior in the UI. |
 | Speaker Diarization | Optional imported-file speaker labeling through `pyannote.audio`, with configurable speaker-count bounds. |
 | Real-time Denoising | Optional `noisereduce` processing before ASR for noisy environments. |
-| Volume Normalization | Dynamically standardizes imported and recorded audio to a target dBFS, default `-20`, using a fast FFmpeg path when denoise is off. The FFmpeg path uses `CPU count - 6` worker threads, with a minimum of `1`, and reports clearly if CPU count cannot be detected. |
-| Progress Telemetry | Surfaces import normalization and processing stages in the status line and stores imported-file status events in processing metrics. |
+| Volume Normalization | Dynamically standardizes imported and recorded audio to a target dBFS, default `-20`, using a fast FFmpeg path when denoise is off. Recorded audio defaults to `M4A / AAC-LC 96k`, with `MP3 / LAME VBR q0` retained as a legacy option; both use a limiter after gain adjustment. The FFmpeg path uses `CPU count - 6` worker threads, with a minimum of `1`, and reports clearly if CPU count cannot be detected. |
+| Progress Telemetry | Surfaces import normalization and processing stages in the status line, stores imported-file status events in processing metrics, and records live ASR chunk telemetry for recordings. |
+| Recording Observability | Writes `{base}_event_log.json` and `{base}_runtime.log` beside each recording so ASR latency, queue backlog, runtime settings, recording audio export status, and third-party logger output can be inspected after the run. |
 | Runtime Diagnostics | Reports GPU detection, CUDA runtime status, ASR model load status, FFmpeg, audio input/output devices, and output-folder writability through CLI scripts and the PyQt UI. |
 | Windows Onboarding | Provides `Start-AURA.bat`, `Check-AURA.bat`, automatic `.venv` preparation, dependency installation, diagnostic report writing, and a versioned portable ZIP layout. |
 | Windows Native Validation | Provides Windows setup docs, GPU smoke checks, runtime reports, hosted Windows CI, gated self-hosted RTX smoke tests, and a portable release builder. |
@@ -469,6 +508,10 @@ Speaker diarization is optional because it adds heavyweight ML dependencies:
 python -m pip install -e ".[diarization]"
 export HUGGINGFACE_TOKEN=hf_your_token_here
 ```
+
+For local development, AURA also reads `/home/jnclaw/.codex/secrets/project-aura-hf.env`
+when `HF_TOKEN` / `HUGGINGFACE_TOKEN` is not already set. This keeps `uv run aura`
+usable without storing tokens in the repository.
 
 Before using the default `pyannote/speaker-diarization-community-1` model, accept its Hugging Face terms for your account.
 
@@ -763,7 +806,7 @@ Current coverage includes:
 
 - file transcription pipeline formatting, prep, cleanup, and cancellation behavior
 - runtime diagnostic report formatting, CUDA activation guidance, and preload status reconciliation
-- recording WAV-to-MP3 normalization/export behavior
+- recording M4A/AAC default export and MP3 legacy export behavior
 - smart splitter extension handling, split-point selection, export, and progress callbacks
 - multi-chunk splitter workflow behavior using synthetic audio
 - runtime settings and UI message formatting defaults

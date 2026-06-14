@@ -10,6 +10,7 @@ from typing import Callable
 
 MEAN_VOLUME_PATTERN = re.compile(r"mean_volume:\s*(-?(?:\d+(?:\.\d+)?|inf))\s*dB")
 RESERVED_CPU_COUNT = 6
+MP3_EXPORT_ARGS = ["-c:a", "libmp3lame", "-q:a", "0"]
 ProgressCallback = Callable[[str], None]
 
 
@@ -54,6 +55,10 @@ def gain_for_target_dbfs(mean_volume: float | None, target_dbfs: float) -> float
     if mean_volume is None or not math.isfinite(mean_volume):
         return 0.0
     return float(target_dbfs) - mean_volume
+
+
+def normalization_filter_chain(gain_db: float) -> str:
+    return f"volume={gain_db:.3f}dB,alimiter=limit=0.95"
 
 
 def _positive_int(value) -> int | None:
@@ -246,7 +251,7 @@ def normalize_media_with_ffmpeg(
         str(input_path),
         "-vn",
         "-af",
-        f"volume={gain_db:.3f}dB",
+        normalization_filter_chain(gain_db),
         *(extra_output_args or []),
         "-f",
         output_format,
@@ -285,6 +290,6 @@ def normalize_wav_to_mp3_with_ffmpeg(
         output_path=mp3_path,
         target_dbfs=target_dbfs,
         output_format="mp3",
-        extra_output_args=["-c:a", "libmp3lame"],
+        extra_output_args=MP3_EXPORT_ARGS,
         progress_callback=progress_callback,
     )

@@ -17,6 +17,7 @@ from aura.asr.file_pipeline import (
     resolve_initial_prompt,
     transcribe_file,
 )
+from aura.config import SAMPLE_RATE
 from aura.asr.punctuation import restore_chinese_punctuation
 from aura.settings import DEFAULT_SETTINGS
 from aura.diarization.pyannote_pipeline import DiarizationSettings
@@ -27,6 +28,40 @@ from aura.system.runtime_paths import append_transcript_backup
 logger = logging.getLogger(__name__)
 
 REQUIRED_ASR_DEVICE = "cuda"
+
+
+def live_asr_telemetry_message(
+    chunk_duration_seconds: float,
+    queue_size: int,
+    elapsed_seconds: float,
+) -> str:
+    realtime_factor = elapsed_seconds / chunk_duration_seconds if chunk_duration_seconds > 0 else 0.0
+    backlog = queue_size > 0
+    return (
+        "Live ASR telemetry: "
+        f"chunk_duration={chunk_duration_seconds:.3f}s "
+        f"queue_size={queue_size} "
+        f"asr_elapsed={elapsed_seconds:.3f}s "
+        f"realtime_factor={realtime_factor:.2f} "
+        f"queue_backlog={'yes' if backlog else 'no'}"
+    )
+
+
+def live_asr_telemetry_event(
+    chunk_duration_seconds: float,
+    queue_size: int,
+    elapsed_seconds: float,
+) -> dict:
+    realtime_factor = elapsed_seconds / chunk_duration_seconds if chunk_duration_seconds > 0 else 0.0
+    return {
+        "category": "live_asr_telemetry",
+        "message": live_asr_telemetry_message(chunk_duration_seconds, queue_size, elapsed_seconds),
+        "chunk_duration_seconds": round(chunk_duration_seconds, 3),
+        "queue_size": int(queue_size),
+        "asr_elapsed_seconds": round(elapsed_seconds, 3),
+        "realtime_factor": round(realtime_factor, 3),
+        "queue_backlog": queue_size > 0,
+    }
 
 
 def cuda_required_error(detail: str) -> str:
@@ -192,6 +227,7 @@ class ModelLoaderThread(QThread):
 class TranscriberThread(QThread):
     text_updated = pyqtSignal(str)
     status_updated = pyqtSignal(str)
+    telemetry_updated = pyqtSignal(object)
 
     def __init__(self):
         super().__init__()
@@ -233,9 +269,16 @@ class TranscriberThread(QThread):
                 )
 
                 self.processing = True
+                queue_size = self.audio_queue.qsize()
+                chunk_duration_seconds = len(audio_data) / SAMPLE_RATE
+                asr_started_at = time.perf_counter()
                 segments, info = self.model.transcribe(audio_data, **transcribe_kwargs)
                 detected_language = getattr(info, "language", None) or self.live_language
                 text_segment = "".join([s.text for s in segments])
+                asr_elapsed_seconds = time.perf_counter() - asr_started_at
+                telemetry = live_asr_telemetry_event(chunk_duration_seconds, queue_size, asr_elapsed_seconds)
+                logger.info(telemetry["message"])
+                self.telemetry_updated.emit(telemetry)
                 if self.live_chinese_punctuation_enabled:
                     punctuation_result = restore_chinese_punctuation(text_segment, language=detected_language)
                     text_segment = punctuation_result.text

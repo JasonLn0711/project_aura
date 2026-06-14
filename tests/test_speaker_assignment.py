@@ -1,6 +1,17 @@
 import unittest
+from pathlib import Path
+from tempfile import TemporaryDirectory
+from unittest.mock import patch
 
-from aura.diarization.pyannote_pipeline import DiarizationSettings, pipeline_kwargs
+from aura.diarization.pyannote_pipeline import (
+    AURA_HF_TOKEN_FILE_ENV,
+    DiarizationDependencyError,
+    DiarizationSettings,
+    diarize_audio_file,
+    huggingface_token,
+    pipeline_kwargs,
+    validate_diarization_runtime,
+)
 from aura.diarization.speaker_assignment import (
     UNKNOWN_SPEAKER,
     SpeakerTurn,
@@ -54,6 +65,83 @@ class SpeakerAssignmentTests(unittest.TestCase):
     def test_rejects_invalid_speaker_range(self):
         with self.assertRaises(ValueError):
             DiarizationSettings(enabled=True, min_speakers=4, max_speakers=2)
+
+    def test_validate_diarization_runtime_noops_when_disabled(self):
+        validate_diarization_runtime(DiarizationSettings(enabled=False))
+
+    def test_validate_diarization_runtime_reports_missing_pyannote_dependency(self):
+        with (
+            patch("aura.diarization.pyannote_pipeline.pyannote_audio_available", return_value=False),
+            self.assertRaisesRegex(DiarizationDependencyError, r"pyannote\.audio"),
+        ):
+            validate_diarization_runtime(DiarizationSettings(enabled=True))
+
+    def test_validate_diarization_runtime_reports_missing_hugging_face_token(self):
+        with (
+            patch("aura.diarization.pyannote_pipeline.pyannote_audio_available", return_value=True),
+            patch("aura.diarization.pyannote_pipeline.local_hf_token_secret_paths", return_value=()),
+            patch.dict("os.environ", {}, clear=True),
+            self.assertRaisesRegex(DiarizationDependencyError, "Hugging Face access token"),
+        ):
+            validate_diarization_runtime(DiarizationSettings(enabled=True))
+
+    def test_huggingface_token_loads_local_secret_file(self):
+        with TemporaryDirectory() as tmpdir:
+            secret_path = Path(tmpdir) / "hf.env"
+            secret_path.write_text(
+                "\n".join(
+                    [
+                        "# local secret",
+                        "export HF_TOKEN=hf_from_file",
+                    ]
+                ),
+                encoding="utf-8",
+            )
+
+            with patch.dict("os.environ", {AURA_HF_TOKEN_FILE_ENV: str(secret_path)}, clear=True):
+                self.assertEqual(huggingface_token(), "hf_from_file")
+
+    def test_huggingface_token_prefers_environment_over_local_secret_file(self):
+        with TemporaryDirectory() as tmpdir:
+            secret_path = Path(tmpdir) / "hf.env"
+            secret_path.write_text("export HF_TOKEN=hf_from_file\n", encoding="utf-8")
+
+            with patch.dict(
+                "os.environ",
+                {
+                    AURA_HF_TOKEN_FILE_ENV: str(secret_path),
+                    "HF_TOKEN": "hf_from_env",
+                },
+                clear=True,
+            ):
+                self.assertEqual(huggingface_token(), "hf_from_env")
+
+    def test_diarize_audio_file_passes_preloaded_waveform_to_pipeline(self):
+        class FakePipeline:
+            def __init__(self):
+                self.audio_input = None
+                self.kwargs = None
+
+            def __call__(self, audio_input, **kwargs):
+                self.audio_input = audio_input
+                self.kwargs = kwargs
+                return [(type("Turn", (), {"start": 1.0, "end": 2.0})(), "SPEAKER_00")]
+
+        fake_pipeline = FakePipeline()
+        fake_audio_input = {"waveform": object(), "sample_rate": 16000}
+
+        with (
+            patch("aura.diarization.pyannote_pipeline._load_pyannote_pipeline", return_value=fake_pipeline),
+            patch("aura.diarization.pyannote_pipeline.pipeline_audio_input", return_value=fake_audio_input),
+        ):
+            turns = diarize_audio_file(
+                "meeting.wav",
+                DiarizationSettings(enabled=True, min_speakers=2, max_speakers=2, device="cuda"),
+            )
+
+        self.assertIs(fake_pipeline.audio_input, fake_audio_input)
+        self.assertEqual(fake_pipeline.kwargs, {"num_speakers": 2})
+        self.assertEqual(turns, [SpeakerTurn(start=1.0, end=2.0, speaker="SPEAKER_00")])
 
 
 if __name__ == "__main__":

@@ -12,13 +12,15 @@ CUDA_RUNTIME_GLOBS = (
     "nvidia/cublas/lib/libcublas.so*",
     "nvidia/cublas/lib/libcublasLt.so*",
     "nvidia/cudnn/lib/libcudnn*.so*",
+    "nvidia/npp/lib/libnpp*.so*",
     "nvidia/cuda_runtime/bin/cudart64_*.dll",
     "nvidia/cublas/bin/cublas64_*.dll",
     "nvidia/cublas/bin/cublasLt64_*.dll",
     "nvidia/cudnn/bin/cudnn64_*.dll",
+    "nvidia/npp/bin/npp*.dll",
 )
-CUDA_REQUIRED_LIBS = ("libcublas.so.12", "libcublasLt.so.12")
-CUDA_REQUIRED_DLLS = ("cublas64_12.dll", "cublasLt64_12.dll")
+CUDA_REQUIRED_LIBS = ("libcublas.so.12", "libcublasLt.so.12", "libnppicc.so.12")
+CUDA_REQUIRED_DLLS = ("cublas64_12.dll", "cublasLt64_12.dll", "nppicc64_12.dll")
 CDLL_MODE = getattr(ctypes, "RTLD_GLOBAL", getattr(ctypes, "DEFAULT_MODE", 0))
 
 
@@ -114,8 +116,10 @@ def is_cuda_runtime_error(error_msg):
         "libcublas.so",
         "libcublaslt.so",
         "libcudnn",
+        "libnpp",
         "cublas64",
         "cudnn64",
+        "nppicc64",
         "cudart64",
         "cannot be loaded",
         "cannot open shared object file",

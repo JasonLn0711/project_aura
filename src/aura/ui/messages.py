@@ -67,6 +67,13 @@ class UIStrings:
     output_policy_tooltip: str = "Controls where auto-saved transcript artifacts and processing metrics are written."
     select_output_folder: str = "Select Folder"
     output_folder_selected: str = "Output folder: {folder}"
+    recording_audio_format_label: str = "Recording Audio Format:"
+    recording_audio_m4a: str = "M4A / AAC-LC 96k (recommended)"
+    recording_audio_mp3: str = "MP3 / LAME VBR q0 (legacy)"
+    recording_audio_format_tooltip: str = (
+        "Controls the saved recording audio artifact. M4A/AAC keeps clearer speech at practical file sizes; "
+        "MP3 is retained for legacy workflows."
+    )
     target_volume_label: str = "Target Volume Normalization (dBFS):"
     beam_size_label: str = "Beam Size (Recommended: 5):"
     initial_prompt_label: str = "Initial Prompt:"

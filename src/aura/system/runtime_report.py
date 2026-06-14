@@ -1,13 +1,51 @@
 import datetime
+import importlib.util
 import os
 import shutil
 import sys
 from dataclasses import dataclass
 
+from aura.config import DIARIZATION_MODEL_ID
+from aura.diarization.pyannote_pipeline import HF_TOKEN_ENV, HUGGINGFACE_TOKEN_ENV, huggingface_token
 from aura.metadata import __version__
 from aura.system.audio_diagnostics import AudioDiagnostics, collect_audio_diagnostics
 from aura.system.gpu_diagnostics import GpuDiagnostics, collect_gpu_diagnostics
 from aura.system.platform import RuntimePlatform, detect_runtime_platform
+
+
+def _module_available(module_name: str) -> bool:
+    try:
+        return importlib.util.find_spec(module_name) is not None
+    except ModuleNotFoundError:
+        return False
+
+
+@dataclass(frozen=True)
+class DiarizationDiagnostics:
+    model_id: str = DIARIZATION_MODEL_ID
+    pyannote_available: bool = False
+    torch_available: bool = False
+    torch_cuda_available: bool = False
+    token_available: bool = False
+
+    @property
+    def ready(self) -> bool:
+        return self.pyannote_available and self.torch_available and self.token_available
+
+    @property
+    def status_line(self) -> str:
+        missing = []
+        if not self.pyannote_available:
+            missing.append("pyannote.audio")
+        if not self.torch_available:
+            missing.append("torch")
+        if not self.token_available:
+            missing.append(f"{HUGGINGFACE_TOKEN_ENV} or {HF_TOKEN_ENV}")
+        if missing:
+            return "needs setup: " + ", ".join(missing)
+        if self.torch_cuda_available:
+            return "ready with CUDA-capable torch"
+        return "ready; torch is installed but CUDA is not available"
 
 
 @dataclass(frozen=True)
@@ -15,6 +53,7 @@ class RuntimeDiagnostics:
     platform: RuntimePlatform
     gpu: GpuDiagnostics
     audio: AudioDiagnostics
+    diarization: DiarizationDiagnostics = DiarizationDiagnostics()
     asr_model_status: str = "not loaded"
     output_folder_writable: bool = False
 
@@ -31,6 +70,24 @@ class RuntimeDiagnostics:
         return self.audio.status_line
 
 
+def collect_diarization_diagnostics() -> DiarizationDiagnostics:
+    torch_available = _module_available("torch")
+    torch_cuda_available = False
+    if torch_available:
+        try:
+            import torch
+
+            torch_cuda_available = bool(torch.cuda.is_available())
+        except Exception:
+            torch_cuda_available = False
+    return DiarizationDiagnostics(
+        pyannote_available=_module_available("pyannote.audio"),
+        torch_available=torch_available,
+        torch_cuda_available=torch_cuda_available,
+        token_available=bool(huggingface_token()),
+    )
+
+
 @dataclass(frozen=True)
 class FirstLaunchCheck:
     key: str
@@ -45,6 +102,7 @@ def collect_runtime_diagnostics(asr_model_status: str = "not loaded") -> Runtime
         platform=detect_runtime_platform(),
         gpu=collect_gpu_diagnostics(),
         audio=collect_audio_diagnostics(),
+        diarization=collect_diarization_diagnostics(),
         asr_model_status=asr_model_status,
         output_folder_writable=os.access(os.getcwd(), os.W_OK),
     )
@@ -100,6 +158,12 @@ def first_launch_checks(diagnostics: RuntimeDiagnostics) -> tuple[FirstLaunchChe
     )
 
 
+def activation_report_line(diagnostics: RuntimeDiagnostics) -> str:
+    if diagnostics.gpu.cuda_ready:
+        return "- Activation status: complete"
+    return f"- Activation guidance: {diagnostics.gpu.activation_guidance}"
+
+
 def format_runtime_report(diagnostics: RuntimeDiagnostics) -> str:
     gpu = diagnostics.gpu
     audio = diagnostics.audio
@@ -133,7 +197,7 @@ def format_runtime_report(diagnostics: RuntimeDiagnostics) -> str:
         [
             f"- ASR model load status: {diagnostics.asr_model_status}",
             f"- Current output folder writable: {'yes' if diagnostics.output_folder_writable else 'no'}",
-            f"- Activation guidance: {gpu.activation_guidance}",
+            activation_report_line(diagnostics),
             "",
             "Audio / FFmpeg",
             f"- FFmpeg: {audio.ffmpeg_path or shutil.which('ffmpeg') or 'missing'}",
@@ -147,6 +211,18 @@ def format_runtime_report(diagnostics: RuntimeDiagnostics) -> str:
         lines.append("- Input device names: " + "; ".join(audio.input_devices[:8]))
     if audio.output_devices:
         lines.append("- Output device names: " + "; ".join(audio.output_devices[:8]))
+    lines.extend(
+        [
+            "",
+            "Optional Speaker Diarization",
+            f"- Model: {diagnostics.diarization.model_id}",
+            f"- pyannote.audio import: {'ok' if diagnostics.diarization.pyannote_available else 'missing'}",
+            f"- torch import: {'ok' if diagnostics.diarization.torch_available else 'missing'}",
+            f"- torch CUDA: {'available' if diagnostics.diarization.torch_cuda_available else 'not available'}",
+            f"- Hugging Face token: {'configured' if diagnostics.diarization.token_available else 'missing'}",
+            f"- Diarization status: {diagnostics.diarization.status_line}",
+        ]
+    )
     lines.extend(["", "First Launch Check"])
     for check in first_launch_checks(diagnostics):
         lines.append(f"- {check.label}: {'ready' if check.ready else 'needs attention'} ({check.detail})")

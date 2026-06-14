@@ -3,6 +3,8 @@ import unittest
 import numpy as np
 
 from aura.audio.capture import (
+    AudioRecorderThread,
+    ENERGY_BRIDGE_MS,
     MIX_MAX_GAIN,
     MIX_MIN_GAIN,
     NO_VOICE_AUTO_STOP_MINUTES,
@@ -15,6 +17,7 @@ from aura.audio.capture import (
     select_pulse_sources_for_mode,
     select_system_pulse_source,
     should_auto_stop_for_no_voice,
+    should_treat_frame_as_speech,
     trim_trailing_unvoiced_frames,
 )
 from aura.config import CHUNK_MS, LIVE_CAPTURE_MICROPHONE, LIVE_CAPTURE_SYSTEM, LIVE_CAPTURE_SYSTEM_MICROPHONE
@@ -115,6 +118,44 @@ class AudioCaptureTests(unittest.TestCase):
         self.assertTrue(should_auto_stop_for_no_voice(10, 10))
         self.assertFalse(should_auto_stop_for_no_voice(10, 0))
 
+    def test_energy_gate_does_not_start_speech_without_vad(self):
+        self.assertFalse(
+            should_treat_frame_as_speech(
+                vad_is_speech=False,
+                frame_rms_value=5000.0,
+                has_active_segment=False,
+                consecutive_vad_miss_frames=1,
+                energy_gate_rms=1000.0,
+                max_energy_bridge_frames=frames_for_duration_seconds(ENERGY_BRIDGE_MS / 1000),
+            )
+        )
+
+    def test_energy_gate_bridges_short_vad_miss_inside_active_segment(self):
+        self.assertTrue(
+            should_treat_frame_as_speech(
+                vad_is_speech=False,
+                frame_rms_value=5000.0,
+                has_active_segment=True,
+                consecutive_vad_miss_frames=1,
+                energy_gate_rms=1000.0,
+                max_energy_bridge_frames=frames_for_duration_seconds(ENERGY_BRIDGE_MS / 1000),
+            )
+        )
+
+    def test_energy_gate_stops_bridging_after_short_vad_miss_window(self):
+        max_bridge_frames = frames_for_duration_seconds(ENERGY_BRIDGE_MS / 1000)
+
+        self.assertFalse(
+            should_treat_frame_as_speech(
+                vad_is_speech=False,
+                frame_rms_value=5000.0,
+                has_active_segment=True,
+                consecutive_vad_miss_frames=max_bridge_frames + 1,
+                energy_gate_rms=1000.0,
+                max_energy_bridge_frames=max_bridge_frames,
+            )
+        )
+
     def test_trim_trailing_unvoiced_frames_removes_only_tail(self):
         frames = [b"voice-1", b"quiet-1", b"voice-2", b"quiet-2", b"quiet-3"]
         trimmed, count = trim_trailing_unvoiced_frames(frames, [True, False, True, False, False])
@@ -131,6 +172,23 @@ class AudioCaptureTests(unittest.TestCase):
     def test_trim_trailing_unvoiced_frames_requires_matching_lengths(self):
         with self.assertRaises(ValueError):
             trim_trailing_unvoiced_frames([b"frame"], [])
+
+    def test_recorder_uses_live_segment_and_energy_gate_defaults(self):
+        recorder = AudioRecorderThread("recording", transcriber_thread=object())
+
+        self.assertEqual(recorder.max_segment_len_sec, 16.0)
+        self.assertEqual(recorder.energy_gate_rms, 1000.0)
+
+    def test_recorder_allows_live_segment_and_energy_gate_overrides(self):
+        recorder = AudioRecorderThread(
+            "recording",
+            transcriber_thread=object(),
+            max_segment_len_sec=12.5,
+            energy_gate_rms=1200.0,
+        )
+
+        self.assertEqual(recorder.max_segment_len_sec, 12.5)
+        self.assertEqual(recorder.energy_gate_rms, 1200.0)
 
 
 if __name__ == "__main__":

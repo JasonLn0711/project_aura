@@ -20,7 +20,7 @@ from aura.asr.file_pipeline import (
     transcribe_file,
 )
 from aura.config import DEFAULT_PROMPT
-from aura.diarization.pyannote_pipeline import DiarizationSettings
+from aura.diarization.pyannote_pipeline import DiarizationDependencyError, DiarizationSettings
 from aura.diarization.speaker_assignment import SpeakerTurn
 from aura.system import runtime_paths
 
@@ -256,6 +256,32 @@ class FilePipelineTests(unittest.TestCase):
 
             self.assertEqual(result.lines, ["[00:00:01] SPEAKER_01:  hello"])
             self.assertEqual(lines, ["[00:00:01] SPEAKER_01:  hello"])
+
+    def test_transcribe_file_validates_diarization_runtime_before_preparing_audio(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            source = Path(tmpdir) / "input.wav"
+            export_silence(source)
+            model = FakeModel()
+
+            with (
+                patch.dict(os.environ, {runtime_paths.RUNTIME_DIR_ENV: tmpdir}),
+                patch(
+                    "aura.asr.file_pipeline.validate_diarization_runtime",
+                    side_effect=DiarizationDependencyError("missing diarization runtime"),
+                ) as validate_mock,
+                patch("aura.asr.file_pipeline.prepare_import_audio") as prepare_mock,
+                self.assertRaisesRegex(DiarizationDependencyError, "missing diarization runtime"),
+            ):
+                transcribe_file(
+                    model=model,
+                    file_path=str(source),
+                    settings=FileTranscriptionSettings(diarization=DiarizationSettings(enabled=True)),
+                    worker_id="unit-diar-preflight",
+                )
+
+            validate_mock.assert_called_once()
+            prepare_mock.assert_not_called()
+            self.assertEqual(model.calls, [])
 
 
 if __name__ == "__main__":
