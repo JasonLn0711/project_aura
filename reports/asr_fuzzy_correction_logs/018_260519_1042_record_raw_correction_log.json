@@ -1,0 +1,18 @@
+{
+  "correction_log": [
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "KPI",
+      "end": 2914,
+      "method": "rapidfuzz",
+      "original": "kpi",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "span": "kpi",
+      "start": 2911
+    }
+  ],
+  "source_transcript": "260519_1042_record/260519_1042_record_raw.txt"
+}

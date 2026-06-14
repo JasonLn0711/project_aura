@@ -1,0 +1,31 @@
+{
+  "correction_log": [
+    {
+      "accepted": false,
+      "category": "technical_terms",
+      "corrected": "510(k)",
+      "end": 866,
+      "method": "rapidfuzz",
+      "original": "50L510K",
+      "review_reason": "regulatory_numeric_context_required",
+      "review_status": "manual_review_required",
+      "score": 100.0,
+      "span": "50L510K",
+      "start": 859
+    },
+    {
+      "accepted": false,
+      "category": "organizations",
+      "corrected": "NYCU",
+      "end": 3539,
+      "method": "rapidfuzz",
+      "original": "nyc",
+      "review_reason": "possible_distinct_acronym",
+      "review_status": "denylist",
+      "score": 85.71,
+      "span": "nyc",
+      "start": 3536
+    }
+  ],
+  "source_transcript": "260528_0839_record/260528_0839_record_final.txt"
+}

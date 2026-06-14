@@ -1,0 +1,122 @@
+{
+  "correction_log": [
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "CPU",
+      "end": 2795,
+      "method": "rapidfuzz",
+      "original": "cpu",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "span": "cpu",
+      "start": 2792
+    },
+    {
+      "accepted": false,
+      "category": "people",
+      "corrected": "Max",
+      "end": 20651,
+      "method": "rapidfuzz",
+      "original": "max",
+      "review_reason": "person_name_or_common_word_context_required",
+      "review_status": "manual_review_required",
+      "score": 100.0,
+      "span": "max",
+      "start": 20648
+    },
+    {
+      "accepted": false,
+      "category": "people",
+      "corrected": "Max",
+      "end": 20658,
+      "method": "rapidfuzz",
+      "original": "max",
+      "review_reason": "person_name_or_common_word_context_required",
+      "review_status": "manual_review_required",
+      "score": 100.0,
+      "span": "max",
+      "start": 20655
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "Spark",
+      "end": 22644,
+      "method": "rapidfuzz",
+      "original": "spark",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "span": "spark",
+      "start": 22639
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "CPU",
+      "end": 23557,
+      "method": "rapidfuzz",
+      "original": "cpu",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "span": "cpu",
+      "start": 23554
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "CPU",
+      "end": 23566,
+      "method": "rapidfuzz",
+      "original": "cpu",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "span": "cpu",
+      "start": 23563
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "Spark",
+      "end": 23874,
+      "method": "rapidfuzz",
+      "original": "spark",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "span": "spark",
+      "start": 23869
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "SQL",
+      "end": 29417,
+      "method": "rapidfuzz",
+      "original": "sql",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "span": "sql",
+      "start": 29414
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "CPU",
+      "end": 30571,
+      "method": "rapidfuzz",
+      "original": "cpu",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "span": "cpu",
+      "start": 30568
+    }
+  ],
+  "source_transcript": "260520_2104_114-2 生成式AI應用系統與工程 W13_1150520/260520_2104_114-2 生成式AI應用系統與工程 W13_1150520_raw.txt"
+}

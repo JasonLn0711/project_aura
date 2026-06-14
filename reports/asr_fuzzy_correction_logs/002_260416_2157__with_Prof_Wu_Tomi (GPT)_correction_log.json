@@ -1,0 +1,31 @@
+{
+  "correction_log": [
+    {
+      "accepted": false,
+      "category": "organizations",
+      "corrected": "國立陽明交通大學",
+      "end": 32926,
+      "method": "rapidfuzz",
+      "original": "陽明交大",
+      "review_reason": "valid_abbreviation_normalization_only",
+      "review_status": "denylist",
+      "score": 100.0,
+      "span": "陽明交大",
+      "start": 32922
+    },
+    {
+      "accepted": false,
+      "category": "organizations",
+      "corrected": "國立陽明交通大學",
+      "end": 33426,
+      "method": "rapidfuzz",
+      "original": "陽明交大",
+      "review_reason": "valid_abbreviation_normalization_only",
+      "review_status": "denylist",
+      "score": 100.0,
+      "span": "陽明交大",
+      "start": 33422
+    }
+  ],
+  "source_transcript": "260416_2157__with_Prof_Wu_Tomi/260416_2157__with_Prof_Wu_Tomi (GPT).txt"
+}

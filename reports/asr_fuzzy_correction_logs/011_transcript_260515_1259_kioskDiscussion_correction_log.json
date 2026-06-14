@@ -1,0 +1,83 @@
+{
+  "correction_log": [
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "Kiosk",
+      "end": 3004,
+      "method": "rapidfuzz",
+      "original": "kiosk",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "span": "kiosk",
+      "start": 2999
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "Kiosk",
+      "end": 3022,
+      "method": "rapidfuzz",
+      "original": "kiosk",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "span": "kiosk",
+      "start": 3017
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "Kiosk",
+      "end": 7957,
+      "method": "rapidfuzz",
+      "original": "kiosk",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "span": "kiosk",
+      "start": 7952
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "Kiosk",
+      "end": 11678,
+      "method": "rapidfuzz",
+      "original": "kiosk",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "span": "kiosk",
+      "start": 11673
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "Kiosk",
+      "end": 11906,
+      "method": "rapidfuzz",
+      "original": "kiosk",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "span": "kiosk",
+      "start": 11901
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "Kiosk",
+      "end": 12192,
+      "method": "rapidfuzz",
+      "original": "kiosk",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "span": "kiosk",
+      "start": 12187
+    }
+  ],
+  "source_transcript": "260515_1259_kioskDiscussion/transcript_260515_1259_kioskDiscussion.txt"
+}

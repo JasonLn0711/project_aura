@@ -1,0 +1,109 @@
+{
+  "correction_log": [
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "LLM",
+      "end": 12599,
+      "method": "rapidfuzz",
+      "original": "llm",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "span": "llm",
+      "start": 12596
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "LLM",
+      "end": 12627,
+      "method": "rapidfuzz",
+      "original": "llm",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "span": "llm",
+      "start": 12624
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "API",
+      "end": 15184,
+      "method": "rapidfuzz",
+      "original": "api",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "span": "api",
+      "start": 15181
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "API",
+      "end": 15484,
+      "method": "rapidfuzz",
+      "original": "api",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "span": "api",
+      "start": 15481
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "API",
+      "end": 15502,
+      "method": "rapidfuzz",
+      "original": "api",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "span": "api",
+      "start": 15499
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "LLM",
+      "end": 20302,
+      "method": "rapidfuzz",
+      "original": "llm",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "span": "llm",
+      "start": 20299
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "LLM",
+      "end": 20459,
+      "method": "rapidfuzz",
+      "original": "llm",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "span": "llm",
+      "start": 20456
+    },
+    {
+      "accepted": true,
+      "category": "organizations",
+      "corrected": "NVIDIA",
+      "end": 35245,
+      "method": "rapidfuzz",
+      "original": "nvidia",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "span": "nvidia",
+      "start": 35239
+    }
+  ],
+  "source_transcript": "260422_1415_114-2 生成式AI應用系統與工程 W9_1150422/260422_1415_114-2 生成式AI應用系統與工程 W9_1150422.txt"
+}

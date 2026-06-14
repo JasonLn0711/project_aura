@@ -1,0 +1,57 @@
+{
+  "correction_log": [
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "GPU",
+      "end": 3288,
+      "method": "rapidfuzz",
+      "original": "gpu",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "span": "gpu",
+      "start": 3285
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "LLM",
+      "end": 8990,
+      "method": "rapidfuzz",
+      "original": "llm",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "span": "llm",
+      "start": 8987
+    },
+    {
+      "accepted": true,
+      "category": "people",
+      "corrected": "Jason",
+      "end": 9830,
+      "method": "rapidfuzz",
+      "original": "jason",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "span": "jason",
+      "start": 9825
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "Kiosk",
+      "end": 15550,
+      "method": "rapidfuzz",
+      "original": "kiosk",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "span": "kiosk",
+      "start": 15545
+    }
+  ],
+  "source_transcript": "260512_1302_record/260512_1302_record (minute).txt"
+}

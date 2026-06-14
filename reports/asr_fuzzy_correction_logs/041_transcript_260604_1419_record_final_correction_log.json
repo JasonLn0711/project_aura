@@ -1,0 +1,18 @@
+{
+  "correction_log": [
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "API",
+      "end": 4806,
+      "method": "rapidfuzz",
+      "original": "api",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "span": "api",
+      "start": 4803
+    }
+  ],
+  "source_transcript": "260604_1419_record/transcript_260604_1419_record_final.txt"
+}

@@ -1,0 +1,31 @@
+{
+  "correction_log": [
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "Kiosk",
+      "end": 322,
+      "method": "rapidfuzz",
+      "original": "kiosk",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "span": "kiosk",
+      "start": 317
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "API",
+      "end": 38186,
+      "method": "rapidfuzz",
+      "original": "api",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "span": "api",
+      "start": 38183
+    }
+  ],
+  "source_transcript": "260527_1422_record/260527_1422_record_raw.txt"
+}

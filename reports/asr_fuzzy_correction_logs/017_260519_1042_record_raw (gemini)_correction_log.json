@@ -1,0 +1,44 @@
+{
+  "correction_log": [
+    {
+      "accepted": false,
+      "category": "organizations",
+      "corrected": "信義院外門診部",
+      "end": 453,
+      "method": "rapidfuzz",
+      "original": "個信義院外門診",
+      "review_reason": "context_required",
+      "review_status": "manual_review_required",
+      "score": 85.71,
+      "span": "個信義院外門診",
+      "start": 446
+    },
+    {
+      "accepted": false,
+      "category": "organizations",
+      "corrected": "信義院外門診部",
+      "end": 806,
+      "method": "rapidfuzz",
+      "original": "信義的院外門診部",
+      "review_reason": "context_required",
+      "review_status": "manual_review_required",
+      "score": 93.33,
+      "span": "信義的院外門診部",
+      "start": 798
+    },
+    {
+      "accepted": false,
+      "category": "organizations",
+      "corrected": "國立陽明交通大學",
+      "end": 1141,
+      "method": "rapidfuzz",
+      "original": "陽明交大",
+      "review_reason": "valid_abbreviation_normalization_only",
+      "review_status": "denylist",
+      "score": 100.0,
+      "span": "陽明交大",
+      "start": 1137
+    }
+  ],
+  "source_transcript": "260519_1042_record/260519_1042_record_raw (gemini).txt"
+}

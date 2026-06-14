@@ -1,0 +1,57 @@
+{
+  "correction_log": [
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "Kiosk",
+      "end": 2458,
+      "method": "rapidfuzz",
+      "original": "kiosk",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "span": "kiosk",
+      "start": 2453
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "Kiosk",
+      "end": 2476,
+      "method": "rapidfuzz",
+      "original": "kiosk",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "span": "kiosk",
+      "start": 2471
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "Kiosk",
+      "end": 9968,
+      "method": "rapidfuzz",
+      "original": "kiosk",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "span": "kiosk",
+      "start": 9963
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "Kiosk",
+      "end": 10220,
+      "method": "rapidfuzz",
+      "original": "kiosk",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "span": "kiosk",
+      "start": 10215
+    }
+  ],
+  "source_transcript": "260515_1259_kioskDiscussion/260515_1259_kioskDiscussion.txt"
+}

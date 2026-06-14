@@ -1,0 +1,18 @@
+{
+  "correction_log": [
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "API",
+      "end": 1704,
+      "method": "rapidfuzz",
+      "original": "api",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "span": "api",
+      "start": 1701
+    }
+  ],
+  "source_transcript": "260526_1057_小lin說_一口氣搞清避稅天堂的資本遊戲/transcript_260526_1057_小lin說_一口氣搞清避稅天堂的資本遊戲_final (gemini).txt"
+}

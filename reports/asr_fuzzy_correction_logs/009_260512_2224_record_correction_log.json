@@ -1,0 +1,57 @@
+{
+  "correction_log": [
+    {
+      "accepted": false,
+      "category": "technical_terms",
+      "corrected": "510(k)",
+      "end": 2757,
+      "method": "rapidfuzz",
+      "original": "5.0k",
+      "review_reason": "regulatory_numeric_context_required",
+      "review_status": "manual_review_required",
+      "score": 100.0,
+      "span": "5.0k",
+      "start": 2753
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "510(k)",
+      "end": 4088,
+      "method": "rapidfuzz",
+      "original": "510k",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "span": "510k",
+      "start": 4084
+    },
+    {
+      "accepted": false,
+      "category": "technical_terms",
+      "corrected": "510(k)",
+      "end": 4847,
+      "method": "rapidfuzz",
+      "original": "5.0k",
+      "review_reason": "regulatory_numeric_context_required",
+      "review_status": "manual_review_required",
+      "score": 100.0,
+      "span": "5.0k",
+      "start": 4843
+    },
+    {
+      "accepted": false,
+      "category": "technical_terms",
+      "corrected": "510(k)",
+      "end": 4876,
+      "method": "rapidfuzz",
+      "original": "5.0k",
+      "review_reason": "regulatory_numeric_context_required",
+      "review_status": "manual_review_required",
+      "score": 100.0,
+      "span": "5.0k",
+      "start": 4872
+    }
+  ],
+  "source_transcript": "260512_2224_record/260512_2224_record.txt"
+}

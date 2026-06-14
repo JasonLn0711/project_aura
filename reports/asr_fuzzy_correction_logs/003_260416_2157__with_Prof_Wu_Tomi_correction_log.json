@@ -1,0 +1,109 @@
+{
+  "correction_log": [
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "Liger",
+      "end": 643,
+      "method": "rapidfuzz",
+      "original": "liger",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "span": "liger",
+      "start": 638
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "FDA",
+      "end": 6081,
+      "method": "rapidfuzz",
+      "original": "fda",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "span": "fda",
+      "start": 6078
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "FDA",
+      "end": 10888,
+      "method": "rapidfuzz",
+      "original": "fda",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "span": "fda",
+      "start": 10885
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "FDA",
+      "end": 10896,
+      "method": "rapidfuzz",
+      "original": "fda",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "span": "fda",
+      "start": 10893
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "FDA",
+      "end": 13849,
+      "method": "rapidfuzz",
+      "original": "fda",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "span": "fda",
+      "start": 13846
+    },
+    {
+      "accepted": true,
+      "category": "people",
+      "corrected": "Jason",
+      "end": 16897,
+      "method": "rapidfuzz",
+      "original": "jason",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "span": "jason",
+      "start": 16892
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "API",
+      "end": 26386,
+      "method": "rapidfuzz",
+      "original": "api",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "span": "api",
+      "start": 26383
+    },
+    {
+      "accepted": false,
+      "category": "organizations",
+      "corrected": "智慧財產局",
+      "end": 39540,
+      "method": "rapidfuzz",
+      "original": "智慧財產",
+      "review_reason": "original_valid_term_adds_institution",
+      "review_status": "denylist",
+      "score": 88.89,
+      "span": "智慧財產",
+      "start": 39536
+    }
+  ],
+  "source_transcript": "260416_2157__with_Prof_Wu_Tomi/260416_2157__with_Prof_Wu_Tomi.txt"
+}

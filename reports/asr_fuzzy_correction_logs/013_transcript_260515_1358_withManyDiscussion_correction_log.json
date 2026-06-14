@@ -1,0 +1,44 @@
+{
+  "correction_log": [
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "ASR",
+      "end": 2217,
+      "method": "rapidfuzz",
+      "original": "asr",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "span": "asr",
+      "start": 2214
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "ASR",
+      "end": 2232,
+      "method": "rapidfuzz",
+      "original": "asr",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "span": "asr",
+      "start": 2229
+    },
+    {
+      "accepted": true,
+      "category": "technical_terms",
+      "corrected": "GPU",
+      "end": 8181,
+      "method": "rapidfuzz",
+      "original": "gpu",
+      "review_reason": "",
+      "review_status": "accepted",
+      "score": 100.0,
+      "span": "gpu",
+      "start": 8178
+    }
+  ],
+  "source_transcript": "260515_1358_withManyDiscussion/transcript_260515_1358_withManyDiscussion.txt"
+}
