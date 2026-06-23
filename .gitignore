@@ -18,6 +18,8 @@ outputs/
 recordings/
 reports/gemma4_e4b_summary_impact/local_outputs/
 local_outputs/meeting_summary/
+local_outputs/denoise_eval/
+local_outputs/denoise_eval_candidates/
 26*/
 ??????_????_*/
 *.wav
