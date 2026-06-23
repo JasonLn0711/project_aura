@@ -31,6 +31,14 @@ from PyQt6.QtWidgets import (
 from aura.asr.punctuation import restore_chinese_punctuation_for_transcript
 from aura.asr.threads import FileTranscriberThread, ModelLoaderThread, TranscriberThread
 from aura.audio.denoise import DEFAULT_ACTIVE_DENOISE_PRESET, OFF_DENOISE_PRESET, normalize_denoise_preset
+from aura.audio.meeting_distance import (
+    MEETING_DISTANCE_FAR_SPEAKER,
+    MEETING_DISTANCE_NORMAL,
+    MEETING_DISTANCE_OFF,
+    MEETING_DISTANCE_RESCUE_OFFLINE,
+    effective_denoise_preset_for_mode,
+    meeting_distance_policy_for,
+)
 from aura.audio.capture import AudioRecorderThread
 from aura.audio.export import normalize_wav_to_recording_audio, recording_audio_format_spec
 from aura.config import CHUNK_MS, LIVE_CAPTURE_MICROPHONE, LIVE_CAPTURE_SYSTEM, LIVE_CAPTURE_SYSTEM_MICROPHONE
@@ -137,6 +145,23 @@ class TranscriptionTab(QWidget):
         self.settings_container = QWidget()
         self.settings_container.setVisible(False)
         settings_vbox = QVBoxLayout(self.settings_container)
+
+        meeting_distance_layout = QHBoxLayout()
+        meeting_distance_layout.addWidget(QLabel(self.strings.meeting_distance_mode_label))
+        self.combo_meeting_distance = QComboBox()
+        self.combo_meeting_distance.setToolTip(self.strings.meeting_distance_tooltip)
+        self.combo_meeting_distance.addItem(self.strings.meeting_distance_off, MEETING_DISTANCE_OFF)
+        self.combo_meeting_distance.addItem(self.strings.meeting_distance_normal, MEETING_DISTANCE_NORMAL)
+        self.combo_meeting_distance.addItem(self.strings.meeting_distance_far_speaker, MEETING_DISTANCE_FAR_SPEAKER)
+        self.combo_meeting_distance.addItem(
+            self.strings.meeting_distance_rescue_offline,
+            MEETING_DISTANCE_RESCUE_OFFLINE,
+        )
+        meeting_distance_index = self.combo_meeting_distance.findData(self.settings.meeting_distance_mode)
+        self.combo_meeting_distance.setCurrentIndex(meeting_distance_index if meeting_distance_index >= 0 else 0)
+        meeting_distance_layout.addWidget(self.combo_meeting_distance)
+        meeting_distance_layout.addStretch()
+        settings_vbox.addLayout(meeting_distance_layout)
 
         denoise_layout = QHBoxLayout()
         denoise_layout.addWidget(QLabel(self.strings.denoise_mode_label))
@@ -663,13 +688,22 @@ class TranscriptionTab(QWidget):
                 self.process_next_file()
 
     def selected_denoise_preset(self) -> str:
-        return normalize_denoise_preset(
+        selected = normalize_denoise_preset(
             enable_denoise=self.combo_denoise.currentData() != OFF_DENOISE_PRESET,
             preset=self.combo_denoise.currentData(),
         )
+        return effective_denoise_preset_for_mode(self.selected_meeting_distance_mode(), selected)
 
     def denoise_enabled(self) -> bool:
         return self.selected_denoise_preset() != OFF_DENOISE_PRESET
+
+    def selected_meeting_distance_mode(self) -> str:
+        if not hasattr(self, "combo_meeting_distance"):
+            return self.settings.meeting_distance_mode
+        return self.combo_meeting_distance.currentData() or self.settings.meeting_distance_mode
+
+    def selected_meeting_distance_policy(self):
+        return meeting_distance_policy_for(self.selected_meeting_distance_mode())
 
     def selected_live_capture_source(self) -> str:
         return self.combo_live_capture.currentData() or LIVE_CAPTURE_SYSTEM_MICROPHONE
@@ -895,6 +929,8 @@ class TranscriptionTab(QWidget):
         min_speakers, max_speakers = self.selected_speaker_range()
         output_base_path = self.transcript_base_path(self.current_folder, self.current_filename)
         self.current_import_metrics = self.new_metrics("import", file_path, output_base_path)
+        self.current_import_metrics.update(self.selected_meeting_distance_policy().metadata())
+        self.current_import_metrics["effective_denoise_preset"] = self.selected_denoise_preset()
         self.current_import_metrics["file_transcription_started_at"] = self.timestamp_now()
         self.current_import_metrics["_file_transcription_started_perf"] = time.perf_counter()
 
@@ -905,6 +941,7 @@ class TranscriptionTab(QWidget):
             beam_size=self.spin_beam.value(),
             initial_prompt=self.prompt_input.text(),
             language=self.combo_lang.currentData(),
+            meeting_distance_mode=self.selected_meeting_distance_mode(),
             enable_denoise=self.denoise_enabled(),
             denoise_preset=self.selected_denoise_preset(),
             enable_speaker_diarization=self.check_speaker_diarization.isChecked(),
@@ -1043,6 +1080,9 @@ class TranscriptionTab(QWidget):
         self.current_recording_metrics["recording_started_at"] = self.timestamp_now()
         self.current_recording_metrics["recording_start_trigger"] = trigger
         self.current_recording_metrics["capture_source"] = self.selected_live_capture_source()
+        meeting_distance_policy = self.selected_meeting_distance_policy()
+        self.current_recording_metrics.update(meeting_distance_policy.metadata())
+        self.current_recording_metrics["effective_denoise_preset"] = self.selected_denoise_preset()
         recording_runtime_config = {
             "asr_model_id": self.settings.model_id,
             "asr_device": self.settings.device,
@@ -1052,7 +1092,18 @@ class TranscriptionTab(QWidget):
             "initial_prompt_configured": bool(self.prompt_input.text()),
             "capture_source": self.selected_live_capture_source(),
             "live_max_segment_len_sec": self.settings.live_max_segment_len_sec,
-            "live_energy_gate_rms": self.settings.live_energy_gate_rms,
+            "live_energy_gate_rms": (
+                meeting_distance_policy.live_energy_gate_rms
+                if meeting_distance_policy.mode != MEETING_DISTANCE_OFF
+                else self.settings.live_energy_gate_rms
+            ),
+            "live_energy_bridge_ms": meeting_distance_policy.live_energy_bridge_ms,
+            "meeting_distance_mode": meeting_distance_policy.mode,
+            "meeting_distance_backend": meeting_distance_policy.enhancement_backend,
+            "meeting_distance_backend_role": meeting_distance_policy.backend_role,
+            "live_agc_enabled": meeting_distance_policy.live_agc_enabled,
+            "live_agc_target_rms": meeting_distance_policy.live_agc_target_rms,
+            "live_agc_max_gain": meeting_distance_policy.live_agc_max_gain,
             "denoise_enabled": self.denoise_enabled(),
             "denoise_preset": self.selected_denoise_preset(),
             "target_dbfs": float(self.spin_norm.value()),
@@ -1087,6 +1138,7 @@ class TranscriptionTab(QWidget):
             self.transcriber_thread,
             enable_denoise=self.denoise_enabled(),
             denoise_preset=self.selected_denoise_preset(),
+            meeting_distance_mode=meeting_distance_policy.mode,
             capture_mode=self.selected_live_capture_source(),
             max_segment_len_sec=self.settings.live_max_segment_len_sec,
             energy_gate_rms=self.settings.live_energy_gate_rms,

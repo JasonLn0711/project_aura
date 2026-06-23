@@ -24,6 +24,15 @@ class UIStrings:
     recording_suffix_placeholder: str = "Recording filename suffix"
     show_advanced_settings: str = "▶ Show Advanced Settings"
     hide_advanced_settings: str = "▼ Hide Advanced Settings"
+    meeting_distance_mode_label: str = "Meeting Distance Mode:"
+    meeting_distance_off: str = "Off - controlled close capture"
+    meeting_distance_normal: str = "Normal - meeting room baseline"
+    meeting_distance_far_speaker: str = "Far speaker - weak voice support"
+    meeting_distance_rescue_offline: str = "Rescue offline - difficult imports"
+    meeting_distance_tooltip: str = (
+        "Sets the ASR preprocessing profile for microphone distance. "
+        "Far-speaker and rescue modes are conservative fallbacks until model-based enhancement is promoted by transcript evaluation."
+    )
     denoise_mode_label: str = "Denoise Mode:"
     denoise_off: str = "Off - preserve original audio"
     denoise_light: str = "Light - normal room noise"

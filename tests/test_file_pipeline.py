@@ -19,6 +19,8 @@ from aura.asr.file_pipeline import (
     prepare_import_audio,
     transcribe_file,
 )
+from aura.audio.enhancement_backends import EnhancementResult
+from aura.audio.meeting_distance import MEETING_DISTANCE_FAR_SPEAKER, MEETING_DISTANCE_NORMAL
 from aura.config import DEFAULT_PROMPT
 from aura.diarization.pyannote_pipeline import DiarizationDependencyError, DiarizationSettings
 from aura.diarization.speaker_assignment import SpeakerTurn
@@ -65,6 +67,13 @@ class FilePipelineTests(unittest.TestCase):
         self.assertEqual(kwargs["beam_size"], 3)
         self.assertNotIn("language", kwargs)
         self.assertEqual(kwargs["initial_prompt"], DEFAULT_PROMPT)
+
+    def test_file_transcription_settings_apply_meeting_distance_denoise_floor(self):
+        normal = FileTranscriptionSettings(meeting_distance_mode=MEETING_DISTANCE_NORMAL, denoise_preset="off")
+        far = FileTranscriptionSettings(meeting_distance_mode=MEETING_DISTANCE_FAR_SPEAKER, denoise_preset="light")
+
+        self.assertEqual(normal.denoise_preset, "light")
+        self.assertEqual(far.denoise_preset, "medium")
 
     def test_normalize_file_transcription_error_adds_ffmpeg_guidance(self):
         message = normalize_file_transcription_error(RuntimeError("ffprobe not found"))
@@ -121,6 +130,79 @@ class FilePipelineTests(unittest.TestCase):
             self.assertEqual(result, target)
             self.assertIn("🧮 CPU count detected via test: 12; using 6 FFmpeg normalization threads (reserved 6).", statuses)
             self.assertIn("🔉 Volume normalization pass 2/2: 50%", statuses)
+
+    def test_prepare_import_audio_uses_successful_far_speaker_enhancement_before_normalization(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            source = Path(tmpdir) / "input.wav"
+            target = Path(tmpdir) / "prepared.wav"
+            export_silence(source)
+            statuses = []
+
+            def fake_enhance(input_path, output_path, meeting_distance_mode):
+                self.assertEqual(Path(input_path), source)
+                self.assertEqual(meeting_distance_mode, MEETING_DISTANCE_FAR_SPEAKER)
+                export_silence(Path(output_path))
+                return EnhancementResult(
+                    backend="deepfilternet3",
+                    status="ok",
+                    output_path=Path(output_path),
+                    note="test enhancement",
+                    runtime_seconds=0.01,
+                )
+
+            def fake_normalize_media_to_wav(file_path, temp_path, target_dbfs, progress_callback=None):
+                self.assertTrue(str(file_path).endswith("_enhanced.wav"))
+                self.assertEqual(temp_path, target)
+                self.assertEqual(target_dbfs, -20.0)
+                target.write_bytes(b"RIFF")
+                return target
+
+            with (
+                patch("aura.asr.file_pipeline.enhance_import_audio_if_available", side_effect=fake_enhance),
+                patch("aura.asr.file_pipeline.normalize_media_to_wav", side_effect=fake_normalize_media_to_wav),
+                patch("aura.asr.file_pipeline.reduce_audio_segment_noise") as reduce_noise,
+            ):
+                result = prepare_import_audio(
+                    file_path=str(source),
+                    settings=FileTranscriptionSettings(
+                        target_dbfs=-20.0,
+                        meeting_distance_mode=MEETING_DISTANCE_FAR_SPEAKER,
+                    ),
+                    temp_path=target,
+                    status_callback=statuses.append,
+                )
+
+            self.assertEqual(result, target)
+            self.assertIn("🎚️ Model-based enhancement completed; skipping fallback noisereduce.", statuses)
+            reduce_noise.assert_not_called()
+
+    def test_prepare_import_audio_falls_back_to_denoise_when_far_speaker_enhancement_skips(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            source = Path(tmpdir) / "input.wav"
+            target = Path(tmpdir) / "prepared.wav"
+            export_silence(source)
+
+            def fake_enhance(input_path, output_path, meeting_distance_mode):
+                return EnhancementResult(
+                    backend="deepfilternet3",
+                    status="skipped",
+                    output_path=None,
+                    note="not installed",
+                    runtime_seconds=0.01,
+                )
+
+            with patch("aura.asr.file_pipeline.enhance_import_audio_if_available", side_effect=fake_enhance):
+                result = prepare_import_audio(
+                    file_path=str(source),
+                    settings=FileTranscriptionSettings(
+                        target_dbfs=-20.0,
+                        meeting_distance_mode=MEETING_DISTANCE_FAR_SPEAKER,
+                    ),
+                    temp_path=target,
+                )
+
+            self.assertEqual(result, target)
+            self.assertTrue(target.exists())
 
     @unittest.skipUnless(shutil.which("ffmpeg"), "ffmpeg is required for imported media containers")
     def test_prepare_import_audio_accepts_common_audio_video_containers(self):

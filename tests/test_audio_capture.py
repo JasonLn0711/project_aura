@@ -20,6 +20,7 @@ from aura.audio.capture import (
     should_treat_frame_as_speech,
     trim_trailing_unvoiced_frames,
 )
+from aura.audio.meeting_distance import MEETING_DISTANCE_FAR_SPEAKER
 from aura.config import CHUNK_MS, LIVE_CAPTURE_MICROPHONE, LIVE_CAPTURE_SYSTEM, LIVE_CAPTURE_SYSTEM_MICROPHONE
 
 
@@ -189,6 +190,19 @@ class AudioCaptureTests(unittest.TestCase):
 
         self.assertEqual(recorder.max_segment_len_sec, 12.5)
         self.assertEqual(recorder.energy_gate_rms, 1200.0)
+
+    def test_far_speaker_mode_overrides_live_gate_bridge_and_denoise(self):
+        recorder = AudioRecorderThread(
+            "recording",
+            transcriber_thread=object(),
+            denoise_preset="off",
+            meeting_distance_mode=MEETING_DISTANCE_FAR_SPEAKER,
+            energy_gate_rms=1200.0,
+        )
+
+        self.assertEqual(recorder.energy_gate_rms, 650.0)
+        self.assertEqual(recorder.energy_bridge_ms, 240)
+        self.assertEqual(recorder.denoise_preset, "medium")
 
 
 if __name__ == "__main__":

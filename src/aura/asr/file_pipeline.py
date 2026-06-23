@@ -7,6 +7,12 @@ from typing import Callable
 from pydub import AudioSegment
 
 from aura.audio.denoise import OFF_DENOISE_PRESET, normalize_denoise_preset, reduce_audio_segment_noise
+from aura.audio.enhancement_backends import enhance_import_audio_if_available
+from aura.audio.meeting_distance import (
+    DEFAULT_MEETING_DISTANCE_MODE,
+    effective_denoise_preset_for_mode,
+    meeting_distance_policy_for,
+)
 from aura.audio.normalization import FfmpegUnavailable, normalize_media_to_wav, normalization_cpu_status
 from aura.asr.punctuation import restore_chinese_punctuation, should_restore_traditional_chinese_punctuation
 from aura.diarization.pyannote_pipeline import DiarizationSettings, diarize_audio_file, validate_diarization_runtime
@@ -39,16 +45,19 @@ class FileTranscriptionSettings:
     beam_size: int = DEFAULT_SETTINGS.beam_size
     initial_prompt: str | None = DEFAULT_SETTINGS.file_initial_prompt
     language: str | None = DEFAULT_SETTINGS.language
+    meeting_distance_mode: str = DEFAULT_SETTINGS.meeting_distance_mode
     enable_denoise: bool = DEFAULT_SETTINGS.denoise_enabled
     denoise_preset: str = DEFAULT_SETTINGS.denoise_preset
     diarization: DiarizationSettings = field(default_factory=DiarizationSettings)
     chinese_punctuation_enabled: bool = DEFAULT_SETTINGS.chinese_punctuation_enabled
 
     def __post_init__(self):
+        meeting_distance_policy_for(self.meeting_distance_mode)
+        selected_denoise = normalize_denoise_preset(self.enable_denoise, self.denoise_preset)
         object.__setattr__(
             self,
             "denoise_preset",
-            normalize_denoise_preset(self.enable_denoise, self.denoise_preset),
+            effective_denoise_preset_for_mode(self.meeting_distance_mode, selected_denoise),
         )
 
 
@@ -173,18 +182,43 @@ def prepare_import_audio(
     file_name = os.path.basename(file_path)
     audio = None
     normalized = None
+    enhanced_path = None
     try:
         if status_callback:
             status_callback(f"🔊 Preparing {file_name} for transcription...")
         cancellation.raise_if_cancelled()
+        policy = meeting_distance_policy_for(settings.meeting_distance_mode)
+        if status_callback and settings.meeting_distance_mode != DEFAULT_MEETING_DISTANCE_MODE:
+            status_callback(
+                f"🎚️ Meeting distance mode `{policy.mode}` selected "
+                f"({policy.enhancement_backend}; {policy.backend_role})."
+            )
+        source_path = Path(file_path)
+        denoise_preset = settings.denoise_preset
+        enhanced_path = temp_path.with_name(f"{temp_path.stem}_enhanced.wav")
+        enhancement = enhance_import_audio_if_available(
+            input_path=source_path,
+            output_path=enhanced_path,
+            meeting_distance_mode=settings.meeting_distance_mode,
+        )
+        if enhancement.status != "not_requested" and status_callback:
+            status_callback(
+                f"🎚️ Import enhancement {enhancement.backend}: {enhancement.status} "
+                f"({enhancement.note}; {enhancement.runtime_seconds:.3f}s)."
+            )
+        if enhancement.succeeded:
+            source_path = enhancement.output_path
+            denoise_preset = OFF_DENOISE_PRESET
+            if status_callback:
+                status_callback("🎚️ Model-based enhancement completed; skipping fallback noisereduce.")
 
-        if settings.denoise_preset == OFF_DENOISE_PRESET:
+        if denoise_preset == OFF_DENOISE_PRESET:
             if status_callback:
                 status_callback(f"🔉 Fast-normalizing volume for {file_name} with FFmpeg...")
                 status_callback(f"🧮 {normalization_cpu_status()}")
             try:
                 result = normalize_media_to_wav(
-                    file_path,
+                    str(source_path),
                     temp_path,
                     settings.target_dbfs,
                     progress_callback=status_callback,
@@ -195,14 +229,14 @@ def prepare_import_audio(
                 if status_callback:
                     status_callback(f"🔉 FFmpeg fast normalization unavailable; using Python path for {file_name}...")
 
-        with open(file_path, "rb") as source:
+        with open(source_path, "rb") as source:
             audio = AudioSegment.from_file(source)
 
-        if settings.denoise_preset != OFF_DENOISE_PRESET:
+        if denoise_preset != OFF_DENOISE_PRESET:
             if status_callback:
-                status_callback(f"🧹 Applying {settings.denoise_preset} denoise to {file_name}...")
+                status_callback(f"🧹 Applying {denoise_preset} denoise to {file_name}...")
             cancellation.raise_if_cancelled()
-            audio = reduce_audio_segment_noise(audio, preset=settings.denoise_preset)
+            audio = reduce_audio_segment_noise(audio, preset=denoise_preset)
 
         if status_callback:
             status_callback(f"🔉 Normalizing volume for {file_name}...")
@@ -217,6 +251,8 @@ def prepare_import_audio(
             del audio
         if normalized:
             del normalized
+        if enhanced_path and enhanced_path.exists():
+            enhanced_path.unlink()
         gc.collect()
 
 

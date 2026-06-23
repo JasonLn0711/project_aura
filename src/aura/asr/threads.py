@@ -90,6 +90,7 @@ class FileTranscriberThread(QThread):
         beam_size=DEFAULT_SETTINGS.beam_size,
         initial_prompt=None,
         language=DEFAULT_SETTINGS.language,
+        meeting_distance_mode=DEFAULT_SETTINGS.meeting_distance_mode,
         enable_denoise=DEFAULT_SETTINGS.denoise_enabled,
         denoise_preset=DEFAULT_SETTINGS.denoise_preset,
         enable_speaker_diarization=DEFAULT_SETTINGS.speaker_diarization_enabled,
@@ -105,6 +106,7 @@ class FileTranscriberThread(QThread):
             beam_size=beam_size,
             initial_prompt=resolve_initial_prompt(initial_prompt),
             language=language,
+            meeting_distance_mode=meeting_distance_mode,
             enable_denoise=resolved_denoise_preset != OFF_DENOISE_PRESET,
             denoise_preset=resolved_denoise_preset,
             diarization=DiarizationSettings(

@@ -11,6 +11,12 @@ import webrtcvad
 from PyQt6.QtCore import QThread, pyqtSignal
 
 from aura.audio.denoise import OFF_DENOISE_PRESET, normalize_denoise_preset, reduce_noise_safely
+from aura.audio.meeting_distance import (
+    DEFAULT_MEETING_DISTANCE_MODE,
+    apply_live_segment_agc,
+    effective_denoise_preset_for_mode,
+    meeting_distance_policy_for,
+)
 from aura.config import (
     CHUNK_MS,
     CHUNK_SIZE,
@@ -361,6 +367,7 @@ class AudioRecorderThread(QThread):
         transcriber_thread,
         enable_denoise=False,
         denoise_preset=None,
+        meeting_distance_mode=DEFAULT_MEETING_DISTANCE_MODE,
         capture_mode=DEFAULT_LIVE_CAPTURE_SOURCE,
         max_segment_len_sec=DEFAULT_SETTINGS.live_max_segment_len_sec,
         energy_gate_rms=DEFAULT_SETTINGS.live_energy_gate_rms,
@@ -369,7 +376,12 @@ class AudioRecorderThread(QThread):
         self.filename = filename
         self.transcriber = transcriber_thread
         self.capture_mode = capture_mode
-        self.denoise_preset = normalize_denoise_preset(enable_denoise, denoise_preset)
+        self.meeting_distance_policy = meeting_distance_policy_for(meeting_distance_mode)
+        selected_denoise = normalize_denoise_preset(enable_denoise, denoise_preset)
+        self.denoise_preset = effective_denoise_preset_for_mode(
+            self.meeting_distance_policy.mode,
+            selected_denoise,
+        )
         self.enable_denoise = self.denoise_preset != OFF_DENOISE_PRESET
         self.running = True
         self.vad = webrtcvad.Vad(VAD_LEVEL)
@@ -377,7 +389,12 @@ class AudioRecorderThread(QThread):
         self.full_frame_voice_flags = []
         self.min_speech_len_sec = 0.5
         self.max_segment_len_sec = float(max_segment_len_sec)
-        self.energy_gate_rms = float(energy_gate_rms)
+        self.energy_gate_rms = (
+            float(self.meeting_distance_policy.live_energy_gate_rms)
+            if self.meeting_distance_policy.mode != DEFAULT_MEETING_DISTANCE_MODE
+            else float(energy_gate_rms)
+        )
+        self.energy_bridge_ms = int(self.meeting_distance_policy.live_energy_bridge_ms)
         self.no_voice_auto_stop_minutes = NO_VOICE_AUTO_STOP_MINUTES
         self.auto_stopped_for_no_voice = False
         self.trimmed_trailing_no_voice_frames = 0
@@ -394,6 +411,7 @@ class AudioRecorderThread(QThread):
             except Exception as e:
                 logger.warning("Denoising failed; continuing without denoise: %s", e)
 
+        audio_np = apply_live_segment_agc(audio_np, self.meeting_distance_policy)
         padding_length = int(SAMPLE_RATE * 0.5)
         silence_padding = np.zeros(padding_length, dtype=np.float32)
         padded_audio_np = np.concatenate([audio_np, silence_padding])
@@ -475,12 +493,19 @@ class AudioRecorderThread(QThread):
             return
 
         self.status_signal.emit(reader.description)
+        if self.meeting_distance_policy.mode != DEFAULT_MEETING_DISTANCE_MODE:
+            self.status_signal.emit(
+                "Meeting distance mode "
+                f"{self.meeting_distance_policy.mode}: "
+                f"{self.meeting_distance_policy.enhancement_backend} "
+                f"({self.meeting_distance_policy.backend_role})."
+            )
         silence_frames = 0
         no_voice_frames = 0
         speech_buffer = []
         min_silence_frames = int((1000 / CHUNK_MS) * self.min_speech_len_sec)
         max_speech_frames = int((1000 / CHUNK_MS) * self.max_segment_len_sec)
-        max_energy_bridge_frames = frames_for_duration_seconds(ENERGY_BRIDGE_MS / 1000)
+        max_energy_bridge_frames = frames_for_duration_seconds(self.energy_bridge_ms / 1000)
         no_voice_auto_stop_frames = frames_for_duration_seconds(self.no_voice_auto_stop_minutes * 60)
         consecutive_vad_miss_frames = 0
 
