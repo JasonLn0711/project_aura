@@ -26,6 +26,8 @@ Keep extracting logic from UI classes into small service modules, then protect t
 
 The denoise policy is now explicit as presets: `off`, `light`, and `medium`. Advanced Settings exposes these as a `Denoise Mode` combo box while keeping `off` as the default.
 
+Meeting distance is a higher-level capture-condition policy owned by `src/aura/audio/meeting_distance.py`. From first principles, distant speakers create low SNR and reverberation before ASR sees the signal, so the application needs a mode contract rather than a stronger global denoise default. Advanced Settings exposes `off`, `normal`, `far-speaker`, and `rescue-offline`. The mode supplies the minimum denoise floor, live VAD bridge/gate tuning, bounded live segment gain, backend-candidate metadata, and metrics fields. Optional imported-file DeepFilterNet3 and ClearVoice attempts belong in `src/aura/audio/enhancement_backends.py`, load heavy dependencies only when selected, and fall back to conservative `noisereduce` when unavailable. Because the current DeepFilterNet and ClearVoice packages depend on `numpy<2.0` while AURA uses `numpy>=2.0`, they stay outside the main dependency graph: DeepFilterNet through the external `deep-filter` CLI and ClearVoice through `AURA_CLEARVOICE_PYTHON`. WPE remains a later dereverberation validation layer until evaluation proves transcript-quality improvement.
+
 Speaker diarization is an optional imported-file post-processing path. It intentionally stays outside the live recording loop, uses `pyannote.audio` behind an optional dependency boundary, and reconciles ASR segments with speaker turns by timestamp overlap.
 
 LLM summary is also optional post-processing. It runs after ASR output exists, loads the Gemma 4 E4B FP8 summary backend through an optional dependency boundary, and forces summary prompts toward Taiwanese Traditional Chinese so summarization behavior is independent from the ASR language setting.
@@ -59,4 +61,4 @@ The Windows-friendly UI is a workstation surface, not a separate application. Th
 
 First Launch Check status is derived from `src/aura/system/runtime_report.py`, not from duplicated UI logic. The UI maps those checks to status labels, Fix Guide buttons, setup-folder access, retry, and copy-report actions. This preserves the principle that testable readiness logic belongs outside Qt while the UI owns the user interaction.
 
-The next high-value cleanup is to add the evaluation harness described in `docs/denoise_upgrade_plan.md`, then test DeepFilterNet3 and ClearerVoice-Studio as optional model-based backends before promoting any new default.
+The next high-value cleanup is to run the evaluation harness described in `docs/denoise_upgrade_plan.md` on a fixed private far-field clip set, then test DeepFilterNet3 and ClearVoice/ClearerVoice as optional model-based backends before promoting any new default.

@@ -630,6 +630,7 @@ For each transcript base name, AURA writes:
 | Compute Type | `int8` on CUDA/RTX GPU by default |
 | Target Volume | `-20 dBFS` |
 | Live Capture Source | System audio + microphone when PulseAudio/PipeWire exposes both sources; otherwise default input fallback |
+| Meeting Distance Mode | Off by default; Advanced Settings can choose `normal`, `far-speaker`, or `rescue-offline` |
 | Traditional Chinese Punctuation | Enabled; model-backed path first tries `kotoba-speech/mmbert-base-zh-punctuation-320000`, then falls back to `p208p2002/zh-wiki-punctuation-restore` when the punctuation extra is installed |
 | Denoise | Off in UI by default |
 | Speaker Diarization | Off by default; imported-file range defaults to `2-6` speakers |
@@ -765,15 +766,52 @@ The current summary MVP is broader than this direct local summary feature but na
 
 Live denoise is intentionally conservative and policy-driven:
 
+- Advanced Settings includes `Meeting Distance Mode`: `off`, `normal`, `far-speaker`, and `rescue-offline`.
+- `normal` applies at least `light` denoise for normal meeting-room audio.
+- `far-speaker` applies at least `medium` denoise, uses a longer live VAD energy bridge, lowers the live energy gate for weak speech, applies bounded segment gain before live ASR, and attempts DeepFilterNet3 on imported files when the optional backend is installed.
+- `rescue-offline` attempts ClearVoice/ClearerVoice enhancement for difficult imported recordings when the optional backend is installed; live recording still uses the conservative fallback path until transcript evaluation promotes a model backend.
 - Denoise is represented internally as explicit presets: `off`, `light`, and `medium`.
-- The Advanced Settings UI exposes these presets as a `Denoise Mode` combo box.
+- The Advanced Settings UI exposes these presets as a `Denoise Mode` combo box; meeting-distance mode provides the minimum safe denoise floor.
 - Silent and near-silent buffers are returned unchanged.
 - Very tiny buffers are skipped because spectral reduction has too little context.
 - Non-silent `light` buffers use `noisereduce` in non-stationary mode with gentle reduction, `prop_decrease=0.35`.
 - `medium` uses `prop_decrease=0.55`; it may affect speech detail more.
 - FFT and hop sizes are capped dynamically so short live buffers cannot trigger `noverlap must be less than nperseg`.
 
-For the model-based denoise roadmap, see `docs/denoise_upgrade_plan.md`. The short version is: keep `noisereduce` as the lightweight fallback, evaluate DeepFilterNet3 first for real-time ASR preprocessing, and evaluate ClearerVoice-Studio for offline imported-file enhancement.
+For the model-based denoise roadmap, see `docs/denoise_upgrade_plan.md`. The short version is: keep `noisereduce` as the lightweight fallback, evaluate DeepFilterNet3 first for near-real-time far-speaker preprocessing, evaluate ClearVoice/ClearerVoice for offline rescue imports, and add WPE/dereverberation only after far-field transcript metrics justify it. The local comparison harness is `scripts/evaluate_denoise_backends.py`; DeepFilterNet is called through an external `deep-filter` CLI, and ClearVoice can run through `AURA_CLEARVOICE_PYTHON` with `scripts/run_clearvoice_enhancement.py`. The harness adds a recommendation table only for categories with reference-backed ASR metrics, so process-only runs do not change defaults.
+
+To prepare the private fixed clip set:
+
+```bash
+python scripts/init_denoise_eval_workspace.py --input-dir ~/record_jn/aura_eval_audio
+python scripts/discover_denoise_eval_candidates.py \
+  --root ~/record_jn/record_audio_ubuntu \
+  --output local_outputs/denoise_eval_candidates/candidates.md
+python scripts/prepare_denoise_eval_case.py \
+  --source /path/to/source_recording.wav \
+  --case-dir ~/record_jn/aura_eval_audio/far_speaker_reverb \
+  --start 120 \
+  --duration 60 \
+  --reference-file /path/to/trusted_reference.txt \
+  --rare-term DeepFilterNet \
+  --rare-term MossFormer
+python scripts/check_denoise_eval_workspace.py \
+  --input-dir ~/record_jn/aura_eval_audio \
+  --min-cases 10 \
+  --max-reference-chars-per-second 45
+```
+
+The discovery manifest lists transcript files only as review sources. A `reference.txt` should be a clip-level trusted transcript for the selected 30-90 second window, not an unreviewed full-recording transcript. The workspace checker rejects references that are implausibly long for the clip duration.
+
+After generating an evaluation report, gate any default-promotion decision against reference-backed ASR metrics:
+
+```bash
+python scripts/gate_denoise_default_promotion.py \
+  --report-json reports/denoise_eval_YYYYMMDD.json \
+  --baseline off \
+  --candidate deepfilternet3 \
+  --min-cases 10
+```
 
 On the current workstation using the legacy `.record` environment, rough timings were:
 
