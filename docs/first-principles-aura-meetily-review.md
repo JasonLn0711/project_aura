@@ -14,6 +14,7 @@
 - **最佳架構是「驗證與產品分工，量測勝出後單向移植」**。現階段維持兩個執行 repo，避免建立共享服務、跨語言 framework 或第三套中介層。第二個真實 consumer 出現，或模型隔離成為可量測的可靠性需求時，再啟動共用 runtime。
 - **Meetily 應成為長期產品表面；AURA 應持續作為能力驗證與證據產生器**。當 Meetily 具備 AURA 等級的臺灣華語品質、artifact 與失敗可診斷性後，AURA 的 PyQt UI 才進入退場 gate。
 - **ASR 的物理執行契約是 GPU-only、fail-closed**。AURA 只接受 CUDA；Meetily 依正式發布平台啟用 CUDA、Vulkan 或 Metal。GPU backend 尚未啟用、初始化失敗或執行環境不符合建置契約時，轉錄會停止並回報啟用 gate，不會以 CPU 取得一個較慢但看似成功的結果。
+- **完整 audit trail**：[`2026-07-14 GPU-only ASR live benchmark audit event`](audit-events/2026-07-14-gpu-only-asr-live-benchmark/audit-event.md) 連接 source、implementation、validation、publication 與下一 evidence gate。
 
 ## 第一性原理：從物理目的而非既有程式碼出發
 

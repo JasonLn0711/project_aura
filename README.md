@@ -28,6 +28,8 @@ ASR is a GPU-only capability. AURA accepts `cuda` and fails closed when CUDA is 
 
 This clean-speech minimum validates the runtime contract rather than choosing a product winner. The next validation layer expands the same artifact contract to long-form, far-field, overlapping, and noisy speech, then compares correction effort, VRAM, cancellation, recovery, and completion time.
 
+Audit trail: [`docs/audit-events/2026-07-14-gpu-only-asr-live-benchmark/audit-event.md`](docs/audit-events/2026-07-14-gpu-only-asr-live-benchmark/audit-event.md).
+
 ## Executive Summary
 
 Project AURA integrates two core workflows:

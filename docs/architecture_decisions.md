@@ -25,7 +25,7 @@ ASR owns one physical execution contract: inference runs on an activated GPU bac
 
 The sibling Meetily product follows the same contract through platform GPU features: CUDA for the measured NVIDIA lane, Vulkan for the general Linux／Windows release lane, Metal for macOS, and CUDA Execution Provider for Parakeet. Backend selection is a release property with runtime verification. CPU／OpenBLAS ASR builds and ONNX CPU fallback are outside the supported architecture.
 
-The evidence path is [`artifacts/asr-benchmark/2026-07-13-common-voice24-minimum/`](../artifacts/asr-benchmark/2026-07-13-common-voice24-minimum/). A valid run records real audio, real inference output, backend identity, GPU-required marker, event timestamps, errors, GPU telemetry, latency, validity, and final decision. A model with an incompatible language contract remains `blocked_runtime`; another model's successful GPU run does not stand in for it.
+The evidence path is [`artifacts/asr-benchmark/2026-07-13-common-voice24-minimum/`](../artifacts/asr-benchmark/2026-07-13-common-voice24-minimum/), with the complete event trail in [`docs/audit-events/2026-07-14-gpu-only-asr-live-benchmark/audit-event.md`](audit-events/2026-07-14-gpu-only-asr-live-benchmark/audit-event.md). A valid run records real audio, real inference output, backend identity, GPU-required marker, event timestamps, errors, GPU telemetry, latency, validity, and final decision. A model with an incompatible language contract remains `blocked_runtime`; another model's successful GPU run does not stand in for it.
 
 ## Current Refactor Direction
 
