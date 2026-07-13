@@ -321,6 +321,7 @@ Advanced Settings also includes scheduled live recording:
 - `scripts/windows_asr_artifact_smoke.py` generates a tiny WAV, runs a CUDA/int8 ASR pass, and verifies raw/final/metrics transcript artifact output.
 - README workflow documentation now matches the simplified UI and automatic transcript-saving behavior.
 - `docs/architecture_decisions.md` records the first-principles ownership split for transcript artifacts, output policy, progress visibility, UI interaction policy, live capture ownership, and Traditional Chinese punctuation post-processing.
+- [`docs/first-principles-aura-meetily-review.md`](docs/first-principles-aura-meetily-review.md) records the 2026-07-13 cross-repo architecture review, completed simplification work, measured verification evidence, and activation gates for capability migration into Meetily.
 - Tests now cover transcript artifact naming, raw/final/summary splitting, metrics JSON writing, event-log writing, structured live ASR telemetry, FFmpeg progress parsing, M4A/AAC recording export, MP3 legacy export, normalization limiter behavior, CPU-count detection, live capture source selection, RMS-based source mixing, live segment/gate defaults, scheduled wall-clock calculation, no-voice auto-stop/trailing-trim helpers, Traditional Chinese punctuation post-processing, runtime diagnostics reporting, first-launch check gates, and propagation of normalization progress into the import pipeline.
 
 ### Current Architecture Health
@@ -381,7 +382,6 @@ project_aura_refactor/
 ├── Start-AURA.ps1
 ├── pyproject.toml
 ├── README.md
-├── requirements.txt
 ├── docs/
 │   ├── architecture_decisions.md
 │   ├── denoise_upgrade_plan.md
@@ -496,11 +496,7 @@ python -m pip install --upgrade pip
 python -m pip install -e .
 ```
 
-If you prefer the pinned legacy dependency list:
-
-```bash
-python -m pip install -r requirements.txt
-```
+`pyproject.toml` is the single dependency contract for pip, uv, CI, and release builds.
 
 Speaker diarization is optional because it adds heavyweight ML dependencies:
 
@@ -515,11 +511,10 @@ usable without storing tokens in the repository.
 
 Before using the default `pyannote/speaker-diarization-community-1` model, accept its Hugging Face terms for your account.
 
-LLM summary is optional because it requires a local Ollama-served Gemma 4 E4B model:
-
-```bash
-python -m pip install -e ".[summary]"
-```
+The daily meeting-summary path uses the local Ollama API and needs no additional
+Python dependency group. The `summary` extra is reserved for the separate
+Transformers-based summary experiments under `src/aura/summary_mvp/` and
+`scripts/`.
 
 The approved summary backend is the local Ollama tag `gemma4:e4b-it-q4_K_M`, corresponding to base model `google/gemma-4-E4B-it`. Before generation, AURA runs a local runtime preflight: it checks `http://localhost:11434/api/tags`, starts `ollama serve` if the local server is not already running, waits for the localhost runner to become ready, and verifies the exact model tag. If the model is missing, AURA shows a local-model dialog with **Pull Model**, **Copy Command**, and **Cancel** actions. Model download is never silent, no fallback model is used, and no cloud API is called.
 
