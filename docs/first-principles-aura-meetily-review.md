@@ -1,6 +1,8 @@
 # Project AURA × Meetily 第一性原理架構審查
 
-日期：2026-07-13
+初次審查：2026-07-13
+
+最新實作與驗證：2026-07-14
 審查範圍：`project_aura` 與同層 `meetily` 的產品目標、執行路徑、依賴、資料流、音訊、ASR、摘要、UI、儲存、跨平台、測試、安全、維護成本與演進路徑。
 
 ## 決策摘要
@@ -11,6 +13,7 @@
 - **Meetily 是跨平台會議產品的交付主體**：核心資產是 Tauri 桌面殼、麥克風與系統音訊、SQLite 會議庫、匯入／重轉錄、模型管理、更新與 onboarding、可編輯摘要及跨平台封裝。
 - **最佳架構是「驗證與產品分工，量測勝出後單向移植」**。現階段維持兩個執行 repo，避免建立共享服務、跨語言 framework 或第三套中介層。第二個真實 consumer 出現，或模型隔離成為可量測的可靠性需求時，再啟動共用 runtime。
 - **Meetily 應成為長期產品表面；AURA 應持續作為能力驗證與證據產生器**。當 Meetily 具備 AURA 等級的臺灣華語品質、artifact 與失敗可診斷性後，AURA 的 PyQt UI 才進入退場 gate。
+- **ASR 的物理執行契約是 GPU-only、fail-closed**。AURA 只接受 CUDA；Meetily 依正式發布平台啟用 CUDA、Vulkan 或 Metal。GPU backend 尚未啟用、初始化失敗或執行環境不符合建置契約時，轉錄會停止並回報啟用 gate，不會以 CPU 取得一個較慢但看似成功的結果。
 
 ## 第一性原理：從物理目的而非既有程式碼出發
 
@@ -46,17 +49,17 @@
 | 產品形態 | Python／PyQt6 驗證型桌面工具 | Rust／Tauri 2 + Next App Router 桌面產品 | 長期產品 UI 由 Meetily 擁有；AURA 保留研究與驗證速度 |
 | 主要使用情境 | 臺灣華語錄音、轉錄、校正、實驗與 artifact 檢查 | 跨平台錄音、會議庫、匯入、搜尋、重轉錄、摘要與模型管理 | 角色互補，產品層合併的效益低於風險 |
 | 音訊來源 | 以麥克風／檔案與 Python 音訊處理為主 | 麥克風 + 系統音訊、裝置偵測、混音、VAD、FFmpeg 與播放 | Meetily 的 capture 層更接近產品需求 |
-| ASR | `faster-whisper` + CTranslate2，Breeze ASR 25，臺灣詞彙與模糊校正 | `whisper-rs` GGML 路徑、Breeze ASR 26，以及 Parakeet ONNX | 同名 Breeze 並不代表可直接交換權重；先以同一語料做 paired benchmark |
+| ASR | `faster-whisper` + CTranslate2，Breeze ASR 25，固定 CUDA／int8，臺灣詞彙與模糊校正 | `whisper-rs` GGML + CUDA／Vulkan／Metal，以及 Parakeet ONNX + CUDA | 同名 Breeze 不代表可直接交換權重；同一份繁中語料已建立 live paired benchmark，產品選擇繼續由真實修正成本決定 |
 | 臺灣語境 | 領域詞彙、繁體中文、校正與實驗資產較成熟 | 模型選擇已涵蓋 Breeze，語境後處理證據較少 | AURA 是演算法與字詞品質的 canonical home |
 | 說話者分離 | 有 pyannote optional path 與相關實驗文件 | 產品資料結構與 UI 可承接，但目前能力較薄 | 在 AURA 驗證 DER／人工修正成本，再移植結果 |
 | 降噪 | 有 noisereduce、WebRTC VAD 與降噪評估／handoff | 有 RNNoise、EBU R128、VAD、混音與訊號管線 | 用真實 noisy corpus 決定組合，避免串接所有處理器造成失真與延遲 |
 | 摘要 | Ollama 欄位批次、結構化 schema、artifact 與 failure evidence | 本機 llama sidecar、Ollama／cloud providers、template、翻譯與可編輯 BlockNote | Meetily 擁有產品摘要；AURA 提供 schema／evidence 驗證方法 |
 | 儲存與檢索 | 檔案與 artifact 導向 | SQLite repository、會議清單、分頁逐字稿、搜尋與 metadata | 產品 canonical data 由 Meetily SQLite 擁有 |
 | 可觀測性 | 每次執行輸出 artifact、runtime 與錯誤證據較完整 | 具 log、analytics、狀態與測試，使用者可回溯 artifact 仍可加強 | Meetily 下一個高價值移植項是 artifact contract，不是另一套 UI |
-| 跨平台 | Python／CUDA 與 Windows 路線明確，封裝面較重 | Tauri 對 macOS／Windows／Linux、Metal／CoreML／CUDA／Vulkan／OpenBLAS 有正式 feature | Meetily 是發布主體 |
+| 跨平台 | Python／CUDA 與 Windows 路線明確，封裝面較重 | Tauri 對 macOS／Windows／Linux，以 Metal／Vulkan／CUDA 提供 GPU ASR；CPU／OpenBLAS ASR feature 已退役 | Meetily 是發布主體；每個 release workflow 必須明確啟用該平台的 GPU backend |
 | UI 狀態 | 大型 PyQt tab，迭代快但單檔責任較集中 | React context、hooks、modal、onboarding 完整，但累積未使用狀態與 Hook 警告 | 先刪死狀態，再依真實 render／profiling 拆分 |
 | 安全模型 | 本機模型與 artifacts，Python supply chain | Tauri CSP、本機與 cloud provider、Node + Cargo supply chain | 明確 endpoint 與依賴稽核是 release gate |
-| 測試 | 282 個 stdlib unittest，supported gate 為 `make check` | Rust workspace、Node stdlib、TypeScript、ESLint、Next production build | 兩邊都已有可自動化基礎；下一步加入共同語料品質 gate |
+| 測試 | stdlib unittest，supported gate 為 `make check`，另有真實 CUDA benchmark | Rust workspace、Node stdlib、TypeScript、ESLint、Next production build，以及 release-mode CUDA adapter | 兩邊都具可自動化基礎；共同繁中語料已形成最小 live gate，下一層擴充長音訊與遠距雜訊 |
 
 ## 審查時的基準證據
 
@@ -88,6 +91,23 @@
 
 結果：4 個檔案變更，淨減少 118 行；`uv.lock` 同步移除 pytest、iniconfig 與 plug。
 
+### Project AURA：刪除未經 live evidence 支持的摘要平行架構
+
+- 保留目前唯一受支援的本機 Gemma field-batch 摘要路徑。
+- 移除 Graph-RAG deterministic dry harness、目標架構草稿、MVP scaffold 與其測試；歷史設計仍可由 Git 取回。
+- 將比較性摘要研究的啟動條件收斂為：具授權 paired corpus、真實模型執行、schema validity、來源支持率、錯誤紀錄與人工修正時間。
+
+結果：25 個檔案變更，淨減少 3,787 行。維護頻寬回到已投入日常工作的 runtime，不再把 scaffold 誤認為完成的實驗。
+
+### 兩個 repo：ASR GPU-only 執行契約
+
+- AURA 的 `AppSettings`、live／file model loader 與降噪評估入口皆拒絕 CPU ASR；CUDA runtime 尚未完成啟用時提供明確診斷。
+- Meetily 的 Whisper runtime 驗證編譯 backend 與執行環境；未取得相符 GPU backend 時停止載入模型。
+- Meetily Parakeet session 明確使用 CUDA Execution Provider，設定 `session.disable_cpu_ep_fallback=1`，並移除 CPU Execution Provider 與 OpenBLAS build scripts。
+- Linux／Windows release workflows 以 Vulkan 發布通用 GPU 路徑；CUDA release script 提供可重現的 compute capability 與 PIC 旗標；macOS 使用 Metal。
+
+這項契約移除「CPU fallback 讓功能表面成功、實際延遲與產品假設失真」的測量污染。GPU 是 ASR 的必要資源；診斷與啟用流程承接環境差異。
+
 ### Meetily：刪除平行世界
 
 - 移除整個 unsupported `backend/` FastAPI／Docker／whisper archive；Git history 繼續提供歷史取用。
@@ -105,6 +125,15 @@
 - Sidebar 移除未渲染的 model／transcript settings 狀態、listeners、save handlers、imports 與無效 window callback。
 - 所有 file item 直接導向真實 `/meeting-details?id=...`，首頁 intro item 保留 `/`。
 - Bluetooth buffer timeout 改用整數奈秒運算，消除跨平台浮點 rounding 邊界。
+
+### Meetily：完成 CPAL stream ownership migration
+
+- `cpal::Stream` 的建立、持有、暫停與釋放集中在 dedicated owner thread。
+- start／pause／stop／shutdown 透過 channel 傳遞，移除跨 thread 移動 native stream 所需的四層 `unsafe impl Send`。
+- 刪除 2,242 行未接入產品路徑的舊監控、system detector、post-processor 與重複 UI surface。
+- 25 次真實 microphone lifecycle 循環均完成 start／stop／drop，讓 native ownership 從設計意圖成為可重跑的 live evidence。
+
+這個改動把資源生命週期交還給建立資源的 thread；UI 與 command handler 只傳遞意圖，不再持有平台音訊資源。
 
 ### Meetily：依賴與安全收斂
 
@@ -125,23 +154,25 @@
 - `pnpm build`：Next 15 production static export passed；輸出路由為 `/`、`/meeting-details`、`/settings` 與框架 404。
 - `pnpm audit --prod`：0 known vulnerabilities。
 - `cargo test --workspace`：Meetily library 185 passed、2 ignored；llama-helper 2 passed；doc test 1 passed。
-- `make check PYTHON=.venv/bin/python`：AURA compile + 282 tests passed。
+- 初次審查的 `make check PYTHON=.venv/bin/python`：AURA compile + 282 tests passed；刪除 6 個 retired summary-scaffold tests 並加入 GPU policy tests 後，2026-07-14 supported gate 為 276 tests passed。
 
 Meetily 目前 diff 的主要量體為 101 個檔案、65 個刪除檔；文字淨減少 32,064 行，另移除 4,460,128 bytes 的 binary installer。Lockfile 與 touched Rust formatting 會產生機械性行數變動，架構價值以「刪除的 runtime／依賴／入口」衡量。
 
 ## 效率瓶頸與下一階段優先序
 
-### P0-A：Linux native audio 可靠性 gate
+### P0-A：Linux native audio ownership gate（已完成）
 
 本輪驗證期間，另一個工作階段完成並保存一份真實非預期終止事件：[`Meetily 非預期終止 Audit Event`](../../meetily/docs/audit-events/2026-07-13-uncontrolled-shutdown/audit-event.md)。原始 73,837-byte log 已逐 byte 保存，顯示 glibc 以 `corrupted double-linked list` 結束 process；第一個造成 heap 損壞的 native instruction 仍由 core dump／sanitizer 確認。
 
-本輪已先完成低風險 containment：
+本輪先完成低風險 containment：
 
 - Linux 裝置發現由每輪三次 native scan 收斂為 input 與 output 各一次。
 - 穩定裝置的 polling interval 現在會實際切換為 5 秒；裝置遺失時才使用 2 秒。
 - 新增 interval regression test，保護 stable／missing 兩個頻率契約。
 
-最高優先的架構 gate 是把 `cpal::Stream` 保留在單一 owner thread，透過 channel 接收 start／pause／stop 指令，並移除四層 `unsafe impl Send`。CPAL 升級、長時間 mic + system audio、hot-plug 與受控 shutdown markers 一起構成驗收層。在這組 live validation 通過前，狀態是「containment landed；native ownership migration pending validation」。
+owner-thread migration 已落地：`cpal::Stream` 保留在 dedicated thread，command channel 接收 start／pause／stop／shutdown，四層 `unsafe impl Send` 已移除，25 次 microphone lifecycle live 循環通過。這關閉了最直接的 native ownership 風險。
+
+下一層驗收是長時間 microphone + system audio、hot-plug／default-device change、受控 shutdown markers 與原始非預期終止案例的壓力重播。這一層量測長時間與裝置變更可靠性，不會重新引入跨 thread stream ownership。
 
 ### P0-B：本輪完成的地基
 
@@ -151,14 +182,17 @@ Meetily 目前 diff 的主要量體為 101 個檔案、65 個刪除檔；文字�
 4. production dependency audit 清零。
 5. 兩邊 supported tests 與 Meetily production build 通過。
 
-### P1：用同一份真實語料選能力
+### P1：共同繁中語料的最小 live gate（已完成）
 
-建立一份具授權且去識別化的 paired corpus；同一批音訊依序跑：
+第一個最小 live benchmark 使用固定 revision 的公開 Common Voice 24 臺灣華語清理資料，選取 5 段帶 reference 的真實音訊；以固定 seed 隨機排序，每個 runtime、每段音訊重複 2 次，共 20 次真實推論。每次執行保留 request summary、event trace、error log、GPU telemetry、實際音訊與決策報告。
 
-- AURA Breeze ASR 25 + 現有後處理。
-- Meetily Breeze ASR 26／whisper-rs。
-- Meetily Parakeet。
-- 每個 runtime 的原始輸出與後處理輸出。
+| Runtime | 有效性 | Runs | Exact | Mean CER | Mean time | Mean RTF | Model load |
+|---|---|---:|---:|---:|---:|---:|---:|
+| AURA `faster-whisper`／Breeze ASR 25 | `valid_target_runtime`，CUDA/int8 | 10 | 8 | 0.0714 | 0.290 s | 0.114 | 3.315 s |
+| Meetily `whisper-rs`／Breeze ASR 26 | `valid_target_runtime`，CUDA release | 10 | 8 | 0.0571 | 0.196 s | 0.076 | 0.729 s |
+| Meetily Parakeet | `blocked_runtime` for zh-TW | 0 | — | — | — | — | — |
+
+Parakeet 留在語言 capability gate：目前正式模型能力不涵蓋臺灣華語，因此不以錯誤語言模型製造無效比較。完整證據位於 [`artifacts/asr-benchmark/2026-07-13-common-voice24-minimum/`](../artifacts/asr-benchmark/2026-07-13-common-voice24-minimum/)。
 
 最低證據欄位：
 
@@ -170,7 +204,7 @@ Meetily 目前 diff 的主要量體為 101 個檔案、65 個刪除檔；文字�
 - 說話者分離 DER 或人工講者修正次數。
 - 摘要 claim 可回指 transcript 的比例，以及人工完成確認所需時間。
 
-這個 gate 產生量測證據後，才選定要移植的 ASR、校正、降噪與 diarization 組合。
+最小 gate 證明兩條 CUDA 路徑均能真實執行，並提供小型 clean-speech 基線；它尚未決定產品預設。下一輪將同一 evidence contract 擴充至長音訊、遠距、重疊語音與雜訊，並補齊人工修正時間、peak VRAM、cancellation、重試與 crash recovery。達成這層後，才選定要移植的 ASR、校正、降噪與 diarization 組合。
 
 ### P1：Meetily 前端體積與狀態債
 
@@ -211,7 +245,7 @@ production build 顯示 `/meeting-details` First Load JS 約 845 kB，是目前�
 
 - AURA `transcription_tab.py` 的全面拆分：以變更衝突、錯誤密度、render latency 或測試困難度作為啟動證據。
 - 兩 repo 共享 domain model package：第二個同步 consumer 出現後再抽取。
-- 同時保留多套 ASR／降噪／摘要為產品預設：paired evaluation 只保留勝出者，其他能力定位為明確 fallback 或研究候選。
+- 同時保留多套 ASR／降噪／摘要為產品預設：paired evaluation 只保留勝出者；其他 GPU ASR 能力定位為研究候選，CPU ASR 不進入 fallback 路徑。
 - 自建 FastAPI server：process isolation、remote execution 或多 client 需求成立後另案啟動。
 - 全量 major dependency upgrade：安全線、實際 capability 與 release test 分批推進。
 
@@ -234,4 +268,4 @@ production build 顯示 `/meeting-details` First Load JS 約 845 kB，是目前�
 
 ## 下一個可驗收決策
 
-下一階段以「同一批真實音訊，哪一條路徑能最少人工修正、最短完成確認、同時保留可追溯證據」作為唯一勝出條件。模型名稱、語言、framework 與現有投資不構成保留理由；量測結果決定產品預設、fallback、研究候選與退場項目。
+下一個 gate 是把已通過的 GPU-only benchmark 從 5 段 clean speech 擴充為具授權的長音訊、遠距、重疊語音與雜訊 corpus。唯一勝出條件仍是「最少人工修正、最短完成確認、可接受的 GPU 記憶體與取消恢復行為、完整可追溯證據」。模型名稱、framework 與既有投資不構成保留理由；量測結果決定產品預設、GPU fallback、研究候選與退場項目。

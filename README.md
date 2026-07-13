@@ -22,6 +22,12 @@ Use this repo for:
 
 Keep historical recordings and generated transcripts in `record_audio_ubuntu` or another data folder.
 
+### CUDA-only ASR validation (2026-07-14)
+
+ASR is a GPU-only capability. AURA accepts `cuda` and fails closed when CUDA is not ready; it never substitutes CPU inference. The paired live benchmark in [`artifacts/asr-benchmark/2026-07-13-common-voice24-minimum/`](artifacts/asr-benchmark/2026-07-13-common-voice24-minimum/) ran 20 real transcriptions over five public Common Voice 24 zh-TW clips: 10 with AURA Breeze ASR 25 on CUDA/int8 and 10 with Meetily Breeze ASR 26 on a CUDA release build. Both paths are `valid_target_runtime`, the error log is empty, and GPU telemetry is retained with the audio, requests, event traces, latency report, failure analysis, and decision report.
+
+This clean-speech minimum validates the runtime contract rather than choosing a product winner. The next validation layer expands the same artifact contract to long-form, far-field, overlapping, and noisy speech, then compares correction effort, VRAM, cancellation, recovery, and completion time.
+
 ## Executive Summary
 
 Project AURA integrates two core workflows:

@@ -19,6 +19,14 @@ Therefore, each layer has one owner:
 
 The practical rule is: if a behavior can be tested without starting Qt, keep it outside `src/aura/ui/`.
 
+## GPU-Only ASR Execution Contract
+
+ASR owns one physical execution contract: inference runs on an activated GPU backend or the request stops at a clear activation gate. In AURA this means CUDA; `AppSettings`, model-loading threads, file and live transcription, GPU smoke checks, and ASR-backed evaluation entrypoints all preserve that requirement. A caller cannot request CPU ASR, and runtime failures remain visible instead of becoming slower CPU results.
+
+The sibling Meetily product follows the same contract through platform GPU features: CUDA for the measured NVIDIA lane, Vulkan for the general Linux／Windows release lane, Metal for macOS, and CUDA Execution Provider for Parakeet. Backend selection is a release property with runtime verification. CPU／OpenBLAS ASR builds and ONNX CPU fallback are outside the supported architecture.
+
+The evidence path is [`artifacts/asr-benchmark/2026-07-13-common-voice24-minimum/`](../artifacts/asr-benchmark/2026-07-13-common-voice24-minimum/). A valid run records real audio, real inference output, backend identity, GPU-required marker, event timestamps, errors, GPU telemetry, latency, validity, and final decision. A model with an incompatible language contract remains `blocked_runtime`; another model's successful GPU run does not stand in for it.
+
 ## Current Refactor Direction
 
 Keep extracting logic from UI classes into small service modules, then protect the service modules with fast synthetic-audio tests. This reduces the risk of changing the desktop UI while preserving behavior from the legacy one-file app.
