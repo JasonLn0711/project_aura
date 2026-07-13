@@ -41,23 +41,27 @@ class SettingsTests(unittest.TestCase):
 
     def test_custom_settings_can_override_runtime_defaults(self):
         settings = AppSettings(
-            device="cpu",
+            device="cuda",
             compute_type="int8",
             language=None,
             target_dbfs=-18.0,
             recording_audio_format="mp3",
         )
 
-        self.assertEqual(settings.device, "cpu")
+        self.assertEqual(settings.device, "cuda")
         self.assertEqual(settings.compute_type, "int8")
         self.assertIsNone(settings.language)
         self.assertEqual(settings.target_dbfs, -18.0)
         self.assertEqual(settings.recording_audio_format, "mp3")
 
+    def test_custom_settings_reject_cpu_asr(self):
+        with self.assertRaisesRegex(ValueError, "requires device='cuda'"):
+            AppSettings(device="cpu")
+
     def test_ui_strings_format_dynamic_status_messages(self):
         strings = UIStrings()
 
-        self.assertEqual(strings.model_ready("cpu", "int8"), "✅ Model is ready (cpu/int8)")
+        self.assertEqual(strings.model_ready("cuda", "int8"), "✅ Model is ready (cuda/int8)")
         self.assertIn("v1.5.0", strings.update_found("1.5.0"))
         self.assertEqual(
             strings.splitter_status("meeting.wav", "/tmp/out"),

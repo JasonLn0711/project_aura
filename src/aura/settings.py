@@ -47,5 +47,11 @@ class AppSettings:
     splitter_target_minutes: int = 40
     splitter_tolerance_minutes: int = 5
 
+    def __post_init__(self) -> None:
+        if self.device != "cuda":
+            raise ValueError(
+                "AURA ASR requires device='cuda'; CPU inference is outside the supported runtime."
+            )
+
 
 DEFAULT_SETTINGS = AppSettings()

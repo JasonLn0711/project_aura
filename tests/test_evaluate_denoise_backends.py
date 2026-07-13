@@ -13,6 +13,7 @@ from scripts.evaluate_denoise_backends import (
     meeting_distance_mode_for_backend,
     recommend_backends_by_category,
     render_markdown,
+    transcribe_audio,
     word_error_rate,
     write_reports,
 )
@@ -76,6 +77,16 @@ class EvaluateDenoiseBackendsTests(unittest.TestCase):
         self.assertEqual(result.meeting_distance_mode, "off")
         self.assertIn("transcription skipped", result.note)
         self.assertIsNotNone(result.processed_path)
+
+    def test_transcription_rejects_cpu_before_loading_model(self):
+        with self.assertRaisesRegex(ValueError, "requires --device cuda"):
+            transcribe_audio(
+                Path("unused.wav"),
+                model_id="unused",
+                device="cpu",
+                compute_type="int8",
+                language="zh",
+            )
 
     def test_recommend_backends_by_category_prefers_transcript_quality(self):
         results = [

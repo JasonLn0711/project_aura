@@ -223,6 +223,11 @@ def process_backend(case: EvalCase, backend: str, output_path: Path) -> str:
 
 
 def transcribe_audio(path: Path, model_id: str, device: str, compute_type: str, language: str | None) -> str:
+    if device != "cuda":
+        raise ValueError(
+            "AURA ASR evaluation requires --device cuda; CPU inference is outside the supported runtime."
+        )
+
     from faster_whisper import WhisperModel
 
     model = WhisperModel(model_id, device=device, compute_type=compute_type)
@@ -399,7 +404,7 @@ def parse_args():
     parser.add_argument("--input-dir", required=True, type=Path)
     parser.add_argument("--backends", default="off,noisereduce-light,noisereduce-medium")
     parser.add_argument("--model", default=None, help="faster-whisper model id. Omit to process audio without ASR.")
-    parser.add_argument("--device", default="cuda")
+    parser.add_argument("--device", choices=("cuda",), default="cuda")
     parser.add_argument("--compute-type", default="int8")
     parser.add_argument("--language", default="zh")
     parser.add_argument("--work-dir", default=Path("local_outputs/denoise_eval"), type=Path)
