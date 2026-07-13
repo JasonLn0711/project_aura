@@ -1,0 +1,24 @@
+{"event": "run_started", "runtime": "aura_faster_whisper", "run_index": 0, "case_id": "cv24-000", "at": 1783959920.9984453}
+{"event": "run_completed", "runtime": "aura_faster_whisper", "run_index": 0, "case_id": "cv24-000", "at": 1783959921.408652}
+{"event": "run_started", "runtime": "aura_faster_whisper", "run_index": 1, "case_id": "cv24-020", "at": 1783959921.4086757}
+{"event": "run_completed", "runtime": "aura_faster_whisper", "run_index": 1, "case_id": "cv24-020", "at": 1783959921.6667986}
+{"event": "run_started", "runtime": "aura_faster_whisper", "run_index": 2, "case_id": "cv24-006", "at": 1783959921.6668172}
+{"event": "run_completed", "runtime": "aura_faster_whisper", "run_index": 2, "case_id": "cv24-006", "at": 1783959921.915794}
+{"event": "run_started", "runtime": "aura_faster_whisper", "run_index": 3, "case_id": "cv24-020", "at": 1783959921.9158165}
+{"event": "run_completed", "runtime": "aura_faster_whisper", "run_index": 3, "case_id": "cv24-020", "at": 1783959922.1713073}
+{"event": "run_started", "runtime": "aura_faster_whisper", "run_index": 4, "case_id": "cv24-061", "at": 1783959922.1713367}
+{"event": "run_completed", "runtime": "aura_faster_whisper", "run_index": 4, "case_id": "cv24-061", "at": 1783959922.4729714}
+{"event": "run_started", "runtime": "aura_faster_whisper", "run_index": 5, "case_id": "cv24-000", "at": 1783959922.4729986}
+{"event": "run_completed", "runtime": "aura_faster_whisper", "run_index": 5, "case_id": "cv24-000", "at": 1783959922.7368336}
+{"event": "run_started", "runtime": "aura_faster_whisper", "run_index": 6, "case_id": "cv24-061", "at": 1783959922.7368858}
+{"event": "run_completed", "runtime": "aura_faster_whisper", "run_index": 6, "case_id": "cv24-061", "at": 1783959923.0370443}
+{"event": "run_started", "runtime": "aura_faster_whisper", "run_index": 7, "case_id": "cv24-006", "at": 1783959923.0370631}
+{"event": "run_completed", "runtime": "aura_faster_whisper", "run_index": 7, "case_id": "cv24-006", "at": 1783959923.3216004}
+{"event": "run_started", "runtime": "aura_faster_whisper", "run_index": 8, "case_id": "cv24-096", "at": 1783959923.3216443}
+{"event": "run_completed", "runtime": "aura_faster_whisper", "run_index": 8, "case_id": "cv24-096", "at": 1783959923.641744}
+{"event": "run_started", "runtime": "aura_faster_whisper", "run_index": 9, "case_id": "cv24-096", "at": 1783959923.6417658}
+{"event": "run_completed", "runtime": "aura_faster_whisper", "run_index": 9, "case_id": "cv24-096", "at": 1783959923.946406}
+{"event": "build_started", "runtime": "meetily_whisper_rs", "gpu_backend": "cuda", "at": 1783959923.993075}
+{"event": "build_completed", "runtime": "meetily_whisper_rs", "gpu_backend": "cuda", "at": 1783959968.7913425}
+{"event": "runtime_started", "runtime": "meetily_whisper_rs", "at": 1783959968.791486}
+{"event": "runtime_completed", "runtime": "meetily_whisper_rs", "at": 1783959971.627757}

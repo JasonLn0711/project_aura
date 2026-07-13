@@ -48,6 +48,10 @@ punctuation = [
   "torch>=2.0",
   "transformers>=4.55",
 ]
+benchmark = [
+  "huggingface-hub>=0.34",
+  "pyarrow>=18.0",
+]
 [project.scripts]
 aura = "aura.app:main"
 project-aura = "aura.app:main"

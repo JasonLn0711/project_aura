@@ -1,0 +1,1 @@
+{"seed": 20260713, "repetitions": 2, "gpu_policy": "ASR inference requires CUDA in both benchmark runtimes", "cuda_architecture": "89", "order": ["cv24-000", "cv24-020", "cv24-006", "cv24-020", "cv24-061", "cv24-000", "cv24-061", "cv24-006", "cv24-096", "cv24-096"]}
