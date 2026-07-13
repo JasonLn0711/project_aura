@@ -4,28 +4,23 @@
 
 Project AURA is a desktop audio assistant for real-time recording, Whisper-based transcription, batch file transcription, and smart audio splitting.
 
-This repository is the clean Python refactor of the working `audio_assistant_v1.5.0.py` script from `record_audio_ubuntu`. It intentionally does **not** copy the recording archive, `.record/` virtual environment, temporary transcripts, or generated media files.
+This repository is the maintained Python implementation extracted from the original `record_audio_ubuntu` prototype. Git history preserves the retired one-file baseline; the current tree contains the active application, validation scripts, tests, and release documentation.
 
 ![Project AURA screenshot](./img/image.png)
 
 ## Project Status
 
-The original `record_audio_ubuntu` folder mixed source code, runtime environment, and many generated recordings/transcripts. This sibling repository separates the maintainable application source from runtime data.
+Project AURA provides a fast validation surface for Taiwan-focused ASR, audio preparation, correction, observability, and evidence-backed capability comparison. Generated recordings and private transcripts stay in their selected output folders while the repo remains a reviewable source and validation package.
 
 Use this repo for:
 
 - source refactoring
 - package structure
 - tests and regression checks
-- future Python releases
+- Python validation releases
+- paired-corpus evidence before capability migration into Meetily
 
 Keep historical recordings and generated transcripts in `record_audio_ubuntu` or another data folder.
-
-The legacy one-file implementation is retained for audit and behavior comparison:
-
-```text
-docs/legacy_audio_assistant_v1.5.0.py
-```
 
 ## Executive Summary
 
@@ -334,7 +329,7 @@ The project is still within a maintainable size for a desktop transcription tool
 
 The guiding rule remains: if behavior can be tested without launching Qt, it should live outside `src/aura/ui/`.
 
-The current meeting-summary MVP is tracked in [`docs/meeting_summary_mvp_sdd.md`](docs/meeting_summary_mvp_sdd.md). It defines a Graph Knowledge + RAG + INT8 SLM summary experiment over ASR transcripts without speaker diarization, ASR correction, full action-item ownership, or speaker attribution. The implementation goal prompt is stored in [`docs/meeting_summary_mvp_goal_prompt.md`](docs/meeting_summary_mvp_goal_prompt.md). The longer target architecture is tracked separately in [`docs/meeting_summary_target_architecture.md`](docs/meeting_summary_target_architecture.md).
+The supported meeting-summary path is the local Gemma field-batch pipeline documented below. Comparative retrieval architectures begin from a licensed paired corpus and measured correction-time or evidence-grounding gap; this keeps evaluation driven by a real product decision instead of a dry-run architecture scaffold.
 
 ## Windows Native Runtime Path
 
@@ -385,10 +380,7 @@ project_aura_refactor/
 ├── docs/
 │   ├── architecture_decisions.md
 │   ├── denoise_upgrade_plan.md
-│   ├── legacy_audio_assistant_v1.5.0.py
-│   ├── meeting_summary_mvp_goal_prompt.md
-│   ├── meeting_summary_mvp_sdd.md
-│   ├── meeting_summary_target_architecture.md
+│   ├── first-principles-aura-meetily-review.md
 │   ├── refactor_plan.md
 │   ├── windows_known_issues.md
 │   ├── windows_native_roadmap.md
@@ -512,9 +504,8 @@ usable without storing tokens in the repository.
 Before using the default `pyannote/speaker-diarization-community-1` model, accept its Hugging Face terms for your account.
 
 The daily meeting-summary path uses the local Ollama API and needs no additional
-Python dependency group. The `summary` extra is reserved for the separate
-Transformers-based summary experiments under `src/aura/summary_mvp/` and
-`scripts/`.
+Python dependency group. The `summary` extra supports explicitly activated
+Transformers evaluation scripts under `scripts/`.
 
 The approved summary backend is the local Ollama tag `gemma4:e4b-it-q4_K_M`, corresponding to base model `google/gemma-4-E4B-it`. Before generation, AURA runs a local runtime preflight: it checks `http://localhost:11434/api/tags`, starts `ollama serve` if the local server is not already running, waits for the localhost runner to become ready, and verifies the exact model tag. If the model is missing, AURA shows a local-model dialog with **Pull Model**, **Copy Command**, and **Cancel** actions. Model download is never silent, no fallback model is used, and no cloud API is called.
 
@@ -755,7 +746,7 @@ PYTHONPATH=. uv run python scripts/generate_meeting_summary.py \
 
 This practical pipeline uses only the corrected transcript as model input. It does not pass the correction log to Gemma, does not create research claims or benchmark metrics, and writes a paste-ready Markdown report with topic, participants, executive summary, key points, decisions, action items, open questions, risks, and next steps. Generated private outputs are written under ignored `local_outputs/meeting_summary/`; the public dry-run sample is stored at [`reports/sample_meeting_summary.md`](reports/sample_meeting_summary.md).
 
-The current summary MVP is broader than this direct local summary feature but narrower than the full target architecture. It is documented in [`docs/meeting_summary_mvp_sdd.md`](docs/meeting_summary_mvp_sdd.md): ASR transcript input, time/sliding-window chunking, chunk embedding, lightweight knowledge graph construction, graph-aware RAG retrieval, fixed JSON summary prompting, Qwen 3.5 9B INT8 and Gemma 4 E4B FP8 comparison, schema validation, and evidence support checking. It explicitly excludes speaker diarization, ASR correction, fine-tuning, action-item owner extraction, medical/legal conclusion generation, and autonomous decision-making.
+Summary evaluation uses the same corrected transcript, structured JSON schema, deterministic Markdown renderer, and field-level validation as the product path. New retrieval or model variants enter only through a paired benchmark with real inference outputs, source-linked evidence, failure records, and human correction-time results.
 
 ## Denoise Behavior
 

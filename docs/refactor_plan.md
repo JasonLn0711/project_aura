@@ -7,7 +7,7 @@ Use this sibling repository as the new maintainable Python codebase. Keep `recor
 ## Boundaries
 
 - Do not import recordings, transcripts, `.record/`, or generated split files into this repo.
-- Keep the one-file legacy implementation only as an audit baseline.
+- Use Git history for retired prototype retrieval and keep the active tree focused on current behavior.
 - Prefer package modules under `src/aura/` for all new work.
 
 ## Refactor Phases
@@ -59,10 +59,8 @@ Use this sibling repository as the new maintainable Python codebase. Keep `recor
    - Add UI-level First Launch Check gates while keeping readiness logic testable outside Qt. Done with `first_launch_checks()` in `src/aura/system/runtime_report.py` and display/actions in `src/aura/ui/transcription_tab.py`.
    - Package the onboarding flow as `dist/aura-windows-portable-vX.Y.Z.zip`. Done in `v1.13.0`; installer work remains a later validation layer.
 
-9. Evidence-grounded meeting summary target
-   - Treat `docs/meeting_summary_mvp_sdd.md` as the durable SDD for the current MVP: Graph Knowledge + RAG + INT8 SLM summary over ASR transcripts.
-   - Keep `docs/meeting_summary_target_architecture.md` as the long-term architecture for the broader ASR Gate, evidence graph, graph-aware RAG, SLM, verifier, and evaluation path.
-   - MVP-v0.1 input is ASR transcript; output is structured meeting summary. It excludes speaker diarization, ASR correction, full action-item ownership, multi-speaker role attribution, fine-tuning, medical/legal conclusion generation, and autonomous decision-making.
-   - MVP-v0.1 compares six settings: Qwen 3.5 9B INT8 direct, vector RAG, graph RAG; and Gemma 4 E4B FP8 direct, vector RAG, graph RAG.
-   - Start with time-based chunking plus sliding window chunking; leave semantic chunking for v0.2.
-   - Use unsupported claim rate, evidence support rate, topic coverage, schema validity, decision capture accuracy, risk/constraint capture accuracy, open-question capture accuracy, human preference ranking, and human correction time as the first evaluation gates before PyQt UI integration.
+9. Evidence-gated summary evaluation
+   - Keep the local Gemma field-batch pipeline as the single supported summary runtime.
+   - Start comparative work from a licensed paired corpus and a named product decision.
+   - Require real model outputs, schema validity, source support, failure records, and human correction time before promoting a model or retrieval variant.
+   - Keep exploratory architectures in a bounded experiment branch or report until live evidence earns an active runtime module.

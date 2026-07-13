@@ -7,7 +7,6 @@ Project AURA uses strict semantic versioning for release tags and package metada
 - Use `MAJOR.MINOR.PATCH` inside source files, for example `1.5.0`.
 - Use `vMAJOR.MINOR.PATCH` only for Git tags and GitHub release names, for example `v1.5.0`.
 - Never put the leading `v` inside `pyproject.toml` or `src/aura/metadata.py`.
-- Do not update the legacy audit file `docs/legacy_audio_assistant_v1.5.0.py` for new releases. It is a historical baseline, not active source.
 
 ## Required Files For Every Version Bump
 
