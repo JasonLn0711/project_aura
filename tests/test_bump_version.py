@@ -21,6 +21,11 @@ class BumpVersionTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             bump_version.normalize_release_date("2026/05/29")
 
+    def test_increment_version_calculates_each_semver_step(self):
+        self.assertEqual(bump_version.increment_version("1.13.0", "patch"), "1.13.1")
+        self.assertEqual(bump_version.increment_version("1.13.4", "minor"), "1.14.0")
+        self.assertEqual(bump_version.increment_version("1.13.4", "major"), "2.0.0")
+
     def test_update_files_synchronizes_release_surfaces(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
@@ -31,24 +36,34 @@ class BumpVersionTests(unittest.TestCase):
                 '__version__ = "1.5.1"\n__date__ = "2026-05-25"\n',
                 encoding="utf-8",
             )
+            (root / "uv.lock").write_text(
+                'name = "project-aura-refactor"\nversion = "1.5.1"\n',
+                encoding="utf-8",
+            )
             (root / "README.md").write_text(
                 "| Refactor Version | `1.5.1` |\n"
-                "| Current Release Tag | `v1.5.1` |\n",
+                "| Current Release Tag | `v1.5.1` |\n"
+                "## Latest Update (2026-05-25)\n",
                 encoding="utf-8",
             )
 
             changed = bump_version.update_files("1.6.0", repo_root=root, release_date="2026-05-29")
 
-            self.assertEqual(len(changed), 3)
+            self.assertEqual(len(changed), 4)
             self.assertIn('version = "1.6.0"', (root / "pyproject.toml").read_text(encoding="utf-8"))
             self.assertIn('__version__ = "1.6.0"', (metadata_dir / "metadata.py").read_text(encoding="utf-8"))
             self.assertIn('__date__ = "2026-05-29"', (metadata_dir / "metadata.py").read_text(encoding="utf-8"))
+            self.assertIn('version = "1.6.0"', (root / "uv.lock").read_text(encoding="utf-8"))
             self.assertIn(
                 "| Refactor Version | `1.6.0` |",
                 (root / "README.md").read_text(encoding="utf-8"),
             )
             self.assertIn(
                 "| Current Release Tag | `v1.6.0` |",
+                (root / "README.md").read_text(encoding="utf-8"),
+            )
+            self.assertIn(
+                "## Latest Update — v1.6.0 (2026-05-29)",
                 (root / "README.md").read_text(encoding="utf-8"),
             )
 

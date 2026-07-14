@@ -23,6 +23,25 @@ def normalize_version(raw_version: str) -> str:
     return version
 
 
+def increment_version(current_version: str, part: str) -> str:
+    major, minor, patch = (int(value) for value in normalize_version(current_version).split("."))
+    if part == "major":
+        return f"{major + 1}.0.0"
+    if part == "minor":
+        return f"{major}.{minor + 1}.0"
+    if part == "patch":
+        return f"{major}.{minor}.{patch + 1}"
+    raise ValueError("Increment must be major, minor, or patch")
+
+
+def read_current_version(repo_root: Path = REPO_ROOT) -> str:
+    pyproject = (repo_root / "pyproject.toml").read_text(encoding="utf-8")
+    match = re.search(r'(?m)^version = "([^"]+)"$', pyproject)
+    if not match:
+        raise RuntimeError("Could not read [project].version from pyproject.toml")
+    return normalize_version(match.group(1))
+
+
 def normalize_release_date(raw_date: str | None = None) -> str:
     release_date = (raw_date or date.today().isoformat()).strip()
     if not DATE_PATTERN.fullmatch(release_date):
@@ -65,6 +84,14 @@ def update_files(
             (re.compile(r'(?m)^__version__ = "[^"]+"$'), f'__version__ = "{normalized}"'),
             (re.compile(r'(?m)^__date__ = "[^"]+"$'), f'__date__ = "{normalized_date}"'),
         ],
+        repo_root / "uv.lock": [
+            (
+                re.compile(
+                    r'(?m)(^name = "project-aura-refactor"\nversion = ")[^"]+("$)'
+                ),
+                rf"\g<1>{normalized}\g<2>",
+            ),
+        ],
         repo_root / "README.md": [
             (
                 re.compile(r"(?m)^\| Refactor Version \| `[^`]+` \|$"),
@@ -73,6 +100,12 @@ def update_files(
             (
                 re.compile(r"(?m)^\| Current Release Tag \| `v?[^`]+` \|$"),
                 f"| Current Release Tag | `v{normalized}` |",
+            ),
+            (
+                re.compile(
+                    r"(?m)^## Latest Update(?: — v\d+\.\d+\.\d+)? \(\d{4}-\d{2}-\d{2}\)$"
+                ),
+                f"## Latest Update — v{normalized} ({normalized_date})",
             ),
         ],
     }
@@ -86,18 +119,24 @@ def update_files(
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("version", help="Target version, with or without leading v")
+    parser.add_argument("version", nargs="?", help="Target version, with or without leading v")
+    parser.add_argument("--increment", choices=("major", "minor", "patch"))
     parser.add_argument("--date", dest="release_date", help="Release update date in YYYY-MM-DD form")
     parser.add_argument("--dry-run", action="store_true", help="Report files that would change")
     args = parser.parse_args()
 
-    changed = update_files(args.version, release_date=args.release_date, dry_run=args.dry_run)
+    if bool(args.version) == bool(args.increment):
+        parser.error("provide either VERSION or --increment major|minor|patch")
+
+    version = args.version or increment_version(read_current_version(), args.increment)
+
+    changed = update_files(version, release_date=args.release_date, dry_run=args.dry_run)
     action = "Would update" if args.dry_run else "Updated"
     if changed:
         for file_path in changed:
             print(f"{action}: {file_path.relative_to(REPO_ROOT)}")
     else:
-        print(f"Version already synchronized: {normalize_version(args.version)}")
+        print(f"Version already synchronized: {normalize_version(version)}")
     return 0
 
 

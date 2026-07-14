@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 
 from aura.config import SUPPORTED_IMPORT_EXTENSIONS
-from aura.metadata import __author__, __organization__, __version__
+from aura.metadata import __author__, __date__, __organization__, __version__
 
 
 def media_filter(label: str, extensions: tuple[str, ...]) -> str:
@@ -201,8 +201,8 @@ class UIStrings:
     splitter_completed_title: str = "Completed"
     splitter_completed: str = "Intelligent splitting completed."
 
-    def footer(self, build_date: str) -> str:
-        return f"© {build_date[:4]}  {__organization__}  |  v{__version__} ({build_date})  |  {__author__}"
+    def footer(self) -> str:
+        return f"© {__date__[:4]}  {__organization__}  |  v{__version__} ({__date__})  |  {__author__}"
 
     def audit_report_ready_message(self, path: str) -> str:
         return self.audit_report_ready.format(path=path)

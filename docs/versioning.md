@@ -15,8 +15,10 @@ Every release version bump must update these files in the same commit:
 - `pyproject.toml`: `[project].version`
 - `src/aura/metadata.py`: `__version__`
 - `src/aura/metadata.py`: `__date__`, using the release update date
+- `uv.lock`: editable `project-aura-refactor` package version
 - `README.md`: `Refactor Version` table row
 - `README.md`: `Current Release Tag` table row, using the leading-`v` tag form
+- `README.md`: `Latest Update` heading, including version and release date
 
 If any of these values differ, the release is invalid.
 
@@ -37,6 +39,17 @@ make bump-version VERSION=X.Y.Z RELEASE_DATE=YYYY-MM-DD PYTHON=/path/to/python
 git add pyproject.toml src/aura/metadata.py README.md
 git commit -m "bump version to vX.Y.Z"
 ```
+
+For the next semantic version, let the helper calculate the number:
+
+```bash
+make bump-version BUMP=patch RELEASE_DATE=YYYY-MM-DD PYTHON=/path/to/python
+make bump-version BUMP=minor RELEASE_DATE=YYYY-MM-DD PYTHON=/path/to/python
+make bump-version BUMP=major RELEASE_DATE=YYYY-MM-DD PYTHON=/path/to/python
+```
+
+`make check` validates that package metadata, runtime metadata, README release
+rows, the latest-update heading, and the application footer remain synchronized.
 
 If `RELEASE_DATE` is omitted, `scripts/bump_version.py` uses the current local date. Passing the date explicitly is preferred for reproducible release commits.
 

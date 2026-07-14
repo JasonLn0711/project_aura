@@ -1,6 +1,4 @@
 import gc
-import os
-import time
 
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QAction
@@ -53,8 +51,6 @@ class MainWindow(QMainWindow):
         self.tabs.addTab(self.tab_splitter, self.strings.tab_splitting)
         self.tabs.currentChanged.connect(self.on_tab_changed)
 
-        build_date = time.strftime("%Y-%m-%d", time.localtime(os.path.getmtime(__file__)))
-
         self.sys_status = QLabel(self.strings.status_idle_gpu)
         self.sys_status.setStyleSheet("padding: 5px; color: #71c9be; font-weight: 600; font-size: 11px;")
         self.statusBar().addWidget(self.sys_status, 1)
@@ -69,7 +65,7 @@ class MainWindow(QMainWindow):
         self.audit_status.setStyleSheet("padding: 5px; color: #8fa4b5; font-size: 11px;")
         self.statusBar().addPermanentWidget(self.audit_status)
 
-        footer = QLabel(self.strings.footer(build_date))
+        footer = QLabel(self.strings.footer())
         footer.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
         footer.setStyleSheet("padding: 5px; color: #71808e; font-size: 11px;")
         self.statusBar().addPermanentWidget(footer)

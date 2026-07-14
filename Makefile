@@ -17,9 +17,11 @@ build:
 
 bump-version:
 ifndef VERSION
-	$(error VERSION is required, for example make bump-version VERSION=1.6.0)
+ifndef BUMP
+	$(error VERSION or BUMP is required, for example make bump-version BUMP=minor)
 endif
-	$(PYTHON) scripts/bump_version.py $(VERSION) $(if $(RELEASE_DATE),--date $(RELEASE_DATE),)
+endif
+	$(PYTHON) scripts/bump_version.py $(if $(VERSION),$(VERSION),--increment $(BUMP)) $(if $(RELEASE_DATE),--date $(RELEASE_DATE),)
 
 clean:
 	rm -rf build dist *.egg-info src/*.egg-info
