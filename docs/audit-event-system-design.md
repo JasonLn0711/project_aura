@@ -306,6 +306,7 @@ Recorder 對敏感 key 執行集中 redaction，並限制字串長度與巢狀�
 - `make check PYTHON=.venv/bin/python` 通過 compile 與 287 項測試。
 - 真實 PyQt 控制項 smoke 產生 8 筆有序事件，sequence `1..8`，包含 app lifecycle、UI navigation、settings、activity log 與 report generation。
 - CLI 由該次完整 session 產生摘要：Integrity `PASS`，本輪規則標記 0 個待複核訊號。
+- `2026-07-14T19:18:02+08:00` live activation snapshot：更新後的桌面 process 已保存 23 筆去內容化事件、1 個 active session，涵蓋 runtime、UI、navigation、import 與 summary；active-session-aware analysis 為 Integrity `PASS`、0 個待複核訊號，daily JSONL 權限為 `600`。這項證據確認正式本機寫入路徑，field threshold calibration 仍由後續 session baseline 決定。
 - 回歸測試涵蓋 sensitive detail redaction、session hash chain、竄改偵測、malformed line、retention、report output，以及 active session 誤報防護。
 
 下一 validation layer：
