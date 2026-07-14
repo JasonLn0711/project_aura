@@ -44,15 +44,57 @@ The app is designed for professional meeting and lecture workflows. It includes 
 | Field | Value |
 | --- | --- |
 | Project Name | Project AURA / Ultimate Audio Assistant |
-| Refactor Version | `1.13.0` |
-| Current Release Tag | `v1.13.0` |
+| Refactor Version | `1.14.0` |
+| Current Release Tag | `v1.14.0` |
 | ASR Model | `SoybeanMilk/faster-whisper-Breeze-ASR-25` |
 | GitHub Repository | `JasonLn0711/project_aura` |
 | Academic Affiliation | National Yang Ming Chiao Tung University (NYCU) |
 | Project Lead | Jason Chia-Sheng Lin (PhD. Student) |
 | License | MIT |
 
-## Latest Update (2026-06-11)
+## Latest Update — v1.14.0 (2026-07-14)
+
+Project AURA v1.14.0 adds an operator-focused desktop workspace and a local,
+content-free audit event system. The release makes recording, import, summary,
+diagnostics, output review, and track splitting easier to operate while giving
+maintainers enough trustworthy evidence to improve UI flow and investigate
+runtime anomalies.
+
+This release adds six durable capabilities:
+
+1. **Operator workspace**: the PyQt layout now separates capture actions, live
+   transcript review, output controls, Advanced Settings, runtime diagnostics,
+   and the activity log into clearer working regions.
+2. **Local product audit trail**: app lifecycle, decision-relevant UI actions,
+   model loading, recording, import, summary, diagnostics, splitter, and audit
+   report events are written to daily local JSONL files.
+3. **Privacy and integrity controls**: audit details redact transcripts,
+   summaries, audio, file paths, credentials, prompts, and raw error messages.
+   Session sequence numbers and a SHA-256 hash chain support integrity review;
+   audit files and generated reports use owner-only permissions.
+4. **UI and reliability analysis**: local reports summarize workflow completion,
+   recoverable friction, latency percentiles, repeated actions, error bursts,
+   incomplete workflows, unknown schemas, and uncontrolled termination
+   candidates. Every anomaly remains a human-review signal.
+5. **In-app and CLI reporting**: Advanced Settings can open the local audit
+   folder or generate a Markdown report; `scripts/summarize_audit_events.py`
+   provides the same analysis in Markdown or JSON.
+6. **Automatic version synchronization**: `make bump-version BUMP=patch|minor|major`
+   calculates the next semantic version and synchronizes package metadata,
+   runtime metadata, release date, README version rows, the latest-update
+   heading, window title, audit events, runtime reports, and the bottom status
+   bar from the same runtime version.
+
+Validation passed `289` tests. The PyQt control smoke produced `8` ordered
+events with integrity `PASS`; the updated desktop process subsequently wrote
+`23` content-free runtime, UI, navigation, import, and summary events in one
+active session with `0` provisional review signals. The next validation layer
+confirms normal session termination and calibrates UI-friction thresholds after
+at least `20` valid sessions or two weeks of local evidence.
+
+Canonical design: [`docs/audit-event-system-design.md`](docs/audit-event-system-design.md).
+
+## Previous Update (2026-06-11)
 
 Project AURA now records each live recording as a reviewable execution package, not only as transcript text. The contribution in this update is operational observability: every recording folder now preserves both a raw runtime log and a structured event log, while live ASR exposes enough telemetry to distinguish normal verbose logging from real latency buildup. The recording audio export path now defaults to clearer M4A/AAC output while retaining MP3 as a legacy compatibility option.
 
@@ -180,9 +222,9 @@ We compared four implementation paths before choosing this design:
 
 The final decision is intentionally hybrid: wall-clock scheduling belongs in the PyQt interaction layer, while the 20-minute no-voice guard belongs in the audio capture layer. That keeps the feature predictable for the user and keeps the saved transcript/audio artifacts consistent with the same recording pipeline AURA already trusts.
 
-## Current Working Version Changes
+## v1.13.0 Windows Onboarding Changes
 
-`v1.13.0` turns the Windows native validation foundation into a simpler Windows onboarding path. The main goals are: let Windows users run one check and one launch command, keep ASR on the required RTX/CUDA path, produce `diagnostic_report.txt` automatically, package a real portable ZIP layout, and expose first-launch readiness checks in the UI.
+`v1.13.0` turned the Windows native validation foundation into a simpler Windows onboarding path. Its goals were to let Windows users run one check and one launch command, keep ASR on the required RTX/CUDA path, produce `diagnostic_report.txt` automatically, package a real portable ZIP layout, and expose first-launch readiness checks in the UI.
 
 ### User Workflow Changes
 
@@ -319,7 +361,7 @@ Advanced Settings also includes scheduled live recording:
 - `docs/windows_setup.md` documents the Windows native setup path, including Python 3.11 venv creation, optional extras, GPU smoke testing, and app launch.
 - `docs/windows_known_issues.md` records the current Windows CUDA/audio/packaging boundaries.
 - Root-level `Start-AURA.ps1`, `Start-AURA.bat`, `Check-AURA.ps1`, and `Check-AURA.bat` provide the Windows onboarding entrypoints.
-- `scripts/build_windows_portable.ps1` now creates both `dist/aura-windows-portable/` and a versioned `dist/aura-windows-portable-v1.13.0.zip` with the onboarding scripts at the archive root.
+- `scripts/build_windows_portable.ps1` creates both `dist/aura-windows-portable/` and a versioned `dist/aura-windows-portable-v<version>.zip`, reading the release version from `pyproject.toml`, with the onboarding scripts at the archive root.
 - `.github/workflows/windows.yml` adds hosted Windows checks for unit tests, PyQt import smoke, runtime-report smoke, and portable packaging smoke; the gated self-hosted RTX lane runs CUDA model-load and ASR artifact smoke tests.
 - `scripts/windows_asr_artifact_smoke.py` generates a tiny WAV, runs a CUDA/int8 ASR pass, and verifies raw/final/metrics transcript artifact output.
 - README workflow documentation now matches the simplified UI and automatic transcript-saving behavior.
@@ -361,6 +403,7 @@ The implementation and remaining validation path are tracked in [`docs/windows_n
 | Volume Normalization | Dynamically standardizes imported and recorded audio to a target dBFS, default `-20`, using a fast FFmpeg path when denoise is off. Recorded audio defaults to `M4A / AAC-LC 96k`, with `MP3 / LAME VBR q0` retained as a legacy option; both use a limiter after gain adjustment. The FFmpeg path uses `CPU count - 6` worker threads, with a minimum of `1`, and reports clearly if CPU count cannot be detected. |
 | Progress Telemetry | Surfaces import normalization and processing stages in the status line, stores imported-file status events in processing metrics, and records live ASR chunk telemetry for recordings. |
 | Recording Observability | Writes `{base}_event_log.json` and `{base}_runtime.log` beside each recording so ASR latency, queue backlog, runtime settings, recording audio export status, and third-party logger output can be inspected after the run. |
+| Local Product Audit | Writes content-free app/UI/workflow events to a local daily JSONL chain with redaction, retention, owner-only permissions, integrity verification, KPI/friction summaries, provisional anomaly signals, and in-app or CLI report generation. |
 | Runtime Diagnostics | Reports GPU detection, CUDA runtime status, ASR model load status, FFmpeg, audio input/output devices, and output-folder writability through CLI scripts and the PyQt UI. |
 | Windows Onboarding | Provides `Start-AURA.bat`, `Check-AURA.bat`, automatic `.venv` preparation, dependency installation, diagnostic report writing, and a versioned portable ZIP layout. |
 | Windows Native Validation | Provides Windows setup docs, GPU smoke checks, runtime reports, hosted Windows CI, gated self-hosted RTX smoke tests, and a portable release builder. |
@@ -536,7 +579,7 @@ Without this extra, AURA still applies safe Traditional Chinese punctuation clea
 For the Windows portable onboarding path:
 
 1. Install or update the NVIDIA driver.
-2. Unzip `aura-windows-portable-v1.13.0.zip`.
+2. Unzip `aura-windows-portable-v<version>.zip`.
 3. Double-click `Check-AURA.bat`, then double-click `Start-AURA.bat`.
 
 `Check-AURA.bat` and `Start-AURA.bat` create `.venv`, install dependencies, check FFmpeg, check the NVIDIA driver, run the RTX/CUDA smoke path, and write `diagnostic_report.txt`.
@@ -882,9 +925,17 @@ Before tagging or publishing a release, run:
 make check PYTHON=/path/to/python
 ```
 
-Version bumps must follow the strict rule in [`docs/versioning.md`](docs/versioning.md). Use `make bump-version VERSION=X.Y.Z` to synchronize `pyproject.toml`, `src/aura/metadata.py`, and the README version rows in one dedicated version commit, then tag with the leading-`v` form such as `vX.Y.Z`.
+Version bumps follow [`docs/versioning.md`](docs/versioning.md). Use
+`make bump-version BUMP=patch|minor|major RELEASE_DATE=YYYY-MM-DD` to calculate
+the next semantic version automatically, or provide `VERSION=X.Y.Z` explicitly.
+The helper synchronizes package/runtime metadata and README release surfaces;
+`make check` enforces the contract before tagging with `vX.Y.Z`.
 
-This update uses `v1.13.0` because it adds Windows one-click onboarding scripts, a versioned portable ZIP layout, automatic diagnostic report generation, and the First Launch Check UI. The package metadata, runtime metadata, README version rows, and release date are synchronized for `2026-05-29`.
+This update uses `v1.14.0` because it adds the operator workspace, local audit
+event system, integrity/privacy controls, UI and anomaly summaries, live audit
+activation evidence, and automatic semantic-version synchronization. Package
+metadata, runtime metadata, README release surfaces, and the application bottom
+bar are synchronized for `2026-07-14`.
 
 ## Troubleshooting
 
