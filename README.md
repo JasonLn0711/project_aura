@@ -916,7 +916,7 @@ python -m build
 or use the repository command:
 
 ```bash
-make build PYTHON=/path/to/python
+make build UV=/path/to/uv
 ```
 
 Before tagging or publishing a release, run:

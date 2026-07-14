@@ -29,7 +29,7 @@ Use one dedicated version commit after all feature/fix commits are already merge
 ```bash
 git status --short --branch
 make check PYTHON=/path/to/python
-make build PYTHON=/path/to/python
+make build UV=/path/to/uv
 ```
 
 Then update the required version files with the repository helper and commit:
@@ -65,7 +65,7 @@ Create the Git tag only after the version commit passes checks:
 
 ```bash
 make check PYTHON=/path/to/python
-make build PYTHON=/path/to/python
+make build UV=/path/to/uv
 git tag -a vX.Y.Z -m "Project AURA vX.Y.Z"
 git push origin main
 git push origin vX.Y.Z

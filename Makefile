@@ -1,5 +1,6 @@
 PYTHON ?= python
 PYTHONPATH ?= src
+UV ?= uv
 
 .PHONY: check test compile build bump-version clean
 
@@ -12,8 +13,7 @@ compile:
 	$(PYTHON) -m compileall src tests
 
 build:
-	$(PYTHON) -m pip install --upgrade build
-	$(PYTHON) -m build
+	$(UV) build
 
 bump-version:
 ifndef VERSION
