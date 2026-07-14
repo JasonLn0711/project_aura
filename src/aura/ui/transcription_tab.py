@@ -9,18 +9,21 @@ from pathlib import Path
 
 import numpy as np
 import pyqtgraph as pg
-from PyQt6.QtCore import QTime, QTimer, pyqtSlot
+from PyQt6.QtCore import Qt, QTime, QTimer, pyqtSlot
 from PyQt6.QtWidgets import (
     QApplication,
     QComboBox,
     QCheckBox,
     QFileDialog,
+    QFrame,
     QHBoxLayout,
     QLabel,
     QLineEdit,
     QMessageBox,
     QProgressBar,
     QPushButton,
+    QScrollArea,
+    QSplitter,
     QSpinBox,
     QTextEdit,
     QTimeEdit,
@@ -28,6 +31,7 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
+from aura.audit import AuditRecorder, write_audit_report
 from aura.asr.punctuation import restore_chinese_punctuation_for_transcript
 from aura.asr.threads import FileTranscriberThread, ModelLoaderThread, TranscriberThread
 from aura.audio.denoise import DEFAULT_ACTIVE_DENOISE_PRESET, OFF_DENOISE_PRESET, normalize_denoise_preset
@@ -68,10 +72,11 @@ logger = logging.getLogger(__name__)
 
 
 class TranscriptionTab(QWidget):
-    def __init__(self, settings=DEFAULT_SETTINGS, strings=UI_TEXT):
+    def __init__(self, settings=DEFAULT_SETTINGS, strings=UI_TEXT, audit=None):
         super().__init__()
         self.settings = settings
         self.strings = strings
+        self.audit = audit if audit is not None else AuditRecorder()
         self.recorder_thread = None
         self.file_thread = None
         self.transcriber_thread = TranscriberThread()
@@ -87,6 +92,8 @@ class TranscriptionTab(QWidget):
         self.ollama_pull_thread = None
         self.ollama_server_process = None
         self.ollama_server_started_by_aura = False
+        self.summary_audit_actor = None
+        self.summary_audit_started_perf = None
         self.total_batch_count = 0
         self.update_checker = None
         self.transcript_revision = 0
@@ -117,34 +124,51 @@ class TranscriptionTab(QWidget):
         self.initUI()
 
     def initUI(self):
+        self.setObjectName("transcriptionWorkspace")
+        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
         layout = QVBoxLayout(self)
+        layout.setContentsMargins(16, 14, 16, 10)
+        layout.setSpacing(12)
 
-        info_layout = QHBoxLayout()
+        workspace_header = QFrame()
+        workspace_header.setObjectName("workspaceHeader")
+        header_layout = QVBoxLayout(workspace_header)
+        header_layout.setContentsMargins(14, 10, 14, 10)
+        header_layout.setSpacing(8)
+
+        status_layout = QHBoxLayout()
         self.status_label = QLabel(self.strings.status_waiting_gpu)
-        self.status_label.setStyleSheet("font-weight: bold; color: #00bcd4; font-size: 14px;")
+        self.status_label.setObjectName("workspaceStatus")
         self.top_gpu_label = QLabel(self.strings.top_gpu_status.format(status="checking"))
         self.top_model_label = QLabel(self.strings.top_model_status.format(status=self.asr_model_status))
         self.top_device_label = QLabel(self.strings.top_device_status.format(status="not selected"))
+        for status_chip in (self.top_gpu_label, self.top_model_label, self.top_device_label):
+            status_chip.setObjectName("statusChip")
         self.name_input = QLineEdit()
         self.name_input.setPlaceholderText(self.strings.recording_suffix_placeholder)
-        info_layout.addWidget(self.status_label, stretch=3)
-        info_layout.addWidget(self.top_gpu_label, stretch=1)
-        info_layout.addWidget(self.top_model_label, stretch=1)
-        info_layout.addWidget(self.top_device_label, stretch=1)
-        info_layout.addWidget(self.name_input, stretch=1)
-        layout.addLayout(info_layout)
+        self.name_input.setMinimumWidth(220)
+        status_layout.addWidget(self.status_label, stretch=1)
+        status_layout.addWidget(self.name_input)
+        header_layout.addLayout(status_layout)
+
+        readiness_layout = QHBoxLayout()
+        readiness_layout.setSpacing(8)
+        readiness_layout.addWidget(self.top_gpu_label)
+        readiness_layout.addWidget(self.top_model_label)
+        readiness_layout.addWidget(self.top_device_label)
+        readiness_layout.addStretch()
+        header_layout.addLayout(readiness_layout)
+        layout.addWidget(workspace_header)
 
         self.btn_toggle_settings = QPushButton(self.strings.show_advanced_settings)
         self.btn_toggle_settings.setCheckable(True)
-        self.btn_toggle_settings.setStyleSheet(
-            "text-align: left; padding: 5px; background: #333; border-radius: 4px; "
-            "color: #00bcd4; min-height: 30px;"
-        )
+        self.btn_toggle_settings.setProperty("role", "quiet")
         self.btn_toggle_settings.clicked.connect(self.toggle_settings)
 
         self.settings_container = QWidget()
-        self.settings_container.setVisible(False)
         settings_vbox = QVBoxLayout(self.settings_container)
+        settings_vbox.setContentsMargins(0, 8, 4, 8)
+        settings_vbox.setSpacing(10)
 
         meeting_distance_layout = QHBoxLayout()
         meeting_distance_layout.addWidget(QLabel(self.strings.meeting_distance_mode_label))
@@ -177,25 +201,27 @@ class TranscriptionTab(QWidget):
         denoise_layout.addStretch()
         settings_vbox.addLayout(denoise_layout)
 
-        speaker_layout = QHBoxLayout()
+        speaker_layout = QVBoxLayout()
         self.check_speaker_diarization = QCheckBox(self.strings.speaker_diarization_label)
         self.check_speaker_diarization.setToolTip(self.strings.speaker_diarization_tooltip)
         self.check_speaker_diarization.setChecked(self.settings.speaker_diarization_enabled)
         self.check_speaker_diarization.toggled.connect(self.update_speaker_controls)
         speaker_layout.addWidget(self.check_speaker_diarization)
 
-        speaker_layout.addWidget(QLabel(self.strings.speaker_min_label))
+        speaker_range_layout = QHBoxLayout()
+        speaker_range_layout.addWidget(QLabel(self.strings.speaker_min_label))
         self.spin_min_speakers = QSpinBox()
         self.spin_min_speakers.setRange(1, 20)
         self.spin_min_speakers.setValue(self.settings.speaker_min_speakers)
-        speaker_layout.addWidget(self.spin_min_speakers)
+        speaker_range_layout.addWidget(self.spin_min_speakers)
 
-        speaker_layout.addWidget(QLabel(self.strings.speaker_max_label))
+        speaker_range_layout.addWidget(QLabel(self.strings.speaker_max_label))
         self.spin_max_speakers = QSpinBox()
         self.spin_max_speakers.setRange(1, 20)
         self.spin_max_speakers.setValue(self.settings.speaker_max_speakers)
-        speaker_layout.addWidget(self.spin_max_speakers)
-        speaker_layout.addStretch()
+        speaker_range_layout.addWidget(self.spin_max_speakers)
+        speaker_range_layout.addStretch()
+        speaker_layout.addLayout(speaker_range_layout)
         settings_vbox.addLayout(speaker_layout)
         self.update_speaker_controls(self.check_speaker_diarization.isChecked())
 
@@ -215,33 +241,38 @@ class TranscriptionTab(QWidget):
         settings_vbox.addLayout(capture_layout)
         self.capture_guidance_label = QLabel()
         self.capture_guidance_label.setWordWrap(True)
-        self.capture_guidance_label.setStyleSheet("color: #ffb74d; font-size: 12px;")
+        self.capture_guidance_label.setStyleSheet("color: #d7a65b; font-size: 12px;")
         settings_vbox.addWidget(self.capture_guidance_label)
         self.update_capture_guidance()
 
-        schedule_layout = QHBoxLayout()
+        schedule_layout = QVBoxLayout()
+        schedule_start_layout = QHBoxLayout()
         self.check_schedule_recording = QCheckBox(self.strings.schedule_recording_label)
         self.check_schedule_recording.setToolTip(self.strings.schedule_recording_tooltip)
         self.check_schedule_recording.toggled.connect(self.update_schedule_controls)
         self.check_schedule_recording.toggled.connect(self.update_record_button_label)
-        schedule_layout.addWidget(self.check_schedule_recording)
+        schedule_start_layout.addWidget(self.check_schedule_recording)
 
-        schedule_layout.addWidget(QLabel(self.strings.schedule_start_time_label))
+        schedule_start_layout.addWidget(QLabel(self.strings.schedule_start_time_label))
         self.time_schedule_start = QTimeEdit()
         self.time_schedule_start.setDisplayFormat("HH:mm")
         self.time_schedule_start.setTime(QTime.currentTime().addSecs(300))
-        schedule_layout.addWidget(self.time_schedule_start)
+        schedule_start_layout.addWidget(self.time_schedule_start)
+        schedule_start_layout.addStretch()
+        schedule_layout.addLayout(schedule_start_layout)
 
+        schedule_stop_layout = QHBoxLayout()
         self.check_schedule_auto_stop = QCheckBox(self.strings.schedule_auto_stop_label)
         self.check_schedule_auto_stop.setToolTip(self.strings.schedule_stop_tooltip)
         self.check_schedule_auto_stop.toggled.connect(self.update_schedule_controls)
-        schedule_layout.addWidget(self.check_schedule_auto_stop)
+        schedule_stop_layout.addWidget(self.check_schedule_auto_stop)
 
         self.time_schedule_end = QTimeEdit()
         self.time_schedule_end.setDisplayFormat("HH:mm")
         self.time_schedule_end.setTime(QTime.currentTime().addSecs(3600))
-        schedule_layout.addWidget(self.time_schedule_end)
-        schedule_layout.addStretch()
+        schedule_stop_layout.addWidget(self.time_schedule_end)
+        schedule_stop_layout.addStretch()
+        schedule_layout.addLayout(schedule_stop_layout)
         settings_vbox.addLayout(schedule_layout)
         self.update_schedule_controls()
 
@@ -266,9 +297,10 @@ class TranscriptionTab(QWidget):
         self.btn_select_output_folder.clicked.connect(self.select_output_folder)
         output_layout.addWidget(self.btn_select_output_folder)
         self.output_folder_label = QLabel()
-        self.output_folder_label.setStyleSheet("color: #9e9e9e;")
-        output_layout.addWidget(self.output_folder_label, stretch=1)
+        self.output_folder_label.setProperty("role", "muted")
         settings_vbox.addLayout(output_layout)
+        self.output_folder_label.setWordWrap(True)
+        settings_vbox.addWidget(self.output_folder_label)
         self.update_output_folder_controls()
 
         recording_audio_layout = QHBoxLayout()
@@ -332,7 +364,7 @@ class TranscriptionTab(QWidget):
         model_settings_layout.addWidget(self.combo_compute)
 
         self.btn_reload_model = QPushButton(self.strings.reload_model)
-        self.btn_reload_model.setStyleSheet("background-color: #546e7a; color: white;")
+        self.btn_reload_model.setProperty("role", "quiet")
         self.btn_reload_model.clicked.connect(self.apply_model_settings)
         model_settings_layout.addWidget(self.btn_reload_model)
 
@@ -353,7 +385,7 @@ class TranscriptionTab(QWidget):
         diagnostics_layout.addWidget(self.runtime_output_label)
 
         first_launch_title = QLabel(self.strings.first_launch_title)
-        first_launch_title.setStyleSheet("font-weight: bold; color: #00bcd4;")
+        first_launch_title.setProperty("role", "sectionTitle")
         diagnostics_layout.addWidget(first_launch_title)
         self.first_launch_check_labels = {}
         self.first_launch_fix_buttons = {}
@@ -371,24 +403,12 @@ class TranscriptionTab(QWidget):
             fix_button = QPushButton(self.strings.first_launch_fix_guide)
             fix_button.setEnabled(False)
             fix_button.clicked.connect(lambda _checked=False, check_key=key: self.show_first_launch_fix(check_key))
-            copy_button = QPushButton(self.strings.runtime_copy_report)
-            copy_button.setEnabled(False)
-            copy_button.clicked.connect(self.copy_runtime_report)
-            setup_button = QPushButton(self.strings.first_launch_open_setup)
-            setup_button.setEnabled(False)
-            setup_button.clicked.connect(self.open_setup_folder)
-            retry_button = QPushButton(self.strings.first_launch_retry)
-            retry_button.setEnabled(False)
-            retry_button.clicked.connect(self.refresh_runtime_diagnostics)
             row.addWidget(status_label, stretch=2)
             row.addWidget(fix_button, stretch=0)
-            row.addWidget(copy_button, stretch=0)
-            row.addWidget(setup_button, stretch=0)
-            row.addWidget(retry_button, stretch=0)
             diagnostics_layout.addLayout(row)
             self.first_launch_check_labels[key] = status_label
             self.first_launch_fix_buttons[key] = fix_button
-            self.first_launch_action_buttons[key] = (fix_button, copy_button, setup_button, retry_button)
+            self.first_launch_action_buttons[key] = (fix_button,)
 
         diagnostics_buttons = QHBoxLayout()
         self.btn_refresh_runtime = QPushButton(self.strings.runtime_refresh)
@@ -397,32 +417,69 @@ class TranscriptionTab(QWidget):
         self.btn_copy_runtime_report.clicked.connect(self.copy_runtime_report)
         self.btn_open_setup_folder = QPushButton(self.strings.first_launch_open_setup)
         self.btn_open_setup_folder.clicked.connect(self.open_setup_folder)
-        self.btn_retry_first_launch = QPushButton(self.strings.first_launch_retry)
-        self.btn_retry_first_launch.clicked.connect(self.refresh_runtime_diagnostics)
         diagnostics_buttons.addWidget(self.btn_refresh_runtime)
         diagnostics_buttons.addWidget(self.btn_copy_runtime_report)
         diagnostics_buttons.addWidget(self.btn_open_setup_folder)
-        diagnostics_buttons.addWidget(self.btn_retry_first_launch)
         diagnostics_buttons.addStretch()
         diagnostics_layout.addLayout(diagnostics_buttons)
         settings_vbox.addLayout(diagnostics_layout)
+
+        audit_title = QLabel(self.strings.audit_trail_title)
+        audit_title.setProperty("role", "sectionTitle")
+        settings_vbox.addWidget(audit_title)
+        audit_scope = QLabel(self.strings.audit_local_scope)
+        audit_scope.setWordWrap(True)
+        audit_scope.setProperty("role", "muted")
+        settings_vbox.addWidget(audit_scope)
+        audit_buttons = QHBoxLayout()
+        self.btn_open_audit_folder = QPushButton(self.strings.audit_open_folder)
+        self.btn_open_audit_folder.clicked.connect(self.open_audit_folder)
+        self.btn_generate_audit_report = QPushButton(self.strings.audit_generate_report)
+        self.btn_generate_audit_report.clicked.connect(self.generate_audit_report)
+        audit_buttons.addWidget(self.btn_open_audit_folder)
+        audit_buttons.addWidget(self.btn_generate_audit_report)
+        audit_buttons.addStretch()
+        settings_vbox.addLayout(audit_buttons)
+
+        for combo in (
+            self.combo_meeting_distance,
+            self.combo_denoise,
+            self.combo_live_capture,
+            self.combo_output_policy,
+            self.combo_recording_audio_format,
+            self.combo_lang,
+            self.combo_compute,
+        ):
+            combo.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon)
+            combo.setMinimumContentsLength(12)
+
+        self.settings_scroll = QScrollArea()
+        self.settings_scroll.setObjectName("settingsScroll")
+        self.settings_scroll.setWidgetResizable(True)
+        self.settings_scroll.setWidget(self.settings_container)
+        self.settings_scroll.setVisible(False)
 
         self.batch_progress = QProgressBar()
         self.batch_progress.setVisible(False)
 
         self.plot_widget = pg.PlotWidget(title=self.strings.live_waveform_title)
         self.plot_widget.setYRange(-30000, 30000)
+        self.plot_widget.setMaximumHeight(155)
+        self.plot_widget.setBackground("#0b1117")
+        self.plot_widget.showGrid(x=True, y=True, alpha=0.12)
         self.plot_data = np.zeros(4000)
-        self.curve = self.plot_widget.plot(self.plot_data, pen="c")
+        self.curve = self.plot_widget.plot(self.plot_data, pen=pg.mkPen("#48c7b8", width=1))
 
         self.text_area = QTextEdit()
+        self.text_area.setObjectName("transcriptArea")
         self.text_area.setReadOnly(True)
         self.text_area.setFontPointSize(12)
+        self.text_area.setPlaceholderText(self.strings.transcript_placeholder)
 
         self.btn_record = QPushButton(self.strings.start_recording)
         self.btn_record.clicked.connect(self.toggle_record)
         self.btn_record.setFixedHeight(50)
-        self.btn_record.setStyleSheet("font-size: 16px; font-weight: bold;")
+        self.btn_record.setProperty("role", "primary")
 
         self.btn_import = QPushButton(self.strings.import_media)
         self.btn_import.setToolTip(self.strings.import_media_tooltip)
@@ -433,7 +490,7 @@ class TranscriptionTab(QWidget):
         self.btn_cancel_import.clicked.connect(self.cancel_import)
         self.btn_cancel_import.setFixedHeight(50)
         self.btn_cancel_import.setVisible(False)
-        self.btn_cancel_import.setStyleSheet("background-color: #5d4037; color: white;")
+        self.btn_cancel_import.setProperty("role", "danger")
 
         self.btn_open_output_folder = QPushButton(self.strings.open_output_folder)
         self.btn_open_output_folder.clicked.connect(self.open_last_output_folder)
@@ -443,6 +500,7 @@ class TranscriptionTab(QWidget):
         self.btn_summary = QPushButton(self.strings.llm_summary_button)
         self.btn_summary.clicked.connect(self.summarize_current_transcript)
         self.btn_summary.setFixedHeight(50)
+        self.btn_summary.setProperty("role", "primary")
 
         self.btn_split_workspace = QPushButton(self.strings.open_split_workspace)
         self.btn_split_workspace.clicked.connect(self.open_split_workspace)
@@ -450,52 +508,89 @@ class TranscriptionTab(QWidget):
 
         self.batch_hint = QLabel(self.strings.batch_hint)
         self.batch_hint.setWordWrap(True)
-        self.batch_hint.setStyleSheet("color: #9e9e9e; font-size: 12px;")
+        self.batch_hint.setProperty("role", "muted")
 
-        body_layout = QHBoxLayout()
-        body_layout.setSpacing(12)
+        self.body_splitter = QSplitter(Qt.Orientation.Horizontal)
+        self.body_splitter.setChildrenCollapsible(False)
+        self.body_splitter.setHandleWidth(8)
 
-        workflow_layout = QVBoxLayout()
+        workflow_panel = QFrame()
+        workflow_panel.setObjectName("sidePanel")
+        workflow_panel.setMinimumWidth(180)
+        workflow_layout = QVBoxLayout(workflow_panel)
+        workflow_layout.setContentsMargins(14, 14, 14, 16)
+        workflow_layout.setSpacing(10)
         workflow_title = QLabel(self.strings.workstation_workflows_title)
-        workflow_title.setStyleSheet("font-weight: bold; color: #00bcd4;")
+        workflow_title.setProperty("role", "sectionTitle")
         workflow_layout.addWidget(workflow_title)
         workflow_layout.addWidget(self.btn_record)
         workflow_layout.addWidget(self.btn_import)
         workflow_layout.addWidget(self.btn_cancel_import)
         workflow_layout.addWidget(self.btn_split_workspace)
-        workflow_layout.addWidget(self.btn_toggle_settings)
         workflow_layout.addStretch()
 
-        transcript_layout = QVBoxLayout()
+        transcript_panel = QFrame()
+        transcript_panel.setObjectName("mainPanel")
+        transcript_panel.setMinimumWidth(420)
+        transcript_layout = QVBoxLayout(transcript_panel)
+        transcript_layout.setContentsMargins(14, 14, 14, 14)
+        transcript_layout.setSpacing(10)
         transcript_title = QLabel(self.strings.transcript_workspace_title)
-        transcript_title.setStyleSheet("font-weight: bold; color: #00bcd4;")
+        transcript_title.setProperty("role", "sectionTitle")
         transcript_layout.addWidget(transcript_title)
         transcript_layout.addWidget(self.batch_progress)
-        transcript_layout.addWidget(self.plot_widget, stretch=1)
-        transcript_layout.addWidget(self.text_area, stretch=3)
+        transcript_layout.addWidget(self.plot_widget)
+        transcript_layout.addWidget(self.text_area, stretch=1)
         transcript_layout.addWidget(self.batch_hint)
 
-        artifact_layout = QVBoxLayout()
+        artifact_panel = QFrame()
+        artifact_panel.setObjectName("sidePanel")
+        artifact_panel.setMinimumWidth(270)
+        artifact_layout = QVBoxLayout(artifact_panel)
+        artifact_layout.setContentsMargins(14, 14, 14, 16)
+        artifact_layout.setSpacing(10)
+        artifact_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
         artifact_title = QLabel(self.strings.artifact_panel_title)
-        artifact_title.setStyleSheet("font-weight: bold; color: #00bcd4;")
+        artifact_title.setProperty("role", "sectionTitle")
         artifact_layout.addWidget(artifact_title)
         artifact_layout.addWidget(self.btn_open_output_folder)
         artifact_layout.addWidget(self.btn_summary)
-        artifact_layout.addWidget(self.settings_container)
+        self.artifact_hint = QLabel(self.strings.artifact_empty_hint)
+        self.artifact_hint.setWordWrap(True)
+        self.artifact_hint.setProperty("role", "muted")
+        artifact_layout.addWidget(self.artifact_hint)
+        artifact_layout.addWidget(self.btn_toggle_settings)
+        artifact_layout.addWidget(self.settings_scroll, stretch=1)
         artifact_layout.addStretch()
 
-        body_layout.addLayout(workflow_layout, stretch=0)
-        body_layout.addLayout(transcript_layout, stretch=3)
-        body_layout.addLayout(artifact_layout, stretch=2)
-        layout.addLayout(body_layout, stretch=1)
+        self.body_splitter.addWidget(workflow_panel)
+        self.body_splitter.addWidget(transcript_panel)
+        self.body_splitter.addWidget(artifact_panel)
+        self.body_splitter.setStretchFactor(0, 0)
+        self.body_splitter.setStretchFactor(1, 1)
+        self.body_splitter.setStretchFactor(2, 0)
+        self.body_splitter.setSizes([210, 680, 340])
+        layout.addWidget(self.body_splitter, stretch=1)
 
-        layout.addWidget(QLabel(self.strings.runtime_log_title))
+        runtime_header = QHBoxLayout()
+        runtime_title = QLabel(self.strings.runtime_log_title)
+        runtime_title.setProperty("role", "sectionTitle")
+        self.btn_toggle_runtime_log = QPushButton(self.strings.show_runtime_log)
+        self.btn_toggle_runtime_log.setCheckable(True)
+        self.btn_toggle_runtime_log.setProperty("role", "quiet")
+        self.btn_toggle_runtime_log.clicked.connect(self.toggle_runtime_log)
+        runtime_header.addWidget(runtime_title)
+        runtime_header.addStretch()
+        runtime_header.addWidget(self.btn_toggle_runtime_log)
+        layout.addLayout(runtime_header)
         self.runtime_log = QTextEdit()
+        self.runtime_log.setObjectName("runtimeLog")
         self.runtime_log.setReadOnly(True)
-        self.runtime_log.setFixedHeight(90)
-        self.runtime_log.setStyleSheet("font-family: Consolas, monospace; font-size: 11px;")
+        self.runtime_log.setFixedHeight(110)
+        self.runtime_log.setVisible(False)
         layout.addWidget(self.runtime_log)
 
+        self.update_summary_button_state()
         self.apply_model_settings()
         self.update_top_active_device()
         QTimer.singleShot(0, self.refresh_runtime_diagnostics)
@@ -517,12 +612,86 @@ class TranscriptionTab(QWidget):
             webbrowser.open(url)
 
     def toggle_settings(self):
-        if self.btn_toggle_settings.isChecked():
-            self.btn_toggle_settings.setText(self.strings.hide_advanced_settings)
-            self.settings_container.setVisible(True)
-        else:
-            self.btn_toggle_settings.setText(self.strings.show_advanced_settings)
-            self.settings_container.setVisible(False)
+        visible = self.btn_toggle_settings.isChecked()
+        self.btn_toggle_settings.setText(
+            self.strings.hide_advanced_settings if visible else self.strings.show_advanced_settings
+        )
+        self.settings_scroll.setVisible(visible)
+        self.body_splitter.setSizes([180, 460, 590] if visible else [210, 680, 340])
+        self.audit.record(
+            "ui.settings_toggled",
+            category="ui.interaction",
+            actor="user",
+            workflow="app",
+            details={"visible": visible},
+        )
+
+    def toggle_runtime_log(self):
+        visible = self.btn_toggle_runtime_log.isChecked()
+        self.btn_toggle_runtime_log.setText(
+            self.strings.hide_runtime_log if visible else self.strings.show_runtime_log
+        )
+        self.runtime_log.setVisible(visible)
+        self.audit.record(
+            "ui.activity_log_toggled",
+            category="ui.interaction",
+            actor="user",
+            workflow="app",
+            details={"visible": visible},
+        )
+
+    def open_audit_folder(self):
+        try:
+            self.audit.root.mkdir(parents=True, exist_ok=True)
+            webbrowser.open(self.audit.root.resolve().as_uri())
+        except OSError:
+            self.audit.record(
+                "audit.folder_opened",
+                category="audit.access",
+                actor="user",
+                workflow="audit",
+                outcome="error",
+                severity="error",
+                details={"error_class": "OSError"},
+            )
+            self.status_label.setText(self.strings.audit_report_failed)
+            return
+        self.audit.record(
+            "audit.folder_opened",
+            category="audit.access",
+            actor="user",
+            workflow="audit",
+        )
+
+    def generate_audit_report(self):
+        try:
+            path, report = write_audit_report(
+                self.audit.root,
+                active_session_id=self.audit.session_id,
+            )
+        except OSError:
+            self.audit.record(
+                "audit.report_generated",
+                category="audit.reporting",
+                actor="user",
+                workflow="audit",
+                outcome="error",
+                severity="error",
+                details={"error_class": "OSError"},
+            )
+            self.status_label.setText(self.strings.audit_report_failed)
+            return
+        self.audit.record(
+            "audit.report_generated",
+            category="audit.reporting",
+            actor="user",
+            workflow="audit",
+            details={
+                "event_count": report["event_count"],
+                "anomaly_count": len(report["anomalies"]),
+            },
+        )
+        self.status_label.setText(self.strings.audit_report_ready_message(str(path)))
 
     def timestamp_now(self) -> str:
         return datetime.datetime.now().astimezone().isoformat(timespec="seconds")
@@ -568,21 +737,52 @@ class TranscriptionTab(QWidget):
         if folder:
             self.custom_output_folder = folder
             self.update_output_folder_controls()
+            self.audit.record(
+                "output.custom_folder_selected",
+                category="ui.output",
+                actor="user",
+                workflow="app",
+            )
 
     def remember_output_folder(self, folder: str | Path):
         self.last_output_folder = str(Path(folder).resolve())
         self.btn_open_output_folder.setVisible(True)
         self.btn_open_output_folder.setEnabled(True)
+        self.artifact_hint.setVisible(False)
 
     def open_last_output_folder(self):
         if not self.last_output_folder:
             self.status_label.setText(self.strings.output_folder_unavailable)
+            self.audit.record(
+                "output.folder_open_rejected",
+                category="ui.output",
+                actor="user",
+                workflow="app",
+                outcome="rejected",
+                severity="warning",
+                details={"reason": "not_available"},
+            )
             return
         folder = Path(self.last_output_folder)
         if not folder.exists():
             self.status_label.setText(self.strings.output_folder_unavailable)
+            self.audit.record(
+                "output.folder_open_rejected",
+                category="ui.output",
+                actor="user",
+                workflow="app",
+                outcome="rejected",
+                severity="warning",
+                details={"reason": "missing"},
+            )
             return
         webbrowser.open(folder.as_uri())
+        self.audit.record(
+            "output.folder_opened",
+            category="ui.output",
+            actor="user",
+            workflow="app",
+        )
 
     def new_metrics(self, workflow: str, source_path: str | None, base_path: str) -> dict:
         return {
@@ -659,13 +859,47 @@ class TranscriptionTab(QWidget):
         self.recording_log_path = None
 
     def import_file(self):
+        self.audit.record(
+            "import.requested",
+            category="workflow.import",
+            actor="user",
+            workflow="import",
+            outcome="attempted",
+        )
         if self.transcriber_thread.model is None:
+            self.audit.record(
+                "import.start_rejected",
+                category="workflow.import",
+                actor="user",
+                workflow="import",
+                outcome="rejected",
+                severity="warning",
+                details={"reason": "model_not_ready"},
+            )
             QMessageBox.warning(self, self.strings.please_wait_title, self.strings.model_not_ready)
             return
         if self.recorder_thread is not None:
+            self.audit.record(
+                "import.start_rejected",
+                category="workflow.import",
+                actor="user",
+                workflow="import",
+                outcome="rejected",
+                severity="warning",
+                details={"reason": "recording_active"},
+            )
             QMessageBox.warning(self, self.strings.error_title, self.strings.stop_recording_before_import)
             return
         if self.summary_thread and self.summary_thread.isRunning():
+            self.audit.record(
+                "import.start_rejected",
+                category="workflow.import",
+                actor="user",
+                workflow="import",
+                outcome="rejected",
+                severity="warning",
+                details={"reason": "summary_active"},
+            )
             QMessageBox.warning(self, self.strings.please_wait_title, self.strings.summary_already_running)
             return
 
@@ -684,8 +918,29 @@ class TranscriptionTab(QWidget):
             self.batch_progress.setVisible(True)
 
             self.set_import_controls(True)
+            self.audit.record(
+                "import.batch_started",
+                category="workflow.import",
+                actor="user",
+                workflow="import",
+                details={
+                    "file_count": len(files),
+                    "denoise_preset": self.selected_denoise_preset(),
+                    "meeting_distance_mode": self.selected_meeting_distance_mode(),
+                    "speaker_diarization": self.check_speaker_diarization.isChecked(),
+                    "summary_enabled": self.check_llm_summary.isChecked(),
+                },
+            )
             if self.file_thread is None or not self.file_thread.isRunning():
                 self.process_next_file()
+        else:
+            self.audit.record(
+                "import.dialog_cancelled",
+                category="workflow.import",
+                actor="user",
+                workflow="import",
+                outcome="cancelled",
+            )
 
     def selected_denoise_preset(self) -> str:
         selected = normalize_denoise_preset(
@@ -755,17 +1010,17 @@ class TranscriptionTab(QWidget):
         if not hasattr(self, "btn_record"):
             return
         if self.scheduled_recording_pending:
-            self.btn_record.setText(self.strings.cancel_scheduled_recording)
-            self.btn_record.setStyleSheet("background-color: #5d4037; color: white; font-size: 16px; font-weight: bold;")
+            text, role = self.strings.cancel_scheduled_recording, "danger"
         elif self.recorder_thread is not None:
-            self.btn_record.setText(self.strings.stop_recording)
-            self.btn_record.setStyleSheet("background-color: #e74c3c; color: white; font-size: 16px; font-weight: bold;")
+            text, role = self.strings.stop_recording, "danger"
         elif self.schedule_recording_enabled():
-            self.btn_record.setText(self.strings.schedule_recording_button)
-            self.btn_record.setStyleSheet("background-color: #546e7a; color: white; font-size: 16px; font-weight: bold;")
+            text, role = self.strings.schedule_recording_button, "scheduled"
         else:
-            self.btn_record.setText(self.strings.start_recording)
-            self.btn_record.setStyleSheet("font-size: 16px; font-weight: bold;")
+            text, role = self.strings.start_recording, "primary"
+        self.btn_record.setText(text)
+        self.btn_record.setProperty("role", role)
+        self.btn_record.style().unpolish(self.btn_record)
+        self.btn_record.style().polish(self.btn_record)
 
     def update_speaker_controls(self, enabled):
         self.spin_min_speakers.setEnabled(enabled)
@@ -820,6 +1075,13 @@ class TranscriptionTab(QWidget):
     def cancel_import(self):
         if not self.file_import_active():
             return
+        self.audit.record(
+            "import.cancel_requested",
+            category="workflow.import",
+            actor="user",
+            workflow="import",
+            outcome="attempted",
+        )
         self.import_cancel_requested = True
         self.pending_files.clear()
         self.btn_cancel_import.setEnabled(False)
@@ -842,6 +1104,14 @@ class TranscriptionTab(QWidget):
             return
 
         new_compute = self.combo_compute.currentData()
+        self.audit.record(
+            "model.load_requested",
+            category="system.runtime",
+            actor="user" if self.model_loader is not None else "system",
+            workflow="diagnostics",
+            outcome="attempted",
+            details={"compute_type": new_compute},
+        )
         self.asr_model_status = "loading"
         self.update_runtime_model_status()
         self.btn_reload_model.setEnabled(False)
@@ -884,6 +1154,12 @@ class TranscriptionTab(QWidget):
         self.status_label.setText(self.strings.model_ready(active_device, active_compute))
         self.asr_model_status = f"loaded ({active_device}/{active_compute})"
         self.update_runtime_model_status()
+        self.audit.record(
+            "model.load_completed",
+            category="system.runtime",
+            workflow="diagnostics",
+            details={"device": active_device, "compute_type": active_compute},
+        )
 
     @pyqtSlot(str)
     def on_model_error(self, err_msg):
@@ -897,22 +1173,47 @@ class TranscriptionTab(QWidget):
         self.btn_reload_model.setText(self.strings.reload_model)
         self.update_schedule_controls()
         self.update_record_button_label()
+        self.audit.record(
+            "model.load_failed",
+            category="system.runtime",
+            workflow="diagnostics",
+            outcome="error",
+            severity="error",
+            details={"error_class": "model_load_error"},
+        )
 
     def process_next_file(self):
         if self.import_cancel_requested:
+            cancelled_count = self.total_batch_count
             self.pending_files.clear()
             self.set_import_controls(False)
             self.status_label.setText(self.strings.batch_tasks_cancelled)
             self.batch_progress.setVisible(False)
             self.total_batch_count = 0
             self.import_cancel_requested = False
+            self.audit.record(
+                "import.batch_cancelled",
+                category="workflow.import",
+                actor="user",
+                workflow="import",
+                outcome="cancelled",
+                details={"file_count": cancelled_count},
+            )
             return
 
         if not self.pending_files:
+            completed_count = self.total_batch_count
             self.set_import_controls(False)
             self.status_label.setText(self.strings.batch_tasks_completed)
             self.batch_progress.setVisible(False)
             self.total_batch_count = 0
+            if completed_count:
+                self.audit.record(
+                    "import.batch_completed",
+                    category="workflow.import",
+                    workflow="import",
+                    details={"file_count": completed_count},
+                )
             return
 
         file_path = self.pending_files.pop(0)
@@ -933,6 +1234,15 @@ class TranscriptionTab(QWidget):
         self.current_import_metrics["effective_denoise_preset"] = self.selected_denoise_preset()
         self.current_import_metrics["file_transcription_started_at"] = self.timestamp_now()
         self.current_import_metrics["_file_transcription_started_perf"] = time.perf_counter()
+        self.audit.record(
+            "import.file_started",
+            category="workflow.import",
+            workflow="import",
+            details={
+                "position": completed + 1,
+                "batch_size": self.total_batch_count,
+            },
+        )
 
         self.file_thread = FileTranscriberThread(
             self.transcriber_thread.model,
@@ -966,9 +1276,39 @@ class TranscriptionTab(QWidget):
         self.batch_progress.setValue(self.total_batch_count - len(self.pending_files))
 
         if not thread or thread.cancel_requested or not thread.result_lines:
+            duration_ms = None
+            if metrics and metrics.get("_file_transcription_started_perf") is not None:
+                duration_ms = round(
+                    (time.perf_counter() - metrics["_file_transcription_started_perf"]) * 1000,
+                    3,
+                )
+            self.audit.record(
+                "import.file_completed",
+                category="workflow.import",
+                workflow="import",
+                outcome="cancelled" if thread and thread.cancel_requested else "rejected",
+                severity="warning",
+                details={
+                    "reason": "cancelled" if thread and thread.cancel_requested else "empty_result",
+                    "duration_ms": duration_ms,
+                },
+            )
             self.current_import_metrics = None
             self.process_next_file()
             return
+
+        duration_ms = None
+        if metrics and metrics.get("_file_transcription_started_perf") is not None:
+            duration_ms = round(
+                (time.perf_counter() - metrics["_file_transcription_started_perf"]) * 1000,
+                3,
+            )
+        self.audit.record(
+            "import.file_completed",
+            category="workflow.import",
+            workflow="import",
+            details={"duration_ms": duration_ms},
+        )
 
         transcript = "\n".join(thread.result_lines)
         base_path = metrics["base_path"] if metrics else self.default_transcript_base_path()
@@ -1025,18 +1365,44 @@ class TranscriptionTab(QWidget):
                 )
             else:
                 self.status_label.setText(self.strings.transcript_artifacts_saved_message(str(final_path), elapsed))
+            self.audit.record(
+                "import.artifact_saved",
+                category="workflow.import",
+                workflow="import",
+                details={
+                    "duration_ms": round(elapsed * 1000, 3),
+                    "summary_included": bool(summary),
+                },
+            )
         self.current_import_metrics = None
         if self.import_cancel_requested:
+            cancelled_count = self.total_batch_count
             self.pending_files.clear()
             self.set_import_controls(False)
             self.batch_progress.setVisible(False)
             self.total_batch_count = 0
             self.import_cancel_requested = False
+            self.audit.record(
+                "import.batch_cancelled",
+                category="workflow.import",
+                actor="user",
+                workflow="import",
+                outcome="cancelled",
+                details={"file_count": cancelled_count},
+            )
             return
         self.process_next_file()
 
     @pyqtSlot(str)
     def on_file_error(self, err_msg):
+        self.audit.record(
+            "import.file_failed",
+            category="workflow.import",
+            workflow="import",
+            outcome="error",
+            severity="error",
+            details={"error_class": "file_transcription_error"},
+        )
         self.show_diagnostic_error(self.strings.file_transcription_failed, err_msg)
 
     def toggle_record(self):
@@ -1053,12 +1419,30 @@ class TranscriptionTab(QWidget):
 
     def start_recording_session(self, trigger: str) -> bool:
         if self.transcriber_thread.model is None:
+            self.audit.record(
+                "recording.start_rejected",
+                category="workflow.recording",
+                actor="user" if trigger == "manual" else "system",
+                workflow="recording",
+                outcome="rejected",
+                severity="warning",
+                details={"reason": "model_not_ready", "trigger": trigger},
+            )
             if trigger == "manual":
                 QMessageBox.warning(self, self.strings.please_wait_title, self.strings.model_not_ready)
             else:
                 self.status_label.setText(self.strings.scheduled_recording_model_not_ready)
             return False
         if self.file_import_active():
+            self.audit.record(
+                "recording.start_rejected",
+                category="workflow.recording",
+                actor="user" if trigger == "manual" else "system",
+                workflow="recording",
+                outcome="rejected",
+                severity="warning",
+                details={"reason": "import_active", "trigger": trigger},
+            )
             self.status_label.setText(self.strings.scheduled_recording_start_failed)
             return False
 
@@ -1154,6 +1538,20 @@ class TranscriptionTab(QWidget):
         self.btn_reload_model.setEnabled(False)
         self.recorder_thread.start()
         self.append_recording_event("recording_started", f"Recording started: {base_name}")
+        self.audit.record(
+            "recording.started",
+            category="workflow.recording",
+            actor="user" if trigger == "manual" else "system",
+            workflow="recording",
+            details={
+                "trigger": trigger,
+                "capture_source": self.selected_live_capture_source(),
+                "meeting_distance_mode": meeting_distance_policy.mode,
+                "denoise_preset": self.selected_denoise_preset(),
+                "language": self.combo_lang.currentData(),
+                "summary_enabled": self.check_llm_summary.isChecked(),
+            },
+        )
 
         self.update_record_button_label()
         self.update_schedule_controls()
@@ -1202,6 +1600,26 @@ class TranscriptionTab(QWidget):
                 self.current_recording_metrics.get("_started_perf"),
             )
             self.append_recording_event("recording_stop_requested", f"Recording stop requested: {trigger}")
+        started_perf = (
+            self.current_recording_metrics.get("_started_perf")
+            if self.current_recording_metrics is not None
+            else None
+        )
+        duration_ms = round((time.perf_counter() - started_perf) * 1000, 3) if started_perf else None
+        self.audit.record(
+            "recording.stop_requested",
+            category="workflow.recording",
+            actor="user" if trigger == "manual" else "system",
+            workflow="recording",
+            outcome="attempted",
+            details={
+                "trigger": trigger,
+                "duration_ms": duration_ms,
+                "auto_stopped_for_no_voice": bool(
+                    getattr(recorder_thread, "auto_stopped_for_no_voice", False)
+                ),
+            },
+        )
         self.scheduled_start_at = None
         self.scheduled_stop_at = None
         self.update_record_button_label()
@@ -1211,9 +1629,27 @@ class TranscriptionTab(QWidget):
 
     def arm_scheduled_recording(self):
         if self.transcriber_thread.model is None:
+            self.audit.record(
+                "recording.schedule_rejected",
+                category="workflow.recording",
+                actor="user",
+                workflow="recording",
+                outcome="rejected",
+                severity="warning",
+                details={"reason": "model_not_ready"},
+            )
             QMessageBox.warning(self, self.strings.please_wait_title, self.strings.model_not_ready)
             return
         if self.file_import_active() or self.recorder_thread is not None:
+            self.audit.record(
+                "recording.schedule_rejected",
+                category="workflow.recording",
+                actor="user",
+                workflow="recording",
+                outcome="rejected",
+                severity="warning",
+                details={"reason": "workflow_active"},
+            )
             self.status_label.setText(self.strings.scheduled_recording_start_failed)
             return
 
@@ -1230,6 +1666,13 @@ class TranscriptionTab(QWidget):
         self.update_record_button_label()
         self.update_schedule_controls()
         self.status_label.setText(self.strings.scheduled_recording_armed(start_at, stop_at))
+        self.audit.record(
+            "recording.schedule_armed",
+            category="workflow.recording",
+            actor="user",
+            workflow="recording",
+            details={"auto_stop_enabled": stop_at is not None},
+        )
 
     def cancel_scheduled_recording(self):
         self.scheduled_start_timer.stop()
@@ -1245,6 +1688,13 @@ class TranscriptionTab(QWidget):
         self.update_record_button_label()
         self.update_schedule_controls()
         self.status_label.setText(self.strings.scheduled_recording_cancelled)
+        self.audit.record(
+            "recording.schedule_cancelled",
+            category="workflow.recording",
+            actor="user",
+            workflow="recording",
+            outcome="cancelled",
+        )
 
     def start_scheduled_recording(self):
         if not self.scheduled_recording_pending:
@@ -1343,6 +1793,14 @@ class TranscriptionTab(QWidget):
                 metrics_path = transcript_artifact_paths(base_path)["metrics"]
                 write_json_file(metrics_path, finished_metrics)
             self.status_label.setText(self.strings.no_content_to_save)
+            self.audit.record(
+                "recording.save_skipped",
+                category="workflow.recording",
+                workflow="recording",
+                outcome="rejected",
+                severity="warning",
+                details={"reason": "empty_content"},
+            )
             self.current_recording_metrics = None
             self.restore_post_recording_controls()
             return
@@ -1385,6 +1843,15 @@ class TranscriptionTab(QWidget):
             remove_transcript_backup()
             self.remember_output_folder(final_path.parent)
             elapsed = metrics.get("total_seconds", 0.0) if metrics else 0.0
+            self.audit.record(
+                "recording.artifact_saved",
+                category="workflow.recording",
+                workflow="recording",
+                details={
+                    "duration_ms": round(elapsed * 1000, 3),
+                    "summary_included": bool(summary),
+                },
+            )
             self.status_label.setText(self.strings.transcript_artifacts_saved_message(str(final_path), elapsed))
             self.current_recording_metrics = None
             self.restore_post_recording_controls()
@@ -1404,7 +1871,8 @@ class TranscriptionTab(QWidget):
 
     def update_summary_button_state(self):
         self.btn_summary.setEnabled(
-            not self.file_import_active()
+            bool(self.transcript_without_summary().strip())
+            and not self.file_import_active()
             and not self.finalize_recording_pending
             and not self.scheduled_recording_pending
             and self.recorder_thread is None
@@ -1430,6 +1898,7 @@ class TranscriptionTab(QWidget):
     def update_log(self, text):
         self.text_area.append(text)
         self.text_area.verticalScrollBar().setValue(self.text_area.verticalScrollBar().maximum())
+        self.update_summary_button_state()
         if self.recording_log_active():
             self.append_recording_event("live_transcript_update", "Live transcript text appended.", text=text)
 
@@ -1469,9 +1938,22 @@ class TranscriptionTab(QWidget):
 
     def summarize_current_transcript(self):
         transcript = self.transcript_without_summary()
+        self.summary_audit_actor = "user"
+        length = len(transcript)
+        length_bucket = "empty" if not length else "short" if length < 1000 else "medium" if length < 10000 else "long"
+        self.audit.record(
+            "summary.requested",
+            category="workflow.summary",
+            actor="user",
+            workflow="summary",
+            outcome="attempted",
+            details={"transcript_length_bucket": length_bucket},
+        )
         self.prepare_llm_runtime_then_summarize(transcript)
 
     def prepare_llm_runtime_then_summarize(self, transcript: str, finished_callback=None, summary_ready_callback=None):
+        if self.summary_audit_actor is None:
+            self.summary_audit_actor = "system" if finished_callback else "user"
         if not transcript.strip():
             if finished_callback:
                 QTimer.singleShot(0, finished_callback)
@@ -1520,11 +2002,31 @@ class TranscriptionTab(QWidget):
 
     @pyqtSlot(str)
     def on_ollama_runtime_failed(self, err_msg: str, finished_callback=None):
+        self.audit.record(
+            "summary.runtime_failed",
+            category="workflow.summary",
+            actor=self.summary_audit_actor or "system",
+            workflow="summary",
+            outcome="error",
+            severity="error",
+            details={"error_class": "ollama_runtime_error"},
+        )
+        self.summary_audit_actor = None
+        self.summary_audit_started_perf = None
         self.show_diagnostic_error(self.strings.summary_failed, err_msg)
         if finished_callback:
             QTimer.singleShot(0, finished_callback)
 
     def on_ollama_model_missing(self, model_tag: str, transcript: str, finished_callback=None, summary_ready_callback=None):
+        self.audit.record(
+            "summary.model_missing",
+            category="workflow.summary",
+            actor=self.summary_audit_actor or "system",
+            workflow="summary",
+            outcome="rejected",
+            severity="warning",
+            details={"model_id": model_tag},
+        )
         command = f"ollama pull {model_tag}"
         message = QMessageBox(self)
         message.setIcon(QMessageBox.Icon.Warning)
@@ -1537,6 +2039,14 @@ class TranscriptionTab(QWidget):
         message.exec()
         clicked = message.clickedButton()
         if clicked is pull_button:
+            self.audit.record(
+                "summary.model_pull_selected",
+                category="workflow.summary",
+                actor="user",
+                workflow="summary",
+                outcome="attempted",
+                details={"model_id": model_tag},
+            )
             self.pull_ollama_model_then_summarize(
                 model_tag,
                 transcript,
@@ -1547,6 +2057,9 @@ class TranscriptionTab(QWidget):
         if clicked is copy_button:
             QApplication.clipboard().setText(command)
             self.update_status_only(self.strings.ollama_pull_command_copied)
+        if clicked in (copy_button, cancel_button) or clicked is None:
+            self.summary_audit_actor = None
+            self.summary_audit_started_perf = None
         if (clicked in (copy_button, cancel_button) or clicked is None) and finished_callback:
             QTimer.singleShot(0, finished_callback)
 
@@ -1594,6 +2107,13 @@ class TranscriptionTab(QWidget):
                 self.summary_thread.finished.connect(finished_callback)
             return
         self.btn_summary.setEnabled(False)
+        self.summary_audit_started_perf = time.perf_counter()
+        self.audit.record(
+            "summary.started",
+            category="workflow.summary",
+            actor=self.summary_audit_actor or "system",
+            workflow="summary",
+        )
         self.summary_thread = SummaryThread(transcript, self.summary_settings())
         summary_revision = self.transcript_revision
         self.summary_thread.summary_ready.connect(
@@ -1611,9 +2131,34 @@ class TranscriptionTab(QWidget):
     def update_summary_log(self, text: str, revision: int):
         if revision == self.transcript_revision:
             self.update_log(text)
+            duration_ms = (
+                round((time.perf_counter() - self.summary_audit_started_perf) * 1000, 3)
+                if self.summary_audit_started_perf is not None
+                else None
+            )
+            self.audit.record(
+                "summary.completed",
+                category="workflow.summary",
+                actor=self.summary_audit_actor or "system",
+                workflow="summary",
+                details={"duration_ms": duration_ms},
+            )
+            self.summary_audit_actor = None
+            self.summary_audit_started_perf = None
 
     @pyqtSlot(str)
     def on_summary_error(self, err_msg):
+        self.audit.record(
+            "summary.generation_failed",
+            category="workflow.summary",
+            actor=self.summary_audit_actor or "system",
+            workflow="summary",
+            outcome="error",
+            severity="error",
+            details={"error_class": "summary_generation_error"},
+        )
+        self.summary_audit_actor = None
+        self.summary_audit_started_perf = None
         self.show_diagnostic_error(self.strings.summary_failed, err_msg)
 
     def on_recording_thread_finished(self, recorder_thread, wav_path):
@@ -1635,6 +2180,14 @@ class TranscriptionTab(QWidget):
     def process_audio(self, wav_path):
         if "Hardware mounting failed" in wav_path or "No audio recorded" in wav_path:
             self.append_recording_event("recording_audio_unavailable", wav_path)
+            self.audit.record(
+                "recording.audio_export_failed",
+                category="workflow.recording",
+                workflow="recording",
+                outcome="error",
+                severity="error",
+                details={"error_class": "audio_unavailable"},
+            )
             return
         metrics = self.current_recording_metrics
         base_path = self.default_transcript_base_path() if metrics is not None else None
@@ -1673,6 +2226,12 @@ class TranscriptionTab(QWidget):
                 audio_path=str(audio_path),
                 target_dbfs=target_dbfs,
             )
+            self.audit.record(
+                "recording.audio_export_completed",
+                category="workflow.recording",
+                workflow="recording",
+                details={"audio_format": audio_format, "codec": audio_spec.codec},
+            )
             if base_path and metrics is not None:
                 write_event_log_file(base_path, metrics)
                 write_json_file(transcript_artifact_paths(base_path)["metrics"], metrics)
@@ -1687,6 +2246,14 @@ class TranscriptionTab(QWidget):
                 wav_path=wav_path,
                 target_dbfs=target_dbfs,
                 error=str(e),
+            )
+            self.audit.record(
+                "recording.audio_export_failed",
+                category="workflow.recording",
+                workflow="recording",
+                outcome="error",
+                severity="error",
+                details={"error_class": type(e).__name__, "audio_format": audio_format},
             )
             if base_path and metrics is not None:
                 write_event_log_file(base_path, metrics)
@@ -1751,6 +2318,20 @@ class TranscriptionTab(QWidget):
             )
         )
         self.update_first_launch_checks(diagnostics)
+        ready = {
+            "gpu_ready": bool(diagnostics.gpu.gpu_detected),
+            "cuda_ready": bool(diagnostics.gpu.cuda_ready),
+            "audio_ready": bool(diagnostics.audio.input_ready),
+            "output_ready": bool(diagnostics.output_folder_writable),
+        }
+        self.audit.record(
+            "diagnostics.completed",
+            category="system.runtime",
+            workflow="diagnostics",
+            outcome="success" if all(ready.values()) else "rejected",
+            severity="info" if all(ready.values()) else "warning",
+            details=ready,
+        )
 
     def update_first_launch_checks(self, diagnostics):
         for check in first_launch_checks(diagnostics):
@@ -1778,6 +2359,13 @@ class TranscriptionTab(QWidget):
             guidance = self.first_launch_guidance.get(key)
         if not guidance:
             return
+        self.audit.record(
+            "diagnostics.fix_guide_opened",
+            category="system.runtime",
+            actor="user",
+            workflow="diagnostics",
+            details={"check": key},
+        )
         QMessageBox.information(
             self,
             guidance["label"],
@@ -1797,6 +2385,12 @@ class TranscriptionTab(QWidget):
 
     def open_setup_folder(self):
         webbrowser.open(self.setup_folder_path().as_uri())
+        self.audit.record(
+            "diagnostics.setup_folder_opened",
+            category="system.runtime",
+            actor="user",
+            workflow="diagnostics",
+        )
 
     def current_runtime_report(self) -> str:
         if not self.latest_runtime_report:
@@ -1807,8 +2401,22 @@ class TranscriptionTab(QWidget):
         self.refresh_runtime_diagnostics()
         QApplication.clipboard().setText(self.current_runtime_report())
         self.status_label.setText(self.strings.runtime_report_copied)
+        self.audit.record(
+            "diagnostics.report_copied",
+            category="system.runtime",
+            actor="user",
+            workflow="diagnostics",
+        )
 
     def show_diagnostic_error(self, title: str, message: str):
+        self.audit.record(
+            "diagnostics.error_shown",
+            category="system.runtime",
+            workflow="diagnostics",
+            outcome="error",
+            severity="error",
+            details={"error_class": "runtime_diagnostic_error"},
+        )
         self.refresh_runtime_diagnostics()
         box = QMessageBox(self)
         box.setIcon(QMessageBox.Icon.Critical)

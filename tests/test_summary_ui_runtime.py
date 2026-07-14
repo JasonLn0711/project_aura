@@ -63,6 +63,9 @@ class SummaryUiRuntimeTests(unittest.TestCase):
         tab.summary_thread = None
         tab.ollama_runtime_thread = None
         tab.ollama_pull_thread = None
+        tab.summary_audit_actor = None
+        tab.summary_audit_started_perf = None
+        tab.audit = MagicMock()
         tab.update_status_only = MagicMock()
         tab.update_summary_button_state = MagicMock()
         tab.start_summary = MagicMock()
