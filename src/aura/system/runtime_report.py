@@ -5,6 +5,7 @@ import shutil
 import sys
 from dataclasses import dataclass
 
+from aura.asr.punctuation import PUNCTUATION_SETUP_GUIDANCE
 from aura.config import DIARIZATION_MODEL_ID
 from aura.diarization.pyannote_pipeline import HF_TOKEN_ENV, HUGGINGFACE_TOKEN_ENV, huggingface_token
 from aura.metadata import __version__
@@ -49,11 +50,33 @@ class DiarizationDiagnostics:
 
 
 @dataclass(frozen=True)
+class PunctuationDiagnostics:
+    torch_available: bool = False
+    transformers_available: bool = False
+
+    @property
+    def ready(self) -> bool:
+        return self.torch_available and self.transformers_available
+
+    @property
+    def status_line(self) -> str:
+        if self.ready:
+            return "local model dependencies ready"
+        missing = [
+            name
+            for name, ready in (("torch", self.torch_available), ("transformers", self.transformers_available))
+            if not ready
+        ]
+        return f"rule fallback ready; missing {', '.join(missing)}. {PUNCTUATION_SETUP_GUIDANCE}"
+
+
+@dataclass(frozen=True)
 class RuntimeDiagnostics:
     platform: RuntimePlatform
     gpu: GpuDiagnostics
     audio: AudioDiagnostics
     diarization: DiarizationDiagnostics = DiarizationDiagnostics()
+    punctuation: PunctuationDiagnostics = PunctuationDiagnostics()
     asr_model_status: str = "not loaded"
     output_folder_writable: bool = False
 
@@ -88,6 +111,13 @@ def collect_diarization_diagnostics() -> DiarizationDiagnostics:
     )
 
 
+def collect_punctuation_diagnostics() -> PunctuationDiagnostics:
+    return PunctuationDiagnostics(
+        torch_available=_module_available("torch"),
+        transformers_available=_module_available("transformers"),
+    )
+
+
 @dataclass(frozen=True)
 class FirstLaunchCheck:
     key: str
@@ -103,6 +133,7 @@ def collect_runtime_diagnostics(asr_model_status: str = "not loaded") -> Runtime
         gpu=collect_gpu_diagnostics(),
         audio=collect_audio_diagnostics(),
         diarization=collect_diarization_diagnostics(),
+        punctuation=collect_punctuation_diagnostics(),
         asr_model_status=asr_model_status,
         output_folder_writable=os.access(os.getcwd(), os.W_OK),
     )
@@ -213,6 +244,12 @@ def format_runtime_report(diagnostics: RuntimeDiagnostics) -> str:
         lines.append("- Output device names: " + "; ".join(audio.output_devices[:8]))
     lines.extend(
         [
+            "",
+            "Traditional Chinese Punctuation",
+            "- Rule fallback: ready",
+            f"- torch import: {'ok' if diagnostics.punctuation.torch_available else 'missing'}",
+            f"- transformers import: {'ok' if diagnostics.punctuation.transformers_available else 'missing'}",
+            f"- Local model status: {diagnostics.punctuation.status_line}",
             "",
             "Optional Speaker Diarization",
             f"- Model: {diagnostics.diarization.model_id}",

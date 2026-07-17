@@ -7,6 +7,7 @@ from aura.system.gpu_diagnostics import CommandCheck, GpuDiagnostics, collect_gp
 from aura.system.platform import LINUX_NATIVE, RuntimePlatform, platform_cuda_guidance
 from aura.system.runtime_report import (
     DiarizationDiagnostics,
+    PunctuationDiagnostics,
     RuntimeDiagnostics,
     first_launch_checks,
     format_runtime_report,
@@ -76,6 +77,7 @@ class RuntimeDiagnosticsTests(unittest.TestCase):
         self.assertIn("Project AURA Runtime Diagnostic Report", report)
         self.assertIn("GPU / CUDA", report)
         self.assertIn("Audio / FFmpeg", report)
+        self.assertIn("Traditional Chinese Punctuation", report)
         self.assertIn("Optional Speaker Diarization", report)
         self.assertIn("ASR model load status: loaded on cuda/int8", report)
         self.assertIn("First Launch Check", report)
@@ -130,6 +132,45 @@ class RuntimeDiagnosticsTests(unittest.TestCase):
         self.assertIn("- torch import: missing", report)
         self.assertIn("- Hugging Face token: missing", report)
         self.assertIn("Diarization status: needs setup: pyannote.audio, torch", report)
+
+    def test_runtime_report_surfaces_punctuation_setup_status(self):
+        platform = RuntimePlatform(
+            kind=LINUX_NATIVE,
+            system="Linux",
+            release="test",
+            machine="x86_64",
+            python_version="3.12",
+            is_windows=False,
+            is_wsl=False,
+            is_docker=False,
+        )
+        report = format_runtime_report(
+            RuntimeDiagnostics(
+                platform=platform,
+                gpu=GpuDiagnostics(
+                    nvidia_smi=CommandCheck("nvidia-smi", False, 1, "", "not found"),
+                    faster_whisper_importable=False,
+                    faster_whisper_version="",
+                    ctranslate2_importable=False,
+                    ctranslate2_version="",
+                    cuda_runtime_ready=False,
+                    cuda_runtime_detail="not ready",
+                    cuda_libraries=(),
+                    activation_guidance="Complete GPU setup.",
+                ),
+                audio=AudioDiagnostics(
+                    ffmpeg_path="",
+                    pyaudio_available=False,
+                    input_devices=(),
+                    output_devices=(),
+                ),
+                punctuation=PunctuationDiagnostics(torch_available=True, transformers_available=False),
+            )
+        )
+
+        self.assertIn("- transformers import: missing", report)
+        self.assertIn("rule fallback ready; missing transformers", report)
+        self.assertIn("make setup-app", report)
 
     def test_runtime_report_keeps_activation_guidance_when_cuda_incomplete(self):
         platform = RuntimePlatform(
