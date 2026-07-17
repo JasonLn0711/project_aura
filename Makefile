@@ -2,7 +2,13 @@ PYTHON ?= python
 PYTHONPATH ?= src
 UV ?= uv
 
-.PHONY: check test compile build bump-version clean
+.PHONY: setup-app setup-dev check test compile build bump-version clean
+
+setup-app:
+	$(UV) sync --extra punctuation --inexact
+
+setup-dev:
+	$(UV) sync --all-extras
 
 check: compile test
 

@@ -304,7 +304,7 @@ The first version uses `rapidfuzz`, does not use LLM verification, and only corr
 - Windows native feasibility is covered by `scripts/windows_gpu_smoke.py`, which verifies `nvidia-smi`, Python imports, CUDA DLL/runtime visibility, cuBLAS/cuDNN, and the actual `WhisperModel(..., device="cuda", compute_type="int8")` model-load path.
 - `scripts/runtime_report.py` produces a copyable report covering OS, Python, GPU, CUDA, cuBLAS, cuDNN, `ctranslate2`, `faster-whisper`, FFmpeg, audio I/O, and output-folder writability.
 - File ASR keeps the Traditional Mandarin meeting-record prompt by default; live ASR keeps a separate live prompt default.
-- Traditional Chinese transcript text now runs through post-ASR punctuation restoration. The model-backed path first tries `kotoba-speech/mmbert-base-zh-punctuation-320000`, then falls back to `p208p2002/zh-wiki-punctuation-restore`.
+- Traditional Chinese transcript text now runs through post-ASR punctuation restoration with the available `p208p2002/zh-wiki-punctuation-restore` token-classification model.
 - If punctuation dependencies or model weights are unavailable, AURA uses deterministic full-width punctuation cleanup instead of blocking ASR or transcript saving.
 - Punctuation restoration is conservative: it adds/normalizes punctuation for readability but does not translate Simplified Chinese, rewrite vocabulary, or replace the ASR text.
 
@@ -536,10 +536,16 @@ Use a fresh virtual environment in this repo:
 python3 -m venv .venv
 source .venv/bin/activate
 python -m pip install --upgrade pip
-python -m pip install -e .
+python -m pip install -e ".[punctuation]"
 ```
 
 `pyproject.toml` is the single dependency contract for pip, uv, CI, and release builds.
+This standard app profile activates both deterministic punctuation cleanup and the local
+model-backed punctuation path. For a complete uv development environment, use one command:
+
+```bash
+make setup-dev
+```
 
 Speaker diarization is optional because it adds heavyweight ML dependencies:
 
@@ -569,10 +575,13 @@ python -m pip install -e ".[punctuation]"
 With `uv`, install the same optional dependency group with:
 
 ```bash
-uv sync --extra punctuation
+make setup-app
 ```
 
-Without this extra, AURA still applies safe Traditional Chinese punctuation cleanup through the built-in rule fallback.
+`make setup-app` adds the standard punctuation profile without removing optional packages already
+present in the environment. `make setup-dev` selects every declared extra for the complete
+development/test feature set. Without the punctuation extra, AURA still applies safe Traditional
+Chinese punctuation cleanup and reports the exact activation command in runtime diagnostics.
 
 ### Windows 3-Step Quick Start
 
@@ -668,7 +677,7 @@ For each transcript base name, AURA writes:
 | Target Volume | `-20 dBFS` |
 | Live Capture Source | System audio + microphone when PulseAudio/PipeWire exposes both sources; otherwise default input fallback |
 | Meeting Distance Mode | Off by default; Advanced Settings can choose `normal`, `far-speaker`, or `rescue-offline` |
-| Traditional Chinese Punctuation | Enabled; model-backed path first tries `kotoba-speech/mmbert-base-zh-punctuation-320000`, then falls back to `p208p2002/zh-wiki-punctuation-restore` when the punctuation extra is installed |
+| Traditional Chinese Punctuation | Enabled; the `p208p2002/zh-wiki-punctuation-restore` token-classification model activates when the punctuation extra is installed |
 | Denoise | Off in UI by default |
 | Speaker Diarization | Off by default; imported-file range defaults to `2-6` speakers |
 | LLM Summary | Off by default; local Ollama `gemma4:e4b-it-q4_K_M` parallel field-batch meeting summary extraction when enabled |
@@ -709,7 +718,7 @@ The lower-level ASR threads also have explicit defaults:
 
 Traditional Chinese punctuation is a post-ASR readability layer. AURA first keeps ASR on the required RTX/CUDA path, then checks the detected or selected language plus the transcript text. When the output looks like Traditional Chinese, it restores readable full-width punctuation before imported-file artifacts are saved and while live-recording segments are emitted.
 
-The model-backed path first tries `kotoba-speech/mmbert-base-zh-punctuation-320000`, a Hugging Face `transformers` token-classification model trained for Chinese punctuation prediction. It then falls back to `p208p2002/zh-wiki-punctuation-restore`, which supports `，`, `、`, `。`, `？`, `！`, and `；` and includes a Traditional Chinese usage example. If `torch`/`transformers` or both model weights are not available, AURA falls back to deterministic cleanup: ASCII punctuation beside Chinese text is converted to full-width punctuation, duplicate punctuation is collapsed, spacing around Chinese punctuation is normalized, and a final `。` is added when a Chinese line has no terminal punctuation.
+The model-backed path uses `p208p2002/zh-wiki-punctuation-restore`, a Hugging Face `transformers` token-classification model that supports `，`, `、`, `。`, `？`, `！`, and `；` and includes a Traditional Chinese usage example. If `torch`/`transformers` or the model weights need activation, AURA keeps deterministic cleanup available: ASCII punctuation beside Chinese text is converted to full-width punctuation, duplicate punctuation is collapsed, spacing around Chinese punctuation is normalized, and a final `。` is added when a Chinese line has no terminal punctuation.
 
 This post-processing is intentionally conservative: it does not translate Simplified Chinese into Traditional Chinese, rewrite words, or block transcript saving when the model cannot load.
 

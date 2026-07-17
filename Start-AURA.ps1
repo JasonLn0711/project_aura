@@ -121,6 +121,10 @@ try {
     if ((Test-Path $pyproject) -and (Test-Path $DependencyStamp)) {
         $needsInstall = (Get-Item $pyproject).LastWriteTimeUtc -gt (Get-Item $DependencyStamp).LastWriteTimeUtc
     }
+    if (-not $needsInstall) {
+        & $ResolvedPython -c "import aura, torch, transformers" 2>$null
+        $needsInstall = $LASTEXITCODE -ne 0
+    }
     if ($needsInstall) {
         Write-Step "Installing Project AURA dependencies"
         Invoke-Python $ResolvedPython @("-m", "pip", "install", "-e", ".[summary,punctuation]")
