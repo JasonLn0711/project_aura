@@ -40,6 +40,10 @@ SIMPLIFIED_HINT_CHARS = set(
 LINE_PREFIX_RE = re.compile(r"^(\[\d{2}:\d{2}:\d{2}\]\s*(?:[A-Z][A-Z0-9_ -]{0,48}:\s*)?)(.*)$")
 JAPANESE_KANA_RE = re.compile(r"[\u3040-\u30ff]")
 CJK_RE = re.compile(r"[\u4e00-\u9fff]")
+PUNCTUATION_SETUP_GUIDANCE = (
+    "Activate local punctuation model support with `make setup-app` in a uv checkout or "
+    "`python -m pip install -e \".[punctuation]\"` in a pip environment, then restart AURA."
+)
 
 _DEFAULT_RESTORER = None
 
@@ -185,13 +189,21 @@ class TransformersChinesePunctuationRestorer:
         self.model = None
         self.torch = None
         self.device = "cpu"
+        self.load_error = ""
 
     def _load(self):
         if self.model is not None and self.tokenizer is not None:
             return
+        if self.load_error:
+            raise RuntimeError(self.load_error)
 
-        import torch
-        from transformers import AutoModelForTokenClassification, AutoTokenizer
+        try:
+            import torch
+            from transformers import AutoModelForTokenClassification, AutoTokenizer
+        except ModuleNotFoundError as exc:
+            missing = exc.name or "punctuation model dependency"
+            self.load_error = f"Dependency `{missing}` needs activation. {PUNCTUATION_SETUP_GUIDANCE}"
+            raise RuntimeError(self.load_error) from exc
 
         self.torch = torch
         self.device = "cuda" if self.requested_device == "auto" and torch.cuda.is_available() else self.requested_device
@@ -210,7 +222,9 @@ class TransformersChinesePunctuationRestorer:
                 self.model = None
                 errors.append(f"{model_id}: {exc}")
         if self.model is None or self.tokenizer is None:
-            raise RuntimeError("; ".join(errors) or "No Chinese punctuation model could be loaded.")
+            # ponytail: retry once per process; restart AURA after repairing model access.
+            self.load_error = "; ".join(errors) or "No Chinese punctuation model could be loaded."
+            raise RuntimeError(self.load_error)
 
         self.model.to(self.device)
         self.model.eval()

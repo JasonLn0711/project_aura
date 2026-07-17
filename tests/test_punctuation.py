@@ -1,4 +1,5 @@
 import unittest
+from unittest.mock import patch
 
 from aura.asr.punctuation import (
     TransformersChinesePunctuationRestorer,
@@ -77,6 +78,25 @@ class PunctuationTests(unittest.TestCase):
         restorer = TransformersChinesePunctuationRestorer(model_id="primary", fallback_model_id="fallback")
 
         self.assertEqual(restorer.model_ids, ("primary", "fallback"))
+
+    def test_missing_model_dependency_is_actionable_and_cached(self):
+        restorer = TransformersChinesePunctuationRestorer()
+        real_import = __import__
+        transformer_imports = 0
+
+        def import_with_missing_transformers(name, *args, **kwargs):
+            nonlocal transformer_imports
+            if name == "transformers":
+                transformer_imports += 1
+                raise ModuleNotFoundError("No module named 'transformers'", name="transformers")
+            return real_import(name, *args, **kwargs)
+
+        with patch("builtins.__import__", side_effect=import_with_missing_transformers):
+            for _ in range(2):
+                with self.assertRaisesRegex(RuntimeError, "make setup-app"):
+                    restorer.restore("這是一段需要標點的會議紀錄")
+
+        self.assertEqual(transformer_imports, 1)
 
 
 if __name__ == "__main__":
