@@ -1,12 +1,16 @@
-# Project AURA: Ultimate Audio Assistant Refactor
+# Project AURA: Local Desktop Audio Assistant
 
-![Status](https://img.shields.io/badge/Status-Refactor%20Baseline-blue?logo=github) ![CI](https://github.com/JasonLn0711/project_aura/actions/workflows/ci.yml/badge.svg) ![Python Version](https://img.shields.io/badge/Python-3.10%2B-blue?logo=python) ![ASR Engine](https://img.shields.io/badge/ASR-faster--whisper-orange) ![UI](https://img.shields.io/badge/UI-PyQt6-9cf) ![VAD](https://img.shields.io/badge/VAD-WebRTC_VAD-success) ![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
+![Status](https://img.shields.io/badge/Status-Maintained-brightgreen?logo=github) ![CI](https://github.com/JasonLn0711/project_aura/actions/workflows/ci.yml/badge.svg) ![Python Version](https://img.shields.io/badge/Python-3.10%2B-blue?logo=python) ![ASR Engine](https://img.shields.io/badge/ASR-faster--whisper-orange) ![UI](https://img.shields.io/badge/UI-PyQt6-9cf) ![VAD](https://img.shields.io/badge/VAD-WebRTC_VAD-success) ![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
 
 Project AURA is a desktop audio assistant for real-time recording, Whisper-based transcription, batch file transcription, and smart audio splitting.
 
 This repository is the maintained Python implementation extracted from the original `record_audio_ubuntu` prototype. Git history preserves the retired one-file baseline; the current tree contains the active application, validation scripts, tests, and release documentation.
 
-![Project AURA screenshot](./img/image.png)
+![Project AURA v1.14.0 live transcription workspace with CUDA status, waveform, Traditional Chinese transcript, and review controls](./img/transcription-workspace-v1.14.0.png)
+
+*AURA v1.14.0 during live transcription: the operator workspace keeps capture,
+runtime status, waveform, Traditional Chinese transcript, and review together,
+with direct access to settings, track splitting, and the local activity log.*
 
 ## Project Status
 
@@ -14,7 +18,7 @@ Project AURA provides a fast validation surface for Taiwan-focused ASR, audio pr
 
 Use this repo for:
 
-- source refactoring
+- maintained desktop application source
 - package structure
 - tests and regression checks
 - Python validation releases
@@ -63,7 +67,7 @@ runtime anomalies.
 This release adds six durable capabilities:
 
 1. **Operator workspace**: the PyQt layout now separates capture actions, live
-   transcript review, output controls, Advanced Settings, runtime diagnostics,
+   transcript review, output controls, Settings, runtime diagnostics,
    and the activity log into clearer working regions.
 2. **Local product audit trail**: app lifecycle, decision-relevant UI actions,
    model loading, recording, import, summary, diagnostics, splitter, and audit
@@ -76,7 +80,7 @@ This release adds six durable capabilities:
    recoverable friction, latency percentiles, repeated actions, error bursts,
    incomplete workflows, unknown schemas, and uncontrolled termination
    candidates. Every anomaly remains a human-review signal.
-5. **In-app and CLI reporting**: Advanced Settings can open the local audit
+5. **In-app and CLI reporting**: Settings can open the local audit
    folder or generate a Markdown report; `scripts/summarize_audit_events.py`
    provides the same analysis in Markdown or JSON.
 6. **Automatic version synchronization**: `make bump-version BUMP=patch|minor|major`
@@ -411,17 +415,15 @@ The implementation and remaining validation path are tracked in [`docs/windows_n
 | RTX/CUDA-only ASR | ASR model loading is pinned to `cuda`; CPU fallback is disabled so transcription never silently leaves the RTX GPU path. |
 | System Tray Integration | Minimizes to background with `QSystemTrayIcon`. |
 | Auto-update Checker | Background GitHub release check preserved from the original app. |
-| Smart Splitting | Uses silence detection to cut near natural pauses and preserves original bitrate when possible. |
-| Modern Desktop UI | PyQt6 workstation layout with workflow actions, top runtime status, transcript workspace, artifact/export/summary panel, foldable settings, live waveform visualization, and runtime log. |
-
-![Project AURA batch UI](./img/image-1.png)
+| Track Splitter | Uses silence detection to cut near natural pauses and preserves original bitrate when possible. |
+| Modern Desktop UI | PyQt6 workstation layout with workflow actions, top runtime status, transcript workspace, output/review panel, foldable settings, live waveform visualization, and activity log. |
 
 ## What Changed In This Refactor
 
 The original project used a monolithic script. This repo keeps the behavior but splits the code by responsibility:
 
 ```text
-project_aura_refactor/
+project_aura/
 ├── Check-AURA.bat
 ├── Check-AURA.ps1
 ├── Start-AURA.bat
@@ -438,8 +440,9 @@ project_aura_refactor/
 │   ├── windows_setup.md
 │   └── versioning.md
 ├── img/
-│   ├── image.png
-│   └── image-1.png
+│   ├── advanced-settings-v1.14.0.png
+│   ├── track-splitter-v1.14.0.png
+│   └── transcription-workspace-v1.14.0.png
 ├── src/aura/
 │   ├── app.py                    # QApplication entrypoint
 │   ├── config.py                 # Runtime constants
@@ -605,7 +608,7 @@ The smoke script checks `nvidia-smi`, Python imports for `faster_whisper` and `c
 
 ## Run
 
-From this sibling repo:
+From the repository root:
 
 ```bash
 python -m aura
@@ -624,21 +627,36 @@ The packaged entrypoints are defined in `pyproject.toml`:
 
 ## UI Workflow
 
-### Tab 1: Recording & Transcription
+### Tab 1: Transcription
 
 1. Wait for the background `ModelLoaderThread` to initialize the ASR model.
-2. Open **Advanced Settings** to adjust live capture source, target dBFS, compute type, beam size, language, initial prompt, denoise, optional speaker diarization, optional LLM summary, and transcript output location.
-3. Click **Start Recording** for live recording and live transcription. The default live capture source tries to mix system audio and microphone audio through PulseAudio/PipeWire; Advanced Settings can switch to system-only or microphone-only capture.
+2. Open **Settings** to adjust live capture source, target dBFS, compute type, beam size, language, initial prompt, denoise, optional speaker diarization, optional LLM summary, and transcript output location.
+3. Click **Start Recording** for live recording and live transcription. The default live capture source tries to mix system audio and microphone audio through PulseAudio/PipeWire; Settings can switch to system-only or microphone-only capture.
 4. Click **Import Media** for batch transcription. Speaker diarization runs only on imported files when enabled.
    The import dialog lists common media containers including `mp3`, `mp4`, `m4a`, `wav`, `flac`, `mkv`, `mov`, `ogg`, `aac`, `wma`, `aiff`, `opus`, `webm`, `avi`, `m4v`, `3gp`, and `3g2`; the fallback **All Files** filter can still be used for other ffmpeg-supported media. Each imported transcript is auto-saved according to the selected transcript output policy.
    Use **Cancel Import** to stop the active import when possible and skip the remaining queue.
-5. Enable **Summarize transcript after ASR** or click **Summarize Current Transcript** to append a local Gemma 4 E4B summary.
-6. Click **Stop Recording** to finish live recording. The app waits for final ASR text, runs glossary correction and optional summary if enabled, saves `{recording_name}_raw.txt`, `{recording_name}_corrected.txt`, `{recording_name}_correction_log.json`, `{recording_name}_final.txt`, optional `{recording_name}_summary.txt`, and `{recording_name}_processing_metrics.json`, then clears the transcript pane and temporary backup.
+5. Enable **Summarize transcript after ASR** or click **Summarize Transcript** to append a local Gemma 4 E4B summary.
+6. Click **Stop Recording** to finish live recording. The app waits for final ASR text, runs glossary correction and optional summary if enabled, saves the transcript, metrics, event log, runtime log, and recording audio together, then clears the transcript pane and temporary backup.
 7. Use **Open Output Folder** after an auto-save to inspect the generated transcript artifacts.
+
+### Settings and Runtime Diagnostics
+
+The scrollable **Settings** panel keeps audio preparation, speaker labeling,
+scheduling, local summary, output policy, model controls, runtime diagnostics,
+first-launch checks, and local audit actions in one operator surface.
+
+![Project AURA v1.14.0 Settings panel with meeting-distance, denoise, speaker, capture, scheduling, summary, output, and recording controls](./img/advanced-settings-v1.14.0.png)
+
+*Settings keep optional capabilities and output choices available without
+competing with the primary recording and import actions.*
+
+Runtime Diagnostics appears lower in the same panel. It reports GPU, CUDA,
+model, FFmpeg, audio-device, and output-folder readiness, then provides a
+First Launch Check and a focused **Fix Guide** for each activation gate.
 
 ### Transcript Output Policy
 
-Advanced Settings exposes three output modes:
+Settings exposes three output modes:
 
 - **Same folder as source/recording**: default; imported-file artifacts stay beside the source media, and live-recording artifacts stay in the recording folder.
 - **Project outputs/transcripts folder**: stores artifacts under `outputs/transcripts/` in this repo.
@@ -653,16 +671,23 @@ For each transcript base name, AURA writes:
 {base}_final.txt
 {base}_summary.txt                  # only when a summary is produced
 {base}_processing_metrics.json
+{base}_event_log.json
+{base}_runtime.log                  # live recordings only
 ```
 
 `final.txt` uses the corrected transcript plus optional summary. The metrics JSON includes output policy, source path, saved artifact paths, glossary correction status, total elapsed time, coarse stage durations, and imported-file status events such as FFmpeg normalization progress.
 
-### Tab 2: Smart Splitter
+### Tab 2: Track Splitter
 
 1. Select source audio or video.
 2. Select output folder.
 3. Set target segment length and tolerance.
 4. Start splitting to export chunks near natural pauses.
+
+![Project AURA v1.14.0 Track Splitter with target length, tolerance, source, output, progress, and processing details](./img/track-splitter-v1.14.0.png)
+
+*Track Splitter presents the complete source-to-output sequence and keeps
+progress and processing details visible during long media jobs.*
 
 ## Configuration Defaults
 
@@ -676,7 +701,7 @@ For each transcript base name, AURA writes:
 | Compute Type | `int8` on CUDA/RTX GPU by default |
 | Target Volume | `-20 dBFS` |
 | Live Capture Source | System audio + microphone when PulseAudio/PipeWire exposes both sources; otherwise default input fallback |
-| Meeting Distance Mode | Off by default; Advanced Settings can choose `normal`, `far-speaker`, or `rescue-offline` |
+| Meeting Distance Mode | Off by default; Settings can choose `normal`, `far-speaker`, or `rescue-offline` |
 | Traditional Chinese Punctuation | Enabled; the `p208p2002/zh-wiki-punctuation-restore` token-classification model activates when the punctuation extra is installed |
 | Denoise | Off in UI by default |
 | Speaker Diarization | Off by default; imported-file range defaults to `2-6` speakers |
@@ -706,7 +731,7 @@ The default file-transcription prompt is:
 這是一份專業的繁體中文會議紀錄，請務必根據語氣加上正確的全形標點符號。
 ```
 
-It is loaded into the Advanced Settings prompt field at startup and is passed to both batch file transcription and live recording when recording starts.
+It is loaded into the Settings prompt field at startup and is passed to both batch file transcription and live recording when recording starts.
 
 The lower-level ASR threads also have explicit defaults:
 
@@ -726,7 +751,7 @@ This post-processing is intentionally conservative: it does not translate Simpli
 
 Speaker diarization is an optional imported-file workflow. Live recording still uses the low-latency ASR queue without speaker labels.
 
-When enabled in Advanced Settings, the file pipeline:
+When enabled in Settings, the file pipeline:
 
 1. Decodes the source media with `pydub`.
 2. Optionally applies the selected denoise preset.
@@ -755,11 +780,11 @@ Known limits:
 
 LLM summary is an optional post-ASR workflow. It is intentionally separate from ASR so the app can still run transcription without the local Gemma 4 E4B Ollama runner.
 
-When enabled in Advanced Settings:
+When enabled in Settings:
 
 - imported-file transcription starts summary after each file's transcript is complete and waits for that summary/save step before starting the next queued file
 - live recording schedules summary shortly after the user stops recording, giving the ASR queue a short drain window
-- the **Summarize Current Transcript** button can run summary manually on the current transcript area
+- the **Summarize Transcript** button can run summary manually on the current transcript area
 
 The summary model contract is fixed:
 
@@ -771,7 +796,7 @@ The summary model contract is fixed:
 - cloud calls: `false`
 - fallback model: disabled
 
-When **Summarize Current Transcript** runs, AURA uses the current corrected transcript only. It does not send the raw transcript, correction log, audit logs, or review notes to the model.
+When **Summarize Transcript** runs, AURA uses the current corrected transcript only. It does not send the raw transcript, correction log, audit logs, or review notes to the model.
 
 Before starting the LLM call, AURA performs a local Ollama preflight. If the localhost server is unavailable, AURA attempts to start `ollama serve` and waits for `http://localhost:11434/api/tags`. If the required `gemma4:e4b-it-q4_K_M` tag is missing, AURA asks before running `ollama pull gemma4:e4b-it-q4_K_M` or lets the user copy the command. Missing server, missing command, missing model tag, and pull failure are surfaced as separate runtime states.
 
@@ -812,12 +837,12 @@ Summary evaluation uses the same corrected transcript, structured JSON schema, d
 
 Live denoise is intentionally conservative and policy-driven:
 
-- Advanced Settings includes `Meeting Distance Mode`: `off`, `normal`, `far-speaker`, and `rescue-offline`.
+- Settings includes `Meeting Distance Mode`: `off`, `normal`, `far-speaker`, and `rescue-offline`.
 - `normal` applies at least `light` denoise for normal meeting-room audio.
 - `far-speaker` applies at least `medium` denoise, uses a longer live VAD energy bridge, lowers the live energy gate for weak speech, applies bounded segment gain before live ASR, and attempts DeepFilterNet3 on imported files when the optional backend is installed.
 - `rescue-offline` attempts ClearVoice/ClearerVoice enhancement for difficult imported recordings when the optional backend is installed; live recording still uses the conservative fallback path until transcript evaluation promotes a model backend.
 - Denoise is represented internally as explicit presets: `off`, `light`, and `medium`.
-- The Advanced Settings UI exposes these presets as a `Denoise Mode` combo box; meeting-distance mode provides the minimum safe denoise floor.
+- The Settings UI exposes these presets as a `Denoise Mode` combo box; meeting-distance mode provides the minimum safe denoise floor.
 - Silent and near-silent buffers are returned unchanged.
 - Very tiny buffers are skipped because spectral reduction has too little context.
 - Non-silent `light` buffers use `noisereduce` in non-stationary mode with gentle reduction, `prop_decrease=0.35`.
@@ -895,7 +920,7 @@ Current coverage includes:
 - multi-chunk splitter workflow behavior using synthetic audio
 - runtime settings and UI message formatting defaults
 - speaker diarization timestamp assignment and speaker-count argument handling
-- LLM summary prompt and Gemma 4 E4B FP8 default settings
+- LLM summary prompts and the local Gemma 4 E4B `q4_K_M` runtime contract
 - import smoke coverage for every `aura` package module
 - transcript artifact naming, final/raw/summary splitting, and metrics JSON writing
 - live capture PulseAudio/PipeWire source parsing, source selection, and system+microphone RMS mixing
@@ -950,7 +975,7 @@ bar are synchronized for `2026-07-14`.
 
 ### GPU Out Of Memory
 
-- Open Advanced Settings and keep Compute Type on `int8` for the default RTX GPU path.
+- Open Settings and keep Compute Type on `int8` for the default RTX GPU path.
 - Close other GPU-heavy applications.
 - The app releases model references, runs garbage collection, and clears CUDA cache during cleanup when PyTorch is available.
 
@@ -990,16 +1015,15 @@ pactl info
 pactl list short sources
 ```
 
-### File Bloat In Smart Splitter
+### File Bloat In Track Splitter
 
 The splitter attempts to detect and reuse the original bitrate for MP3 export. Ensure `ffmpeg` is installed and visible on PATH.
 
-## Migration Notes
+## Repository Data Boundary
 
-- Do not copy `.record/`, generated recordings, transcripts, or split media into this repo.
-- Keep large runtime outputs in `record_audio_ubuntu`, `outputs/`, or another data folder.
-- Add only small, stable fixtures under `tests/fixtures/` when needed for regression tests.
-- Use `docs/refactor_plan.md` for the next refactor phases.
+- Keep `.record/`, generated recordings, transcripts, split media, and other large runtime outputs in `record_audio_ubuntu`, `outputs/`, or another data folder.
+- Version small, stable fixtures under `tests/fixtures/` when they support regression checks.
+- Use `docs/refactor_plan.md` for the next architecture phase.
 
 ## License
 
