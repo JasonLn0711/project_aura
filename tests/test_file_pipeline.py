@@ -50,6 +50,18 @@ class FakeChineseModel:
         return [SimpleNamespace(start=1.2, end=2.5, text="這是測試")], SimpleNamespace(language="zh")
 
 
+class FakeLowConfidenceModel:
+    def transcribe(self, path, **kwargs):
+        return [
+            SimpleNamespace(
+                start=1.2,
+                end=2.5,
+                text="重疊內容",
+                avg_logprob=-1.2,
+            )
+        ], SimpleNamespace(language="zh")
+
+
 class FilePipelineTests(unittest.TestCase):
     def test_format_segment_uses_hms_timestamp(self):
         segment = SimpleNamespace(start=3661.7, text=" hello")
@@ -338,6 +350,45 @@ class FilePipelineTests(unittest.TestCase):
 
             self.assertEqual(result.lines, ["[00:00:01] SPEAKER_01:  hello"])
             self.assertEqual(lines, ["[00:00:01] SPEAKER_01:  hello"])
+            self.assertEqual(len(result.segments), 1)
+            self.assertEqual(
+                (
+                    result.segments[0].start_ms,
+                    result.segments[0].end_ms,
+                    result.segments[0].speaker,
+                    result.segments[0].text,
+                    result.segments[0].state,
+                ),
+                (1200, 2500, "SPEAKER_01", " hello", "final"),
+            )
+
+    def test_transcribe_file_flags_low_confidence_and_speaker_overlap(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            source = Path(tmpdir) / "input.wav"
+            export_silence(source)
+
+            def overlapping_turns(_path, _settings):
+                return [
+                    SpeakerTurn(1.0, 2.0, "SPEAKER_01"),
+                    SpeakerTurn(1.8, 3.0, "SPEAKER_02"),
+                ]
+
+            with patch.dict(os.environ, {runtime_paths.RUNTIME_DIR_ENV: tmpdir}):
+                result = transcribe_file(
+                    model=FakeLowConfidenceModel(),
+                    file_path=str(source),
+                    settings=FileTranscriptionSettings(
+                        diarization=DiarizationSettings(enabled=True)
+                    ),
+                    worker_id="unit-review-flags",
+                    diarization_runner=overlapping_turns,
+                )
+
+            self.assertEqual(result.segments[0].asr_logprob, -1.2)
+            self.assertEqual(
+                set(result.segments[0].review_flags),
+                {"low_confidence", "speaker_overlap"},
+            )
 
     def test_transcribe_file_validates_diarization_runtime_before_preparing_audio(self):
         with tempfile.TemporaryDirectory() as tmpdir:

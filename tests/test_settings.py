@@ -8,7 +8,6 @@ from aura.config import (
     DEVICE,
     DIARIZATION_MODEL_ID,
     MODEL_ID,
-    SUMMARY_MODEL_ID,
     SUPPORTED_IMPORT_EXTENSIONS,
 )
 from aura.settings import DEFAULT_SETTINGS, AppSettings
@@ -33,9 +32,8 @@ class SettingsTests(unittest.TestCase):
         self.assertEqual(DEFAULT_SETTINGS.speaker_max_speakers, 6)
         self.assertEqual(DEFAULT_SETTINGS.speaker_diarization_model, DIARIZATION_MODEL_ID)
         self.assertFalse(DEFAULT_SETTINGS.llm_summary_enabled)
-        self.assertEqual(DEFAULT_SETTINGS.llm_summary_model, SUMMARY_MODEL_ID)
-        self.assertEqual(DEFAULT_SETTINGS.llm_summary_model, "google/gemma-4-E4B-it")
-        self.assertEqual(DEFAULT_SETTINGS.llm_summary_quantization, "ollama_q4_K_M_local_tag")
+        self.assertFalse(hasattr(DEFAULT_SETTINGS, "llm_summary_temperature"))
+        self.assertFalse(hasattr(DEFAULT_SETTINGS, "llm_summary_max_new_tokens"))
         self.assertTrue(DEFAULT_SETTINGS.chinese_punctuation_enabled)
         self.assertEqual(DEFAULT_SETTINGS.chinese_punctuation_model, CHINESE_PUNCTUATION_MODEL_ID)
 

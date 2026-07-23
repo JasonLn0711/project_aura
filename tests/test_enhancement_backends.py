@@ -89,7 +89,9 @@ class EnhancementBackendTests(unittest.TestCase):
         self.assertEqual(result.status, "ok")
         self.assertEqual(result.output_path, output)
         self.assertEqual(run.call_args.args[0][0], "/opt/clearvoice/bin/python")
-        self.assertIn("run_clearvoice_enhancement.py", run.call_args.args[0][1])
+        runner = Path(run.call_args.args[0][1])
+        self.assertEqual(runner.name, "run_clearvoice_enhancement.py")
+        self.assertTrue(runner.is_file())
 
 
 if __name__ == "__main__":

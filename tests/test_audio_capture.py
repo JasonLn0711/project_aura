@@ -1,4 +1,8 @@
+import json
+import tempfile
 import unittest
+import wave
+from pathlib import Path
 
 import numpy as np
 
@@ -18,6 +22,7 @@ from aura.audio.capture import (
     select_system_pulse_source,
     should_auto_stop_for_no_voice,
     should_treat_frame_as_speech,
+    track_audio_frames,
     trim_trailing_unvoiced_frames,
 )
 from aura.audio.meeting_distance import MEETING_DISTANCE_FAR_SPEAKER
@@ -81,6 +86,22 @@ class AudioCaptureTests(unittest.TestCase):
         self.assertTrue(system[0].name.endswith(".monitor"))
         self.assertEqual(len(microphone), 1)
         self.assertFalse(microphone[0].name.endswith(".monitor"))
+
+    def test_system_and_microphone_frames_remain_separate_before_mixing(self):
+        sources = parse_pactl_sources(PACTL_SOURCES)[:2]
+        system = np.array([1_000, -1_000], dtype=np.int16)
+        microphone = np.array([1_000, -1_000], dtype=np.int16)
+
+        tracks = track_audio_frames(
+            LIVE_CAPTURE_SYSTEM_MICROPHONE,
+            sources,
+            [system, microphone],
+        )
+
+        self.assertEqual(set(tracks), {"mixed", "system", "microphone"})
+        np.testing.assert_array_equal(tracks["system"], system)
+        np.testing.assert_array_equal(tracks["microphone"], microphone)
+        np.testing.assert_array_equal(tracks["mixed"], np.array([800, -800], dtype=np.int16))
 
     def test_frame_rms_and_gain_limits(self):
         self.assertAlmostEqual(frame_rms(np.array([3, 4], dtype=np.int16)), 3.5355, places=3)
@@ -203,6 +224,92 @@ class AudioCaptureTests(unittest.TestCase):
         self.assertEqual(recorder.energy_gate_rms, 650.0)
         self.assertEqual(recorder.energy_bridge_ms, 240)
         self.assertEqual(recorder.denoise_preset, "medium")
+
+    def test_recorder_journals_and_finalizes_all_live_capture_tracks(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            recorder = AudioRecorderThread(
+                str(Path(tmpdir) / "meeting" / "meeting"),
+                transcriber_thread=type("Transcriber", (), {"add_audio": lambda _self, _audio: None})(),
+                capture_mode=LIVE_CAPTURE_SYSTEM_MICROPHONE,
+            )
+
+            class Reader:
+                sample_width = 2
+                description = "test reader"
+
+                def read_tracks(self):
+                    recorder.running = False
+                    system = np.full(480, 1_000, dtype=np.int16)
+                    microphone = np.full(480, 2_000, dtype=np.int16)
+                    return {
+                        "mixed": np.full(480, 1_200, dtype=np.int16),
+                        "system": system,
+                        "microphone": microphone,
+                    }
+
+                def close(self):
+                    pass
+
+            recorder._open_reader = lambda: Reader()
+            finished = []
+            statuses = []
+            recorder.finished_signal.connect(finished.append)
+            recorder.status_signal.connect(statuses.append)
+
+            recorder.run()
+
+            session_dir = Path(tmpdir) / "meeting" / "meeting_session"
+            manifest_path = session_dir / "session.json"
+            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+            self.assertEqual(manifest["status"], "ready")
+            self.assertEqual(set(manifest["audio_tracks"]), {"mixed", "system", "microphone"})
+            self.assertEqual(finished, [str(session_dir / "meeting.wav")])
+            self.assertTrue(
+                any("持續保存" in status for status in statuses),
+                statuses,
+            )
+
+    def test_midstream_capture_error_preserves_partial_wav_and_failed_provenance(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            recorder = AudioRecorderThread(
+                str(Path(tmpdir) / "meeting" / "meeting"),
+                transcriber_thread=type("Transcriber", (), {"add_audio": lambda _self, _audio: None})(),
+            )
+
+            class Reader:
+                sample_width = 2
+                description = "test reader"
+                reads = 0
+
+                def read_tracks(self):
+                    self.reads += 1
+                    if self.reads > 1:
+                        raise RuntimeError("device disconnected")
+                    return {"mixed": np.full(480, 1_200, dtype=np.int16)}
+
+                def close(self):
+                    pass
+
+            recorder._open_reader = lambda: Reader()
+            finished = []
+            statuses = []
+            recorder.finished_signal.connect(finished.append)
+            recorder.status_signal.connect(statuses.append)
+
+            recorder.run()
+
+            session_dir = Path(tmpdir) / "meeting" / "meeting_session"
+            manifest = json.loads((session_dir / "session.json").read_text(encoding="utf-8"))
+            partial_wav = session_dir / "meeting_partial.wav"
+            self.assertEqual(manifest["status"], "failed")
+            self.assertEqual(manifest["recording_outcome"], "partial")
+            self.assertEqual(manifest["failure"]["phase"], "capture")
+            self.assertIn("device disconnected", manifest["failure"]["message"])
+            self.assertTrue(partial_wav.is_file())
+            with wave.open(str(partial_wav), "rb") as recording:
+                self.assertEqual(recording.getnframes(), 480)
+            self.assertEqual(finished, [str(partial_wav)])
+            self.assertTrue(any("Partial recording preserved" in status for status in statuses))
 
 
 if __name__ == "__main__":

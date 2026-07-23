@@ -39,6 +39,36 @@ class AudioExportTests(unittest.TestCase):
             self.assertTrue(audio_path.exists())
             self.assertFalse(wav_path.exists())
 
+    def test_normalize_wav_to_recording_audio_can_preserve_durable_mixed_track(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            wav_path = Path(tmpdir) / "recording.wav"
+            with wav_path.open("wb") as target:
+                AudioSegment.silent(duration=100, frame_rate=16000).export(target, format="wav")
+
+            audio_path = normalize_wav_to_recording_audio(
+                wav_path,
+                -20.0,
+                remove_source=False,
+            )
+
+            self.assertTrue(audio_path.exists())
+            self.assertTrue(wav_path.exists())
+
+    def test_recording_export_can_retain_the_durable_wav(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            wav_path = Path(tmpdir) / "recording.wav"
+            with wav_path.open("wb") as target:
+                AudioSegment.silent(duration=100, frame_rate=16000).export(target, format="wav")
+
+            audio_path = normalize_wav_to_recording_audio(
+                wav_path,
+                -20.0,
+                remove_source=False,
+            )
+
+            self.assertTrue(audio_path.exists())
+            self.assertTrue(wav_path.exists())
+
     def test_normalize_wav_to_mp3_exports_and_removes_wav(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             wav_path = Path(tmpdir) / "recording.wav"

@@ -1,11 +1,16 @@
+import json
 import tempfile
 import unittest
 from pathlib import Path
+from uuid import UUID
 
 from aura.ui.transcript_io import (
     SUMMARY_MARKER,
+    collision_safe_transcript_base_path,
     event_log_payload,
+    ensure_transcript_session,
     final_transcript_text,
+    prepare_transcript,
     split_transcript_sections,
     transcript_artifact_paths,
     transcript_text_for_save,
@@ -16,6 +21,90 @@ from aura.ui.transcript_io import (
 
 
 class TranscriptIoTests(unittest.TestCase):
+    def test_transcript_session_reuses_recording_manifest_identity(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            session_dir = Path(tmpdir) / "recording_session"
+            session_dir.mkdir()
+            manifest_path = session_dir / "session.json"
+            manifest_path.write_text(
+                json.dumps({"meeting_id": "recording-meeting-id", "status": "ready"}),
+                encoding="utf-8",
+            )
+
+            session = ensure_transcript_session(Path(tmpdir) / "recording", workflow="recording")
+
+            self.assertEqual(session.directory, session_dir)
+            self.assertEqual(session.meeting_id, "recording-meeting-id")
+            self.assertEqual(json.loads(manifest_path.read_text(encoding="utf-8"))["meeting_id"], session.meeting_id)
+
+    def test_transcript_session_creates_and_reuses_import_identity(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            base = Path(tmpdir) / "transcript_interview"
+
+            first = ensure_transcript_session(base, workflow="import", source_path="/tmp/interview.mp3")
+            second = ensure_transcript_session(base, workflow="import", source_path="/tmp/interview.mp3")
+
+            self.assertEqual(first, second)
+            self.assertEqual(first.directory, Path(tmpdir) / "transcript_interview_session")
+            UUID(first.meeting_id)
+            manifest = json.loads((first.directory / "session.json").read_text(encoding="utf-8"))
+            self.assertEqual(manifest["meeting_id"], first.meeting_id)
+            self.assertEqual(manifest["workflow"], "import")
+            self.assertEqual(manifest["status"], "ready")
+
+    def test_transcript_session_rejects_a_different_import_source(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            base = Path(tmpdir) / "transcript_interview"
+            ensure_transcript_session(base, workflow="import", source_path="/a/interview.mp3")
+
+            with self.assertRaisesRegex(ValueError, "different source"):
+                ensure_transcript_session(base, workflow="import", source_path="/b/interview.mp3")
+
+    def test_collision_safe_base_adds_stable_source_hash(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            base = Path(tmpdir) / "transcript_meeting"
+            ensure_transcript_session(base, workflow="import", source_path="/a/meeting.mp3")
+
+            resolved = collision_safe_transcript_base_path(base, "/b/meeting.mp3")
+
+            self.assertNotEqual(resolved, base)
+            self.assertTrue(resolved.name.startswith("transcript_meeting_"))
+            self.assertEqual(
+                collision_safe_transcript_base_path(resolved, "/b/meeting.mp3"),
+                resolved,
+            )
+
+    def test_dotted_base_name_keeps_one_session_identity(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            base = Path(tmpdir) / "transcript_client.v1"
+
+            session = ensure_transcript_session(
+                base,
+                workflow="import",
+                source_path="/tmp/client.v1.mp3",
+            )
+            paths = transcript_artifact_paths(base)
+
+            self.assertEqual(session.directory, Path(tmpdir) / "transcript_client.v1_session")
+            self.assertEqual(paths["final"], Path(tmpdir) / "transcript_client.v1_final.txt")
+
+    def test_prepare_transcript_applies_punctuation_then_glossary_and_hashes_corrected_text(self):
+        prepared = prepare_transcript(
+            "[00:00:01] 志德灣和 iMBS 開會",
+            language="zh",
+            enable_punctuation=True,
+            enable_punctuation_model=False,
+        )
+
+        self.assertEqual(prepared.raw_text, "[00:00:01] 志德灣和 iMBS 開會")
+        self.assertEqual(prepared.punctuated_text, "[00:00:01] 志德灣和 iMBS 開會。")
+        self.assertEqual(prepared.corrected_text, "[00:00:01] 智德萬和 iMVS 開會。")
+        self.assertEqual(
+            prepared.content_sha256,
+            "2e9a924b3cc29dd440fbba12f15a48f9f4cd180bcf8270df0e552aed67cfdf50",
+        )
+        self.assertEqual(len(prepared.correction_log), 2)
+
     def test_transcript_text_for_save_strips_and_adds_newline(self):
         self.assertEqual(transcript_text_for_save("  hello\n"), "hello\n")
 
@@ -51,8 +140,8 @@ class TranscriptIoTests(unittest.TestCase):
 
         self.assertEqual(text, f"[00:00:01] hello\n\n{SUMMARY_MARKER}\n重點摘要")
 
-    def test_transcript_artifact_paths_use_base_stem(self):
-        paths = transcript_artifact_paths("/tmp/meeting.txt")
+    def test_transcript_artifact_paths_use_base_path(self):
+        paths = transcript_artifact_paths("/tmp/meeting")
 
         self.assertEqual(paths["raw"], Path("/tmp/meeting_raw.txt"))
         self.assertEqual(paths["corrected"], Path("/tmp/meeting_corrected.txt"))
@@ -127,6 +216,42 @@ class TranscriptIoTests(unittest.TestCase):
             text = path.read_text(encoding="utf-8")
             self.assertIn('"workflow": "recording"', text)
             self.assertIn('"category": "live_asr_telemetry"', text)
+
+    def test_write_transcript_artifacts_persists_the_exact_prepared_transcript(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            base = Path(tmpdir) / "meeting"
+            prepared = prepare_transcript(
+                "[00:00:01] 志德灣和 iMBS 開會",
+                language="zh",
+                enable_punctuation=True,
+                enable_punctuation_model=False,
+            )
+
+            saved = write_transcript_artifacts(base, prepared, metrics={})
+
+            self.assertEqual(saved["raw"].read_text(encoding="utf-8"), "[00:00:01] 志德灣和 iMBS 開會\n")
+            self.assertEqual(
+                saved["corrected"].read_text(encoding="utf-8"),
+                "[00:00:01] 智德萬和 iMVS 開會。\n",
+            )
+            manifest = json.loads(saved["prepared"].read_text(encoding="utf-8"))
+            self.assertEqual(manifest["corrected_text"], prepared.corrected_text)
+            self.assertEqual(manifest["content_sha256"], prepared.content_sha256)
+            metrics = json.loads(saved["metrics"].read_text(encoding="utf-8"))
+            self.assertEqual(metrics["prepared_transcript_sha256"], prepared.content_sha256)
+
+    def test_prepared_transcript_is_bound_to_the_session_manifest(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            base = Path(tmpdir) / "meeting"
+            session = ensure_transcript_session(base, workflow="import")
+            prepared = prepare_transcript("確認內容。", language="zh")
+
+            saved = write_transcript_artifacts(base, prepared, session=session)
+
+            self.assertEqual(saved["prepared"], session.directory / "prepared_transcript.json")
+            manifest = json.loads((session.directory / "session.json").read_text(encoding="utf-8"))
+            self.assertEqual(manifest["transcript_sha256"], prepared.content_sha256)
+            self.assertEqual(manifest["prepared_transcript"], "prepared_transcript.json")
 
 
 if __name__ == "__main__":

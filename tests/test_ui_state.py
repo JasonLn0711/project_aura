@@ -1,7 +1,17 @@
+import json
+import tempfile
 import unittest
+from types import SimpleNamespace
+from pathlib import Path
 
+from aura.review import FINAL, ReviewSegment
 from aura.ui.messages import UI_TEXT
-from aura.ui.transcription_tab import TranscriptionTab
+from aura.ui.transcript_io import prepare_transcript
+from aura.ui.transcription_tab import (
+    TranscriptionTab,
+    ensure_output_directory_writable,
+    safe_recording_suffix,
+)
 
 
 class FakeStyle:
@@ -58,6 +68,11 @@ class FakeTextArea:
 
     def toPlainText(self):
         return self.text
+
+
+class FakeCombo:
+    def currentData(self):
+        return "zh"
 
 
 class FakeAudit:
@@ -128,6 +143,76 @@ class UiStateTests(unittest.TestCase):
 
         self.assertEqual(tab.btn_record.text, UI_TEXT.stop_recording)
         self.assertEqual(tab.btn_record.properties["role"], "danger")
+
+    def test_recording_consent_is_explicit_for_each_session(self):
+        tab = self.make_tab()
+        tab.check_recording_consent = FakeButton(checked=False)
+
+        self.assertFalse(TranscriptionTab.recording_consent_confirmed(tab))
+
+        tab.check_recording_consent.checked = True
+        self.assertTrue(TranscriptionTab.recording_consent_confirmed(tab))
+
+    def test_recording_suffix_cannot_escape_the_session_folder(self):
+        self.assertEqual(
+            safe_recording_suffix("../../董事會 / Q3"),
+            "董事會_Q3",
+        )
+
+    def test_output_write_probe_leaves_no_artifact(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            output = Path(tmpdir) / "custom"
+
+            resolved = ensure_output_directory_writable(output)
+
+            self.assertEqual(resolved, output.resolve())
+            self.assertEqual(list(output.iterdir()), [])
+
+    def test_summary_input_is_prepared_with_punctuation_then_glossary_correction(self):
+        tab = self.make_tab()
+        tab.settings = SimpleNamespace(chinese_punctuation_enabled=True)
+        tab.combo_lang = FakeCombo()
+
+        prepared = tab.prepare_transcript_input("[00:00:01] 志德灣和 iMBS 開會")
+
+        self.assertEqual(prepared.corrected_text, "[00:00:01] 智德萬和 iMVS 開會。")
+
+    def test_summary_settings_use_the_canonical_session_and_review_segments(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            recording_dir = Path(tmpdir) / "meeting"
+            session_dir = recording_dir / "meeting_session"
+            session_dir.mkdir(parents=True)
+            (session_dir / "session.json").write_text(
+                json.dumps({"meeting_id": "meeting-canonical"}),
+                encoding="utf-8",
+            )
+            tab = self.make_tab()
+            tab.settings = SimpleNamespace(
+                chinese_punctuation_enabled=True,
+            )
+            tab.current_recording_metrics = {
+                "workflow": "recording",
+                "base_path": str(recording_dir / "meeting"),
+                "source_path": str(recording_dir / "meeting.wav"),
+            }
+            tab.current_import_metrics = None
+            tab.current_meeting_id = None
+            tab.text_area = SimpleNamespace(
+                review=SimpleNamespace(
+                    segments=[
+                        ReviewSegment("seg-1", 0, 1000, "確認內容", state=FINAL),
+                    ]
+                )
+            )
+
+            prepared = prepare_transcript("確認內容。", language="zh")
+            settings = tab.summary_settings(prepared)
+
+            self.assertEqual(settings.session_dir, str(session_dir))
+            self.assertEqual(settings.meeting_id, "meeting-canonical")
+            self.assertEqual(settings.evidence_segments[0]["segment_id"], "seg-1")
+            self.assertEqual(settings.transcript_sha256, prepared.content_sha256)
+            self.assertEqual(tab.current_recording_metrics["meeting_id"], "meeting-canonical")
 
 
 if __name__ == "__main__":

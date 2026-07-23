@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 import tempfile
 import threading
 import time
@@ -25,6 +26,7 @@ from summary.layered_summary_pipeline import (
     generate_layered_summary,
     run_extractors_parallel,
     save_layered_outputs,
+    summary_claims,
 )
 from summary.ollama_gemma4_client import OllamaGemma4Client, OllamaGemmaConfig, OllamaGemmaError
 
@@ -158,6 +160,89 @@ class LayeredSummaryPipelineTests(unittest.TestCase):
 
         self.assertTrue(result.valid)
         self.assertEqual(value["action_items"][0]["status"], "open")
+        self.assertEqual(value["action_items"][0]["source_segment_ids"], [])
+        self.assertEqual(value["action_items"][0]["support_status"], "unsupported")
+        self.assertEqual(value["action_items"][0]["review_status"], "unreviewed")
+
+    def test_decision_and_action_item_keep_source_and_review_evidence(self) -> None:
+        decision, decision_result = validate_field_value(
+            "decisions",
+            {
+                "decisions": [
+                    {
+                        "decision": "採用 evidence-first 流程",
+                        "evidence_style": "explicit",
+                        "source_segment_ids": ["seg-001", "seg-002"],
+                        "support_status": "supported",
+                        "review_status": "unreviewed",
+                    }
+                ]
+            },
+        )
+        actions, action_result = validate_field_value(
+            "action_items",
+            {
+                "action_items": [
+                    {
+                        "task": "完成 Gate A",
+                        "owner": "Jason",
+                        "deadline": "",
+                        "status": "open",
+                        "source_segment_ids": ["seg-003"],
+                        "support_status": "partial",
+                        "review_status": "unreviewed",
+                    }
+                ]
+            },
+        )
+
+        self.assertTrue(decision_result.valid)
+        self.assertTrue(action_result.valid)
+        self.assertEqual(decision[0]["source_segment_ids"], ["seg-001", "seg-002"])
+        self.assertEqual(decision[0]["review_status"], "unreviewed")
+        self.assertEqual(actions[0]["support_status"], "partial")
+
+    def test_model_output_cannot_self_confirm_a_claim(self) -> None:
+        _, result = validate_field_value(
+            "decisions",
+            {
+                "decisions": [
+                    {
+                        "decision": "模型自行確認",
+                        "evidence_style": "explicit",
+                        "source_segment_ids": ["seg-001"],
+                        "support_status": "supported",
+                        "review_status": "confirmed",
+                    }
+                ]
+            },
+        )
+
+        self.assertFalse(result.valid)
+        self.assertIn("unreviewed", result.error)
+
+    def test_invalid_claim_support_status_is_rejected(self) -> None:
+        _, result = validate_field_value(
+            "decisions",
+            {
+                "decisions": [
+                    {
+                        "decision": "決策",
+                        "source_segment_ids": ["seg-001"],
+                        "support_status": "certain",
+                    }
+                ]
+            },
+        )
+
+        self.assertFalse(result.valid)
+
+    def test_claim_prompts_require_source_segment_ids(self) -> None:
+        for extractor in ("decisions", "action_items"):
+            prompt = build_extractor_prompt(extractor, "[seg-001] transcript")
+            self.assertIn("source_segment_ids", prompt)
+            self.assertIn("support_status", prompt)
+            self.assertIn("review_status", prompt)
 
     def test_all_extractors_cover_final_fields_once(self) -> None:
         covered = [field for fields in EXTRACTOR_FIELDS.values() for field in fields]
@@ -246,6 +331,189 @@ class LayeredSummaryPipelineTests(unittest.TestCase):
             paths = save_layered_outputs(result, Path(temp_dir) / "local_outputs" / "meeting_summary")
 
         self.assertIn("local_outputs/meeting_summary", str(paths["final_summary"]))
+
+    def test_each_meeting_gets_its_own_summary_evidence_directory(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            output_dir = Path(temp_dir) / "meeting_summary"
+            result = generate_layered_summary("corrected transcript", client=FakeClient())
+
+            first = save_layered_outputs(result, output_dir, meeting_id="meeting-001")
+            second = save_layered_outputs(result, output_dir, meeting_id="meeting-002")
+
+            self.assertEqual(first["final_summary"], output_dir / "meeting-001" / "summary.json")
+            self.assertEqual(second["final_summary"], output_dir / "meeting-002" / "summary.json")
+            self.assertNotEqual(first["final_summary"], second["final_summary"])
+
+    def test_session_output_is_written_beside_the_session_manifest(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            session_dir = Path(temp_dir) / "recording"
+            session_dir.mkdir()
+            (session_dir / "session.json").write_text(
+                json.dumps({"meeting_id": "meeting-001"}),
+                encoding="utf-8",
+            )
+            result = generate_layered_summary("corrected transcript", client=FakeClient())
+
+            paths = save_layered_outputs(
+                result,
+                meeting_id="meeting-001",
+                session_dir=session_dir,
+            )
+
+            self.assertEqual(paths["final_summary"], session_dir / "summary.json")
+            manifest = json.loads((session_dir / "session.json").read_text(encoding="utf-8"))
+            self.assertEqual(manifest["summary_evidence"], "summary.json")
+
+    def test_failed_atomic_summary_replace_preserves_previous_canonical_summary(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            output_dir = Path(temp_dir) / "meeting_summary"
+            result = generate_layered_summary(
+                "corrected transcript",
+                client=FakeClient(),
+            )
+            paths = save_layered_outputs(
+                result,
+                output_dir,
+                meeting_id="meeting-001",
+            )
+            previous = paths["final_summary"].read_bytes()
+            real_replace = os.replace
+
+            def fail_summary_replace(source, destination):
+                if Path(destination).name == "summary.json":
+                    raise OSError("simulated disk failure")
+                return real_replace(source, destination)
+
+            with patch(
+                "summary.layered_summary_pipeline.os.replace",
+                side_effect=fail_summary_replace,
+            ):
+                with self.assertRaisesRegex(OSError, "simulated disk failure"):
+                    save_layered_outputs(
+                        result,
+                        output_dir,
+                        meeting_id="meeting-001",
+                    )
+
+            self.assertEqual(paths["final_summary"].read_bytes(), previous)
+
+    def test_summary_evidence_links_claims_only_to_known_segments(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            result = generate_layered_summary("corrected transcript", client=FakeClient())
+            result.summary["decisions"][0].update(
+                {
+                    "source_segment_ids": ["seg-known", "seg-hallucinated"],
+                    "support_status": "supported",
+                    "review_status": "unreviewed",
+                }
+            )
+
+            paths = save_layered_outputs(
+                result,
+                Path(temp_dir),
+                meeting_id="meeting-001",
+                segments=[
+                    {
+                        "segment_id": "seg-known",
+                        "start_ms": 0,
+                        "end_ms": 1000,
+                        "text": "Use corrected transcript.",
+                        "speaker": "Jason",
+                        "state": "final",
+                        "revision": 0,
+                    }
+                ],
+            )
+
+            payload = json.loads(paths["final_summary"].read_text(encoding="utf-8"))
+            decision = next(claim for claim in payload["claims"] if claim["field"] == "decisions")
+            self.assertEqual(payload["meeting_id"], "meeting-001")
+            self.assertEqual(decision["text"], "Use corrected transcript.")
+            self.assertEqual(decision["source_segment_ids"], ["seg-known"])
+            self.assertEqual(decision["support_status"], "supported")
+            self.assertEqual(decision["review_status"], "unreviewed")
+            self.assertEqual(payload["claim_source_coverage"], 0.5)
+
+    def test_claim_identity_changes_when_regenerated_content_changes(self) -> None:
+        first_summary = {
+            "decisions": [
+                {
+                    "decision": "採用方案甲",
+                    "source_segment_ids": ["seg-1"],
+                    "support_status": "supported",
+                    "review_status": "unreviewed",
+                }
+            ],
+            "action_items": [],
+        }
+        second_summary = {
+            **first_summary,
+            "decisions": [
+                {
+                    **first_summary["decisions"][0],
+                    "decision": "採用方案乙",
+                }
+            ],
+        }
+        segments = [{"segment_id": "seg-1"}]
+
+        first = summary_claims(first_summary, "meeting-1", segments)
+        second = summary_claims(second_summary, "meeting-1", segments)
+
+        self.assertNotEqual(first[0]["claim_id"], second[0]["claim_id"])
+
+    def test_claim_identity_changes_after_source_transcript_revision(self) -> None:
+        summary = {
+            "decisions": [
+                {
+                    "decision": "採用方案甲",
+                    "source_segment_ids": ["seg-1"],
+                    "support_status": "supported",
+                    "review_status": "unreviewed",
+                }
+            ],
+            "action_items": [],
+        }
+
+        first = summary_claims(
+            summary,
+            "meeting-1",
+            [{"segment_id": "seg-1", "revision": 0, "text": "原文"}],
+            "hash-before",
+        )
+        second = summary_claims(
+            summary,
+            "meeting-1",
+            [{"segment_id": "seg-1", "revision": 1, "text": "修正文"}],
+            "hash-after",
+        )
+
+        self.assertNotEqual(first[0]["claim_id"], second[0]["claim_id"])
+
+    def test_summary_evidence_exposes_action_items_as_reviewable_claims(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            result = generate_layered_summary("corrected transcript", client=FakeClient())
+            result.summary["action_items"][0].update(
+                {
+                    "source_segment_ids": ["seg-action"],
+                    "support_status": "partial",
+                    "review_status": "confirmed",
+                }
+            )
+
+            paths = save_layered_outputs(
+                result,
+                Path(temp_dir),
+                meeting_id="meeting-001",
+                segments=[{"segment_id": "seg-action"}],
+            )
+
+            payload = json.loads(paths["final_summary"].read_text(encoding="utf-8"))
+            action = next(claim for claim in payload["claims"] if claim["field"] == "action_items")
+            self.assertEqual(action["text"], "Render Markdown.")
+            self.assertEqual(action["source_segment_ids"], ["seg-action"])
+            self.assertEqual(action["support_status"], "partial")
+            self.assertEqual(action["review_status"], "unreviewed")
 
 
 if __name__ == "__main__":

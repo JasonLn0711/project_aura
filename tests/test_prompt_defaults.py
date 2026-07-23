@@ -1,4 +1,7 @@
 import unittest
+from unittest.mock import patch
+
+import numpy as np
 
 from aura.asr.file_pipeline import build_transcribe_kwargs, resolve_initial_prompt
 from aura.asr.threads import (
@@ -88,6 +91,34 @@ class PromptDefaultTests(unittest.TestCase):
         self.assertEqual(event["asr_elapsed_seconds"], 8.24)
         self.assertEqual(event["realtime_factor"], 0.5)
         self.assertFalse(event["queue_backlog"])
+
+    def test_live_transcript_timestamps_follow_stream_elapsed_time(self):
+        thread = TranscriberThread()
+        thread.live_chinese_punctuation_enabled = False
+        emitted = []
+        thread.text_updated.connect(emitted.append)
+
+        class Model:
+            calls = 0
+
+            def transcribe(self, _audio, **_kwargs):
+                self.calls += 1
+                if self.calls == 2:
+                    thread.running = False
+                return [type("Segment", (), {"text": f" chunk-{self.calls}"})()], type(
+                    "Info",
+                    (),
+                    {"language": "zh"},
+                )()
+
+        thread.model = Model()
+        thread.add_audio(np.zeros(2 * 16_000, dtype=np.float32))
+        thread.add_audio(np.zeros(3 * 16_000, dtype=np.float32))
+
+        with patch("aura.asr.threads.append_transcript_backup"):
+            thread.run()
+
+        self.assertEqual(emitted, ["[00:00:00]  chunk-1", "[00:00:02]  chunk-2"])
 
     def test_explicit_empty_prompt_remains_empty(self):
         self.assertEqual(resolve_initial_prompt("", DEFAULT_PROMPT), "")
