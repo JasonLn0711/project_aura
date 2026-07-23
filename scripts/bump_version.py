@@ -98,8 +98,8 @@ def update_files(
                 f"| Refactor Version | `{normalized}` |",
             ),
             (
-                re.compile(r"(?m)^\| Current Release Tag \| `v?[^`]+` \|$"),
-                f"| Current Release Tag | `v{normalized}` |",
+                re.compile(r"(?m)^\| Next Release Candidate \| `v?[^`]+` \|$"),
+                f"| Next Release Candidate | `v{normalized}` |",
             ),
             (
                 re.compile(

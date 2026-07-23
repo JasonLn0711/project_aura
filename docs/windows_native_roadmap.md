@@ -125,7 +125,7 @@ python scripts/windows_gpu_smoke.py
 py -3.11 -m venv .venv
 .\.venv\Scripts\Activate.ps1
 pip install -U pip
-pip install -e ".[summary,punctuation]"
+pip install -e ".[punctuation]"
 python scripts/windows_gpu_smoke.py
 python -m aura
 ```

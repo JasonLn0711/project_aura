@@ -42,7 +42,8 @@ class BumpVersionTests(unittest.TestCase):
             )
             (root / "README.md").write_text(
                 "| Refactor Version | `1.5.1` |\n"
-                "| Current Release Tag | `v1.5.1` |\n"
+                "| Latest Published Tag | `v1.5.0` |\n"
+                "| Next Release Candidate | `v1.5.1` |\n"
                 "## Latest Update (2026-05-25)\n",
                 encoding="utf-8",
             )
@@ -59,7 +60,11 @@ class BumpVersionTests(unittest.TestCase):
                 (root / "README.md").read_text(encoding="utf-8"),
             )
             self.assertIn(
-                "| Current Release Tag | `v1.6.0` |",
+                "| Latest Published Tag | `v1.5.0` |",
+                (root / "README.md").read_text(encoding="utf-8"),
+            )
+            self.assertIn(
+                "| Next Release Candidate | `v1.6.0` |",
                 (root / "README.md").read_text(encoding="utf-8"),
             )
             self.assertIn(

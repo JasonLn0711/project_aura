@@ -84,15 +84,42 @@ The app is designed for professional meeting and lecture workflows. It includes 
 | Field | Value |
 | --- | --- |
 | Project Name | Project AURA / Ultimate Audio Assistant |
-| Refactor Version | `1.14.0` |
-| Current Release Tag | `v1.14.0` |
+| Refactor Version | `1.15.0` |
+| Latest Published Tag | `v1.14.0` |
+| Next Release Candidate | `v1.15.0` |
 | ASR Model | `SoybeanMilk/faster-whisper-Breeze-ASR-25` |
 | GitHub Repository | `JasonLn0711/project_aura` |
 | Academic Affiliation | National Yang Ming Chiao Tung University (NYCU) |
 | Project Lead | Jason Chia-Sheng Lin (PhD. Student) |
 | License | MIT |
 
-## Latest Update — v1.14.0 (2026-07-14)
+## Latest Update — v1.15.0 (2026-07-23)
+
+Project AURA v1.15.0 establishes an evidence-first local meeting workflow:
+durable multi-source capture journals, explicit audio recovery, corrected
+transcript identity, timestamped human review, source-linked summary claims,
+and a rebuildable SQLite FTS5 evidence index. Recording and import outputs now
+share one canonical session, human edits autosave and invalidate stale
+summaries, and confirmed actions require current source evidence.
+
+The release candidate also packages its summary prompts, domain glossary, and
+ClearVoice runner inside the wheel, validates output paths before work begins,
+and uses atomic writes for canonical transcript and summary artifacts. The
+general-purpose Agent layer remains deferred until measured external-action
+demand passes the proposal-only activation gate.
+
+Validation passed `392` tests, including forced-process interruption recovery,
+partial-WAV preservation, stale-confirmation prevention, same-basename
+collision handling, Python 3.10 compatibility checks, and an isolated wheel
+run outside the repository. Local Gemma live inference remains an activation
+gate because Ollama and the required model tag are not installed in the
+validated environment.
+
+`v1.15.0` is the next release candidate in this working tree. The latest
+published Git tag remains `v1.14.0`; tagging and remote publication begin after
+an explicit release closeout.
+
+## Previous Release — v1.14.0 (2026-07-14)
 
 Project AURA v1.14.0 adds an operator-focused desktop workspace and a local,
 content-free audit event system. The release makes recording, import, summary,

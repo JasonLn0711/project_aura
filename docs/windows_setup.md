@@ -47,7 +47,7 @@ Kali 或 Docker。AURA 的 ASR 路徑維持 RTX/CUDA-only；CPU fallback 持續�
 py -3.11 -m venv .venv
 .\.venv\Scripts\Activate.ps1
 pip install -U pip
-pip install -e ".[summary,punctuation]"
+pip install -e ".[punctuation]"
 python scripts/runtime_report.py
 python scripts/windows_gpu_smoke.py
 python -m aura

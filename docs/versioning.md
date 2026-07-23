@@ -10,17 +10,21 @@ Project AURA uses strict semantic versioning for release tags and package metada
 
 ## Required Files For Every Version Bump
 
-Every release version bump must update these files in the same commit:
+Every runtime version bump must update these files together so local audit and
+diagnostic provenance stay accurate:
 
 - `pyproject.toml`: `[project].version`
 - `src/aura/metadata.py`: `__version__`
 - `src/aura/metadata.py`: `__date__`, using the release update date
 - `uv.lock`: editable `project-aura-refactor` package version
 - `README.md`: `Refactor Version` table row
-- `README.md`: `Current Release Tag` table row, using the leading-`v` tag form
+- `README.md`: `Next Release Candidate` table row, using the leading-`v` form
 - `README.md`: `Latest Update` heading, including version and release date
 
-If any of these values differ, the release is invalid.
+`Latest Published Tag` records the latest tag that actually exists. A prepared
+working tree may therefore report a newer runtime/package version while
+retaining the previous published tag; update that row only when the new tag is
+created.
 
 ## Release Commit Rule
 

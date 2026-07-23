@@ -1,10 +1,10 @@
 [build-system]
-requires = ["setuptools>=69", "wheel"]
+requires = ["setuptools>=77", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "project-aura-refactor"
-version = "1.14.0"
+version = "1.15.0"
 description = "Refactored Project AURA desktop audio transcription and splitting tool."
 readme = "README.md"
 requires-python = ">=3.10"
@@ -55,9 +55,14 @@ benchmark = [
 [project.scripts]
 aura = "aura.app:main"
 project-aura = "aura.app:main"
+aura-evidence = "aura.evidence_search:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.setuptools.package-data]
+asr_postprocess = ["domain_glossary.yaml"]
+summary = ["meeting_summary_layers/*.system.txt"]
 
 [tool.uv.sources]
 torch = [
