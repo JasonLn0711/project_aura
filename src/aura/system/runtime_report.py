@@ -4,14 +4,25 @@ import os
 import shutil
 import sys
 from dataclasses import dataclass
+from pathlib import Path
 
 from aura.asr.punctuation import PUNCTUATION_SETUP_GUIDANCE
 from aura.config import DIARIZATION_MODEL_ID
 from aura.diarization.pyannote_pipeline import HF_TOKEN_ENV, HUGGINGFACE_TOKEN_ENV, huggingface_token
+from aura.llm.ollama_runtime import (
+    DEFAULT_OLLAMA_HOST,
+    check_ollama_command,
+    ollama_tags,
+    validate_localhost_host,
+)
 from aura.metadata import __version__
 from aura.system.audio_diagnostics import AudioDiagnostics, collect_audio_diagnostics
 from aura.system.gpu_diagnostics import GpuDiagnostics, collect_gpu_diagnostics
 from aura.system.platform import RuntimePlatform, detect_runtime_platform
+from summary.field_schemas import OLLAMA_MODEL_TAG
+
+
+MIN_OUTPUT_FREE_BYTES = 1 << 30
 
 
 def _module_available(module_name: str) -> bool:
@@ -71,14 +82,37 @@ class PunctuationDiagnostics:
 
 
 @dataclass(frozen=True)
+class OllamaDiagnostics:
+    configured: bool = False
+    host: str = ""
+    model_tag: str = ""
+    command_available: bool = False
+    server_ready: bool = False
+    model_available: bool = False
+    detail: str = "not configured"
+
+    @property
+    def ready(self) -> bool:
+        return self.configured and self.server_ready and self.model_available
+
+
+@dataclass(frozen=True)
 class RuntimeDiagnostics:
     platform: RuntimePlatform
     gpu: GpuDiagnostics
     audio: AudioDiagnostics
     diarization: DiarizationDiagnostics = DiarizationDiagnostics()
     punctuation: PunctuationDiagnostics = PunctuationDiagnostics()
+    ollama: OllamaDiagnostics = OllamaDiagnostics()
     asr_model_status: str = "not loaded"
+    output_folder: str = ""
     output_folder_writable: bool = False
+    output_folder_free_bytes: int | None = None
+    minimum_free_bytes: int = MIN_OUTPUT_FREE_BYTES
+
+    @property
+    def output_folder_space_ready(self) -> bool:
+        return self.output_folder_free_bytes is not None and self.output_folder_free_bytes >= self.minimum_free_bytes
 
     @property
     def gpu_status(self) -> str:
@@ -127,15 +161,83 @@ class FirstLaunchCheck:
     fix_guidance: str
 
 
-def collect_runtime_diagnostics(asr_model_status: str = "not loaded") -> RuntimeDiagnostics:
+def _output_folder_status(output_folder: str | os.PathLike[str]) -> tuple[str, bool, int | None]:
+    selected = Path(output_folder).expanduser().resolve()
+    if selected.exists() and not selected.is_dir():
+        return str(selected), False, None
+    probe = selected
+    while not probe.exists() and probe != probe.parent:
+        probe = probe.parent
+    try:
+        return str(selected), os.access(probe, os.W_OK), shutil.disk_usage(probe).free
+    except OSError:
+        return str(selected), False, None
+
+
+def collect_ollama_diagnostics(host: str | None, model_tag: str | None) -> OllamaDiagnostics:
+    if not host or not model_tag:
+        return OllamaDiagnostics()
+    command_available = check_ollama_command()
+    try:
+        validate_localhost_host(host)
+        tags = ollama_tags(host, timeout_sec=1)
+    except Exception as exc:
+        return OllamaDiagnostics(
+            configured=True,
+            host=host,
+            model_tag=model_tag,
+            command_available=command_available,
+            detail=str(exc) or type(exc).__name__,
+        )
+    if not isinstance(tags, dict):
+        return OllamaDiagnostics(
+            configured=True,
+            host=host,
+            model_tag=model_tag,
+            command_available=command_available,
+            detail="Ollama tags endpoint returned an invalid response.",
+        )
+    names = {
+        str(model.get("name") or "")
+        for model in tags.get("models") or []
+        if isinstance(model, dict)
+    }
+    model_available = model_tag in names
+    return OllamaDiagnostics(
+        configured=True,
+        host=host,
+        model_tag=model_tag,
+        command_available=command_available,
+        server_ready=True,
+        model_available=model_available,
+        detail=(
+            f"Local Ollama runtime ready with model {model_tag}."
+            if model_available
+            else f"Required local model tag not found: {model_tag}"
+        ),
+    )
+
+
+def collect_runtime_diagnostics(
+    asr_model_status: str = "not loaded",
+    output_folder: str | os.PathLike[str] | None = None,
+    minimum_free_bytes: int = MIN_OUTPUT_FREE_BYTES,
+    ollama_host: str | None = DEFAULT_OLLAMA_HOST,
+    ollama_model_tag: str | None = OLLAMA_MODEL_TAG,
+) -> RuntimeDiagnostics:
+    selected_output, output_writable, output_free_bytes = _output_folder_status(output_folder or os.getcwd())
     return RuntimeDiagnostics(
         platform=detect_runtime_platform(),
         gpu=collect_gpu_diagnostics(),
         audio=collect_audio_diagnostics(),
         diarization=collect_diarization_diagnostics(),
         punctuation=collect_punctuation_diagnostics(),
+        ollama=collect_ollama_diagnostics(ollama_host, ollama_model_tag),
         asr_model_status=asr_model_status,
-        output_folder_writable=os.access(os.getcwd(), os.W_OK),
+        output_folder=selected_output,
+        output_folder_writable=output_writable,
+        output_folder_free_bytes=output_free_bytes,
+        minimum_free_bytes=minimum_free_bytes,
     )
 
 
@@ -143,7 +245,7 @@ def first_launch_checks(diagnostics: RuntimeDiagnostics) -> tuple[FirstLaunchChe
     ffmpeg_ready = bool(diagnostics.audio.ffmpeg_path or shutil.which("ffmpeg"))
     model_status = diagnostics.asr_model_status.strip().lower()
     model_ready = model_status.startswith("loaded")
-    return (
+    checks = [
         FirstLaunchCheck(
             key="gpu",
             label="GPU Ready",
@@ -176,8 +278,24 @@ def first_launch_checks(diagnostics: RuntimeDiagnostics) -> tuple[FirstLaunchChe
             key="output",
             label="Output Folder",
             ready=diagnostics.output_folder_writable,
-            detail="Current working folder is writable." if diagnostics.output_folder_writable else "Current folder is not writable.",
+            detail=(
+                f"Selected output folder is writable: {diagnostics.output_folder or os.getcwd()}"
+                if diagnostics.output_folder_writable
+                else f"Selected output folder is not writable: {diagnostics.output_folder or os.getcwd()}"
+            ),
             fix_guidance="Choose or move AURA to a writable folder before recording or importing media.",
+        ),
+        FirstLaunchCheck(
+            key="disk_space",
+            label="Output Disk Space",
+            ready=diagnostics.output_folder_space_ready,
+            detail=(
+                f"{diagnostics.output_folder_free_bytes} bytes available; "
+                f"{diagnostics.minimum_free_bytes} bytes required."
+                if diagnostics.output_folder_free_bytes is not None
+                else "Available disk space could not be read."
+            ),
+            fix_guidance="Choose an output folder with enough free disk space for the recording.",
         ),
         FirstLaunchCheck(
             key="asr_model",
@@ -186,12 +304,43 @@ def first_launch_checks(diagnostics: RuntimeDiagnostics) -> tuple[FirstLaunchChe
             detail=diagnostics.asr_model_status,
             fix_guidance="Use Check-AURA.bat or reload the model after GPU/CUDA readiness is complete.",
         ),
-    )
+    ]
+    if diagnostics.ollama.configured:
+        checks.extend(
+            [
+                FirstLaunchCheck(
+                    key="ollama_command",
+                    label="Ollama Command",
+                    ready=diagnostics.ollama.command_available,
+                    detail=(
+                        "Ollama command is available on PATH."
+                        if diagnostics.ollama.command_available
+                        else "Ollama command is not available on PATH."
+                    ),
+                    fix_guidance="Install Ollama or add its command to PATH.",
+                ),
+                FirstLaunchCheck(
+                    key="ollama_server",
+                    label="Ollama Local Server",
+                    ready=diagnostics.ollama.server_ready,
+                    detail=f"{diagnostics.ollama.host}: {diagnostics.ollama.detail}",
+                    fix_guidance="Start the local Ollama service, then refresh the runtime check.",
+                ),
+                FirstLaunchCheck(
+                    key="ollama_model",
+                    label="Ollama Summary Model",
+                    ready=diagnostics.ollama.model_available,
+                    detail=diagnostics.ollama.detail,
+                    fix_guidance=f"Run: ollama pull {diagnostics.ollama.model_tag}",
+                ),
+            ]
+        )
+    return tuple(checks)
 
 
 def activation_report_line(diagnostics: RuntimeDiagnostics) -> str:
     if diagnostics.gpu.cuda_ready:
-        return "- Activation status: complete"
+        return "- CUDA runtime preload: complete"
     return f"- Activation guidance: {diagnostics.gpu.activation_guidance}"
 
 
@@ -227,7 +376,10 @@ def format_runtime_report(diagnostics: RuntimeDiagnostics) -> str:
     lines.extend(
         [
             f"- ASR model load status: {diagnostics.asr_model_status}",
-            f"- Current output folder writable: {'yes' if diagnostics.output_folder_writable else 'no'}",
+            f"- Selected output folder: {diagnostics.output_folder or os.getcwd()}",
+            f"- Selected output folder writable: {'yes' if diagnostics.output_folder_writable else 'no'}",
+            f"- Output folder free bytes: {diagnostics.output_folder_free_bytes if diagnostics.output_folder_free_bytes is not None else 'unknown'}",
+            f"- Output disk space status: {'ready' if diagnostics.output_folder_space_ready else 'needs attention'}",
             activation_report_line(diagnostics),
             "",
             "Audio / FFmpeg",
@@ -242,6 +394,19 @@ def format_runtime_report(diagnostics: RuntimeDiagnostics) -> str:
         lines.append("- Input device names: " + "; ".join(audio.input_devices[:8]))
     if audio.output_devices:
         lines.append("- Output device names: " + "; ".join(audio.output_devices[:8]))
+    if diagnostics.ollama.configured:
+        lines.extend(
+            [
+                "",
+                "Local LLM / Ollama",
+                f"- Host: {diagnostics.ollama.host}",
+                f"- Command: {'available' if diagnostics.ollama.command_available else 'missing'}",
+                f"- Server: {'ready' if diagnostics.ollama.server_ready else 'unavailable'}",
+                f"- Required model tag: {diagnostics.ollama.model_tag}",
+                f"- Model tag: {'ready' if diagnostics.ollama.model_available else 'missing'}",
+                f"- Detail: {diagnostics.ollama.detail}",
+            ]
+        )
     lines.extend(
         [
             "",
@@ -266,5 +431,19 @@ def format_runtime_report(diagnostics: RuntimeDiagnostics) -> str:
     return "\n".join(lines)
 
 
-def build_runtime_report(asr_model_status: str = "not loaded") -> str:
-    return format_runtime_report(collect_runtime_diagnostics(asr_model_status=asr_model_status))
+def build_runtime_report(
+    asr_model_status: str = "not loaded",
+    output_folder: str | os.PathLike[str] | None = None,
+    minimum_free_bytes: int = MIN_OUTPUT_FREE_BYTES,
+    ollama_host: str | None = DEFAULT_OLLAMA_HOST,
+    ollama_model_tag: str | None = OLLAMA_MODEL_TAG,
+) -> str:
+    return format_runtime_report(
+        collect_runtime_diagnostics(
+            asr_model_status=asr_model_status,
+            output_folder=output_folder,
+            minimum_free_bytes=minimum_free_bytes,
+            ollama_host=ollama_host,
+            ollama_model_tag=ollama_model_tag,
+        )
+    )

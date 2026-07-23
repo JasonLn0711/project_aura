@@ -9,7 +9,6 @@ from aura.config import (
     DEVICE,
     DIARIZATION_MODEL_ID,
     MODEL_ID,
-    SUMMARY_MODEL_ID,
 )
 from aura.audio.meeting_distance import DEFAULT_MEETING_DISTANCE_MODE
 
@@ -38,10 +37,6 @@ class AppSettings:
     speaker_diarization_device: str = DEVICE
     speaker_diarization_use_exclusive: bool = True
     llm_summary_enabled: bool = False
-    llm_summary_model: str = SUMMARY_MODEL_ID
-    llm_summary_quantization: str = "ollama_q4_K_M_local_tag"
-    llm_summary_max_new_tokens: int = 768
-    llm_summary_temperature: float = 0.2
     chinese_punctuation_enabled: bool = True
     chinese_punctuation_model: str = CHINESE_PUNCTUATION_MODEL_ID
     splitter_target_minutes: int = 40

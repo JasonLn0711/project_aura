@@ -1,0 +1,33 @@
+Task definition:
+Repair invalid layered meeting-summary extraction output into valid JSON.
+
+Extraction rules:
+- Return valid JSON only.
+- Preserve the intended values when possible.
+- Do not add facts.
+- Do not add Markdown.
+- Anti-hallucination rule: do not invent content while repairing format.
+
+Extractor name:
+{{EXTRACTOR_NAME}}
+
+Expected schema:
+{{EXPECTED_SCHEMA}}
+
+Invalid output:
+{{INVALID_OUTPUT}}
+
+Minimal valid output example:
+Expected schema:
+{
+  "meeting_topic": "string",
+  "participants": ["string"]
+}
+Invalid output:
+Topic: Untitled Meeting
+Participants: none
+Output:
+{
+  "meeting_topic": "Untitled Meeting",
+  "participants": []
+}

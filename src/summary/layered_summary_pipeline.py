@@ -1,11 +1,16 @@
 from __future__ import annotations
 
 import json
+import os
+import uuid
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import asdict, dataclass
+from importlib import resources
+from importlib.resources.abc import Traversable
 from pathlib import Path
 from typing import Protocol
 
+from aura.audio.recording_session import write_session_manifest
 from summary.field_schemas import (
     EXTRACTOR_FIELDS,
     EXTRACTOR_NAMES,
@@ -20,9 +25,14 @@ from summary.markdown_renderer import render_markdown
 from summary.ollama_gemma4_client import OllamaGemma4Client
 
 
-REPO_ROOT = Path(__file__).resolve().parents[2]
-DEFAULT_LAYER_PROMPT_DIR = REPO_ROOT / "prompts" / "meeting_summary_layers"
-DEFAULT_LOCAL_OUTPUT_DIR = REPO_ROOT / "local_outputs" / "meeting_summary"
+DEFAULT_LAYER_PROMPT_DIR = resources.files("summary").joinpath(
+    "meeting_summary_layers"
+)
+DEFAULT_LOCAL_OUTPUT_DIR = (
+    Path(os.environ.get("XDG_DATA_HOME", Path.home() / ".local" / "share"))
+    / "project_aura"
+    / "meeting_summary"
+)
 
 
 class JsonGenerationClient(Protocol):
@@ -49,14 +59,90 @@ class LayeredSummaryResult:
     field_outputs: dict[str, object]
 
 
-def read_extractor_prompt(extractor: str, prompt_dir: Path = DEFAULT_LAYER_PROMPT_DIR) -> str:
-    return (prompt_dir / f"{extractor}.system.txt").read_text(encoding="utf-8")
+def _atomic_write_text(path: Path, text: str) -> Path:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temporary = path.with_name(f".{path.name}.{uuid.uuid4().hex}.tmp")
+    try:
+        with temporary.open("w", encoding="utf-8") as target:
+            target.write(text)
+            target.flush()
+            os.fsync(target.fileno())
+        os.replace(temporary, path)
+    finally:
+        temporary.unlink(missing_ok=True)
+    return path
+
+
+def summary_claims(
+    summary: dict,
+    meeting_id: str,
+    segments: list[dict[str, object]],
+    transcript_sha256: str = "",
+) -> list[dict[str, object]]:
+    known_segments = {
+        str(segment["segment_id"]): segment
+        for segment in segments
+    }
+    claims = []
+    for field, text_key in (("decisions", "decision"), ("action_items", "task")):
+        for index, item in enumerate(summary.get(field, [])):
+            source_segment_ids = [
+                str(segment_id)
+                for segment_id in item.get("source_segment_ids", [])
+                if str(segment_id) in known_segments
+            ]
+            support_status = str(item.get("support_status") or "unsupported")
+            if not source_segment_ids:
+                support_status = "unsupported"
+            text = str(item.get(text_key) or "")
+            identity = json.dumps(
+                [
+                    meeting_id,
+                    transcript_sha256,
+                    field,
+                    index,
+                    text,
+                    [
+                        [
+                            segment_id,
+                            known_segments[segment_id].get("revision", 0),
+                            known_segments[segment_id].get("text", ""),
+                        ]
+                        for segment_id in source_segment_ids
+                    ],
+                ],
+                ensure_ascii=False,
+                separators=(",", ":"),
+            )
+            claims.append(
+                {
+                    "claim_id": "claim-"
+                    + uuid.uuid5(
+                        uuid.NAMESPACE_URL, f"project-aura:{identity}"
+                    ).hex[:16],
+                    "field": field,
+                    "text": text,
+                    "source_segment_ids": source_segment_ids,
+                    "support_status": support_status,
+                    "review_status": "unreviewed",
+                }
+            )
+    return claims
+
+
+def read_extractor_prompt(
+    extractor: str,
+    prompt_dir: Path | Traversable = DEFAULT_LAYER_PROMPT_DIR,
+) -> str:
+    return prompt_dir.joinpath(f"{extractor}.system.txt").read_text(
+        encoding="utf-8"
+    )
 
 
 def build_extractor_prompt(
     extractor: str,
     corrected_transcript: str,
-    prompt_dir: Path = DEFAULT_LAYER_PROMPT_DIR,
+    prompt_dir: Path | Traversable = DEFAULT_LAYER_PROMPT_DIR,
 ) -> str:
     return read_extractor_prompt(extractor, prompt_dir).replace("{{CORRECTED_TRANSCRIPT}}", corrected_transcript.strip())
 
@@ -64,7 +150,7 @@ def build_extractor_prompt(
 def build_repair_prompt(
     extractor: str,
     invalid_output: str,
-    prompt_dir: Path = DEFAULT_LAYER_PROMPT_DIR,
+    prompt_dir: Path | Traversable = DEFAULT_LAYER_PROMPT_DIR,
 ) -> str:
     template = read_extractor_prompt("format_repair", prompt_dir)
     return (
@@ -78,7 +164,7 @@ def extract_with_repair(
     extractor: str,
     corrected_transcript: str,
     client: JsonGenerationClient,
-    prompt_dir: Path = DEFAULT_LAYER_PROMPT_DIR,
+    prompt_dir: Path | Traversable = DEFAULT_LAYER_PROMPT_DIR,
 ) -> tuple[dict[str, object], ExtractorLog, object]:
     raw_output = client.generate_json(build_extractor_prompt(extractor, corrected_transcript, prompt_dir))
     value, result = validate_extractor_value(extractor, raw_output)
@@ -102,7 +188,7 @@ def run_extractors_parallel(
     extractors: tuple[str, ...],
     corrected_transcript: str,
     client: JsonGenerationClient,
-    prompt_dir: Path = DEFAULT_LAYER_PROMPT_DIR,
+    prompt_dir: Path | Traversable = DEFAULT_LAYER_PROMPT_DIR,
 ) -> list[tuple[str, dict[str, object], ExtractorLog, object]]:
     with ThreadPoolExecutor(max_workers=len(extractors), thread_name_prefix="aura-summary-extractor") as executor:
         futures = {
@@ -119,7 +205,7 @@ def run_extractors_parallel(
 def generate_layered_summary(
     corrected_transcript: str,
     client: JsonGenerationClient | None = None,
-    prompt_dir: Path = DEFAULT_LAYER_PROMPT_DIR,
+    prompt_dir: Path | Traversable = DEFAULT_LAYER_PROMPT_DIR,
 ) -> LayeredSummaryResult:
     if not corrected_transcript.strip():
         raise ValueError("corrected_transcript is empty")
@@ -149,25 +235,79 @@ def generate_layered_summary(
     )
 
 
-def save_layered_outputs(result: LayeredSummaryResult, output_dir: Path = DEFAULT_LOCAL_OUTPUT_DIR) -> dict[str, Path]:
+def save_layered_outputs(
+    result: LayeredSummaryResult,
+    output_dir: Path = DEFAULT_LOCAL_OUTPUT_DIR,
+    *,
+    meeting_id: str | None = None,
+    segments: list[dict[str, object]] | None = None,
+    session_dir: Path | None = None,
+    transcript_sha256: str = "",
+) -> dict[str, Path]:
+    meeting_id = meeting_id or str(uuid.uuid4())
+    if session_dir is not None:
+        session_dir = Path(session_dir)
+        manifest_path = session_dir / "session.json"
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        if str(manifest.get("meeting_id") or "") != meeting_id:
+            raise ValueError("summary meeting_id does not match session.json")
+        output_dir = session_dir
+    else:
+        output_dir = output_dir / meeting_id
     output_dir.mkdir(parents=True, exist_ok=True)
     paths = {
         "field_outputs": output_dir / "field_outputs.json",
-        "final_summary": output_dir / "final_summary.json",
-        "final_markdown": output_dir / "final_summary.md",
+        "final_summary": output_dir / "summary.json",
+        "final_markdown": output_dir / "summary.md",
         "validation_log": output_dir / "validation_log.json",
     }
-    paths["field_outputs"].write_text(
+    _atomic_write_text(
+        paths["field_outputs"],
         json.dumps(result.field_outputs, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
-        encoding="utf-8",
     )
-    paths["final_summary"].write_text(
-        json.dumps(result.summary, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
-        encoding="utf-8",
+    claims = summary_claims(
+        result.summary,
+        meeting_id,
+        segments or [],
+        transcript_sha256,
     )
-    paths["final_markdown"].write_text(result.markdown, encoding="utf-8")
-    paths["validation_log"].write_text(
+    claim_source_coverage = (
+        round(
+            sum(bool(claim["source_segment_ids"]) for claim in claims)
+            / len(claims),
+            4,
+        )
+        if claims
+        else None
+    )
+    _atomic_write_text(
+        paths["final_summary"],
+        json.dumps(
+            {
+                "schema_version": 1,
+                "meeting_id": meeting_id,
+                "transcript_sha256": transcript_sha256,
+                "summary": result.summary,
+                "claims": claims,
+                "claim_source_coverage": claim_source_coverage,
+            },
+            ensure_ascii=False,
+            indent=2,
+            sort_keys=True,
+        )
+        + "\n",
+    )
+    _atomic_write_text(paths["final_markdown"], result.markdown)
+    _atomic_write_text(
+        paths["validation_log"],
         json.dumps(result.validation_log, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
-        encoding="utf-8",
     )
+    if session_dir is not None:
+        manifest["summary_evidence"] = paths["final_summary"].name
+        manifest["summary_status"] = "valid"
+        manifest.pop("summary_invalidation_reason", None)
+        manifest.pop("summary_invalidated_at", None)
+        if transcript_sha256:
+            manifest["transcript_sha256"] = transcript_sha256
+        write_session_manifest(manifest_path, manifest)
     return paths

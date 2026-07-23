@@ -1,9 +1,8 @@
 import logging
-import os
 import shutil
 import subprocess
-import wave
 from dataclasses import dataclass
+from pathlib import Path
 
 import numpy as np
 import pyaudio
@@ -17,6 +16,7 @@ from aura.audio.meeting_distance import (
     effective_denoise_preset_for_mode,
     meeting_distance_policy_for,
 )
+from aura.audio.recording_session import RecordingSession
 from aura.config import (
     CHUNK_MS,
     CHUNK_SIZE,
@@ -222,6 +222,27 @@ def mix_audio_frames(frames: list[np.ndarray]) -> np.ndarray:
     return np.clip(mixed, -32768, 32767).astype(np.int16)
 
 
+def track_audio_frames(
+    mode: str,
+    sources: list[PulseSource],
+    frames: list[np.ndarray],
+) -> dict[str, np.ndarray]:
+    if len(sources) != len(frames):
+        raise ValueError("sources and frames must have the same length")
+    tracks = {"mixed": mix_audio_frames(frames)}
+    if mode == LIVE_CAPTURE_SYSTEM:
+        if frames:
+            tracks["system"] = frames[0]
+        return tracks
+    if mode == LIVE_CAPTURE_MICROPHONE:
+        if frames:
+            tracks["microphone"] = frames[0]
+        return tracks
+    for source, frame in zip(sources, frames):
+        tracks.setdefault("system" if is_monitor_source(source) else "microphone", frame)
+    return tracks
+
+
 def frames_for_duration_seconds(duration_seconds: float) -> int:
     if duration_seconds <= 0:
         return 0
@@ -322,7 +343,12 @@ class PulseCaptureReader:
             raise
 
     def read(self) -> np.ndarray:
-        return mix_audio_frames([input_source.read() for input_source in self.inputs])
+        return self.read_tracks()["mixed"]
+
+    def read_tracks(self) -> dict[str, np.ndarray]:
+        frames = [input_source.read() for input_source in self.inputs]
+        sources = [input_source.source for input_source in self.inputs]
+        return track_audio_frames(self.mode, sources, frames)
 
     def close(self):
         for input_source in self.inputs:
@@ -344,11 +370,14 @@ class PyAudioCaptureReader:
         return None
 
     def read(self) -> np.ndarray:
+        return self.read_tracks()["mixed"]
+
+    def read_tracks(self) -> dict[str, np.ndarray]:
         raw_data = self.stream.read(CHUNK_SIZE, exception_on_overflow=False)
         np_data = np.frombuffer(raw_data, dtype=np.int16)
         if self.channels > 1:
             np_data = np_data.reshape(-1, self.channels).mean(axis=1).astype(np.int16)
-        return np_data
+        return {"mixed": np_data}
 
     def close(self):
         self.stream.stop_stream()
@@ -385,8 +414,9 @@ class AudioRecorderThread(QThread):
         self.enable_denoise = self.denoise_preset != OFF_DENOISE_PRESET
         self.running = True
         self.vad = webrtcvad.Vad(VAD_LEVEL)
-        self.full_frames = []
         self.full_frame_voice_flags = []
+        self.recorded_frame_count = 0
+        self.recording_session = None
         self.min_speech_len_sec = 0.5
         self.max_segment_len_sec = float(max_segment_len_sec)
         self.energy_gate_rms = (
@@ -492,6 +522,25 @@ class AudioRecorderThread(QThread):
             self.finished_signal.emit(f"Hardware mounting failed: {str(e)}")
             return
 
+        try:
+            filename = Path(self.filename)
+            self.recording_session = RecordingSession.start(
+                filename.parent / f"{filename.name}_session",
+                recording_name=filename.name,
+                capture_mode=self.capture_mode,
+                sample_rate=SAMPLE_RATE,
+                sample_width=reader.sample_width,
+            )
+        except Exception as e:
+            reader.close()
+            self.finished_signal.emit(f"Recording session failed: {str(e)}")
+            return
+
+        self.status_signal.emit(
+            f"原始音訊正持續保存於 {self.recording_session.session_dir}"
+        )
+        if hasattr(self.transcriber, "reset_stream_elapsed"):
+            self.transcriber.reset_stream_elapsed()
         self.status_signal.emit(reader.description)
         if self.meeting_distance_policy.mode != DEFAULT_MEETING_DISTANCE_MODE:
             self.status_signal.emit(
@@ -508,11 +557,16 @@ class AudioRecorderThread(QThread):
         max_energy_bridge_frames = frames_for_duration_seconds(self.energy_bridge_ms / 1000)
         no_voice_auto_stop_frames = frames_for_duration_seconds(self.no_voice_auto_stop_minutes * 60)
         consecutive_vad_miss_frames = 0
+        capture_error = None
 
         while self.running:
             try:
-                np_data = reader.read()
+                tracks = reader.read_tracks() if hasattr(reader, "read_tracks") else {"mixed": reader.read()}
+                np_data = tracks["mixed"]
                 vad_data = np_data.tobytes()
+                self.recording_session.append_pcm(
+                    {track: frame.tobytes() for track, frame in tracks.items()}
+                )
 
                 self.waveform_signal.emit(np_data)
 
@@ -531,8 +585,8 @@ class AudioRecorderThread(QThread):
                     max_energy_bridge_frames=max_energy_bridge_frames,
                 )
 
-                self.full_frames.append(vad_data)
                 self.full_frame_voice_flags.append(is_speech)
+                self.recorded_frame_count += 1
                 if is_speech:
                     speech_buffer.append(np_data)
                     silence_frames = 0
@@ -555,30 +609,58 @@ class AudioRecorderThread(QThread):
                     self.running = False
             except Exception as e:
                 logger.exception("Audio loop stopped after error: %s", e)
+                capture_error = e
                 break
 
         speech_buffer = self._flush_speech_buffer(speech_buffer)
-        reader.close()
+        try:
+            reader.close()
+        except Exception as e:
+            logger.warning("Audio reader cleanup failed: %s", e)
 
-        frames_to_write = self.full_frames
+        trim_trailing_frames = 0
         if self.auto_stopped_for_no_voice:
-            frames_to_write, self.trimmed_trailing_no_voice_frames = trim_trailing_unvoiced_frames(
-                self.full_frames,
-                self.full_frame_voice_flags,
+            last_voiced_frame = next(
+                (
+                    index
+                    for index in range(len(self.full_frame_voice_flags) - 1, -1, -1)
+                    if self.full_frame_voice_flags[index]
+                ),
+                -1,
             )
+            self.trimmed_trailing_no_voice_frames = len(self.full_frame_voice_flags) - last_voiced_frame - 1
+            trim_trailing_frames = self.trimmed_trailing_no_voice_frames
             if self.trimmed_trailing_no_voice_frames:
                 trimmed_seconds = self.trimmed_trailing_no_voice_frames * CHUNK_MS / 1000
                 self.status_signal.emit(f"Trimmed {trimmed_seconds:.1f}s of trailing no-voice audio.")
 
-        if not frames_to_write:
+        if self.recording_session.manifest["status"] == "failed":
+            self.finished_signal.emit(f"Recording failed: {capture_error}")
+            return
+
+        try:
+            audio_tracks = self.recording_session.finalize(
+                trim_trailing_frames=trim_trailing_frames,
+                frame_samples=CHUNK_SIZE,
+                capture_error=capture_error,
+            )
+        except Exception as e:
+            logger.exception("Recording finalization failed: %s", e)
+            self.finished_signal.emit(f"Recording finalization failed: {str(e)}")
+            return
+
+        if capture_error is not None and "mixed" in audio_tracks:
+            message = (
+                f"Partial recording preserved after {type(capture_error).__name__}: "
+                f"{audio_tracks['mixed']}"
+            )
+            logger.warning(message)
+            self.status_signal.emit(f"⚠️ {message}")
+            self.finished_signal.emit(str(audio_tracks["mixed"]))
+            return
+
+        if self.recorded_frame_count <= trim_trailing_frames or "mixed" not in audio_tracks:
             self.finished_signal.emit("No audio recorded")
             return
 
-        wav_path = self.filename + ".wav"
-        os.makedirs(os.path.dirname(wav_path), exist_ok=True)
-        with wave.open(wav_path, "wb") as wf:
-            wf.setnchannels(1)
-            wf.setsampwidth(reader.sample_width)
-            wf.setframerate(SAMPLE_RATE)
-            wf.writeframes(b"".join(frames_to_write))
-        self.finished_signal.emit(wav_path)
+        self.finished_signal.emit(str(audio_tracks["mixed"]))

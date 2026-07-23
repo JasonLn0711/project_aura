@@ -10,6 +10,7 @@ BASE_MODEL_ID = "google/gemma-4-E4B-it"
 OLLAMA_MODEL_TAG = "gemma4:e4b-it-q4_K_M"
 OLLAMA_NUM_CTX = 32768
 ACTION_ITEM_STATUSES = {"open", "done", "blocked", "unknown"}
+CLAIM_SUPPORT_STATUSES = {"supported", "partial", "unsupported"}
 FIELD_NAMES = (
     "meeting_topic",
     "participants",
@@ -99,9 +100,31 @@ def expected_schema(field: str) -> dict[str, Any]:
     if field in {"key_points", "open_questions", "risks", "next_steps"}:
         return {field: ["string"]}
     if field == "decisions":
-        return {"decisions": [{"decision": "string", "evidence_style": "explicit"}]}
+        return {
+            "decisions": [
+                {
+                    "decision": "string",
+                    "evidence_style": "explicit",
+                    "source_segment_ids": ["seg-001"],
+                    "support_status": "supported",
+                    "review_status": "unreviewed",
+                }
+            ]
+        }
     if field == "action_items":
-        return {"action_items": [{"task": "string", "owner": "string", "deadline": "string", "status": "open"}]}
+        return {
+            "action_items": [
+                {
+                    "task": "string",
+                    "owner": "string",
+                    "deadline": "string",
+                    "status": "open",
+                    "source_segment_ids": ["seg-001"],
+                    "support_status": "supported",
+                    "review_status": "unreviewed",
+                }
+            ]
+        }
     raise ValueError(f"Unknown summary field: {field}")
 
 
@@ -150,10 +173,34 @@ def _normalize_string_list(value: Any, limit: int) -> tuple[list[str], str]:
     return items, ""
 
 
-def _normalize_decisions(value: Any) -> tuple[list[dict[str, str]], str]:
+def _normalize_claim_evidence(item: dict[str, Any]) -> tuple[dict[str, Any], str]:
+    source_segment_ids = item.get("source_segment_ids", [])
+    support_status = item.get("support_status", "unsupported")
+    review_status = item.get("review_status", "unreviewed")
+    if not isinstance(source_segment_ids, list) or not all(
+        isinstance(segment_id, str) for segment_id in source_segment_ids
+    ):
+        return {}, "source_segment_ids must be a list of strings"
+    if not isinstance(support_status, str) or support_status not in CLAIM_SUPPORT_STATUSES:
+        return {}, f"unsupported claim support status: {support_status}"
+    if review_status != "unreviewed":
+        return {}, "model claim review_status must be unreviewed"
+    normalized_ids = list(
+        dict.fromkeys(_clip_text(segment_id, 80) for segment_id in source_segment_ids if segment_id.strip())
+    )
+    if not normalized_ids and support_status != "unsupported":
+        support_status = "unsupported"
+    return {
+        "source_segment_ids": normalized_ids,
+        "support_status": support_status,
+        "review_status": review_status,
+    }, ""
+
+
+def _normalize_decisions(value: Any) -> tuple[list[dict[str, Any]], str]:
     if not isinstance(value, list):
         return [], "decisions is not a list"
-    decisions: list[dict[str, str]] = []
+    decisions: list[dict[str, Any]] = []
     for item in value[: FIELD_LIMITS["decisions"]]:
         if not isinstance(item, dict):
             return [], "decision item is not an object"
@@ -163,15 +210,24 @@ def _normalize_decisions(value: Any) -> tuple[list[dict[str, str]], str]:
             return [], "decision object must contain string decision and evidence_style"
         decision = _clip_text(decision)
         evidence_style = evidence_style.strip() or "explicit"
+        evidence, error = _normalize_claim_evidence(item)
+        if error:
+            return [], error
         if decision:
-            decisions.append({"decision": decision, "evidence_style": evidence_style})
+            decisions.append(
+                {
+                    "decision": decision,
+                    "evidence_style": evidence_style,
+                    **evidence,
+                }
+            )
     return decisions, ""
 
 
-def _normalize_action_items(value: Any) -> tuple[list[dict[str, str]], str]:
+def _normalize_action_items(value: Any) -> tuple[list[dict[str, Any]], str]:
     if not isinstance(value, list):
         return [], "action_items is not a list"
-    action_items: list[dict[str, str]] = []
+    action_items: list[dict[str, Any]] = []
     for item in value[: FIELD_LIMITS["action_items"]]:
         if not isinstance(item, dict):
             return [], "action item is not an object"
@@ -184,6 +240,9 @@ def _normalize_action_items(value: Any) -> tuple[list[dict[str, str]], str]:
         status = status.strip() or "unknown"
         if status not in ACTION_ITEM_STATUSES:
             return [], f"unsupported action item status: {status}"
+        evidence, error = _normalize_claim_evidence(item)
+        if error:
+            return [], error
         task = _clip_text(task)
         if task:
             action_items.append(
@@ -192,6 +251,7 @@ def _normalize_action_items(value: Any) -> tuple[list[dict[str, str]], str]:
                     "owner": _clip_text(owner, 80),
                     "deadline": _clip_text(deadline, 80),
                     "status": status,
+                    **evidence,
                 }
             )
     return action_items, ""

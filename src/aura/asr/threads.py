@@ -13,6 +13,7 @@ from aura.asr.file_pipeline import (
     FileTranscriptionCancelled,
     FileTranscriptionSettings,
     build_transcribe_kwargs,
+    format_timestamp,
     normalize_file_transcription_error,
     resolve_initial_prompt,
     transcribe_file,
@@ -120,6 +121,7 @@ class FileTranscriberThread(QThread):
         )
         self.cancellation = CancellationToken()
         self.result_lines = []
+        self.result_segments = []
         self.status_events = []
 
     @property
@@ -163,6 +165,7 @@ class FileTranscriberThread(QThread):
                 line_callback=self.text_updated.emit,
             )
             self.result_lines = result.lines
+            self.result_segments = result.segments
         except FileTranscriptionCancelled:
             self.emit_status(f"⚠️ Cancelled transcribing {file_name}")
         except Exception as e:
@@ -244,6 +247,7 @@ class TranscriberThread(QThread):
         self.live_initial_prompt = DEFAULT_SETTINGS.live_initial_prompt
         self.live_chinese_punctuation_enabled = DEFAULT_SETTINGS.chinese_punctuation_enabled
         self.punctuation_status_emitted = False
+        self._stream_elapsed_seconds = 0.0
 
     def update_live_settings(
         self,
@@ -273,6 +277,8 @@ class TranscriberThread(QThread):
                 self.processing = True
                 queue_size = self.audio_queue.qsize()
                 chunk_duration_seconds = len(audio_data) / SAMPLE_RATE
+                chunk_start_seconds = self._stream_elapsed_seconds
+                self._stream_elapsed_seconds += chunk_duration_seconds
                 asr_started_at = time.perf_counter()
                 segments, info = self.model.transcribe(audio_data, **transcribe_kwargs)
                 detected_language = getattr(info, "language", None) or self.live_language
@@ -295,7 +301,7 @@ class TranscriberThread(QThread):
                             self.status_updated.emit("🔤 Traditional Chinese punctuation normalized with rule fallback.")
                         self.punctuation_status_emitted = True
                 if text_segment.strip():
-                    timestamp = datetime.datetime.now().strftime("%H:%M:%S")
+                    timestamp = format_timestamp(chunk_start_seconds)
                     formatted_text = f"[{timestamp}] {text_segment}"
                     self.text_updated.emit(formatted_text)
                     append_transcript_backup(formatted_text)
@@ -310,6 +316,9 @@ class TranscriberThread(QThread):
 
     def add_audio(self, audio_np):
         self.audio_queue.put(audio_np)
+
+    def reset_stream_elapsed(self):
+        self._stream_elapsed_seconds = 0.0
 
     def is_idle(self):
         return self.audio_queue.empty() and not self.processing

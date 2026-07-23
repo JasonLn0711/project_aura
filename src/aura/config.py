@@ -5,7 +5,6 @@ VAD_LEVEL = 3
 
 MODEL_ID = "SoybeanMilk/faster-whisper-Breeze-ASR-25"
 DIARIZATION_MODEL_ID = "pyannote/speaker-diarization-community-1"
-SUMMARY_MODEL_ID = "google/gemma-4-E4B-it"
 CHINESE_PUNCTUATION_MODEL_ID = "p208p2002/zh-wiki-punctuation-restore"
 CHINESE_PUNCTUATION_FALLBACK_MODEL_ID = ""
 DEVICE = "cuda"

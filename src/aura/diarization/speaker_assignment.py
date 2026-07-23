@@ -9,6 +9,7 @@ class TranscriptSegment:
     start: float
     end: float
     text: str
+    asr_logprob: float | None = None
 
 
 @dataclass(frozen=True)

@@ -16,7 +16,21 @@ from aura.audio.meeting_distance import (
 from aura.audio.normalization import FfmpegUnavailable, normalize_media_to_wav, normalization_cpu_status
 from aura.asr.punctuation import restore_chinese_punctuation, should_restore_traditional_chinese_punctuation
 from aura.diarization.pyannote_pipeline import DiarizationSettings, diarize_audio_file, validate_diarization_runtime
-from aura.diarization.speaker_assignment import TranscriptSegment, assign_speakers
+from aura.diarization.speaker_assignment import (
+    UNKNOWN_SPEAKER,
+    TranscriptSegment,
+    assign_speakers,
+    overlap_seconds,
+)
+from aura.review import (
+    FINAL,
+    LOW_CONFIDENCE_FLAG,
+    LOW_CONFIDENCE_LOGPROB,
+    SPEAKER_OVERLAP_FLAG,
+    UNKNOWN_SPEAKER_FLAG,
+    ReviewSegment,
+    stable_segment_id,
+)
 from aura.settings import DEFAULT_SETTINGS
 from aura.system.cuda import is_cuda_runtime_error
 from aura.system.platform import detect_runtime_platform, platform_cuda_guidance
@@ -65,6 +79,7 @@ class FileTranscriptionSettings:
 class FileTranscriptionResult:
     file_name: str
     lines: list[str] = field(default_factory=list)
+    segments: list[ReviewSegment] = field(default_factory=list)
     cancelled: bool = False
 
 
@@ -105,7 +120,17 @@ def transcript_segment_from_whisper(segment) -> TranscriptSegment:
     end = float(getattr(segment, "end", start))
     if end < start:
         end = start
-    return TranscriptSegment(start=start, end=end, text=str(segment.text))
+    raw_logprob = getattr(segment, "avg_logprob", None)
+    try:
+        asr_logprob = float(raw_logprob) if raw_logprob is not None else None
+    except (TypeError, ValueError):
+        asr_logprob = None
+    return TranscriptSegment(
+        start=start,
+        end=end,
+        text=str(segment.text),
+        asr_logprob=asr_logprob,
+    )
 
 
 def restore_transcript_segments_punctuation(
@@ -130,6 +155,7 @@ def restore_transcript_segments_punctuation(
                 start=segment.start,
                 end=segment.end,
                 text=result.text,
+                asr_logprob=segment.asr_logprob,
             )
         )
         if result.backend == "model":
@@ -308,6 +334,7 @@ def transcribe_file(
             )
         cancellation.raise_if_cancelled()
 
+        speaker_turns = []
         if settings.diarization.enabled:
             if status_callback:
                 status_callback(
@@ -323,8 +350,56 @@ def transcribe_file(
                 format_segment(item.transcript, speaker=item.speaker)
                 for item in labeled_segments
             ]
+            speakers = [item.speaker for item in labeled_segments]
         else:
             formatted_lines = [format_segment(segment) for segment in transcript_segments]
+            speakers = [UNKNOWN_SPEAKER] * len(transcript_segments)
+
+        review_segments = [
+            ReviewSegment(
+                segment_id=stable_segment_id(index, round(segment.start * 1000)),
+                start_ms=round(segment.start * 1000),
+                end_ms=max(round(segment.start * 1000), round(segment.end * 1000)),
+                text=segment.text,
+                speaker=speakers[index],
+                state=FINAL,
+                asr_logprob=segment.asr_logprob,
+                review_flags=tuple(
+                    flag
+                    for flag, active in (
+                        (
+                            UNKNOWN_SPEAKER_FLAG,
+                            speakers[index] == UNKNOWN_SPEAKER,
+                        ),
+                        (
+                            SPEAKER_OVERLAP_FLAG,
+                            len(
+                                {
+                                    turn.speaker
+                                    for turn in speaker_turns
+                                    if overlap_seconds(
+                                        segment.start,
+                                        segment.end,
+                                        turn.start,
+                                        turn.end,
+                                    )
+                                    > 0
+                                }
+                            )
+                            > 1,
+                        ),
+                        (
+                            LOW_CONFIDENCE_FLAG,
+                            segment.asr_logprob is not None
+                            and segment.asr_logprob
+                            < LOW_CONFIDENCE_LOGPROB,
+                        ),
+                    )
+                    if active
+                ),
+            )
+            for index, segment in enumerate(transcript_segments)
+        ]
 
         for formatted_text in formatted_lines:
             cancellation.raise_if_cancelled()
@@ -338,7 +413,12 @@ def transcribe_file(
                 status_callback(f"⚠️ Cancelled transcribing {file_name}")
             else:
                 status_callback(f"✅ Finished transcribing {file_name}")
-        return FileTranscriptionResult(file_name=file_name, lines=lines, cancelled=cancellation.cancelled)
+        return FileTranscriptionResult(
+            file_name=file_name,
+            lines=lines,
+            segments=review_segments,
+            cancelled=cancellation.cancelled,
+        )
     finally:
         if temp_path.exists():
             temp_path.unlink()

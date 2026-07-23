@@ -1,6 +1,6 @@
 from PyQt6.QtCore import QThread, pyqtSignal
 
-from summary.field_schemas import OLLAMA_MODEL_TAG
+from summary.field_schemas import BASE_MODEL_ID, OLLAMA_MODEL_TAG
 from aura.llm.ollama_runtime import (
     DEFAULT_OLLAMA_HOST,
     DEFAULT_OLLAMA_READY_TIMEOUT_SEC,
@@ -28,7 +28,7 @@ class SummaryThread(QThread):
     def run(self):
         try:
             self.status_updated.emit(
-                f"🧠 Summarizing transcript with local {self.settings.model_id} {self.settings.quantization}..."
+                f"🧠 Summarizing transcript with local {OLLAMA_MODEL_TAG} ({BASE_MODEL_ID})..."
             )
             summary = summarize_transcript(self.transcript, self.settings)
             if summary.strip():

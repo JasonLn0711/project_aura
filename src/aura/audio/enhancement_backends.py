@@ -112,7 +112,7 @@ def _enhance_with_clearvoice(input_path: Path, output_path: Path, started_at: fl
                 ),
                 started_at,
             )
-        script_path = Path(__file__).resolve().parents[3] / "scripts" / "run_clearvoice_enhancement.py"
+        script_path = Path(__file__).with_name("run_clearvoice_enhancement.py")
         output_path.parent.mkdir(parents=True, exist_ok=True)
         command = [clearvoice_python, str(script_path), str(input_path), str(output_path)]
         subprocess.run(command, check=True, capture_output=True, text=True)

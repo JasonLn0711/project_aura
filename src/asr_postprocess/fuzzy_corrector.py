@@ -3,6 +3,8 @@ from __future__ import annotations
 import json
 import re
 from dataclasses import asdict, dataclass
+from importlib import resources
+from importlib.resources.abc import Traversable
 from pathlib import Path
 from typing import Any
 
@@ -10,7 +12,9 @@ import yaml
 from rapidfuzz import fuzz
 
 
-DEFAULT_GLOSSARY_PATH = Path(__file__).resolve().parents[2] / "config" / "domain_glossary.yaml"
+DEFAULT_GLOSSARY_PATH = resources.files("asr_postprocess").joinpath(
+    "domain_glossary.yaml"
+)
 DEFAULT_THRESHOLDS = {
     "organizations": 85.0,
     "medical_terms": 92.0,
@@ -66,11 +70,15 @@ class CorrectionResult:
         return self.raw_transcript != self.corrected_transcript
 
 
-def load_glossary(path: str | Path = DEFAULT_GLOSSARY_PATH) -> dict[str, Any]:
-    glossary_path = Path(path)
-    if not glossary_path.exists():
-        raise FileNotFoundError(f"Domain glossary not found: {glossary_path}")
-    payload = yaml.safe_load(glossary_path.read_text(encoding="utf-8")) or {}
+def load_glossary(
+    path: str | Path | Traversable = DEFAULT_GLOSSARY_PATH,
+) -> dict[str, Any]:
+    glossary = Path(path) if isinstance(path, (str, Path)) else path
+    try:
+        text = glossary.read_text(encoding="utf-8")
+    except FileNotFoundError:
+        raise FileNotFoundError(f"Domain glossary not found: {glossary}") from None
+    payload = yaml.safe_load(text) or {}
     if not isinstance(payload, dict):
         raise ValueError("Domain glossary must be a YAML mapping.")
     return payload
@@ -264,7 +272,7 @@ def _select_non_overlapping(
 
 def correct_transcript(
     transcript: str,
-    glossary_path: str | Path = DEFAULT_GLOSSARY_PATH,
+    glossary_path: str | Path | Traversable = DEFAULT_GLOSSARY_PATH,
 ) -> CorrectionResult:
     payload = load_glossary(glossary_path)
     thresholds = glossary_thresholds(payload)

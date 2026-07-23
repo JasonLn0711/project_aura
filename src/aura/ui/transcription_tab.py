@@ -1,7 +1,10 @@
 import datetime
 import gc
+import json
 import logging
 import os
+import re
+import tempfile
 import time
 import webbrowser
 from concurrent.futures import ThreadPoolExecutor
@@ -9,7 +12,8 @@ from pathlib import Path
 
 import numpy as np
 import pyqtgraph as pg
-from PyQt6.QtCore import Qt, QTime, QTimer, pyqtSlot
+from PyQt6.QtCore import Qt, QTime, QTimer, QUrl, pyqtSlot
+from PyQt6.QtMultimedia import QAudioOutput, QMediaPlayer
 from PyQt6.QtWidgets import (
     QApplication,
     QComboBox,
@@ -17,6 +21,7 @@ from PyQt6.QtWidgets import (
     QFileDialog,
     QFrame,
     QHBoxLayout,
+    QInputDialog,
     QLabel,
     QLineEdit,
     QMessageBox,
@@ -32,7 +37,6 @@ from PyQt6.QtWidgets import (
 )
 
 from aura.audit import AuditRecorder, write_audit_report
-from aura.asr.punctuation import restore_chinese_punctuation_for_transcript
 from aura.asr.threads import FileTranscriberThread, ModelLoaderThread, TranscriberThread
 from aura.audio.denoise import DEFAULT_ACTIVE_DENOISE_PRESET, OFF_DENOISE_PRESET, normalize_denoise_preset
 from aura.audio.meeting_distance import (
@@ -44,10 +48,12 @@ from aura.audio.meeting_distance import (
     meeting_distance_policy_for,
 )
 from aura.audio.capture import AudioRecorderThread
+from aura.audio.recording_session import write_session_manifest
 from aura.audio.export import normalize_wav_to_recording_audio, recording_audio_format_spec
 from aura.config import CHUNK_MS, LIVE_CAPTURE_MICROPHONE, LIVE_CAPTURE_SYSTEM, LIVE_CAPTURE_SYSTEM_MICROPHONE
 from aura.llm.summary import SummarySettings
 from aura.llm.threads import OllamaPullThread, OllamaRuntimeThread, SummaryThread
+from aura.review import export_segments
 from aura.scheduling import milliseconds_until, next_wall_clock_datetime, stop_datetime_after_start
 from aura.settings import DEFAULT_SETTINGS
 from aura.system.platform import detect_runtime_platform
@@ -57,18 +63,40 @@ from aura.system.runtime_report import (
     first_launch_checks,
     format_runtime_report,
 )
-from aura.system.runtime_paths import remove_transcript_backup
+from aura.system.runtime_paths import remove_transcript_backup, transcript_backup_path
 from aura.system.update_checker import UpdateCheckerThread
 from aura.ui.messages import UI_TEXT
 from aura.ui.transcript_io import (
+    PreparedTranscript,
+    collision_safe_transcript_base_path,
+    ensure_transcript_session,
+    prepare_transcript,
     split_transcript_sections,
     transcript_artifact_paths,
     write_json_file,
     write_event_log_file,
     write_transcript_artifacts,
+    write_transcript_file,
 )
+from aura.ui.summary_claims_table import SummaryClaimsTable
+from aura.ui.transcript_review_table import TranscriptReviewTable
+from summary.field_schemas import BASE_MODEL_ID, OLLAMA_MODEL_TAG
 
 logger = logging.getLogger(__name__)
+
+
+def safe_recording_suffix(value: str) -> str:
+    cleaned = re.sub(r"[^\w.-]+", "_", str(value).strip(), flags=re.UNICODE)
+    return cleaned.strip("._")[:80] or "record"
+
+
+def ensure_output_directory_writable(folder: str | Path) -> Path:
+    directory = Path(folder).expanduser().resolve()
+    directory.mkdir(parents=True, exist_ok=True)
+    descriptor, probe_name = tempfile.mkstemp(prefix=".aura-write-probe-", dir=directory)
+    os.close(descriptor)
+    Path(probe_name).unlink()
+    return directory
 
 
 class TranscriptionTab(QWidget):
@@ -79,6 +107,7 @@ class TranscriptionTab(QWidget):
         self.audit = audit if audit is not None else AuditRecorder()
         self.recorder_thread = None
         self.file_thread = None
+        self.final_recording_thread = None
         self.transcriber_thread = TranscriberThread()
         self.transcriber_thread.text_updated.connect(self.update_log)
         self.transcriber_thread.status_updated.connect(self.update_status_only)
@@ -94,6 +123,7 @@ class TranscriptionTab(QWidget):
         self.ollama_server_started_by_aura = False
         self.summary_audit_actor = None
         self.summary_audit_started_perf = None
+        self.summary_workflow_busy = False
         self.total_batch_count = 0
         self.update_checker = None
         self.transcript_revision = 0
@@ -104,6 +134,14 @@ class TranscriptionTab(QWidget):
         self.current_recording_metrics = None
         self.recording_log_handler = None
         self.recording_log_path = None
+        self.current_meeting_id = None
+        self.current_summary_session_dir = None
+        self.current_review_session_dir = None
+        self.current_review_meeting_id = None
+        self.current_review_audio_path = None
+        self.review_audio_path = None
+        self.review_player = None
+        self.review_audio_output = None
         self.last_output_folder = None
         self.custom_output_folder = os.path.join(os.getcwd(), "outputs", "transcripts")
         self.scheduled_recording_pending = False
@@ -396,7 +434,11 @@ class TranscriptionTab(QWidget):
             ("ffmpeg", "FFmpeg Ready"),
             ("microphone", "Microphone Ready"),
             ("output", "Output Folder"),
+            ("disk_space", "Output Disk Space"),
             ("asr_model", "ASR Model Load"),
+            ("ollama_command", "Ollama Command"),
+            ("ollama_server", "Ollama Local Server"),
+            ("ollama_model", "Ollama Summary Model"),
         ):
             row = QHBoxLayout()
             status_label = QLabel(self.strings.first_launch_status.format(label=label, status="checking"))
@@ -470,16 +512,22 @@ class TranscriptionTab(QWidget):
         self.plot_data = np.zeros(4000)
         self.curve = self.plot_widget.plot(self.plot_data, pen=pg.mkPen("#48c7b8", width=1))
 
-        self.text_area = QTextEdit()
+        self.text_area = TranscriptReviewTable()
         self.text_area.setObjectName("transcriptArea")
-        self.text_area.setReadOnly(True)
+        self.text_area.setReadOnly(False)
         self.text_area.setFontPointSize(12)
         self.text_area.setPlaceholderText(self.strings.transcript_placeholder)
+        self.text_area.review_changed.connect(self.on_review_changed)
+        self.text_area.seek_requested.connect(self.play_review_segment)
 
         self.btn_record = QPushButton(self.strings.start_recording)
         self.btn_record.clicked.connect(self.toggle_record)
         self.btn_record.setFixedHeight(50)
         self.btn_record.setProperty("role", "primary")
+
+        self.check_recording_consent = QCheckBox(self.strings.recording_consent_label)
+        self.check_recording_consent.setToolTip(self.strings.recording_consent_tooltip)
+        self.check_recording_consent.setAccessibleName(self.strings.recording_consent_label)
 
         self.btn_import = QPushButton(self.strings.import_media)
         self.btn_import.setToolTip(self.strings.import_media_tooltip)
@@ -523,6 +571,7 @@ class TranscriptionTab(QWidget):
         workflow_title = QLabel(self.strings.workstation_workflows_title)
         workflow_title.setProperty("role", "sectionTitle")
         workflow_layout.addWidget(workflow_title)
+        workflow_layout.addWidget(self.check_recording_consent)
         workflow_layout.addWidget(self.btn_record)
         workflow_layout.addWidget(self.btn_import)
         workflow_layout.addWidget(self.btn_cancel_import)
@@ -541,6 +590,25 @@ class TranscriptionTab(QWidget):
         transcript_layout.addWidget(self.batch_progress)
         transcript_layout.addWidget(self.plot_widget)
         transcript_layout.addWidget(self.text_area, stretch=1)
+        review_actions = QHBoxLayout()
+        self.btn_play_segment = QPushButton("播放選取片段")
+        self.btn_play_segment.setAccessibleName("播放選取的逐字稿來源音訊")
+        self.btn_play_segment.clicked.connect(self.play_selected_segment)
+        self.btn_confirm_segment = QPushButton("確認選取片段")
+        self.btn_confirm_segment.clicked.connect(self.confirm_selected_segment)
+        self.btn_next_review = QPushButton("下一個待覆核")
+        self.btn_next_review.clicked.connect(self.select_next_pending_segment)
+        self.btn_rename_speaker = QPushButton("套用本場講者名稱")
+        self.btn_rename_speaker.clicked.connect(self.rename_selected_speaker)
+        self.btn_export_review = QPushButton("匯出覆核結果")
+        self.btn_export_review.clicked.connect(self.export_current_review)
+        review_actions.addWidget(self.btn_play_segment)
+        review_actions.addWidget(self.btn_confirm_segment)
+        review_actions.addWidget(self.btn_next_review)
+        review_actions.addWidget(self.btn_rename_speaker)
+        review_actions.addWidget(self.btn_export_review)
+        review_actions.addStretch()
+        transcript_layout.addLayout(review_actions)
         transcript_layout.addWidget(self.batch_hint)
 
         artifact_panel = QFrame()
@@ -555,6 +623,29 @@ class TranscriptionTab(QWidget):
         artifact_layout.addWidget(artifact_title)
         artifact_layout.addWidget(self.btn_open_output_folder)
         artifact_layout.addWidget(self.btn_summary)
+        self.summary_claims = SummaryClaimsTable()
+        self.summary_claims.setMinimumHeight(180)
+        self.summary_claims.setVisible(False)
+        self.summary_claims.source_requested.connect(self.open_claim_source)
+        artifact_layout.addWidget(self.summary_claims)
+        claim_actions = QHBoxLayout()
+        self.btn_confirm_claim = QPushButton("確認主張")
+        self.btn_confirm_claim.clicked.connect(
+            lambda: self.review_selected_claim("confirmed")
+        )
+        self.btn_reject_claim = QPushButton("退回主張")
+        self.btn_reject_claim.clicked.connect(
+            lambda: self.review_selected_claim("rejected")
+        )
+        self.btn_edit_claim = QPushButton("編輯主張")
+        self.btn_edit_claim.clicked.connect(self.edit_selected_claim)
+        self.btn_confirm_claim.setVisible(False)
+        self.btn_reject_claim.setVisible(False)
+        self.btn_edit_claim.setVisible(False)
+        claim_actions.addWidget(self.btn_confirm_claim)
+        claim_actions.addWidget(self.btn_edit_claim)
+        claim_actions.addWidget(self.btn_reject_claim)
+        artifact_layout.addLayout(claim_actions)
         self.artifact_hint = QLabel(self.strings.artifact_empty_hint)
         self.artifact_hint.setWordWrap(True)
         self.artifact_hint.setProperty("role", "muted")
@@ -866,6 +957,18 @@ class TranscriptionTab(QWidget):
             workflow="import",
             outcome="attempted",
         )
+        if vars(self).get("summary_workflow_busy", False):
+            self.audit.record(
+                "import.start_rejected",
+                category="workflow.import",
+                actor="user",
+                workflow="import",
+                outcome="rejected",
+                severity="warning",
+                details={"reason": "summary_active"},
+            )
+            self.status_label.setText(self.strings.summary_already_running)
+            return
         if self.transcriber_thread.model is None:
             self.audit.record(
                 "import.start_rejected",
@@ -998,6 +1101,7 @@ class TranscriptionTab(QWidget):
         )
         schedule_enabled = self.check_schedule_recording.isChecked()
         self.check_schedule_recording.setEnabled(not active_workflow)
+        self.check_recording_consent.setEnabled(not active_workflow)
         self.time_schedule_start.setEnabled(schedule_enabled and not active_workflow)
         self.check_schedule_auto_stop.setEnabled(schedule_enabled and not active_workflow)
         self.time_schedule_end.setEnabled(
@@ -1217,9 +1321,17 @@ class TranscriptionTab(QWidget):
             return
 
         file_path = self.pending_files.pop(0)
+        self.current_review_session_dir = None
+        self.current_review_meeting_id = None
+        self.current_review_audio_path = None
+        self.review_audio_path = None
+        self.reset_summary_claims()
+        self.text_area.clear()
+        self.transcript_revision += 1
         base_name = os.path.splitext(os.path.basename(file_path))[0]
         self.current_filename = f"transcript_{base_name}"
         self.current_folder = os.path.dirname(file_path)
+        self.set_review_audio_source(file_path)
         self.update_output_folder_controls()
 
         completed = self.total_batch_count - len(self.pending_files) - 1
@@ -1228,7 +1340,33 @@ class TranscriptionTab(QWidget):
         total_left = len(self.pending_files) + 1
         self.status_label.setText(self.strings.batch_processing(total_left, base_name))
         min_speakers, max_speakers = self.selected_speaker_range()
-        output_base_path = self.transcript_base_path(self.current_folder, self.current_filename)
+        try:
+            output_base_path = str(
+                collision_safe_transcript_base_path(
+                    self.transcript_base_path(
+                        self.current_folder,
+                        self.current_filename,
+                    ),
+                    file_path,
+                )
+            )
+            ensure_output_directory_writable(Path(output_base_path).parent)
+        except (OSError, ValueError) as exc:
+            self.status_label.setText(
+                f"輸出資料夾目前無法寫入；來源媒體保持不變：{exc}"
+            )
+            self.audit.record(
+                "import.start_rejected",
+                category="workflow.import",
+                actor="system",
+                workflow="import",
+                outcome="error",
+                severity="error",
+                details={"reason": "output_unavailable", "error_class": type(exc).__name__},
+            )
+            QTimer.singleShot(0, self.process_next_file)
+            return
+        self.current_filename = Path(output_base_path).name
         self.current_import_metrics = self.new_metrics("import", file_path, output_base_path)
         self.current_import_metrics.update(self.selected_meeting_distance_policy().metadata())
         self.current_import_metrics["effective_denoise_preset"] = self.selected_denoise_preset()
@@ -1311,6 +1449,9 @@ class TranscriptionTab(QWidget):
         )
 
         transcript = "\n".join(thread.result_lines)
+        if getattr(thread, "result_segments", None):
+            self.text_area.set_segments(thread.result_segments)
+            transcript = self.text_area.toPlainText()
         base_path = metrics["base_path"] if metrics else self.default_transcript_base_path()
         if self.check_llm_summary.isChecked():
             summary_holder = {"text": ""}
@@ -1339,10 +1480,36 @@ class TranscriptionTab(QWidget):
             metrics["llm_summary_finished_at"] = self.timestamp_now()
 
         save_started = time.perf_counter()
+        prepared = self.prepare_transcript_input(transcript)
         if metrics is not None:
             metrics["save_started_at"] = self.timestamp_now()
+            if prepared.punctuation_backend != "skipped":
+                metrics["punctuation_restoration_backend"] = prepared.punctuation_backend
         self.import_summary_pending = False
-        saved = write_transcript_artifacts(base_path, transcript, summary_text=summary, metrics=metrics)
+        try:
+            saved = self.save_session_artifacts(
+                base_path,
+                prepared,
+                summary,
+                metrics,
+                default_workflow="import",
+            )
+        except (OSError, ValueError) as exc:
+            self.import_summary_pending = False
+            self.current_import_metrics = None
+            self.status_label.setText(
+                f"逐字稿仍保留在畫面中；輸出寫入需要協助確認：{exc}"
+            )
+            self.audit.record(
+                "import.artifact_save_failed",
+                category="workflow.import",
+                workflow="import",
+                outcome="error",
+                severity="error",
+                details={"error_class": type(exc).__name__},
+            )
+            QTimer.singleShot(0, self.process_next_file)
+            return
         if metrics is not None:
             self.add_stage_duration(metrics, "save_outputs", save_started)
             finished_metrics = self.finish_metrics(metrics)
@@ -1357,6 +1524,7 @@ class TranscriptionTab(QWidget):
 
         final_path = saved.get("final") or saved.get("raw")
         if final_path:
+            remove_transcript_backup()
             self.remember_output_folder(final_path.parent)
             elapsed = finished_metrics.get("total_seconds", 0.0) if finished_metrics else 0.0
             if self.import_cancel_requested:
@@ -1417,7 +1585,49 @@ class TranscriptionTab(QWidget):
             return
         self.stop_recording_session("manual")
 
+    def recording_consent_confirmed(self) -> bool:
+        return bool(
+            hasattr(self, "check_recording_consent")
+            and self.check_recording_consent.isChecked()
+        )
+
+    def require_recording_consent(self, event_name: str, trigger: str) -> bool:
+        if self.recording_consent_confirmed():
+            return True
+        self.audit.record(
+            event_name,
+            category="workflow.recording",
+            actor="user" if trigger != "scheduled" else "system",
+            workflow="recording",
+            outcome="rejected",
+            severity="warning",
+            details={"reason": "consent_not_confirmed", "trigger": trigger},
+        )
+        if trigger == "scheduled":
+            self.status_label.setText(self.strings.recording_consent_required)
+        else:
+            QMessageBox.warning(
+                self,
+                self.strings.recording_consent_title,
+                self.strings.recording_consent_required,
+            )
+        return False
+
     def start_recording_session(self, trigger: str) -> bool:
+        if vars(self).get("summary_workflow_busy", False):
+            self.audit.record(
+                "recording.start_rejected",
+                category="workflow.recording",
+                actor="user" if trigger == "manual" else "system",
+                workflow="recording",
+                outcome="rejected",
+                severity="warning",
+                details={"reason": "summary_active", "trigger": trigger},
+            )
+            self.status_label.setText(self.strings.summary_already_running)
+            return False
+        if not self.require_recording_consent("recording.start_rejected", trigger):
+            return False
         if self.transcriber_thread.model is None:
             self.audit.record(
                 "recording.start_rejected",
@@ -1446,21 +1656,53 @@ class TranscriptionTab(QWidget):
             self.status_label.setText(self.strings.scheduled_recording_start_failed)
             return False
 
-        suffix = self.name_input.text().strip() or "record"
-        timestamp = datetime.datetime.now().strftime("%y%m%d_%H%M")
+        self.current_review_session_dir = None
+        self.current_review_meeting_id = None
+        self.current_review_audio_path = None
+        self.review_audio_path = None
+
+        suffix = safe_recording_suffix(self.name_input.text())
+        timestamp = datetime.datetime.now().strftime("%y%m%d_%H%M%S_%f")[:-3]
         base_name = f"{timestamp}_{suffix}"
 
         self.current_folder = os.path.join(os.getcwd(), base_name)
-        os.makedirs(self.current_folder, exist_ok=True)
         self.current_filename = base_name
-        full_path = os.path.join(self.current_folder, base_name)
+        full_path = self.default_transcript_base_path()
+        try:
+            ensure_output_directory_writable(Path(full_path).parent)
+        except OSError as exc:
+            self.status_label.setText(f"輸出資料夾目前無法寫入，錄音尚未啟動：{exc}")
+            self.audit.record(
+                "recording.start_rejected",
+                category="workflow.recording",
+                actor="user" if trigger == "manual" else "system",
+                workflow="recording",
+                outcome="error",
+                severity="error",
+                details={"reason": "output_unavailable", "error_class": type(exc).__name__},
+            )
+            return False
         self.update_output_folder_controls()
         self.current_recording_metrics = self.new_metrics(
             "recording",
             f"{full_path}.wav",
             self.default_transcript_base_path(),
         )
-        self.start_recording_runtime_log(self.default_transcript_base_path())
+        try:
+            self.start_recording_runtime_log(self.default_transcript_base_path())
+        except OSError as exc:
+            self.current_recording_metrics = None
+            self.status_label.setText(f"錄音活動紀錄目前無法建立，錄音尚未啟動：{exc}")
+            self.audit.record(
+                "recording.start_rejected",
+                category="workflow.recording",
+                actor="user" if trigger == "manual" else "system",
+                workflow="recording",
+                outcome="error",
+                severity="error",
+                details={"reason": "runtime_log_unavailable", "error_class": type(exc).__name__},
+            )
+            return False
         self.current_recording_metrics["recording_started_at"] = self.timestamp_now()
         self.current_recording_metrics["recording_start_trigger"] = trigger
         self.current_recording_metrics["capture_source"] = self.selected_live_capture_source()
@@ -1494,8 +1736,10 @@ class TranscriptionTab(QWidget):
             "recording_audio_format": self.selected_recording_audio_format(),
             "chinese_punctuation_enabled": self.settings.chinese_punctuation_enabled,
             "llm_summary_enabled": self.check_llm_summary.isChecked(),
-            "llm_summary_model": self.settings.llm_summary_model,
-            "output_folder": self.current_folder,
+            "llm_summary_model": BASE_MODEL_ID,
+            "llm_summary_quantization": OLLAMA_MODEL_TAG,
+            "recording_consent_confirmed": True,
+            "output_folder": str(Path(full_path).parent),
         }
         self.current_recording_metrics["recording_runtime_config"] = recording_runtime_config
         self.append_recording_event(
@@ -1556,6 +1800,7 @@ class TranscriptionTab(QWidget):
         self.update_record_button_label()
         self.update_schedule_controls()
         self.status_label.setText(self.strings.recording(base_name))
+        self.reset_summary_claims()
         self.text_area.clear()
         self.transcript_revision += 1
         return True
@@ -1568,7 +1813,8 @@ class TranscriptionTab(QWidget):
         if not thread_already_finished:
             recorder_thread.running = False
             recorder_thread.quit()
-        self.recorder_thread = None
+        else:
+            self.recorder_thread = None
 
         self.btn_record.setEnabled(False)
         self.btn_import.setEnabled(False)
@@ -1628,6 +1874,8 @@ class TranscriptionTab(QWidget):
         QTimer.singleShot(1000, self.finalize_recording_after_live_asr_idle)
 
     def arm_scheduled_recording(self):
+        if not self.require_recording_consent("recording.schedule_rejected", "schedule"):
+            return
         if self.transcriber_thread.model is None:
             self.audit.record(
                 "recording.schedule_rejected",
@@ -1684,6 +1932,7 @@ class TranscriptionTab(QWidget):
         self.btn_record.setEnabled(not import_active)
         self.btn_import.setEnabled(not import_active)
         self.btn_reload_model.setEnabled(not import_active)
+        self.check_recording_consent.setChecked(False)
         self.update_summary_button_state()
         self.update_record_button_label()
         self.update_schedule_controls()
@@ -1729,6 +1978,9 @@ class TranscriptionTab(QWidget):
     def finalize_recording_after_live_asr_idle(self):
         if not self.finalize_recording_pending:
             return
+        if self.recorder_thread is not None:
+            QTimer.singleShot(250, self.finalize_recording_after_live_asr_idle)
+            return
         if not self.transcriber_thread.is_idle():
             QTimer.singleShot(1000, self.finalize_recording_after_live_asr_idle)
             return
@@ -1740,6 +1992,14 @@ class TranscriptionTab(QWidget):
                 self.current_recording_metrics.get("_stop_requested_perf"),
             )
             self.append_recording_event("final_asr_idle", "Live ASR queue drained before saving artifacts.")
+        metrics = self.current_recording_metrics
+        if metrics is not None and not metrics.get("final_recording_pass_completed"):
+            if self.final_recording_thread is not None:
+                return
+            if self.start_final_recording_pass():
+                return
+            metrics["final_recording_pass_completed"] = True
+            metrics["final_recording_pass_status"] = "skipped_no_durable_audio"
         if self.check_llm_summary.isChecked() and self.transcript_without_summary():
             summary_holder = {"text": ""}
             if self.current_recording_metrics is not None:
@@ -1756,6 +2016,85 @@ class TranscriptionTab(QWidget):
             return
         self.save_and_clear_recording_transcript()
 
+    def start_final_recording_pass(self) -> bool:
+        durable_audio = (self.current_recording_metrics or {}).get(
+            "recording_raw_wav_path"
+        )
+        audio_path = Path(durable_audio) if durable_audio else None
+        if not audio_path or not audio_path.exists() or self.transcriber_thread.model is None:
+            return False
+        min_speakers, max_speakers = self.selected_speaker_range()
+        self.final_recording_thread = FileTranscriberThread(
+            self.transcriber_thread.model,
+            str(audio_path),
+            target_dbfs=float(self.spin_norm.value()),
+            beam_size=self.spin_beam.value(),
+            initial_prompt=self.prompt_input.text(),
+            language=self.combo_lang.currentData(),
+            meeting_distance_mode=self.selected_meeting_distance_mode(),
+            enable_denoise=self.denoise_enabled(),
+            denoise_preset=self.selected_denoise_preset(),
+            enable_speaker_diarization=self.check_speaker_diarization.isChecked(),
+            min_speakers=min_speakers,
+            max_speakers=max_speakers,
+        )
+        if self.current_recording_metrics is not None:
+            self.current_recording_metrics["final_recording_pass_started_at"] = self.timestamp_now()
+            self.current_recording_metrics["_final_recording_pass_started_perf"] = time.perf_counter()
+        self.append_recording_event(
+            "final_recording_pass_started",
+            "Offline final ASR and diarization started from durable audio.",
+        )
+        self.status_label.setText("⏳ 正在從已保存音訊產生會後精確逐字稿…")
+        self.final_recording_thread.status_updated.connect(self.update_status_only)
+        self.final_recording_thread.error_signal.connect(self.on_final_recording_pass_error)
+        self.final_recording_thread.finished_signal.connect(self.on_final_recording_pass_finished)
+        self.final_recording_thread.start()
+        return True
+
+    @pyqtSlot(str)
+    def on_final_recording_pass_error(self, error: str):
+        if self.current_recording_metrics is not None:
+            self.current_recording_metrics["final_recording_pass_error"] = str(error)
+        self.append_recording_event(
+            "final_recording_pass_failed",
+            "Offline final ASR failed; the provisional transcript remains available.",
+            error_class="final_recording_pass_error",
+        )
+        self.update_status_only(f"⚠️ 會後精確逐字稿未完成，將保存會中暫定版本：{error}")
+
+    def on_final_recording_pass_finished(self):
+        thread = self.final_recording_thread
+        self.final_recording_thread = None
+        metrics = self.current_recording_metrics
+        if metrics is not None:
+            self.add_stage_duration(
+                metrics,
+                "final_recording_pass",
+                metrics.get("_final_recording_pass_started_perf"),
+            )
+            metrics["final_recording_pass_finished_at"] = self.timestamp_now()
+            metrics["final_recording_pass_completed"] = True
+        segments = list(getattr(thread, "result_segments", []) or [])
+        if segments:
+            self.text_area.set_segments(segments)
+            if metrics is not None:
+                metrics["final_recording_pass_status"] = "final"
+                metrics["final_segment_count"] = len(segments)
+            self.append_recording_event(
+                "final_recording_pass_completed",
+                "Durable audio replaced the provisional transcript with final timestamped segments.",
+                segment_count=len(segments),
+            )
+        else:
+            if metrics is not None:
+                metrics["final_recording_pass_status"] = "provisional_fallback"
+            self.append_recording_event(
+                "final_recording_pass_fallback",
+                "No final segments were produced; preserving the provisional transcript.",
+            )
+        self.finalize_recording_after_live_asr_idle()
+
     def save_and_clear_recording_transcript(self, summary_override: str = ""):
         if not self.finalize_recording_pending:
             return
@@ -1768,16 +2107,9 @@ class TranscriptionTab(QWidget):
             self.append_event_to_metrics(metrics, "llm_summary_finished", "LLM summary finished for recording transcript.")
 
         raw_transcript, summary = split_transcript_sections(self.text_area.toPlainText())
-        punctuation_result = None
-        if self.settings.chinese_punctuation_enabled:
-            punctuation_result = restore_chinese_punctuation_for_transcript(
-                raw_transcript,
-                language=self.combo_lang.currentData(),
-                enable_model=False,
-            )
-            raw_transcript = punctuation_result.text
+        prepared = self.prepare_transcript_input(raw_transcript)
         summary = summary_override or summary
-        if not raw_transcript and not summary:
+        if not prepared.raw_text and not summary:
             if metrics is not None:
                 self.append_event_to_metrics(metrics, "save_skipped", "No transcript or summary content to save.")
                 finished_metrics = self.finish_metrics(metrics)
@@ -1809,10 +2141,31 @@ class TranscriptionTab(QWidget):
         save_started = time.perf_counter()
         if metrics is not None:
             metrics["save_started_at"] = self.timestamp_now()
-            if punctuation_result is not None and punctuation_result.backend != "skipped":
-                metrics["punctuation_restoration_backend"] = punctuation_result.backend
+            if prepared.punctuation_backend != "skipped":
+                metrics["punctuation_restoration_backend"] = prepared.punctuation_backend
             self.append_event_to_metrics(metrics, "save_started", "Saving recording transcript artifacts.")
-        saved = write_transcript_artifacts(base_path, raw_transcript, summary_text=summary, metrics=metrics)
+        try:
+            saved = self.save_session_artifacts(
+                base_path,
+                prepared,
+                summary,
+                metrics,
+                default_workflow="recording",
+            )
+        except (OSError, ValueError) as exc:
+            self.status_label.setText(
+                f"錄音與逐字稿仍保留；輸出寫入需要協助確認：{exc}"
+            )
+            self.audit.record(
+                "recording.artifact_save_failed",
+                category="workflow.recording",
+                workflow="recording",
+                outcome="error",
+                severity="error",
+                details={"error_class": type(exc).__name__},
+            )
+            self.restore_post_recording_controls()
+            return
         if metrics is not None:
             self.add_stage_duration(metrics, "save_outputs", save_started)
             finished_metrics = self.finish_metrics(metrics)
@@ -1839,7 +2192,6 @@ class TranscriptionTab(QWidget):
         final_path = saved.get("final") or saved.get("raw")
         if final_path:
             self.transcript_revision += 1
-            self.text_area.clear()
             remove_transcript_backup()
             self.remember_output_folder(final_path.parent)
             elapsed = metrics.get("total_seconds", 0.0) if metrics else 0.0
@@ -1852,7 +2204,17 @@ class TranscriptionTab(QWidget):
                     "summary_included": bool(summary),
                 },
             )
-            self.status_label.setText(self.strings.transcript_artifacts_saved_message(str(final_path), elapsed))
+            if metrics and metrics.get("recording_outcome") == "partial":
+                self.status_label.setText(
+                    f"⚠️ 已保存可用的部分錄音與逐字稿：{final_path}；請由人員覆核錄音結束位置。"
+                )
+            else:
+                self.status_label.setText(
+                    self.strings.transcript_artifacts_saved_message(
+                        str(final_path),
+                        elapsed,
+                    )
+                )
             self.current_recording_metrics = None
             self.restore_post_recording_controls()
             return
@@ -1862,6 +2224,7 @@ class TranscriptionTab(QWidget):
 
     def restore_post_recording_controls(self):
         import_active = self.file_import_active()
+        self.check_recording_consent.setChecked(False)
         self.btn_record.setEnabled(not import_active)
         self.btn_import.setEnabled(not import_active)
         self.btn_reload_model.setEnabled(not import_active)
@@ -1869,9 +2232,49 @@ class TranscriptionTab(QWidget):
         self.update_schedule_controls()
         self.update_summary_button_state()
 
+    def set_summary_workflow_busy(self, busy: bool):
+        self.summary_workflow_busy = bool(busy)
+        attributes = vars(self)
+        text_area = attributes.get("text_area")
+        if text_area is not None:
+            text_area.setReadOnly(self.summary_workflow_busy)
+            set_enabled = getattr(text_area, "setEnabled", None)
+            if set_enabled is not None:
+                set_enabled(not self.summary_workflow_busy)
+        for name in (
+            "btn_confirm_segment",
+            "btn_rename_speaker",
+            "btn_export_review",
+            "btn_confirm_claim",
+            "btn_reject_claim",
+            "btn_edit_claim",
+        ):
+            button = attributes.get(name)
+            if button is not None:
+                button.setEnabled(not self.summary_workflow_busy)
+        if self.summary_workflow_busy:
+            for name in ("btn_summary", "btn_record", "btn_import", "btn_reload_model"):
+                button = attributes.get(name)
+                if button is not None:
+                    button.setEnabled(False)
+            return
+
+        import_active = self.file_import_active() if "pending_files" in attributes else False
+        recording_active = attributes.get("recorder_thread") is not None
+        scheduled = bool(attributes.get("scheduled_recording_pending", False))
+        for name in ("btn_record", "btn_import", "btn_reload_model"):
+            button = attributes.get(name)
+            if button is not None:
+                button.setEnabled(not import_active and not recording_active and not scheduled)
+        if "btn_summary" in attributes:
+            self.update_summary_button_state()
+        if "check_schedule_recording" in attributes:
+            self.update_schedule_controls()
+
     def update_summary_button_state(self):
         self.btn_summary.setEnabled(
             bool(self.transcript_without_summary().strip())
+            and not vars(self).get("summary_workflow_busy", False)
             and not self.file_import_active()
             and not self.finalize_recording_pending
             and not self.scheduled_recording_pending
@@ -1902,6 +2305,256 @@ class TranscriptionTab(QWidget):
         if self.recording_log_active():
             self.append_recording_event("live_transcript_update", "Live transcript text appended.", text=text)
 
+    @pyqtSlot(object)
+    def on_review_changed(self, _change):
+        self.transcript_revision += 1
+        self.update_summary_button_state()
+        events = self.text_area.review.events
+        if events and events[-1].get("event") == "segment.edited":
+            self.reset_summary_claims()
+        session_dir = getattr(self, "current_review_session_dir", None)
+        meeting_id = getattr(self, "current_review_meeting_id", None)
+        if session_dir and meeting_id:
+            try:
+                self.text_area.review.save(
+                    session_dir,
+                    meeting_id=meeting_id,
+                    audio_path=getattr(self, "current_review_audio_path", None),
+                )
+            except OSError as exc:
+                self.status_label.setText(
+                    f"覆核內容仍保留在畫面中；寫入工作階段時發生錯誤：{exc}"
+                )
+                self.audit.record(
+                    "review.autosave_failed",
+                    category="workflow.review",
+                    actor="user",
+                    workflow="review",
+                    outcome="error",
+                    severity="error",
+                    details={"error_class": type(exc).__name__},
+                )
+                return
+        self.audit.record(
+            "review.transcript_changed",
+            category="workflow.review",
+            actor="user",
+            workflow="review",
+        )
+
+    def confirm_selected_segment(self):
+        row = self.text_area.currentRow()
+        if row < 0:
+            self.status_label.setText("請先選取要確認的逐字稿片段。")
+            return
+        self.text_area.confirm_row(row)
+        self.status_label.setText("✅ 已確認選取片段。")
+
+    def play_selected_segment(self):
+        row = self.text_area.currentRow()
+        if row < 0 or row >= len(self.text_area.review.segments):
+            self.status_label.setText("請先選取要播放的逐字稿片段。")
+            return
+        self.play_review_segment(self.text_area.review.segments[row].start_ms)
+
+    def select_next_pending_segment(self):
+        segment = self.text_area.select_next_pending()
+        if segment is None:
+            self.status_label.setText("✅ 本場逐字稿片段皆已完成覆核。")
+            return
+        self.status_label.setText(f"待覆核片段：{segment.segment_id}")
+
+    def rename_selected_speaker(self):
+        row = self.text_area.currentRow()
+        if row < 0 or row >= len(self.text_area.review.segments):
+            self.status_label.setText("請先選取要命名的講者片段。")
+            return
+        current_name = self.text_area.review.segments[row].speaker
+        new_name, accepted = QInputDialog.getText(
+            self,
+            "套用本場講者名稱",
+            f"將本場所有「{current_name}」改為：",
+        )
+        if not accepted or not new_name.strip():
+            return
+        changed = self.text_area.rename_speaker(current_name, new_name.strip())
+        self.status_label.setText(f"✅ 已更新 {changed} 個講者片段。")
+
+    def set_review_audio_source(self, audio_path: str | Path):
+        path = Path(audio_path).expanduser().resolve()
+        self.review_audio_path = path if path.exists() else None
+
+    @pyqtSlot(int)
+    def play_review_segment(self, start_ms: int):
+        if not self.review_audio_path or not self.review_audio_path.exists():
+            self.status_label.setText("這個工作階段目前沒有可播放的原始音訊。")
+            return
+        if self.review_player is None:
+            self.review_audio_output = QAudioOutput(self)
+            self.review_player = QMediaPlayer(self)
+            self.review_player.setAudioOutput(self.review_audio_output)
+        source = QUrl.fromLocalFile(str(self.review_audio_path))
+        if self.review_player.source() != source:
+            self.review_player.setSource(source)
+        self.review_player.setPosition(max(0, int(start_ms)))
+        self.review_player.play()
+        self.status_label.setText(f"▶ 從 {start_ms / 1000:.1f} 秒播放原始音訊。")
+
+    @pyqtSlot(str)
+    def open_claim_source(self, segment_id: str):
+        segment = self.text_area.select_segment(segment_id)
+        if segment is None:
+            self.status_label.setText(f"找不到來源片段 {segment_id}。")
+            return
+        self.play_review_segment(segment.start_ms)
+
+    def review_selected_claim(self, review_status: str):
+        try:
+            self.summary_claims.review_selected(review_status)
+        except OSError as exc:
+            self.status_label.setText("覆核內容仍保留；覆核紀錄尚未寫入，請確認輸出空間後重試。")
+            self.audit.record(
+                "review.claim_write_failed",
+                category="workflow.review",
+                actor="user",
+                workflow="review",
+                outcome="error",
+                severity="error",
+                details={"error_class": type(exc).__name__},
+            )
+            return
+        except ValueError:
+            self.status_label.setText("這項主張需要來源片段後才能確認；可先退回並重新摘要。")
+            return
+        if self.summary_claims.currentRow() >= 0:
+            action = "確認" if review_status == "confirmed" else "退回"
+            self.status_label.setText(f"✅ 已{action}選取的摘要主張並保存覆核紀錄。")
+
+    def edit_selected_claim(self):
+        row = self.summary_claims.currentRow()
+        if row < 0:
+            self.status_label.setText("請先選取要編輯的摘要主張。")
+            return
+        current = self.summary_claims.item(
+            row, self.summary_claims.CLAIM_COLUMN
+        ).text()
+        replacement, accepted = QInputDialog.getText(
+            self,
+            "編輯摘要主張",
+            "人員校訂內容：",
+            text=current,
+        )
+        if accepted and replacement.strip():
+            try:
+                self.summary_claims.edit_selected(replacement)
+            except (OSError, ValueError, KeyError) as exc:
+                self.status_label.setText("摘要主張維持原內容；覆核紀錄尚未寫入，請確認輸出空間後重試。")
+                self.audit.record(
+                    "review.claim_write_failed",
+                    category="workflow.review",
+                    actor="user",
+                    workflow="review",
+                    outcome="error",
+                    severity="error",
+                    details={
+                        "action": "edit",
+                        "error_class": type(exc).__name__,
+                    },
+                )
+                return
+            self.status_label.setText("✅ 已保存摘要主張的人員校訂紀錄。")
+
+    def load_current_summary_claims(self):
+        session_dir = self.current_summary_session_dir
+        if not session_dir or not (Path(session_dir) / "summary.json").exists():
+            return
+        self.summary_claims.load_session(session_dir)
+        visible = self.summary_claims.rowCount() > 0
+        self.summary_claims.setVisible(visible)
+        self.btn_confirm_claim.setVisible(visible)
+        self.btn_reject_claim.setVisible(visible)
+        self.btn_edit_claim.setVisible(visible)
+        if visible:
+            self.artifact_hint.setVisible(False)
+
+    def reset_summary_claims(self):
+        self.current_summary_session_dir = None
+        self.summary_claims.clear_session()
+        self.summary_claims.setVisible(False)
+        self.btn_confirm_claim.setVisible(False)
+        self.btn_reject_claim.setVisible(False)
+        self.btn_edit_claim.setVisible(False)
+
+    def save_review_artifacts(self, base_path: str | Path, metrics: dict | None = None) -> dict[str, Path]:
+        if not self.text_area.review.segments:
+            return {}
+        base = Path(base_path)
+        workflow = str((metrics or {}).get("workflow") or "review")
+        source_path = (metrics or {}).get("source_path")
+        session = ensure_transcript_session(
+            base,
+            workflow=workflow,
+            source_path=source_path,
+        )
+        meeting_id = session.meeting_id
+        if metrics is not None:
+            metrics["meeting_id"] = meeting_id
+        self.current_meeting_id = meeting_id
+        audio_path = (
+            (metrics or {}).get("recording_audio_path")
+            or self.review_audio_path
+            or (metrics or {}).get("source_path")
+        )
+        saved = self.text_area.review.save(
+            session.directory,
+            meeting_id=str(meeting_id),
+            audio_path=audio_path,
+        )
+        self.current_review_session_dir = session.directory
+        self.current_review_meeting_id = str(meeting_id)
+        self.current_review_audio_path = audio_path
+        exports = export_segments(self.text_area.review.segments, base.with_name(f"{base.name}_review"))
+        saved.update({f"review_{name}": path for name, path in exports.items()})
+        return saved
+
+    def save_session_artifacts(
+        self,
+        base_path: str | Path,
+        prepared: PreparedTranscript,
+        summary: str,
+        metrics: dict | None,
+        *,
+        default_workflow: str,
+    ) -> dict[str, Path]:
+        session = ensure_transcript_session(
+            base_path,
+            workflow=str((metrics or {}).get("workflow") or default_workflow),
+            source_path=(metrics or {}).get("source_path"),
+        )
+        if metrics is not None:
+            metrics["meeting_id"] = session.meeting_id
+        saved = write_transcript_artifacts(
+            base_path,
+            prepared,
+            summary_text=summary,
+            metrics=metrics,
+            session=session,
+        )
+        saved.update(self.save_review_artifacts(base_path, metrics))
+        return saved
+
+    def export_current_review(self):
+        if not self.text_area.review.segments:
+            self.status_label.setText("目前沒有可匯出的覆核片段。")
+            return
+        saved = self.save_review_artifacts(
+            self.default_transcript_base_path(),
+            self.current_recording_metrics or self.current_import_metrics,
+        )
+        if saved:
+            self.remember_output_folder(next(iter(saved.values())).parent)
+            self.status_label.setText("✅ 已匯出 JSON、Markdown、SRT 與 VTT 覆核結果。")
+
     @pyqtSlot(str)
     def update_status_only(self, text):
         self.status_label.setText(text)
@@ -1920,13 +2573,38 @@ class TranscriptionTab(QWidget):
         message = fields.pop("message", "Live ASR telemetry captured.")
         self.append_recording_event(category, message, **fields)
 
-    def summary_settings(self) -> SummarySettings:
+    def summary_settings(self, prepared: PreparedTranscript | None = None) -> SummarySettings:
+        metrics = self.current_recording_metrics or self.current_import_metrics
+        base_path = metrics["base_path"] if metrics else self.default_transcript_base_path()
+        session = ensure_transcript_session(
+            base_path,
+            workflow=str((metrics or {}).get("workflow") or "summary"),
+            source_path=(metrics or {}).get("source_path"),
+        )
+        session_dir = str(session.directory)
+        meeting_id = session.meeting_id
+        self.current_summary_session_dir = session.directory
+        if metrics:
+            metrics["meeting_id"] = meeting_id
+        self.current_meeting_id = meeting_id
+        segments = tuple(segment.to_dict() for segment in self.text_area.review.segments)
         return SummarySettings(
-            enabled=True,
-            model_id=self.settings.llm_summary_model,
-            quantization=self.settings.llm_summary_quantization,
-            max_new_tokens=self.settings.llm_summary_max_new_tokens,
-            temperature=self.settings.llm_summary_temperature,
+            session_dir=session_dir,
+            meeting_id=meeting_id,
+            evidence_segments=segments,
+            transcript_sha256=prepared.content_sha256 if prepared else "",
+        )
+
+    def prepare_transcript_input(self, transcript: str | PreparedTranscript) -> PreparedTranscript:
+        if isinstance(transcript, PreparedTranscript):
+            return transcript
+        language = self.combo_lang.currentData() if hasattr(self, "combo_lang") else None
+        punctuation_enabled = getattr(self.settings, "chinese_punctuation_enabled", True)
+        return prepare_transcript(
+            transcript,
+            language=language,
+            enable_punctuation=punctuation_enabled,
+            enable_punctuation_model=False,
         )
 
     def transcript_without_summary(self) -> str:
@@ -1951,7 +2629,14 @@ class TranscriptionTab(QWidget):
         )
         self.prepare_llm_runtime_then_summarize(transcript)
 
-    def prepare_llm_runtime_then_summarize(self, transcript: str, finished_callback=None, summary_ready_callback=None):
+    def prepare_llm_runtime_then_summarize(
+        self,
+        transcript: str | PreparedTranscript,
+        finished_callback=None,
+        summary_ready_callback=None,
+    ):
+        prepared = self.prepare_transcript_input(transcript)
+        transcript = prepared.corrected_text
         if self.summary_audit_actor is None:
             self.summary_audit_actor = "system" if finished_callback else "user"
         if not transcript.strip():
@@ -1967,23 +2652,29 @@ class TranscriptionTab(QWidget):
         if self.ollama_pull_thread and self.ollama_pull_thread.isRunning():
             return
 
-        self.btn_summary.setEnabled(False)
+        settings = self.summary_settings(prepared)
+        summary_revision = self.transcript_revision
+        self.set_summary_workflow_busy(True)
         self.ollama_runtime_thread = OllamaRuntimeThread()
         self.ollama_runtime_thread.status_updated.connect(self.update_status_only)
         self.ollama_runtime_thread.server_process_started.connect(self.on_ollama_server_process_started)
         self.ollama_runtime_thread.ready.connect(
-            lambda transcript=transcript, finished_callback=finished_callback, summary_ready_callback=summary_ready_callback: self.start_summary(
-                transcript,
+            lambda prepared=prepared, settings=settings, summary_revision=summary_revision, finished_callback=finished_callback, summary_ready_callback=summary_ready_callback: self.start_summary(
+                prepared,
                 finished_callback=finished_callback,
                 summary_ready_callback=summary_ready_callback,
+                settings=settings,
+                summary_revision=summary_revision,
             )
         )
         self.ollama_runtime_thread.model_missing.connect(
-            lambda model_tag, transcript=transcript, finished_callback=finished_callback, summary_ready_callback=summary_ready_callback: self.on_ollama_model_missing(
+            lambda model_tag, prepared=prepared, settings=settings, summary_revision=summary_revision, finished_callback=finished_callback, summary_ready_callback=summary_ready_callback: self.on_ollama_model_missing(
                 model_tag,
-                transcript,
+                prepared,
                 finished_callback=finished_callback,
                 summary_ready_callback=summary_ready_callback,
+                settings=settings,
+                summary_revision=summary_revision,
             )
         )
         self.ollama_runtime_thread.failed.connect(
@@ -1992,7 +2683,6 @@ class TranscriptionTab(QWidget):
                 finished_callback=finished_callback,
             )
         )
-        self.ollama_runtime_thread.finished.connect(self.update_summary_button_state)
         self.ollama_runtime_thread.start()
 
     @pyqtSlot(object)
@@ -2013,11 +2703,21 @@ class TranscriptionTab(QWidget):
         )
         self.summary_audit_actor = None
         self.summary_audit_started_perf = None
+        self.set_summary_workflow_busy(False)
         self.show_diagnostic_error(self.strings.summary_failed, err_msg)
         if finished_callback:
             QTimer.singleShot(0, finished_callback)
 
-    def on_ollama_model_missing(self, model_tag: str, transcript: str, finished_callback=None, summary_ready_callback=None):
+    def on_ollama_model_missing(
+        self,
+        model_tag: str,
+        transcript: str | PreparedTranscript,
+        finished_callback=None,
+        summary_ready_callback=None,
+        *,
+        settings: SummarySettings | None = None,
+        summary_revision: int | None = None,
+    ):
         self.audit.record(
             "summary.model_missing",
             category="workflow.summary",
@@ -2052,6 +2752,8 @@ class TranscriptionTab(QWidget):
                 transcript,
                 finished_callback=finished_callback,
                 summary_ready_callback=summary_ready_callback,
+                settings=settings,
+                summary_revision=summary_revision,
             )
             return
         if clicked is copy_button:
@@ -2060,18 +2762,30 @@ class TranscriptionTab(QWidget):
         if clicked in (copy_button, cancel_button) or clicked is None:
             self.summary_audit_actor = None
             self.summary_audit_started_perf = None
+            self.set_summary_workflow_busy(False)
         if (clicked in (copy_button, cancel_button) or clicked is None) and finished_callback:
             QTimer.singleShot(0, finished_callback)
 
-    def pull_ollama_model_then_summarize(self, model_tag: str, transcript: str, finished_callback=None, summary_ready_callback=None):
+    def pull_ollama_model_then_summarize(
+        self,
+        model_tag: str,
+        transcript: str | PreparedTranscript,
+        finished_callback=None,
+        summary_ready_callback=None,
+        *,
+        settings: SummarySettings | None = None,
+        summary_revision: int | None = None,
+    ):
         self.btn_summary.setEnabled(False)
         self.ollama_pull_thread = OllamaPullThread(model_tag)
         self.ollama_pull_thread.status_updated.connect(self.update_status_only)
         self.ollama_pull_thread.pulled.connect(
-            lambda transcript=transcript, finished_callback=finished_callback, summary_ready_callback=summary_ready_callback: self.prepare_llm_runtime_then_summarize(
+            lambda transcript=transcript, settings=settings, summary_revision=summary_revision, finished_callback=finished_callback, summary_ready_callback=summary_ready_callback: self.start_summary(
                 transcript,
                 finished_callback=finished_callback,
                 summary_ready_callback=summary_ready_callback,
+                settings=settings,
+                summary_revision=summary_revision,
             )
         )
         self.ollama_pull_thread.failed.connect(
@@ -2080,7 +2794,6 @@ class TranscriptionTab(QWidget):
                 finished_callback=finished_callback,
             )
         )
-        self.ollama_pull_thread.finished.connect(self.update_summary_button_state)
         self.ollama_pull_thread.start()
 
     def summarize_after_live_asr_idle(self):
@@ -2097,8 +2810,19 @@ class TranscriptionTab(QWidget):
             return
         QTimer.singleShot(1000, self.enable_reload_after_live_asr_idle)
 
-    def start_summary(self, transcript: str, finished_callback=None, summary_ready_callback=None):
-        if not transcript.strip():
+    def start_summary(
+        self,
+        transcript: str | PreparedTranscript,
+        finished_callback=None,
+        summary_ready_callback=None,
+        *,
+        settings: SummarySettings | None = None,
+        summary_revision: int | None = None,
+    ):
+        prepared = self.prepare_transcript_input(transcript)
+        transcript = prepared.corrected_text
+        if not transcript:
+            self.set_summary_workflow_busy(False)
             if finished_callback:
                 QTimer.singleShot(0, finished_callback)
             return
@@ -2114,16 +2838,31 @@ class TranscriptionTab(QWidget):
             actor=self.summary_audit_actor or "system",
             workflow="summary",
         )
-        self.summary_thread = SummaryThread(transcript, self.summary_settings())
-        summary_revision = self.transcript_revision
+        self.summary_thread = SummaryThread(
+            transcript,
+            settings or self.summary_settings(prepared),
+        )
+        summary_revision = (
+            self.transcript_revision
+            if summary_revision is None
+            else summary_revision
+        )
         self.summary_thread.summary_ready.connect(
             lambda text, revision=summary_revision: self.update_summary_log(text, revision)
         )
         if summary_ready_callback:
-            self.summary_thread.summary_ready.connect(summary_ready_callback)
+            self.summary_thread.summary_ready.connect(
+                lambda text, revision=summary_revision: (
+                    summary_ready_callback(text)
+                    if revision == self.transcript_revision
+                    else None
+                )
+            )
         self.summary_thread.status_updated.connect(self.update_status_only)
         self.summary_thread.error_signal.connect(self.on_summary_error)
-        self.summary_thread.finished.connect(self.update_summary_button_state)
+        self.summary_thread.finished.connect(
+            lambda: self.set_summary_workflow_busy(False)
+        )
         if finished_callback:
             self.summary_thread.finished.connect(finished_callback)
         self.summary_thread.start()
@@ -2145,6 +2884,7 @@ class TranscriptionTab(QWidget):
             )
             self.summary_audit_actor = None
             self.summary_audit_started_perf = None
+            self.load_current_summary_claims()
 
     @pyqtSlot(str)
     def on_summary_error(self, err_msg):
@@ -2162,8 +2902,32 @@ class TranscriptionTab(QWidget):
         self.show_diagnostic_error(self.strings.summary_failed, err_msg)
 
     def on_recording_thread_finished(self, recorder_thread, wav_path):
+        if Path(wav_path).exists():
+            self.set_review_audio_source(wav_path)
+            if self.current_recording_metrics is not None:
+                recording_session = getattr(recorder_thread, "recording_session", None)
+                recording_outcome = (
+                    getattr(recording_session, "manifest", {}).get("recording_outcome")
+                    if recording_session is not None
+                    else None
+                )
+                if recording_outcome == "partial":
+                    self.current_recording_metrics["recording_outcome"] = "partial"
+                    self.current_recording_metrics["requires_human_confirmation"] = True
+                    self.append_recording_event(
+                        "recording_partial_preserved",
+                        "Capture ended early; durable partial audio remains available for review.",
+                    )
+                self.current_recording_metrics["recording_raw_wav_path"] = str(Path(wav_path).resolve())
+                self.current_recording_metrics.setdefault("outputs", {})["recording_mixed_wav"] = str(
+                    Path(wav_path).resolve()
+                )
         self.process_audio(wav_path)
-        if self.recorder_thread is not recorder_thread or self.finalize_recording_pending:
+        if self.recorder_thread is not recorder_thread:
+            return
+        if self.finalize_recording_pending:
+            self.recorder_thread = None
+            QTimer.singleShot(0, self.finalize_recording_after_live_asr_idle)
             return
         trigger = (
             "no_voice_auto_stop"
@@ -2178,7 +2942,7 @@ class TranscriptionTab(QWidget):
 
     @pyqtSlot(str)
     def process_audio(self, wav_path):
-        if "Hardware mounting failed" in wav_path or "No audio recorded" in wav_path:
+        if Path(wav_path).suffix.lower() != ".wav" or not Path(wav_path).is_file():
             self.append_recording_event("recording_audio_unavailable", wav_path)
             self.audit.record(
                 "recording.audio_export_failed",
@@ -2209,7 +2973,12 @@ class TranscriptionTab(QWidget):
     def _normalization_task(self, wav_path, target_dbfs, audio_format="m4a", metrics=None, base_path=None):
         audio_spec = recording_audio_format_spec(audio_format)
         try:
-            audio_path = normalize_wav_to_recording_audio(wav_path, target_dbfs, audio_format)
+            audio_path = normalize_wav_to_recording_audio(
+                wav_path,
+                target_dbfs,
+                audio_format,
+                remove_source=False,
+            )
             if metrics is not None:
                 metrics["recording_audio_path"] = str(audio_path)
                 metrics["recording_audio_format"] = audio_format
@@ -2260,15 +3029,29 @@ class TranscriptionTab(QWidget):
                 write_json_file(transcript_artifact_paths(base_path)["metrics"], metrics)
 
     def stop_threads(self):
-        self.close_recording_runtime_log()
         self.scheduled_start_timer.stop()
         self.scheduled_stop_timer.stop()
-        self.transcriber_thread.stop()
         if self.recorder_thread:
             self.recorder_thread.running = False
+            if not self.recorder_thread.wait(5000):
+                logger.warning("Recorder did not finalize within 5 seconds; its PCM journal remains recoverable.")
+        try:
+            self.shutdown_backup_preserved = self.preserve_recording_shutdown_transcript()
+        except (OSError, ValueError):
+            self.shutdown_backup_preserved = False
+            logger.exception(
+                "Could not copy the provisional transcript into the recording session; "
+                "the runtime backup will be retained."
+            )
+        self.close_recording_runtime_log()
+        self.transcriber_thread.stop()
         if self.file_thread and self.file_thread.isRunning():
             self.file_thread.request_cancel()
             self.file_thread.wait(2000)
+        final_recording_thread = getattr(self, "final_recording_thread", None)
+        if final_recording_thread and final_recording_thread.isRunning():
+            final_recording_thread.request_cancel()
+            final_recording_thread.wait(5000)
         if self.summary_thread and self.summary_thread.isRunning():
             self.summary_thread.quit()
             self.summary_thread.wait(2000)
@@ -2284,6 +3067,33 @@ class TranscriptionTab(QWidget):
             self.ollama_server_process = None
             self.ollama_server_started_by_aura = False
 
+    def preserve_recording_shutdown_transcript(self):
+        attributes = vars(self)
+        metrics = attributes.get("current_recording_metrics") or attributes.get(
+            "current_import_metrics"
+        )
+        backup = transcript_backup_path()
+        if not metrics:
+            return not backup.is_file()
+        if not backup.is_file():
+            return True
+        text = backup.read_text(encoding="utf-8").strip()
+        if not text:
+            return True
+        session = ensure_transcript_session(
+            metrics["base_path"],
+            workflow=str(metrics.get("workflow") or "recording"),
+            source_path=metrics.get("source_path"),
+        )
+        provisional_path = session.directory / "provisional_transcript.txt"
+        write_transcript_file(provisional_path, text)
+        manifest_path = session.directory / "session.json"
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        manifest["provisional_transcript"] = provisional_path.name
+        manifest["recovery_next_action"] = "review_or_retranscribe_audio"
+        write_session_manifest(manifest_path, manifest)
+        return True
+
     def update_runtime_model_status(self):
         if hasattr(self, "runtime_model_label"):
             self.runtime_model_label.setText(
@@ -2293,7 +3103,10 @@ class TranscriptionTab(QWidget):
             self.top_model_label.setText(self.strings.top_model_status.format(status=self.asr_model_status))
 
     def refresh_runtime_diagnostics(self):
-        diagnostics = collect_runtime_diagnostics(asr_model_status=self.asr_model_status)
+        diagnostics = collect_runtime_diagnostics(
+            asr_model_status=self.asr_model_status,
+            output_folder=self.resolved_output_folder(self.current_folder),
+        )
         self.latest_runtime_report = format_runtime_report(diagnostics)
         self.runtime_gpu_label.setText(
             self.strings.runtime_gpu_status.format(status="yes" if diagnostics.gpu.gpu_detected else "no")
@@ -2323,6 +3136,8 @@ class TranscriptionTab(QWidget):
             "cuda_ready": bool(diagnostics.gpu.cuda_ready),
             "audio_ready": bool(diagnostics.audio.input_ready),
             "output_ready": bool(diagnostics.output_folder_writable),
+            "disk_space_ready": bool(diagnostics.output_folder_space_ready),
+            "ollama_ready": bool(diagnostics.ollama.ready),
         }
         self.audit.record(
             "diagnostics.completed",

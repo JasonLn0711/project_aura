@@ -132,7 +132,7 @@ QPushButton[role="quiet"]:checked {
     background: #1a2530;
     border-color: #3a4c5d;
 }
-QLineEdit, QComboBox, QSpinBox, QTimeEdit, QTextEdit {
+QLineEdit, QComboBox, QSpinBox, QTimeEdit, QTextEdit, QTableWidget {
     color: #e3ebf1;
     background: #0f171f;
     border: 1px solid #2d3b49;
@@ -141,13 +141,24 @@ QLineEdit, QComboBox, QSpinBox, QTimeEdit, QTextEdit {
     selection-background-color: #327d76;
 }
 QLineEdit:focus, QComboBox:focus, QSpinBox:focus,
-QTimeEdit:focus, QTextEdit:focus {
+QTimeEdit:focus, QTextEdit:focus, QTableWidget:focus {
     border: 1px solid #48c7b8;
 }
-QTextEdit#transcriptArea {
+QTableWidget#transcriptArea {
     font-size: 13px;
-    line-height: 1.45;
-    padding: 12px;
+    gridline-color: #24313d;
+    alternate-background-color: #121d26;
+}
+QTableWidget#transcriptArea::item {
+    padding: 8px;
+}
+QTableWidget#transcriptArea QHeaderView::section {
+    color: #b9c8d3;
+    background: #17222c;
+    border: 0;
+    border-bottom: 1px solid #324252;
+    padding: 8px;
+    font-weight: 700;
 }
 QTextEdit#runtimeLog {
     font-family: "Noto Sans Mono", "Consolas", monospace;

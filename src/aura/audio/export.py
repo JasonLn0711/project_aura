@@ -66,7 +66,13 @@ def mp3_path_for_wav(wav_path: str | Path) -> Path:
     return audio_path_for_wav(wav_path, "mp3")
 
 
-def normalize_wav_to_recording_audio(wav_path: str | Path, target_dbfs: float, audio_format: str = "m4a") -> Path:
+def normalize_wav_to_recording_audio(
+    wav_path: str | Path,
+    target_dbfs: float,
+    audio_format: str = "m4a",
+    *,
+    remove_source: bool = True,
+) -> Path:
     wav_path = Path(wav_path)
     spec = recording_audio_format_spec(audio_format)
     output_path = audio_path_for_wav(wav_path, spec.key)
@@ -79,7 +85,7 @@ def normalize_wav_to_recording_audio(wav_path: str | Path, target_dbfs: float, a
             output_format=spec.ffmpeg_format,
             extra_output_args=spec.ffmpeg_args,
         )
-        if wav_path.exists():
+        if remove_source and wav_path.exists():
             wav_path.unlink()
         return output_path
     except (FfmpegUnavailable, RuntimeError):
@@ -93,7 +99,7 @@ def normalize_wav_to_recording_audio(wav_path: str | Path, target_dbfs: float, a
         normalized = audio.apply_gain(target_dbfs - audio.dBFS)
         with output_path.open("wb") as target:
             normalized.export(target, format=spec.pydub_format, parameters=spec.pydub_parameters)
-        if wav_path.exists():
+        if remove_source and wav_path.exists():
             wav_path.unlink()
         return output_path
     finally:
