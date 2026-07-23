@@ -47,8 +47,10 @@ AURA 現在把每場會議視為一個可恢復、可覆核、可查證的本機
 
 錄音開始前，操作介面要求每場會議完成告知與同意確認；錄音開始後會顯示
 原始音訊持續保存的位置。摘要 runtime 固定為本機 Ollama
-`gemma4:e4b-it-q4_K_M`，First Launch Check 會分別呈現 command、server、
-model tag、磁碟空間與 output path readiness。
+`gemma4:e4b-it-qat`，generation request 固定啟用 reasoning
+（Ollama `think=true`）；只有通過結構驗證的 final response 會進入摘要
+artifact。First Launch Check 會分別呈現 command、server、model tag、磁碟
+空間與 output path readiness。
 
 Evidence CLI（`rebuild` 只重建衍生 SQLite；所有 query 皆為唯讀）：
 
@@ -111,9 +113,16 @@ demand passes the proposal-only activation gate.
 Validation passed `392` tests, including forced-process interruption recovery,
 partial-WAV preservation, stale-confirmation prevention, same-basename
 collision handling, Python 3.10 compatibility checks, and an isolated wheel
-run outside the repository. Local Gemma live inference remains an activation
-gate because Ollama and the required model tag are not installed in the
-validated environment.
+run outside the repository. The original v1.15 validation classified local
+Gemma inference as an activation gate because Ollama and its then-required
+model tag were absent. As of 2026-07-23, the active runtime contract uses the
+installed local Ollama runner with `gemma4:e4b-it-qat` and `think=true`;
+the current runtime correction passes `398` tests and a real nine-field Gemma 4
+run. All nine fields passed schema validation with reasoning enabled in
+`71.186` seconds while AURA ASR remained loaded on the same GPU. Paired
+quality/correction-time measurement remains the next evidence layer. The
+runtime evidence packet is stored under
+[`artifacts/llm-runtime/2026-07-23-ollama-gemma4-e4b-qat-minimum/`](artifacts/llm-runtime/2026-07-23-ollama-gemma4-e4b-qat-minimum/).
 
 The `v1.15.0` source candidate is published on remote `main` through commits
 `de0e851`, `c6978b0`, `f6d0faf`, and `56ab98b`. The latest published Git tag
@@ -198,10 +207,10 @@ Project AURA now has a more grounded daily meeting-summary path that turns the c
 This update adds five durable capabilities:
 
 1. **Parallel field-batch summary extraction**: `src/summary/layered_summary_pipeline.py` runs nine single-field extractors in one parallel batch: `meeting_topic`, `participants`, `executive_summary`, `key_points`, `decisions`, `action_items`, `open_questions`, `risks`, and `next_steps`. This removes the earlier Layer 1 / Layer 2 split, avoids a single oversized all-fields prompt, and reduces cross-field example leakage.
-2. **Fixed local Gemma 4 E4B contract**: summary generation uses only the local Ollama tag `gemma4:e4b-it-q4_K_M` for base model `google/gemma-4-E4B-it`, with `temperature=0`, `num_ctx=32768`, and `stream=false`. AURA checks `http://localhost:11434/api/tags` before generation and refuses fallback models or cloud calls.
+2. **Fixed local Gemma 4 E4B contract**: summary generation uses only the local Ollama tag `gemma4:e4b-it-qat` for base model `google/gemma-4-E4B-it`, with `reasoning=true` (Ollama `think=true`), `temperature=0`, `num_ctx=32768`, `num_predict=1536`, and `stream=false`. AURA treats the returned thinking stream as ephemeral runtime output; only the validated final response enters the summary artifact. AURA checks `http://localhost:11434/api/tags` before generation and refuses fallback models or cloud calls.
 3. **Corrected-transcript-only input boundary**: the model receives only the current corrected transcript. Raw ASR text, `correction_log`, private audit logs, and review notes stay outside the prompt. This preserves the fuzzy-correction audit trail while keeping summary generation focused on the user-facing transcript.
 4. **Structured JSON source of truth**: every extractor has its own prompt, minimal valid output example, strict JSON shape, Python validation, and one repair attempt. Python merges the validated outputs into the final schema, validates the full summary, and renders Markdown without using the LLM for formatting.
-5. **Ollama runtime preflight and model-install guardrail**: `src/aura/llm/ollama_runtime.py` checks whether the local Ollama server is reachable, starts `ollama serve` when the server is unavailable, waits for `http://localhost:11434/api/tags`, verifies `gemma4:e4b-it-q4_K_M`, and separates missing-command, server-timeout, missing-model, pull-failure, and summary-failure states. If the model tag is missing, the UI shows a **Local Gemma model not installed** dialog with **Pull Model**, **Copy Command**, and **Cancel**. AURA never silently downloads a large model.
+5. **Ollama runtime preflight and model-install guardrail**: `src/aura/llm/ollama_runtime.py` checks whether the local Ollama server is reachable, starts `ollama serve` when the server is unavailable, waits for `http://localhost:11434/api/tags`, verifies `gemma4:e4b-it-qat`, and separates missing-command, server-timeout, missing-model, pull-failure, and summary-failure states. If the model tag is missing, the UI shows a **Local Gemma model not installed** dialog with **Pull Model**, **Copy Command**, and **Cancel**. AURA never silently downloads a large model.
 
 The practical workflow is now:
 
@@ -236,11 +245,11 @@ Ollama localhost /api/tags preflight
 ↓
 Start local ollama serve if needed
 ↓
-Verify gemma4:e4b-it-q4_K_M
+Verify gemma4:e4b-it-qat
 ↓
 If missing: Pull Model / Copy Command / Cancel
 ↓
-Run field-batch summary only after the local runner is ready
+Run the reasoning-enabled field batch only after the local runner is ready
 ```
 
 The implementation is covered by focused runtime and UI-adjacent tests: `tests/test_ollama_runtime.py` validates server detection, command lookup, startup timeout, model-tag checks, pull success/failure, and localhost-only host policy; `tests/test_summary_ui_runtime.py` verifies that UI summary starts only after runtime-ready, model-missing does not call summary, and empty transcript does not start runtime.
@@ -632,7 +641,7 @@ The daily meeting-summary path uses the local Ollama API and needs no additional
 Python dependency group. The `summary` extra supports explicitly activated
 Transformers evaluation scripts under `scripts/`.
 
-The approved summary backend is the local Ollama tag `gemma4:e4b-it-q4_K_M`, corresponding to base model `google/gemma-4-E4B-it`. Before generation, AURA runs a local runtime preflight: it checks `http://localhost:11434/api/tags`, starts `ollama serve` if the local server is not already running, waits for the localhost runner to become ready, and verifies the exact model tag. If the model is missing, AURA shows a local-model dialog with **Pull Model**, **Copy Command**, and **Cancel** actions. Model download is never silent, no fallback model is used, and no cloud API is called.
+The approved summary backend is the local Ollama tag `gemma4:e4b-it-qat`, corresponding to base model `google/gemma-4-E4B-it`. Pull the active model explicitly with `ollama pull gemma4:e4b-it-qat`. Before generation, AURA runs a local runtime preflight: it checks `http://localhost:11434/api/tags`, starts `ollama serve` if the local server is not already running, waits for the localhost runner to become ready, and verifies the exact model tag. AURA's server process uses local-only single-user defaults: cloud access disabled, one parallel sequence, Flash Attention enabled, and q8 KV cache. Every `/api/chat` generation request enables reasoning with Ollama `think=true`; `message.thinking` remains ephemeral and only validated `message.content` is persisted. If the model is missing, AURA shows a local-model dialog with **Pull Model**, **Copy Command**, and **Cancel** actions. Model download is never silent, no fallback model is used, and no cloud API is called.
 
 Traditional Chinese punctuation restoration can use an optional local Hugging Face token-classification model:
 
@@ -771,7 +780,7 @@ progress and processing details visible during long media jobs.*
 | Traditional Chinese Punctuation | Enabled; the `p208p2002/zh-wiki-punctuation-restore` token-classification model activates when the punctuation extra is installed |
 | Denoise | Off in UI by default |
 | Speaker Diarization | Off by default; imported-file range defaults to `2-6` speakers |
-| LLM Summary | Off by default; local Ollama `gemma4:e4b-it-q4_K_M` parallel field-batch meeting summary extraction when enabled |
+| LLM Summary | Off by default; local Ollama `gemma4:e4b-it-qat` parallel field-batch extraction with `reasoning=true` (`think=true`) when enabled |
 
 ## Runtime Files
 
@@ -855,16 +864,18 @@ When enabled in Settings:
 The summary model contract is fixed:
 
 - base model id: `google/gemma-4-E4B-it`
-- Ollama model tag: `gemma4:e4b-it-q4_K_M`
+- Ollama model tag: `gemma4:e4b-it-qat`
 - runner: `ollama`
+- reasoning: `true` (Ollama `think=true`)
 - context window: `32768`
+- generation budget: `1536`
 - external calls: `false`
 - cloud calls: `false`
 - fallback model: disabled
 
-When **Summarize Transcript** runs, AURA uses the current corrected transcript only. It does not send the raw transcript, correction log, audit logs, or review notes to the model.
+When **Summarize Transcript** runs, AURA uses the current corrected transcript only. It does not send the raw transcript, correction log, audit logs, or review notes to the model. Ollama returns reasoning as `message.thinking` and the final response as `message.content`; AURA keeps reasoning ephemeral and persists only the validated structured response and deterministic Markdown.
 
-Before starting the LLM call, AURA performs a local Ollama preflight. If the localhost server is unavailable, AURA attempts to start `ollama serve` and waits for `http://localhost:11434/api/tags`. If the required `gemma4:e4b-it-q4_K_M` tag is missing, AURA asks before running `ollama pull gemma4:e4b-it-q4_K_M` or lets the user copy the command. Missing server, missing command, missing model tag, and pull failure are surfaced as separate runtime states.
+Before starting the LLM call, AURA performs a local Ollama preflight. If the localhost server is unavailable, AURA attempts to start `ollama serve` and waits for `http://localhost:11434/api/tags`. If the required `gemma4:e4b-it-qat` tag is missing, AURA asks before running `ollama pull gemma4:e4b-it-qat` or lets the user copy the command. Missing server, missing command, missing model tag, and pull failure are surfaced as separate runtime states.
 
 Summary generation uses nine parallel single-field extractors instead of one-shot full-summary generation, two-layer grouped extraction, or 9 sequential field calls. AURA runs all nine field prompts in one parallel batch against the same corrected transcript, then merges and validates the final JSON in Python:
 
@@ -897,7 +908,7 @@ PYTHONPATH=. uv run python scripts/generate_meeting_summary.py \
 
 This practical pipeline uses only the corrected transcript as model input. It does not pass the correction log to Gemma, does not create research claims or benchmark metrics, and writes a paste-ready Markdown report with topic, participants, executive summary, key points, decisions, action items, open questions, risks, and next steps. UI summaries stay in the selected session output; direct API calls without a session use `${XDG_DATA_HOME:-~/.local/share}/project_aura/meeting_summary/`. The public dry-run sample is stored at [`reports/sample_meeting_summary.md`](reports/sample_meeting_summary.md).
 
-Summary evaluation uses the same corrected transcript, structured JSON schema, deterministic Markdown renderer, and field-level validation as the product path. New retrieval or model variants enter only through a paired benchmark with real inference outputs, source-linked evidence, failure records, and human correction-time results.
+Summary evaluation uses the same corrected transcript, structured JSON schema, deterministic Markdown renderer, and field-level validation as the product path. New retrieval or model variants enter only through a paired benchmark with real inference outputs, source-linked evidence, failure records, and human correction-time results. vLLM remains a measured activation gate: it becomes an implementation candidate only when repeated same-corpus runs show sustained concurrent demand or the Ollama runtime misses an agreed latency, queue-time, or throughput target.
 
 ## Denoise Behavior
 
@@ -986,7 +997,7 @@ Current coverage includes:
 - multi-chunk splitter workflow behavior using synthetic audio
 - runtime settings and UI message formatting defaults
 - speaker diarization timestamp assignment and speaker-count argument handling
-- LLM summary prompts and the local Gemma 4 E4B `q4_K_M` runtime contract
+- LLM summary prompts and the local Gemma 4 E4B QAT/reasoning runtime contract
 - import smoke coverage for every `aura` package module
 - transcript artifact naming, final/raw/summary splitting, and metrics JSON writing
 - live capture PulseAudio/PipeWire source parsing, source selection, and system+microphone RMS mixing

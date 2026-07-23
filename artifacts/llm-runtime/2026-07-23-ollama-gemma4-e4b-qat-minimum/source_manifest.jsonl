@@ -1,0 +1,2 @@
+{"source_id":"privacy-safe-zh-tw-runtime-fixture-v1","source_type":"synthetic_privacy_safe_transcript","characters":143,"sha256":"4d37b3adbc9a76c11901a83173787255866bbf4fc6149e64de262bd608443e93","content_committed":false,"purpose":"nine-field product-runtime validation"}
+{"source_id":"privacy-safe-zh-tw-runtime-smoke-v1","source_type":"synthetic_privacy_safe_transcript","characters":47,"sha256":"639b53f5c14753c96dd83005c4737f2ac26b83b2a0df3167df68af796e7549d2","content_committed":false,"purpose":"post-restart product-client smoke"}

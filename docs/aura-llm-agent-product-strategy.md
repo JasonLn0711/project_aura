@@ -163,6 +163,59 @@ AURA 公開 GitHub 在檢查時為 1 star、0 issues，因此直接產品回饋�
 
 這支持保留結構化摘要為研究候選；品質提升與自動化外部動作仍由下一 evidence gate 決定。
 
+### 2026-07-23 當前 local LLM runtime addendum
+
+目前 active backend 維持本機 Ollama，active model tag 為
+`gemma4:e4b-it-qat`。相較於既有 evidence 使用的 9.6 GB
+`q4_K_M` artifact，官方 QAT tag 約 6.1 GB，能在本機 16 GB RTX 4090
+Laptop GPU 與 CUDA ASR 共用的工作站上保留更充足的執行餘裕。既有
+`q4_K_M` 報告與上方歷史段落持續作為 provenance，保留原始量測語境，
+不回寫為新 runtime 的 live evidence。
+
+Gemma 4 E4B 的 generation contract 固定啟用 `reasoning=true`，對應
+Ollama `/api/chat` 的 `think=true`。Ollama 將 `message.thinking` 與 final
+`message.content` 分開回傳；AURA 將 reasoning 視為暫態 runtime output，canonical session
+只保存通過 schema 驗證的 final JSON 與 deterministic Markdown。這讓模型
+保有推理能力，同時維持使用者 artifact 的可覆核性與穩定格式。
+
+目前 command、localhost server 與 `gemma4:e4b-it-qat` model preflight
+均已 ready。真實模型 runtime 已在 AURA ASR 同卡載入時完成最小 live
+validation：隱私安全的繁中逐字稿由產品 client 執行九欄位 extraction，
+9/9 欄位通過 schema，reasoning 已啟用且 trace 未寫入 artifact，總時間
+71.186 秒；當時 ASR process 約占 2666 MiB、Ollama runner 約占 4850 MiB。
+狀態因此提升為 `LIVE_MINIMUM_COMPLETED`（runtime validity）；這份結果驗證
+執行契約與 16 GB 共存能力，摘要品質、人工修正時間與不同 runtime 的比較
+仍由 paired corpus gate 決定。
+
+完整 request summary、event trace、error log、GPU resident snapshots、
+runtime validity、latency、failure analysis 與 final decision 收錄於
+[`artifacts/llm-runtime/2026-07-23-ollama-gemma4-e4b-qat-minimum/`](../artifacts/llm-runtime/2026-07-23-ollama-gemma4-e4b-qat-minimum/)。
+
+Live check 同時找出兩個只在真實推論可見的契約問題：`/api/generate` 即使
+送出 `think=true`，server renderer 在此 structured JSON request 仍顯示
+thinking disabled；`/api/chat` 則穩定分離 reasoning 與 final content。原本
+`768` token 上限也會讓 decisions／action-items 的 reasoning 用完額度而
+沒有 final JSON。Active client 因此使用 `/api/chat`、驗證
+`done=true` 與非空 final content，並採用實測通過且固定的
+`num_predict=1536`。每個 request 都固定送出 `think=true`；
+`message.thinking` 在模型選擇回傳時可作為暫態觀測值，不作為成功與否的
+硬性條件。
+
+vLLM 保留為量測後 activation gate。當 repeated same-corpus measurement
+證明持續併發需求已形成，或 Ollama 未達成事先同意的 latency、queue-time、
+throughput target，才啟動 vLLM implementation 與 paired benchmark。現階段
+維持單一 Ollama backend，可集中驗證摘要品質、修正成本與共享 GPU 資源。
+Localhost boundary 由標準 URL parser 驗證 exact loopback host、HTTP 與
+明確 port，並拒絕 credentials、path、query、fragment；AURA 啟動 server
+時會強制 loopback、`OLLAMA_NO_CLOUD=1`、`OLLAMA_NUM_PARALLEL=1`、
+Flash Attention 與 q8 KV cache。
+
+參考：
+
+- [Ollama Gemma 4 E4B QAT model tag](https://ollama.com/library/gemma4:e4b-it-qat)
+- [Ollama thinking contract](https://docs.ollama.com/capabilities/thinking)
+- [vLLM Gemma 4 model recipe](https://docs.vllm.ai/projects/recipes/en/stable/Google/Gemma4.html)
+
 ### ASR live evidence
 
 既有 5 段 Common Voice 24 臺灣華語 clean-speech 最小 live benchmark 已證明 AURA 與 Meetily 的 CUDA runtime 路徑可真實執行。它是 activation baseline，不是產品品質冠軍。
