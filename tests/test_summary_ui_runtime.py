@@ -3,6 +3,7 @@ from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
 from aura.ui.transcription_tab import TranscriptionTab
+from summary.field_schemas import OLLAMA_MODEL_TAG
 
 
 class FakeButton:
@@ -60,7 +61,7 @@ class FakeRuntimeThread:
         if self.emit_ready_on_start:
             self.ready.emit()
         if self.emit_model_missing_on_start:
-            self.model_missing.emit("gemma4:e4b-it-q4_K_M")
+            self.model_missing.emit(OLLAMA_MODEL_TAG)
         self.finished.emit()
 
 
@@ -126,7 +127,7 @@ class SummaryUiRuntimeTests(unittest.TestCase):
         self.assertEqual(len(FakeRuntimeThread.instances), 1)
         tab.start_summary.assert_not_called()
         args, kwargs = tab.on_ollama_model_missing.call_args
-        self.assertEqual(args[0], "gemma4:e4b-it-q4_K_M")
+        self.assertEqual(args[0], OLLAMA_MODEL_TAG)
         self.assertEqual(args[1].corrected_text, "corrected transcript")
         self.assertEqual(kwargs["summary_revision"], 7)
         self.assertIs(kwargs["settings"], tab.summary_settings.return_value)

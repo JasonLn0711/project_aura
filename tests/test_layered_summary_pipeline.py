@@ -13,8 +13,10 @@ from summary.field_schemas import (
     BASE_MODEL_ID,
     EXTRACTOR_FIELDS,
     EXTRACTOR_NAMES,
+    OLLAMA_MAX_OUTPUT_TOKENS,
     OLLAMA_MODEL_TAG,
     OLLAMA_NUM_CTX,
+    OLLAMA_REASONING_ENABLED,
     validate_extractor_value,
     validate_field_value,
     validate_final_summary,
@@ -112,6 +114,9 @@ class LayeredSummaryPipelineTests(unittest.TestCase):
         self.assertEqual(client.config.base_model_id, BASE_MODEL_ID)
         self.assertEqual(client.config.num_ctx, OLLAMA_NUM_CTX)
         self.assertEqual(client.config.temperature, 0.0)
+        self.assertEqual(client.config.max_output_tokens, OLLAMA_MAX_OUTPUT_TOKENS)
+        self.assertTrue(client.config.reasoning_enabled)
+        self.assertEqual(OLLAMA_MODEL_TAG, "gemma4:e4b-it-qat")
 
     def test_ollama_generation_options_are_fixed(self) -> None:
         client = OllamaGemma4Client()
@@ -121,21 +126,57 @@ class LayeredSummaryPipelineTests(unittest.TestCase):
             requests.append((endpoint, payload))
             if endpoint == "/api/tags":
                 return {"models": [{"name": OLLAMA_MODEL_TAG}]}
-            return {"response": "{}"}
+            return {
+                "message": {"content": "{}", "thinking": ""},
+                "done": True,
+            }
 
         with patch.object(client, "_request", side_effect=fake_request):
             client.generate_json("prompt")
 
         generate_payload = requests[1][1]
         self.assertIsNotNone(generate_payload)
+        self.assertEqual(requests[1][0], "/api/chat")
         self.assertEqual(generate_payload["model"], OLLAMA_MODEL_TAG)
         self.assertFalse(generate_payload["stream"])
+        self.assertIs(generate_payload["think"], OLLAMA_REASONING_ENABLED)
+        self.assertEqual(generate_payload["messages"][0]["role"], "system")
+        self.assertEqual(generate_payload["messages"][1], {"role": "user", "content": "prompt"})
         self.assertEqual(generate_payload["options"]["temperature"], 0.0)
         self.assertEqual(generate_payload["options"]["num_ctx"], OLLAMA_NUM_CTX)
+        self.assertEqual(
+            generate_payload["options"]["num_predict"],
+            OLLAMA_MAX_OUTPUT_TOKENS,
+        )
+
+    def test_ollama_generation_requires_completion_and_final_content(self) -> None:
+        client = OllamaGemma4Client()
+        invalid_responses = (
+            {"message": {"content": "", "thinking": "reasoning trace"}, "done": True},
+            {"message": {"content": "{}", "thinking": "reasoning trace"}, "done": False},
+        )
+
+        for response in invalid_responses:
+            with self.subTest(response=response):
+                with patch.object(
+                    client,
+                    "_request",
+                    side_effect=({"models": [{"name": OLLAMA_MODEL_TAG}]}, response),
+                ):
+                    with self.assertRaises(OllamaGemmaError):
+                        client.generate_json("prompt")
 
     def test_no_fallback_model_allowed(self) -> None:
         with self.assertRaises(OllamaGemmaError):
             OllamaGemma4Client(OllamaGemmaConfig(model="other:model"))
+        with self.assertRaises(OllamaGemmaError):
+            OllamaGemma4Client(OllamaGemmaConfig(max_output_tokens=7))
+
+    def test_remote_host_disguised_as_localhost_is_rejected(self) -> None:
+        with self.assertRaises(OllamaGemmaError):
+            OllamaGemma4Client(
+                OllamaGemmaConfig(host="http://localhost:11434@external.example")
+            )
 
     def test_each_field_prompt_exists(self) -> None:
         for extractor in EXTRACTOR_NAMES:

@@ -69,7 +69,7 @@ class OllamaRuntimeThread(QThread):
                     "Ollama command was not found. Install Ollama and restart AURA, or add ollama to PATH."
                 )
                 return
-            process = start_ollama_server()
+            process = start_ollama_server(self.host)
             if process is None:
                 self.failed.emit(
                     "Ollama command was not found. Install Ollama and restart AURA, or add ollama to PATH."

@@ -19,7 +19,7 @@ from aura.metadata import __version__
 from aura.system.audio_diagnostics import AudioDiagnostics, collect_audio_diagnostics
 from aura.system.gpu_diagnostics import GpuDiagnostics, collect_gpu_diagnostics
 from aura.system.platform import RuntimePlatform, detect_runtime_platform
-from summary.field_schemas import OLLAMA_MODEL_TAG
+from summary.field_schemas import OLLAMA_MODEL_TAG, OLLAMA_REASONING_ENABLED
 
 
 MIN_OUTPUT_FREE_BYTES = 1 << 30
@@ -403,6 +403,7 @@ def format_runtime_report(diagnostics: RuntimeDiagnostics) -> str:
                 f"- Command: {'available' if diagnostics.ollama.command_available else 'missing'}",
                 f"- Server: {'ready' if diagnostics.ollama.server_ready else 'unavailable'}",
                 f"- Required model tag: {diagnostics.ollama.model_tag}",
+                f"- Reasoning: {'enabled' if OLLAMA_REASONING_ENABLED else 'disabled'} (think=true)",
                 f"- Model tag: {'ready' if diagnostics.ollama.model_available else 'missing'}",
                 f"- Detail: {diagnostics.ollama.detail}",
             ]

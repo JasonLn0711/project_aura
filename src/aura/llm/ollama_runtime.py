@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 import json
+import os
 import shutil
 import subprocess
 import time
 import urllib.error
+import urllib.parse
 import urllib.request
 from dataclasses import dataclass
 from typing import Callable
@@ -30,9 +32,24 @@ class OllamaRuntimeStatus:
     message: str
 
 
-def validate_localhost_host(host: str) -> None:
-    if not host.startswith("http://localhost:") and not host.startswith("http://127.0.0.1:"):
-        raise OllamaRuntimeError("Ollama host must be localhost.")
+def validate_localhost_host(host: str) -> urllib.parse.SplitResult:
+    try:
+        parsed = urllib.parse.urlsplit(host)
+        port = parsed.port
+    except ValueError as exc:
+        raise OllamaRuntimeError("Ollama host must be a valid localhost URL.") from exc
+    if (
+        parsed.scheme != "http"
+        or parsed.hostname not in {"localhost", "127.0.0.1", "::1"}
+        or port is None
+        or parsed.username is not None
+        or parsed.password is not None
+        or parsed.path
+        or parsed.query
+        or parsed.fragment
+    ):
+        raise OllamaRuntimeError("Ollama host must be an HTTP localhost URL with an explicit port.")
+    return parsed
 
 
 def ollama_tags(host: str = DEFAULT_OLLAMA_HOST, timeout_sec: int = 5) -> dict:
@@ -58,14 +75,22 @@ def check_ollama_command() -> bool:
     return shutil.which("ollama") is not None
 
 
-def start_ollama_server() -> subprocess.Popen | None:
+def start_ollama_server(host: str = DEFAULT_OLLAMA_HOST) -> subprocess.Popen | None:
+    parsed = validate_localhost_host(host)
     if not check_ollama_command():
         return None
+    env = os.environ.copy()
+    env["OLLAMA_HOST"] = parsed.netloc
+    env["OLLAMA_NO_CLOUD"] = "1"
+    env["OLLAMA_NUM_PARALLEL"] = "1"
+    env["OLLAMA_FLASH_ATTENTION"] = "1"
+    env["OLLAMA_KV_CACHE_TYPE"] = "q8_0"
     return subprocess.Popen(
         ["ollama", "serve"],
-        stdout=subprocess.PIPE,
+        stdout=subprocess.DEVNULL,
         stderr=subprocess.STDOUT,
         text=True,
+        env=env,
     )
 
 
@@ -145,7 +170,7 @@ def ensure_ollama_ready(
                 host=host,
                 message="Ollama command was not found. Install Ollama and restart AURA, or add ollama to PATH.",
             )
-        start_ollama_server()
+        start_ollama_server(host)
         server_running = wait_for_ollama_ready(host=host, timeout_sec=timeout_sec)
         if not server_running:
             return OllamaRuntimeStatus(

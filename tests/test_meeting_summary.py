@@ -6,7 +6,14 @@ import unittest
 from pathlib import Path
 
 from scripts.generate_meeting_summary import dry_run_summary, load_transcript, write_outputs
-from summary.field_schemas import BASE_MODEL_ID, OLLAMA_MODEL_TAG, OLLAMA_NUM_CTX, validate_final_summary
+from summary.field_schemas import (
+    BASE_MODEL_ID,
+    OLLAMA_MAX_OUTPUT_TOKENS,
+    OLLAMA_MODEL_TAG,
+    OLLAMA_NUM_CTX,
+    OLLAMA_REASONING_ENABLED,
+    validate_final_summary,
+)
 
 
 class PracticalMeetingSummaryTests(unittest.TestCase):
@@ -20,6 +27,12 @@ class PracticalMeetingSummaryTests(unittest.TestCase):
         self.assertEqual(summary["metadata"]["model"], OLLAMA_MODEL_TAG)
         self.assertEqual(summary["metadata"]["base_model_id"], BASE_MODEL_ID)
         self.assertEqual(summary["metadata"]["ollama_num_ctx"], OLLAMA_NUM_CTX)
+        self.assertEqual(
+            summary["metadata"]["ollama_max_output_tokens"],
+            OLLAMA_MAX_OUTPUT_TOKENS,
+        )
+        self.assertIs(summary["metadata"]["reasoning_enabled"], OLLAMA_REASONING_ENABLED)
+        self.assertFalse(summary["metadata"]["reasoning_trace_retained"])
         self.assertTrue(summary["metadata"]["parallel_field_generation"])
         self.assertFalse(summary["metadata"]["parallel_layered_generation"])
         self.assertFalse(summary["metadata"]["external_calls"])

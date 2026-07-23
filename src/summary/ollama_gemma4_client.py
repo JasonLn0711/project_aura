@@ -6,7 +6,14 @@ import urllib.request
 from dataclasses import dataclass
 from typing import Any
 
-from summary.field_schemas import BASE_MODEL_ID, OLLAMA_MODEL_TAG, OLLAMA_NUM_CTX
+from aura.llm.ollama_runtime import OllamaRuntimeError, validate_localhost_host
+from summary.field_schemas import (
+    BASE_MODEL_ID,
+    OLLAMA_MAX_OUTPUT_TOKENS,
+    OLLAMA_MODEL_TAG,
+    OLLAMA_NUM_CTX,
+    OLLAMA_REASONING_ENABLED,
+)
 
 
 class OllamaGemmaError(RuntimeError):
@@ -21,8 +28,9 @@ class OllamaGemmaConfig:
     num_ctx: int = OLLAMA_NUM_CTX
     temperature: float = 0.0
     seed: int = 20260604
-    max_output_tokens: int = 768
+    max_output_tokens: int = OLLAMA_MAX_OUTPUT_TOKENS
     timeout_sec: int = 180
+    reasoning_enabled: bool = OLLAMA_REASONING_ENABLED
 
 
 class OllamaGemma4Client:
@@ -30,8 +38,16 @@ class OllamaGemma4Client:
         self.config = config or OllamaGemmaConfig()
         if self.config.model != OLLAMA_MODEL_TAG or self.config.base_model_id != BASE_MODEL_ID:
             raise OllamaGemmaError("No fallback model is allowed for meeting summary generation.")
-        if not self.config.host.startswith("http://127.0.0.1:") and not self.config.host.startswith("http://localhost:"):
-            raise OllamaGemmaError("Ollama host must be localhost.")
+        if self.config.reasoning_enabled is not True:
+            raise OllamaGemmaError("Gemma 4 E4B reasoning must remain enabled.")
+        if self.config.max_output_tokens != OLLAMA_MAX_OUTPUT_TOKENS:
+            raise OllamaGemmaError(
+                f"Gemma 4 E4B max output tokens must be {OLLAMA_MAX_OUTPUT_TOKENS}."
+            )
+        try:
+            validate_localhost_host(self.config.host)
+        except OllamaRuntimeError as exc:
+            raise OllamaGemmaError(str(exc)) from exc
 
     def _request(self, endpoint: str, payload: dict[str, Any] | None = None, timeout: int | None = None) -> dict[str, Any]:
         data = None if payload is None else json.dumps(payload).encode("utf-8")
@@ -57,12 +73,19 @@ class OllamaGemma4Client:
     def generate_json(self, prompt: str) -> str:
         self.check_model_available()
         response = self._request(
-            "/api/generate",
+            "/api/chat",
             payload={
                 "model": self.config.model,
-                "prompt": prompt,
+                "messages": [
+                    {
+                        "role": "system",
+                        "content": "Return valid JSON only. Use only the supplied transcript.",
+                    },
+                    {"role": "user", "content": prompt},
+                ],
                 "stream": False,
                 "format": "json",
+                "think": self.config.reasoning_enabled,
                 "options": {
                     "temperature": self.config.temperature,
                     "seed": self.config.seed,
@@ -72,4 +95,13 @@ class OllamaGemma4Client:
             },
             timeout=self.config.timeout_sec,
         )
-        return str(response.get("response") or "")
+        done_reason = str(response.get("done_reason") or "unknown")
+        if response.get("done") is not True:
+            raise OllamaGemmaError(f"Ollama generation did not complete (done_reason={done_reason}).")
+        message = response.get("message") if isinstance(response.get("message"), dict) else {}
+        content = str(message.get("content") or "").strip()
+        if not content:
+            raise OllamaGemmaError(
+                f"Gemma 4 E4B returned no final JSON content (done_reason={done_reason})."
+            )
+        return content

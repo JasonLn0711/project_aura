@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import tempfile
 import unittest
+from dataclasses import replace
 from pathlib import Path
 from unittest.mock import patch
 
@@ -11,6 +12,7 @@ from scripts.run_gemma4_e4b_summary_impact import (
     FIXED_OLLAMA_MODEL,
     FIXED_MODEL_ID,
     GATE_NAME,
+    OllamaGemmaRunner,
     aggregate_report,
     build_summary_prompt,
     check_model_available,
@@ -40,12 +42,29 @@ class Gemma4E4BSummaryImpactTests(unittest.TestCase):
         self.assertEqual(config.model_id, FIXED_MODEL_ID)
         self.assertEqual(config.runner, "ollama")
         self.assertEqual(config.ollama_model, FIXED_OLLAMA_MODEL)
-        self.assertEqual(config.precision_variant, "ollama_q4_K_M_local_tag")
-        self.assertEqual(config.max_output_tokens, 768)
+        self.assertEqual(config.precision_variant, "ollama_qat_q4_0_local_tag")
+        self.assertTrue(config.reasoning_enabled)
+        self.assertEqual(config.max_output_tokens, 1536)
         self.assertEqual(config.ollama_num_ctx, 32768)
         self.assertFalse(config.allow_fallback_model)
         self.assertFalse(config.allow_download)
         self.assertTrue(config.local_files_only)
+
+    def test_ollama_runner_enables_and_checks_reasoning(self) -> None:
+        config = runner_config(load_config(DEFAULT_CONFIG))
+        with patch(
+            "scripts.run_gemma4_e4b_summary_impact.ollama_request",
+            return_value={
+                "message": {"content": "{}", "thinking": ""},
+                "done": True,
+            },
+        ) as request:
+            self.assertEqual(OllamaGemmaRunner(config).generate("逐字稿"), "{}")
+
+        payload = request.call_args.kwargs["payload"]
+        self.assertEqual(request.call_args.args[1], "/api/chat")
+        self.assertTrue(payload["think"])
+        self.assertEqual(payload["options"]["num_predict"], 1536)
 
     def test_external_calls_forbidden(self) -> None:
         config = load_config(DEFAULT_CONFIG)
@@ -61,6 +80,19 @@ class Gemma4E4BSummaryImpactTests(unittest.TestCase):
             available, reason = check_ollama_available(config)
         self.assertFalse(available)
         self.assertIn("Ollama localhost runner not available", reason)
+
+    def test_gate_rejects_runtime_or_reasoning_contract_drift(self) -> None:
+        config = runner_config(load_config(DEFAULT_CONFIG))
+        for changed in (
+            replace(config, runner="transformers"),
+            replace(config, max_output_tokens=7),
+            replace(config, ollama_host="http://localhost:11434@external.example"),
+        ):
+            with self.subTest(changed=changed):
+                available, _ = check_model_available(changed)
+                self.assertFalse(available)
+        with self.assertRaises(RuntimeError):
+            OllamaGemmaRunner(replace(config, max_output_tokens=7))
 
     def test_raw_transcript_context_not_emitted(self) -> None:
         config = load_config(DEFAULT_CONFIG)

@@ -7,8 +7,10 @@ from typing import Any, Literal
 
 
 BASE_MODEL_ID = "google/gemma-4-E4B-it"
-OLLAMA_MODEL_TAG = "gemma4:e4b-it-q4_K_M"
+OLLAMA_MODEL_TAG = "gemma4:e4b-it-qat"
 OLLAMA_NUM_CTX = 32768
+OLLAMA_MAX_OUTPUT_TOKENS = 1536
+OLLAMA_REASONING_ENABLED = True
 ACTION_ITEM_STATUSES = {"open", "done", "blocked", "unknown"}
 CLAIM_SUPPORT_STATUSES = {"supported", "partial", "unsupported"}
 FIELD_NAMES = (
@@ -83,6 +85,9 @@ def metadata() -> dict[str, Any]:
         "base_model_id": BASE_MODEL_ID,
         "runner": "ollama",
         "ollama_num_ctx": OLLAMA_NUM_CTX,
+        "ollama_max_output_tokens": OLLAMA_MAX_OUTPUT_TOKENS,
+        "reasoning_enabled": OLLAMA_REASONING_ENABLED,
+        "reasoning_trace_retained": False,
         "parallel_field_generation": True,
         "parallel_layered_generation": False,
         "external_calls": False,

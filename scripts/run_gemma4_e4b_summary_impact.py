@@ -2,9 +2,7 @@ from __future__ import annotations
 
 import argparse
 import json
-import os
 import re
-import subprocess
 import sys
 import urllib.error
 import urllib.request
@@ -22,7 +20,16 @@ if str(REPO_ROOT) not in sys.path:
 if str(SRC_ROOT) not in sys.path:
     sys.path.insert(0, str(SRC_ROOT))
 
+from aura.llm.ollama_runtime import (  # noqa: E402
+    OllamaRuntimeError,
+    validate_localhost_host,
+)
 from aura.llm.summary import DEFAULT_SUMMARY_MODEL  # noqa: E402
+from summary.field_schemas import (  # noqa: E402
+    OLLAMA_MAX_OUTPUT_TOKENS,
+    OLLAMA_MODEL_TAG,
+    OLLAMA_REASONING_ENABLED,
+)
 from scripts.evaluate_summary_impact import (  # noqa: E402
     EVALUATED_CATEGORIES,
     ArtifactSet,
@@ -44,7 +51,7 @@ DEFAULT_PRIVACY_CLEARANCE = REPO_ROOT / "reports" / "gemma4_e4b_summary_impact_p
 DEFAULT_LOCAL_OUTPUT_DIR = REPO_ROOT / "reports" / "gemma4_e4b_summary_impact" / "local_outputs"
 DEFAULT_CORRECTION_LOG_DIR = REPO_ROOT / "reports" / "asr_fuzzy_correction_logs"
 FIXED_MODEL_ID = "google/gemma-4-E4B-it"
-FIXED_OLLAMA_MODEL = "gemma4:e4b-it-q4_K_M"
+FIXED_OLLAMA_MODEL = OLLAMA_MODEL_TAG
 REQUIRED_REPORT_FIELDS = (
     "gate",
     "model",
@@ -55,6 +62,7 @@ REQUIRED_REPORT_FIELDS = (
     "ollama_model",
     "model_source",
     "precision_variant",
+    "reasoning_enabled",
     "fp8_checkpoint",
     "download_during_gate",
     "local_files_only",
@@ -93,12 +101,10 @@ class RunnerConfig:
     local_files_only: bool
     precision_variant: str
     fp8_checkpoint: bool
-    load_in_8bit: bool
-    cuda_max_memory: str
-    cpu_max_memory: str
     ollama_model: str
     ollama_host: str
     ollama_num_ctx: int
+    reasoning_enabled: bool
 
 
 def repo_relative(path: Path, base: Path = REPO_ROOT) -> str:
@@ -127,8 +133,10 @@ def nested(config: dict[str, Any], section: str, key: str, default: Any) -> Any:
 def runner_config(config: dict[str, Any]) -> RunnerConfig:
     return RunnerConfig(
         model_id=str(nested(config, "model", "model_id", DEFAULT_SUMMARY_MODEL)),
-        runner=str(nested(config, "model", "runner", "transformers")),
-        max_output_tokens=int(nested(config, "generation", "max_output_tokens", 768)),
+        runner=str(nested(config, "model", "runner", "ollama")),
+        max_output_tokens=int(
+            nested(config, "generation", "max_output_tokens", OLLAMA_MAX_OUTPUT_TOKENS)
+        ),
         temperature=float(nested(config, "generation", "temperature", 0.0)),
         timeout_sec=int(nested(config, "generation", "timeout_sec", 180)),
         seed=int(nested(config, "generation", "seed", 20260604)),
@@ -138,12 +146,12 @@ def runner_config(config: dict[str, Any]) -> RunnerConfig:
         local_files_only=bool(nested(config, "model", "local_files_only", True)),
         precision_variant=str(nested(config, "model", "precision_variant", "native_or_cache_default")),
         fp8_checkpoint=bool(nested(config, "model", "fp8_checkpoint", False)),
-        load_in_8bit=bool(nested(config, "model", "load_in_8bit", False)),
-        cuda_max_memory=str(nested(config, "model", "cuda_max_memory", "8GiB")),
-        cpu_max_memory=str(nested(config, "model", "cpu_max_memory", "96GiB")),
         ollama_model=str(nested(config, "model", "ollama_model", FIXED_OLLAMA_MODEL)),
         ollama_host=str(nested(config, "model", "ollama_host", "http://127.0.0.1:11434")).rstrip("/"),
         ollama_num_ctx=int(nested(config, "generation", "ollama_num_ctx", 32768)),
+        reasoning_enabled=bool(
+            nested(config, "generation", "reasoning_enabled", OLLAMA_REASONING_ENABLED)
+        ),
     )
 
 
@@ -186,29 +194,6 @@ def prompt_uses_correction_log(prompt: str) -> bool:
     return "correction_log" in prompt or "correction log" in prompt.lower()
 
 
-def import_available(module: str) -> bool:
-    try:
-        __import__(module)
-    except Exception:
-        return False
-    return True
-
-
-def hf_cache_model_dir(model_id: str) -> Path:
-    cache_root = Path(os.environ.get("HF_HOME", Path.home() / ".cache" / "huggingface")) / "hub"
-    return cache_root / f"models--{model_id.replace('/', '--')}"
-
-
-def model_cache_available(model_id: str) -> bool:
-    model_dir = hf_cache_model_dir(model_id)
-    if not model_dir.exists():
-        return False
-    refs = model_dir / "refs"
-    snapshots = model_dir / "snapshots"
-    blobs = model_dir / "blobs"
-    return refs.exists() and (snapshots.exists() or blobs.exists())
-
-
 def check_model_available(config: RunnerConfig) -> tuple[bool, str]:
     if config.allow_fallback_model:
         return False, "Fallback model is forbidden for this gate"
@@ -220,18 +205,12 @@ def check_model_available(config: RunnerConfig) -> tuple[bool, str]:
         return False, "Downloads are forbidden during this gate"
     if not config.local_files_only:
         return False, "Runner must use local_files_only"
-    if config.runner == "transformers":
-        if not import_available("transformers") or not import_available("torch"):
-            return False, "Gemma 4 E4B local model runner dependencies not found"
-        if not model_cache_available(config.model_id):
-            return False, "Gemma 4 E4B local model not found"
-        return True, "Gemma 4 E4B local model found"
+    if config.runner != "ollama":
+        return False, "This reasoning-validated gate requires the Ollama runner"
+    if config.max_output_tokens != OLLAMA_MAX_OUTPUT_TOKENS:
+        return False, f"Max output tokens must exactly match {OLLAMA_MAX_OUTPUT_TOKENS}"
     if config.runner == "ollama":
         return check_ollama_available(config)
-    if config.runner in {"llama.cpp", "llama_cpp", "llama-cli"}:
-        if subprocess.run(["sh", "-lc", "command -v llama-cli"], capture_output=True, text=True).returncode != 0:
-            return False, "llama.cpp runner not found"
-        return True, "llama.cpp runner found"
     return False, f"Unsupported local runner: {config.runner}"
 
 
@@ -250,8 +229,12 @@ def ollama_request(host: str, endpoint: str, payload: dict[str, Any] | None = No
 def check_ollama_available(config: RunnerConfig) -> tuple[bool, str]:
     if config.ollama_model != FIXED_OLLAMA_MODEL:
         return False, f"Ollama model must exactly match {FIXED_OLLAMA_MODEL}"
-    if not config.ollama_host.startswith("http://127.0.0.1:") and not config.ollama_host.startswith("http://localhost:"):
-        return False, "Ollama host must be localhost"
+    if config.reasoning_enabled is not True:
+        return False, "Gemma 4 E4B reasoning must remain enabled"
+    try:
+        validate_localhost_host(config.ollama_host)
+    except OllamaRuntimeError as exc:
+        return False, str(exc)
     try:
         tags = ollama_request(config.ollama_host, "/api/tags", timeout=2)
     except (OSError, urllib.error.URLError, TimeoutError, json.JSONDecodeError):
@@ -279,80 +262,21 @@ def safe_report_row(row: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-class TransformersGemmaRunner:
-    def __init__(self, config: RunnerConfig) -> None:
-        import torch
-        from transformers import AutoModelForImageTextToText, AutoTokenizer, BitsAndBytesConfig, set_seed
-
-        set_seed(config.seed)
-        self.config = config
-        self.tokenizer = AutoTokenizer.from_pretrained(
-            config.model_id,
-            trust_remote_code=True,
-            local_files_only=config.local_files_only,
-        )
-        model_kwargs = {
-            "trust_remote_code": True,
-            "local_files_only": config.local_files_only,
-            "device_map": "auto",
-            "max_memory": {0: config.cuda_max_memory, "cpu": config.cpu_max_memory},
-        }
-        if config.load_in_8bit:
-            model_kwargs["quantization_config"] = BitsAndBytesConfig(
-                load_in_8bit=True,
-                llm_int8_enable_fp32_cpu_offload=True,
-            )
-        else:
-            model_kwargs["torch_dtype"] = "auto" if torch.cuda.is_available() else torch.float32
-        self.model = AutoModelForImageTextToText.from_pretrained(config.model_id, **model_kwargs)
-
-    def generate(self, transcript: str) -> str:
-        prompt = build_summary_prompt(transcript)
-        if prompt_uses_correction_log(prompt):
-            raise RuntimeError("Summary prompt must not include correction log content.")
-        messages = [
-            {"role": "system", "content": "Return valid JSON only. Use only the supplied transcript."},
-            {"role": "user", "content": prompt},
-        ]
-        try:
-            inputs = self.tokenizer.apply_chat_template(
-                messages,
-                add_generation_prompt=True,
-                tokenize=True,
-                return_tensors="pt",
-                return_dict=True,
-            )
-        except TypeError:
-            prompt_text = self.tokenizer.apply_chat_template(messages, add_generation_prompt=True, tokenize=False)
-            inputs = self.tokenizer(prompt_text, return_tensors="pt")
-        except AttributeError:
-            prompt_text = "\n\n".join(f"{message['role']}: {message['content']}" for message in messages) + "\nassistant:"
-            inputs = self.tokenizer(prompt_text, return_tensors="pt")
-        device = getattr(self.model, "device", None)
-        if device is not None and hasattr(inputs, "to"):
-            inputs = inputs.to(device)
-        outputs = self.model.generate(
-            **inputs,
-            max_new_tokens=self.config.max_output_tokens,
-            do_sample=self.config.temperature > 0,
-            temperature=self.config.temperature,
-        )
-        input_length = inputs["input_ids"].shape[-1]
-        generated = outputs[0][input_length:]
-        return self.tokenizer.decode(generated, skip_special_tokens=True).strip()
-
-
-def build_runner(config: RunnerConfig) -> TransformersGemmaRunner:
-    if config.runner == "transformers":
-        return TransformersGemmaRunner(config)
+def build_runner(config: RunnerConfig) -> OllamaGemmaRunner:
     if config.runner == "ollama":
-        return OllamaGemmaRunner(config)  # type: ignore[return-value]
+        return OllamaGemmaRunner(config)
     raise RuntimeError(f"Runner is not implemented for generation: {config.runner}")
 
 
 class OllamaGemmaRunner:
     def __init__(self, config: RunnerConfig) -> None:
         self.config = config
+        if self.config.reasoning_enabled is not True:
+            raise RuntimeError("Gemma 4 E4B reasoning must remain enabled.")
+        if self.config.max_output_tokens != OLLAMA_MAX_OUTPUT_TOKENS:
+            raise RuntimeError(
+                f"Gemma 4 E4B max output tokens must be {OLLAMA_MAX_OUTPUT_TOKENS}."
+            )
 
     def generate(self, transcript: str) -> str:
         prompt = build_summary_prompt(transcript)
@@ -360,12 +284,19 @@ class OllamaGemmaRunner:
             raise RuntimeError("Summary prompt must not include correction log content.")
         response = ollama_request(
             self.config.ollama_host,
-            "/api/generate",
+            "/api/chat",
             payload={
                 "model": self.config.ollama_model,
-                "prompt": prompt,
+                "messages": [
+                    {
+                        "role": "system",
+                        "content": "Return valid JSON only. Use only the supplied transcript.",
+                    },
+                    {"role": "user", "content": prompt},
+                ],
                 "stream": False,
                 "format": "json",
+                "think": self.config.reasoning_enabled,
                 "options": {
                     "temperature": self.config.temperature,
                     "seed": self.config.seed,
@@ -375,7 +306,16 @@ class OllamaGemmaRunner:
             },
             timeout=self.config.timeout_sec,
         )
-        return str(response.get("response") or "")
+        done_reason = str(response.get("done_reason") or "unknown")
+        if response.get("done") is not True:
+            raise RuntimeError(f"Ollama generation did not complete (done_reason={done_reason}).")
+        message = response.get("message") if isinstance(response.get("message"), dict) else {}
+        content = str(message.get("content") or "").strip()
+        if not content:
+            raise RuntimeError(
+                f"Gemma 4 E4B returned no final JSON content (done_reason={done_reason})."
+            )
+        return content
 
 
 def safe_filename(value: str) -> str:
@@ -666,6 +606,7 @@ def aggregate_report(
         "ollama_model": config.ollama_model if config.runner == "ollama" else "",
         "model_source": "preloaded_local_cache" if model_available else "local_cache_unavailable",
         "precision_variant": config.precision_variant,
+        "reasoning_enabled": config.reasoning_enabled and config.runner == "ollama",
         "fp8_checkpoint": config.fp8_checkpoint,
         "download_during_gate": False,
         "local_files_only": config.local_files_only,
@@ -722,6 +663,7 @@ def write_manifest(
         "ollama_model": config.ollama_model if config.runner == "ollama" else "",
         "model_source": "preloaded_local_cache" if model_available else "local_cache_unavailable",
         "precision_variant": config.precision_variant,
+        "reasoning_enabled": config.reasoning_enabled and config.runner == "ollama",
         "fp8_checkpoint": config.fp8_checkpoint,
         "download_during_gate": False,
         "local_files_only": config.local_files_only,
@@ -768,6 +710,7 @@ def render_markdown(report: dict[str, Any]) -> str:
             "- Claim scope: internal local model-backed gate, not final empirical claim.",
             f"- Fixed model id: {report['fixed_model_id']}",
             f"- Precision variant: {report['precision_variant']}",
+            f"- Reasoning enabled: {str(report['reasoning_enabled']).lower()}",
             f"- FP8 checkpoint: {str(report['fp8_checkpoint']).lower()}",
             f"- Download during gate: {str(report['download_during_gate']).lower()}",
             f"- Local files only: {str(report['local_files_only']).lower()}",

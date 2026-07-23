@@ -65,7 +65,7 @@ class UIStrings:
     speaker_max_label: str = "Max Speakers:"
     llm_summary_label: str = "Summarize transcript after ASR"
     llm_summary_tooltip: str = (
-        "Uses the fixed local Ollama tag gemma4:e4b-it-q4_K_M after ASR. "
+        "Uses the fixed local Ollama tag gemma4:e4b-it-qat with reasoning enabled after ASR. "
         "摘要採用台灣繁體中文，並保留來源片段供人員覆核。"
     )
     llm_summary_button: str = "Summarize Transcript"

@@ -10,21 +10,19 @@ model:
   allow_download: false
   runner: ollama
   local_files_only: true
-  precision_variant: ollama_q4_K_M_local_tag
+  precision_variant: ollama_qat_q4_0_local_tag
   fp8_checkpoint: false
-  load_in_8bit: false
-  cuda_max_memory: 9GiB
-  cpu_max_memory: 96GiB
-  ollama_model: gemma4:e4b-it-q4_K_M
-  ollama_tag: gemma4:e4b-it-q4_K_M
+  ollama_model: gemma4:e4b-it-qat
+  ollama_tag: gemma4:e4b-it-qat
   ollama_host: http://127.0.0.1:11434
 
 generation:
   temperature: 0.0
   seed: 20260604
-  max_output_tokens: 768
+  max_output_tokens: 1536
   timeout_sec: 180
   ollama_num_ctx: 32768
+  reasoning_enabled: true
 
 sample:
   max_samples: 5

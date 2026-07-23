@@ -338,7 +338,7 @@ class RuntimeDiagnosticsTests(unittest.TestCase):
             input_devices=("mic",),
             output_devices=("speaker",),
         )
-        model_tag = "gemma4:e4b-it-q4_K_M"
+        model_tag = "gemma4:e4b-it-qat"
         with TemporaryDirectory() as tmpdir:
             with (
                 patch("aura.system.runtime_report.detect_runtime_platform", return_value=platform),
@@ -373,7 +373,7 @@ class RuntimeDiagnosticsTests(unittest.TestCase):
         ):
             diagnostics = collect_ollama_diagnostics(
                 "https://api.example.com",
-                "gemma4:e4b-it-q4_K_M",
+                "gemma4:e4b-it-qat",
             )
 
         tags.assert_not_called()
@@ -388,7 +388,7 @@ class RuntimeDiagnosticsTests(unittest.TestCase):
         ):
             diagnostics = collect_ollama_diagnostics(
                 DEFAULT_OLLAMA_HOST,
-                "gemma4:e4b-it-q4_K_M",
+                "gemma4:e4b-it-qat",
             )
 
         self.assertFalse(diagnostics.server_ready)
