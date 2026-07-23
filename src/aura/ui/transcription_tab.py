@@ -312,7 +312,6 @@ class TranscriptionTab(QWidget):
         schedule_stop_layout.addStretch()
         schedule_layout.addLayout(schedule_stop_layout)
         settings_vbox.addLayout(schedule_layout)
-        self.update_schedule_controls()
 
         summary_layout = QHBoxLayout()
         self.check_llm_summary = QCheckBox(self.strings.llm_summary_label)
@@ -528,6 +527,7 @@ class TranscriptionTab(QWidget):
         self.check_recording_consent = QCheckBox(self.strings.recording_consent_label)
         self.check_recording_consent.setToolTip(self.strings.recording_consent_tooltip)
         self.check_recording_consent.setAccessibleName(self.strings.recording_consent_label)
+        self.update_schedule_controls()
 
         self.btn_import = QPushButton(self.strings.import_media)
         self.btn_import.setToolTip(self.strings.import_media_tooltip)

@@ -1,9 +1,14 @@
+import os
 import json
 import tempfile
 import unittest
 from types import SimpleNamespace
 from pathlib import Path
+from unittest.mock import patch
 
+os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
+
+from PyQt6.QtWidgets import QApplication
 from aura.review import FINAL, ReviewSegment
 from aura.ui.messages import UI_TEXT
 from aura.ui.transcript_io import prepare_transcript
@@ -84,11 +89,33 @@ class FakeAudit:
 
 
 class UiStateTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.app = QApplication.instance() or QApplication([])
+
     def make_tab(self):
         tab = TranscriptionTab.__new__(TranscriptionTab)
         tab.strings = UI_TEXT
         tab.audit = FakeAudit()
         return tab
+
+    def test_transcription_tab_initializes_schedule_and_consent_controls(self):
+        with (
+            patch("aura.ui.transcription_tab.TranscriberThread.start"),
+            patch.object(TranscriptionTab, "apply_model_settings"),
+            patch.object(TranscriptionTab, "refresh_runtime_diagnostics"),
+            patch.object(TranscriptionTab, "check_for_updates"),
+        ):
+            tab = TranscriptionTab(audit=FakeAudit())
+
+        try:
+            self.assertTrue(tab.check_recording_consent.isEnabled())
+            self.assertFalse(tab.time_schedule_start.isEnabled())
+            self.assertFalse(tab.check_schedule_auto_stop.isEnabled())
+            self.assertFalse(tab.time_schedule_end.isEnabled())
+        finally:
+            tab.executor.shutdown(wait=False, cancel_futures=True)
+            tab.deleteLater()
 
     def test_settings_toggle_opens_readable_side_panel(self):
         tab = self.make_tab()
