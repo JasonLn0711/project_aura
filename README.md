@@ -115,9 +115,10 @@ run outside the repository. Local Gemma live inference remains an activation
 gate because Ollama and the required model tag are not installed in the
 validated environment.
 
-`v1.15.0` is the next release candidate in this working tree. The latest
-published Git tag remains `v1.14.0`; tagging and remote publication begin after
-an explicit release closeout.
+The `v1.15.0` source candidate is published on remote `main` through commits
+`de0e851`, `c6978b0`, `f6d0faf`, and `56ab98b`. The latest published Git tag
+remains `v1.14.0`; an annotated `v1.15.0` tag and release remain a separate
+explicit release gate.
 
 ## Previous Release — v1.14.0 (2026-07-14)
 

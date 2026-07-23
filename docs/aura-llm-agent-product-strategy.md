@@ -5,7 +5,7 @@ Canonical home：`project_aura/docs/`
 紀錄狀態：`source preserved`
 決策狀態：`proposed direction recorded`
 實作狀態：`evidence-first implementation landed; live gates active`
-發布狀態：`not published in this record`
+發布狀態：`source commits published to remote main; release tag pending`
 
 ## 紀錄契約
 
@@ -706,6 +706,23 @@ workflow、暫不建立通用 Agent」的產品決策。
 - `proposed direction recorded`：LLM 保留為受控摘要 workflow；Agent 在 evidence layer 與真實外部動作需求成立後啟動。
 - `implementation landed`：capture durability、corrected-summary ordering、session identity、evidence schema、review UI、runtime diagnostics、packaged resources 與 SQLite FTS5 read-only layer 已落在目前工作樹。
 - `validated`：392 個 tests、Python 3.10 compile／version checks、isolated wheel、強制終止後的 partial recovery、output readiness、Ollama command／server／model absence 與 touched-scope checks 已於 2026-07-23 重新檢查。
-- `release provenance`：目前工作樹為 `v1.15.0` release candidate；最新已發布 tag 維持 `v1.14.0`，本輪尚未建立 commit、tag 或 push。
+- `release provenance`：`v1.15.0` source candidate 已由 commits `de0e851`、
+  `c6978b0`、`f6d0faf`、`56ab98b` 發布至 remote `main`；最新已發布 tag
+  維持 `v1.14.0`，annotated `v1.15.0` tag 由獨立 release gate 啟動。
 - `live activation gates`：真實錄音硬體 recovery、local Gemma live inference、broader paired corpus 與人工覆核時間量測仍依 Gate A／C／D 推進。
-- `published`：本紀錄建立時尚未 commit／push；發布證據需要後續明確 Git closeout。
+- `published`：`git push origin HEAD:main` 成功；重新 fetch 後
+  `HEAD...origin/main` divergence 為 `0 0`。
+
+## Connection map
+
+- [`README.md`](../README.md)：操作者入口、`v1.15.0` capability summary、
+  validation 與 release provenance。
+- [`docs/architecture_decisions.md`](architecture_decisions.md)：session、
+  recovery、review、evidence index 與 bounded-Agent ownership contract。
+- [`docs/versioning.md`](versioning.md)：runtime candidate、published tag 與
+  annotated release 的版本邊界。
+- `planning-everything-track/data/projects/2026-05-project-aura-refactor.md`：
+  planning locator、容量影響、remote-main evidence 與下一個 activation gate。
+- `planning-everything-track/weeks/2026-W30/days/2026-07-23.md`：本次
+  FIRST PRINCIPLE day-note mirror；implementation、tests 與 runtime artifacts
+  持續由本 repo 保存。
