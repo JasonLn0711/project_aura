@@ -37,9 +37,56 @@ Meeting distance is a higher-level capture-condition policy owned by `src/aura/a
 
 Speaker diarization is an optional imported-file post-processing path. It intentionally stays outside the live recording loop, uses `pyannote.audio` behind an optional dependency boundary, and reconciles ASR segments with speaker turns by timestamp overlap.
 
-LLM summary is also optional post-processing. It runs after ASR output exists, loads the Gemma 4 E4B FP8 summary backend through an optional dependency boundary, and forces summary prompts toward Taiwanese Traditional Chinese so summarization behavior is independent from the ASR language setting.
+LLM summary is also optional post-processing. It runs after ASR output exists, uses the fixed local Ollama tag `gemma4:e4b-it-q4_K_M`, and forces summary prompts toward Taiwanese Traditional Chinese so summarization behavior is independent from the ASR language setting.
 
 The supported summary path receives the corrected transcript, extracts nine fields through the approved local Gemma runner, validates the JSON contract, and renders Markdown deterministically. Comparative architectures activate after a measured gap and run real model inference on the same paired corpus. The retired deterministic Graph-RAG dry harness remains available in Git history as design provenance; it no longer occupies the active runtime or test surface.
+
+## Evidence-first Session Contract
+
+每場錄音或匯入工作由 `{base}_session/session.json` 提供唯一 `meeting_id` 與
+artifact locator。錄音層先建立 session，轉錄、摘要與覆核層重用同一 identity；
+選定的 Session Output 同時承載音訊、逐字稿與 evidence，避免同一場會議形成
+彼此無法對應的資料島。
+
+錄音 durability 由 `src/aura/audio/recording_session.py` 擁有。Capture loop
+將 mixed 與本次 capture 實際可用的 system／microphone track 寫入 append-only PCM journal，依固定週期
+flush 與 fsync，並以原子 `session.json` 更新形成 crash recovery 邊界。最終 WAV
+只從 durable journal 重建；M4A／MP3 是交付格式，mixed WAV 保留為 evidence
+source。啟動時的 discovery 是唯讀操作，恢復動作由使用者明確啟動；成功取回
+原音後寫入 acknowledgement 與下一步，避免同一 session 重複出現在 recovery
+清單。中斷狀態重建出的 WAV 維持 `recording_outcome=partial`，並保存原始
+status／failure provenance；`ready` 表示音訊可供覆核，不代表錄音內容完整。
+Custom output 可由使用者直接選取 `session.json`。
+
+逐字稿有三個清楚狀態：`provisional`、`final`、`confirmed`。Live ASR 提供
+provisional feedback，durable audio 的第二次 ASR 形成 final timestamps，
+人員修字、改講者與確認形成 append-only review events。ASR log probability、
+unknown speaker 與多講者時間重疊形成 review flags；它們是覆核排序訊號，
+不是自動品質結論。
+
+摘要層只接收同一份 prepared corrected transcript。Decision 與 action item
+形成帶有 stable claim identity、source segment IDs、support status 與 review
+status 的 evidence claims。人員確認、校訂與退回保存於 `review_events.jsonl`；
+model output 保持不變。缺少來源或標記為 `unsupported` 的主張不能進入
+confirmed action。逐字稿一旦修正，manifest 會先原子標記既有摘要為
+invalidated，再保存 canonical segments 與 review events；任何後段寫入失敗都
+維持 fail-closed evidence state。下一次摘要
+會把 transcript hash 與來源 segment revision 納入 claim identity，使舊的人工
+確認不會自動套用到新 evidence。
+
+跨會議 retrieval 由 `src/aura/evidence_search.py` 擁有。Canonical files
+仍是 source of truth；SQLite FTS5 index 可隨時原子重建，查詢連線使用
+read-only mode。對外工具面目前只有 `search_meetings`、`search_segments`、
+`open_audio_span` 與 `get_confirmed_actions` 等唯讀能力。Proposal connector、
+MCP 與通用 Agent 由真實 consumer、反覆搬運 confirmed action 的 audit evidence
+及逐項核准需求啟動。
+
+SQLite rebuild 只接受明確的資料庫副檔名；既有 target 必須通過 AURA schema 與
+`user_version` 驗證後才能原子替換。只有 meeting identity／transcript hash
+一致且仍有效的摘要可進入 meeting search 與 actions；confirmed action 的每個
+source segment ID 也必須存在於該 meeting 的 canonical `segments.json`。摘要、
+逐字稿與覆核 event history 採用 temp file、flush、fsync 與 `os.replace`，讓
+中斷或磁碟錯誤保留上一個完整版本。
 
 Traditional Chinese punctuation restoration is a post-ASR readability layer, not an ASR decoding policy. From first principles, punctuation should improve the saved transcript without changing what the recognizer heard. Therefore `src/aura/asr/punctuation.py` owns Chinese-language/script detection, model-backed punctuation insertion, and deterministic fallback cleanup. File imports call it after ASR segments are collected and before diarization/formatting; live ASR calls it inside the transcriber thread; final recording save applies a no-model fallback so the UI thread never blocks on model download.
 

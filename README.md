@@ -26,6 +26,42 @@ Use this repo for:
 
 Keep historical recordings and generated transcripts in `record_audio_ubuntu` or another data folder.
 
+### Evidence-first session workflow（2026-07-23）
+
+AURA 現在把每場會議視為一個可恢復、可覆核、可查證的本機 session：
+
+- 錄音開始後，mixed 與本次來源實際可用的 system／microphone PCM 會持續寫入
+  `{base}_session/.capture/`，每秒 flush、每五秒 fsync；`session.json`
+  以原子更新記錄狀態。啟動時可發現未完成錄音，也可直接選取 custom
+  output 內的 `session.json` 復原原音，再由「匯入媒體」進入轉錄。
+- 即時 ASR 提供 provisional 內容；錄音結束後，以 durable mixed WAV
+  執行 final timestamped pass。匯入與錄音共用
+  `punctuation → glossary correction → SHA-256` preparation path，摘要只接收
+  corrected transcript。
+- 覆核工作台支援逐段修字、全場講者更名、低信心／講者重疊提示、
+  待覆核導覽、點擊時間播放原音，以及 JSON／Markdown／SRT／VTT 匯出。
+- Decision 與 action-item 主張保存來源 segment、support status 與 append-only
+  人員覆核事件；沒有來源的主張維持待處理狀態，不能成為 confirmed action。
+- 本機跨會議資料層採用 Python stdlib SQLite FTS5。它只讀取 canonical
+  session artifacts；目前不提供自主外部寫入，也不引入 Agent framework。
+
+錄音開始前，操作介面要求每場會議完成告知與同意確認；錄音開始後會顯示
+原始音訊持續保存的位置。摘要 runtime 固定為本機 Ollama
+`gemma4:e4b-it-q4_K_M`，First Launch Check 會分別呈現 command、server、
+model tag、磁碟空間與 output path readiness。
+
+Evidence CLI（`rebuild` 只重建衍生 SQLite；所有 query 皆為唯讀）：
+
+```bash
+aura-evidence rebuild outputs/transcripts outputs/aura-evidence.sqlite3
+aura-evidence search-meetings outputs/aura-evidence.sqlite3 "驗收"
+aura-evidence search-segments outputs/aura-evidence.sqlite3 "智德萬"
+aura-evidence confirmed-actions outputs/aura-evidence.sqlite3
+```
+
+完整產品決策、公開痛點來源、已實作範圍與 live validation gates 收錄於
+[`docs/aura-llm-agent-product-strategy.md`](docs/aura-llm-agent-product-strategy.md)。
+
 ### CUDA-only ASR validation (2026-07-14)
 
 ASR is a GPU-only capability. AURA accepts `cuda` and fails closed when CUDA is not ready; it never substitutes CPU inference. The paired live benchmark in [`artifacts/asr-benchmark/2026-07-13-common-voice24-minimum/`](artifacts/asr-benchmark/2026-07-13-common-voice24-minimum/) ran 20 real transcriptions over five public Common Voice 24 zh-TW clips: 10 with AURA Breeze ASR 25 on CUDA/int8 and 10 with Meetily Breeze ASR 26 on a CUDA release build. Both paths are `valid_target_runtime`, the error log is empty, and GPU telemetry is retained with the audio, requests, event traces, latency report, failure analysis, and decision report.
@@ -129,7 +165,7 @@ The implementation is covered by focused tests for transcript artifact naming, e
 
 ## Previous Update (2026-06-09)
 
-Project AURA now has a more grounded daily meeting-summary path that turns the corrected transcript into structured meeting notes through the approved local Gemma 4 E4B Ollama runner. The 2026-06-09 correction removes the earlier Layer 1 / Layer 2 grouped prompts and runs the nine final summary fields as one parallel batch. The contribution is operational: **Summarize Current Transcript** no longer depends on one-shot free-form summary generation, grouped prompt examples, or a manually pre-started LLM runtime. It now runs nine field-level extractors in one parallel batch, validates every structured field in Python, writes local artifacts only to an ignored output directory, renders Markdown deterministically from the final JSON, and performs a local Ollama runtime preflight before any LLM call.
+Project AURA now has a more grounded daily meeting-summary path that turns the corrected transcript into structured meeting notes through the approved local Gemma 4 E4B Ollama runner. The 2026-06-09 correction removes the earlier Layer 1 / Layer 2 grouped prompts and runs the nine final summary fields as one parallel batch. The contribution is operational: **Summarize Current Transcript** no longer depends on one-shot free-form summary generation, grouped prompt examples, or a manually pre-started LLM runtime. It now runs nine field-level extractors in one parallel batch, validates every structured field in Python, writes session-bound artifacts to the selected output and direct-API fallback artifacts to the user's local data directory, renders Markdown deterministically from the final JSON, and performs a local Ollama runtime preflight before any LLM call.
 
 This update adds five durable capabilities:
 
@@ -371,6 +407,7 @@ Advanced Settings also includes scheduled live recording:
 - README workflow documentation now matches the simplified UI and automatic transcript-saving behavior.
 - `docs/architecture_decisions.md` records the first-principles ownership split for transcript artifacts, output policy, progress visibility, UI interaction policy, live capture ownership, and Traditional Chinese punctuation post-processing.
 - [`docs/first-principles-aura-meetily-review.md`](docs/first-principles-aura-meetily-review.md) records the 2026-07-13 cross-repo architecture review, completed simplification work, measured verification evidence, and activation gates for capability migration into Meetily.
+- [`docs/aura-llm-agent-product-strategy.md`](docs/aura-llm-agent-product-strategy.md) preserves the 2026-07-23 AURA-specific LLM Agent necessity assessment, representative market pain evidence, evidence-first product direction, bounded-Agent activation gates, and frontier roadmap.
 - Tests now cover transcript artifact naming, raw/final/summary splitting, metrics JSON writing, event-log writing, structured live ASR telemetry, FFmpeg progress parsing, M4A/AAC recording export, MP3 legacy export, normalization limiter behavior, CPU-count detection, live capture source selection, RMS-based source mixing, live segment/gate defaults, scheduled wall-clock calculation, no-voice auto-stop/trailing-trim helpers, Traditional Chinese punctuation post-processing, runtime diagnostics reporting, first-launch check gates, and propagation of normalization progress into the import pipeline.
 
 ### Current Architecture Health
@@ -395,7 +432,7 @@ The implementation and remaining validation path are tracked in [`docs/windows_n
 
 | Feature Category | Implementation Details |
 | --- | --- |
-| Real-time Transcription | Live system-audio, microphone, or system+microphone recording plus streaming ASR via `faster-whisper`; stopping a recording waits for final ASR, auto-saves transcript artifacts, and clears the transcript pane. |
+| Real-time Transcription | Live system-audio, microphone, or system+microphone recording plus streaming ASR via `faster-whisper`; stopping a recording waits for final ASR, auto-saves transcript artifacts, and keeps the final timestamped rows available for correction, confirmation, and source playback. |
 | Scheduled Live Recording | Optional wall-clock scheduled start for live recording/transcription, with optional wall-clock auto-stop and normal transcript artifact finalization. |
 | No-Voice Failsafe | Automatically stops live recording after 20 continuous minutes without detected human voice and trims the trailing no-voice audio before export. |
 | Batch Transcription | Import multiple audio/video files with queue scheduling, cancellation, serialized optional summaries, and progress tracking. |
@@ -624,6 +661,7 @@ The packaged entrypoints are defined in `pyproject.toml`:
 
 - `aura`
 - `project-aura`
+- `aura-evidence`
 
 ## UI Workflow
 
@@ -636,7 +674,7 @@ The packaged entrypoints are defined in `pyproject.toml`:
    The import dialog lists common media containers including `mp3`, `mp4`, `m4a`, `wav`, `flac`, `mkv`, `mov`, `ogg`, `aac`, `wma`, `aiff`, `opus`, `webm`, `avi`, `m4v`, `3gp`, and `3g2`; the fallback **All Files** filter can still be used for other ffmpeg-supported media. Each imported transcript is auto-saved according to the selected transcript output policy.
    Use **Cancel Import** to stop the active import when possible and skip the remaining queue.
 5. Enable **Summarize transcript after ASR** or click **Summarize Transcript** to append a local Gemma 4 E4B summary.
-6. Click **Stop Recording** to finish live recording. The app waits for final ASR text, runs glossary correction and optional summary if enabled, saves the transcript, metrics, event log, runtime log, and recording audio together, then clears the transcript pane and temporary backup.
+6. Click **Stop Recording** to finish live recording. The app waits for the durable WAV and final ASR text, runs glossary correction and optional summary if enabled, saves the transcript, metrics, event log, runtime log, and recording audio together, then keeps the final rows in the review pane. Starting the next workflow clears the pane after the current session is durable.
 7. Use **Open Output Folder** after an auto-save to inspect the generated transcript artifacts.
 
 ### Settings and Runtime Diagnostics
@@ -829,7 +867,7 @@ PYTHONPATH=. uv run python scripts/generate_meeting_summary.py \
   --output-json reports/meeting_summary.json
 ```
 
-This practical pipeline uses only the corrected transcript as model input. It does not pass the correction log to Gemma, does not create research claims or benchmark metrics, and writes a paste-ready Markdown report with topic, participants, executive summary, key points, decisions, action items, open questions, risks, and next steps. Generated private outputs are written under ignored `local_outputs/meeting_summary/`; the public dry-run sample is stored at [`reports/sample_meeting_summary.md`](reports/sample_meeting_summary.md).
+This practical pipeline uses only the corrected transcript as model input. It does not pass the correction log to Gemma, does not create research claims or benchmark metrics, and writes a paste-ready Markdown report with topic, participants, executive summary, key points, decisions, action items, open questions, risks, and next steps. UI summaries stay in the selected session output; direct API calls without a session use `${XDG_DATA_HOME:-~/.local/share}/project_aura/meeting_summary/`. The public dry-run sample is stored at [`reports/sample_meeting_summary.md`](reports/sample_meeting_summary.md).
 
 Summary evaluation uses the same corrected transcript, structured JSON schema, deterministic Markdown renderer, and field-level validation as the product path. New retrieval or model variants enter only through a paired benchmark with real inference outputs, source-linked evidence, failure records, and human correction-time results.
 
