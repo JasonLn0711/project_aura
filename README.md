@@ -1,87 +1,98 @@
 # Project AURA: Local Desktop Audio Assistant
 
-![Status](https://img.shields.io/badge/Status-Maintained-brightgreen?logo=github) ![CI](https://github.com/JasonLn0711/project_aura/actions/workflows/ci.yml/badge.svg) ![Python Version](https://img.shields.io/badge/Python-3.10%2B-blue?logo=python) ![ASR Engine](https://img.shields.io/badge/ASR-faster--whisper-orange) ![UI](https://img.shields.io/badge/UI-PyQt6-9cf) ![VAD](https://img.shields.io/badge/VAD-WebRTC_VAD-success) ![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
+<p>
+  <img alt="Maintained repository status" src="https://img.shields.io/badge/Status-Maintained-brightgreen?logo=github">
+  <img alt="Continuous integration status" src="https://github.com/JasonLn0711/project_aura/actions/workflows/ci.yml/badge.svg">
+  <img alt="Python 3.10 or newer" src="https://img.shields.io/badge/Python-3.10%2B-blue?logo=python">
+  <img alt="faster-whisper ASR engine" src="https://img.shields.io/badge/ASR-faster--whisper-orange">
+  <img alt="PyQt6 desktop interface" src="https://img.shields.io/badge/UI-PyQt6-9cf">
+  <img alt="MIT license" src="https://img.shields.io/badge/License-MIT-yellow.svg">
+</p>
 
-Project AURA is a desktop audio assistant for real-time recording, Whisper-based transcription, batch file transcription, and smart audio splitting.
+*Repository indicators summarize maintenance, CI, runtime, ASR, UI, and license status.*
 
-This repository is the maintained Python implementation extracted from the original `record_audio_ubuntu` prototype. Git history preserves the retired one-file baseline; the current tree contains the active application, validation scripts, tests, and release documentation.
+<!--
+README FORMAT CONTRACT
 
-![Project AURA v1.14.0 live transcription workspace with CUDA status, waveform, Traditional Chinese transcript, and review controls](./img/transcription-workspace-v1.14.0.png)
+Keep the rendered sections in this exact order:
+1. Product Purpose
+2. Project Status
+3. Latest Update
+4. Core Capabilities
+5. Architecture and Ownership
+6. Evidence-First Session Contract
+7. Desktop Workflow
+8. Installation
+9. Configuration Defaults
+10. Feature Behavior
+11. Session Artifacts and Data Layout
+12. Validation and Evidence
+13. Development and Testing
+14. Windows Runtime Path
+15. Release and Versioning
+16. Troubleshooting
+17. Documentation Map
+18. Repository Data Stewardship
+19. License
 
-*AURA v1.14.0 during live transcription: the operator workspace keeps capture,
-runtime status, waveform, Traditional Chinese transcript, and review together,
-with direct access to settings, track splitting, and the local activity log.*
+Keep all rendered README copy in English. Place an explanatory caption
+immediately after every screenshot, diagram, or illustration. Preserve
+operational depth while routing dated history to GitHub Releases, design
+detail to docs/, and measured runtime packets to artifacts/.
 
-## Project Status
+Preserve the Refactor Version, Latest Published Tag, Next Release Candidate
+rows and the Latest Update heading because scripts/bump_version.py updates
+them during release preparation.
+-->
 
-Project AURA provides a fast validation surface for Taiwan-focused ASR, audio preparation, correction, observability, and evidence-backed capability comparison. Generated recordings and private transcripts stay in their selected output folders while the repo remains a reviewable source and validation package.
+Project AURA is a local desktop audio assistant for professional meetings,
+lectures, and review-intensive transcription workflows. It brings recording,
+RTX/CUDA speech recognition, Traditional Chinese transcript preparation,
+human review, local structured summaries, and evidence export into one
+recoverable workflow.
 
-Use this repo for:
+![Project AURA transcription workspace with CUDA status, waveform, Traditional Chinese transcript, and review controls](./img/transcription-workspace-v1.14.0.png)
 
-- maintained desktop application source
-- package structure
-- tests and regression checks
-- Python validation releases
-- paired-corpus evidence before capability migration into Meetily
+*Figure 1. The transcription workspace keeps capture controls, CUDA readiness, waveform feedback, Traditional Chinese transcript review, output actions, and the local activity log in one operator view.*
 
-Keep historical recordings and generated transcripts in `record_audio_ubuntu` or another data folder.
+## Product Purpose
 
-### Evidence-first session workflow（2026-07-23）
+AURA turns audio into a durable, reviewable meeting record. The application
+keeps audio, transcript states, summary claims, and review events connected
+through one session identity so operators can move from capture to confirmed
+actions with a visible evidence path.
 
-AURA 現在把每場會議視為一個可恢復、可覆核、可查證的本機 session：
+The active product flow is:
 
-- 錄音開始後，mixed 與本次來源實際可用的 system／microphone PCM 會持續寫入
-  `{base}_session/.capture/`，每秒 flush、每五秒 fsync；`session.json`
-  以原子更新記錄狀態。啟動時可發現未完成錄音，也可直接選取 custom
-  output 內的 `session.json` 復原原音，再由「匯入媒體」進入轉錄。
-- 即時 ASR 提供 provisional 內容；錄音結束後，以 durable mixed WAV
-  執行 final timestamped pass。匯入與錄音共用
-  `punctuation → glossary correction → SHA-256` preparation path，摘要只接收
-  corrected transcript。
-- 覆核工作台支援逐段修字、全場講者更名、低信心／講者重疊提示、
-  待覆核導覽、點擊時間播放原音，以及 JSON／Markdown／SRT／VTT 匯出。
-- Decision 與 action-item 主張保存來源 segment、support status 與 append-only
-  人員覆核事件；沒有來源的主張維持待處理狀態，不能成為 confirmed action。
-- 本機跨會議資料層採用 Python stdlib SQLite FTS5。它只讀取 canonical
-  session artifacts；目前不提供自主外部寫入，也不引入 Agent framework。
-
-錄音開始前，操作介面要求每場會議完成告知與同意確認；錄音開始後會顯示
-原始音訊持續保存的位置。摘要 runtime 固定為本機 Ollama
-`gemma4:e4b-it-qat`，generation request 固定啟用 reasoning
-（Ollama `think=true`）；只有通過結構驗證的 final response 會進入摘要
-artifact。First Launch Check 會分別呈現 command、server、model tag、磁碟
-空間與 output path readiness。
-
-Evidence CLI（`rebuild` 只重建衍生 SQLite；所有 query 皆為唯讀）：
-
-```bash
-aura-evidence rebuild outputs/transcripts outputs/aura-evidence.sqlite3
-aura-evidence search-meetings outputs/aura-evidence.sqlite3 "驗收"
-aura-evidence search-segments outputs/aura-evidence.sqlite3 "智德萬"
-aura-evidence confirmed-actions outputs/aura-evidence.sqlite3
+```text
+Live capture or media import
+        |
+        v
+Breeze ASR on RTX/CUDA
+        |
+        v
+Traditional Chinese punctuation and glossary correction
+        |
+        v
+Timestamped human review
+        |
+        v
+Local Gemma 4 structured summary
+        |
+        v
+Source-linked claims, exports, and evidence search
 ```
 
-完整產品決策、公開痛點來源、已實作範圍與 live validation gates 收錄於
-[`docs/aura-llm-agent-product-strategy.md`](docs/aura-llm-agent-product-strategy.md)。
+Use this repository for:
 
-### CUDA-only ASR validation (2026-07-14)
+- the maintained PyQt6 desktop application;
+- reusable audio, ASR, review, summary, diagnostics, and evidence services;
+- regression tests and platform smoke checks;
+- release packaging and semantic version automation;
+- public runtime evidence with source manifests and measured event traces;
+- architecture, product strategy, governance, and platform documentation.
 
-ASR is a GPU-only capability. AURA accepts `cuda` and fails closed when CUDA is not ready; it never substitutes CPU inference. The paired live benchmark in [`artifacts/asr-benchmark/2026-07-13-common-voice24-minimum/`](artifacts/asr-benchmark/2026-07-13-common-voice24-minimum/) ran 20 real transcriptions over five public Common Voice 24 zh-TW clips: 10 with AURA Breeze ASR 25 on CUDA/int8 and 10 with Meetily Breeze ASR 26 on a CUDA release build. Both paths are `valid_target_runtime`, the error log is empty, and GPU telemetry is retained with the audio, requests, event traces, latency report, failure analysis, and decision report.
-
-This clean-speech minimum validates the runtime contract rather than choosing a product winner. The next validation layer expands the same artifact contract to long-form, far-field, overlapping, and noisy speech, then compares correction effort, VRAM, cancellation, recovery, and completion time.
-
-Audit trail: [`docs/audit-events/2026-07-14-gpu-only-asr-live-benchmark/audit-event.md`](docs/audit-events/2026-07-14-gpu-only-asr-live-benchmark/audit-event.md).
-
-## Executive Summary
-
-Project AURA integrates two core workflows:
-
-1. **Real-time / file-based transcription** with timestamped logs.
-2. **Smart audio splitting** that finds natural pause points to avoid cutting speech mid-sentence.
-
-The app is designed for professional meeting and lecture workflows. It includes prompt-guided ASR, Traditional Chinese punctuation restoration, optional background noise reduction, batch processing, and memory-management safeguards for heavier ASR workloads.
-
-## Project Metadata
+## Project Status
 
 | Field | Value |
 | --- | --- |
@@ -89,1021 +100,871 @@ The app is designed for professional meeting and lecture workflows. It includes 
 | Refactor Version | `1.15.0` |
 | Latest Published Tag | `v1.14.0` |
 | Next Release Candidate | `v1.15.0` |
+| Release State | `v1.15.0` source candidate is published on `main`; the annotated tag and GitHub Release form the next release gate |
+| Primary Platform | Ubuntu 22.04 / 24.04 desktop |
+| Python Runtime | Python 3.10+ |
 | ASR Model | `SoybeanMilk/faster-whisper-Breeze-ASR-25` |
-| GitHub Repository | `JasonLn0711/project_aura` |
-| Academic Affiliation | National Yang Ming Chiao Tung University (NYCU) |
-| Project Lead | Jason Chia-Sheng Lin (PhD. Student) |
+| ASR Runtime | NVIDIA RTX/CUDA with `int8` compute |
+| Summary Runtime | Local Ollama `gemma4:e4b-it-qat` with reasoning enabled |
+| Desktop UI | PyQt6 |
+| Project Lead | Jason Chia-Sheng Lin, National Yang Ming Chiao Tung University |
 | License | MIT |
+
+### Release lineage
+
+| Release | Contribution |
+| --- | --- |
+| `v1.15.0` candidate | Durable meeting sessions, crash recovery, timestamped transcript review, source-linked summary claims, and rebuildable local evidence search |
+| `v1.14.0` | Operator-focused workspace, content-free local audit events, runtime diagnostics, integrity checks, and synchronized version automation |
+| `v1.13.0` | Windows onboarding, portable packaging, RTX diagnostics, output policy, scheduling, and broader artifact visibility |
+| `v1.12.0` | Structured transcript artifacts, progress telemetry, audio-quality controls, and modular transcription services |
+
+GitHub Releases owns the durable release chronology. The sections below
+describe the current product contract and link each capability to its
+canonical design or evidence source.
 
 ## Latest Update — v1.15.0 (2026-07-23)
 
-Project AURA v1.15.0 establishes an evidence-first local meeting workflow:
-durable multi-source capture journals, explicit audio recovery, corrected
-transcript identity, timestamped human review, source-linked summary claims,
-and a rebuildable SQLite FTS5 evidence index. Recording and import outputs now
-share one canonical session, human edits autosave and invalidate stale
-summaries, and confirmed actions require current source evidence.
-
-The release candidate also packages its summary prompts, domain glossary, and
-ClearVoice runner inside the wheel, validates output paths before work begins,
-and uses atomic writes for canonical transcript and summary artifacts. The
-general-purpose Agent layer remains deferred until measured external-action
-demand passes the proposal-only activation gate.
-
-Validation passed `392` tests, including forced-process interruption recovery,
-partial-WAV preservation, stale-confirmation prevention, same-basename
-collision handling, Python 3.10 compatibility checks, and an isolated wheel
-run outside the repository. The original v1.15 validation classified local
-Gemma inference as an activation gate because Ollama and its then-required
-model tag were absent. As of 2026-07-23, the active runtime contract uses the
-installed local Ollama runner with `gemma4:e4b-it-qat` and `think=true`;
-the current runtime correction passes `398` tests and a real nine-field Gemma 4
-run. All nine fields passed schema validation with reasoning enabled in
-`71.186` seconds while AURA ASR remained loaded on the same GPU. Paired
-quality/correction-time measurement remains the next evidence layer. The
-runtime evidence packet is stored under
-[`artifacts/llm-runtime/2026-07-23-ollama-gemma4-e4b-qat-minimum/`](artifacts/llm-runtime/2026-07-23-ollama-gemma4-e4b-qat-minimum/).
-
-The `v1.15.0` source candidate is published on remote `main` through commits
-`de0e851`, `c6978b0`, `f6d0faf`, and `56ab98b`. The latest published Git tag
-remains `v1.14.0`; an annotated `v1.15.0` tag and release remain a separate
-explicit release gate.
-
-## Previous Release — v1.14.0 (2026-07-14)
-
-Project AURA v1.14.0 adds an operator-focused desktop workspace and a local,
-content-free audit event system. The release makes recording, import, summary,
-diagnostics, output review, and track splitting easier to operate while giving
-maintainers enough trustworthy evidence to improve UI flow and investigate
-runtime anomalies.
-
-This release adds six durable capabilities:
-
-1. **Operator workspace**: the PyQt layout now separates capture actions, live
-   transcript review, output controls, Settings, runtime diagnostics,
-   and the activity log into clearer working regions.
-2. **Local product audit trail**: app lifecycle, decision-relevant UI actions,
-   model loading, recording, import, summary, diagnostics, splitter, and audit
-   report events are written to daily local JSONL files.
-3. **Privacy and integrity controls**: audit details redact transcripts,
-   summaries, audio, file paths, credentials, prompts, and raw error messages.
-   Session sequence numbers and a SHA-256 hash chain support integrity review;
-   audit files and generated reports use owner-only permissions.
-4. **UI and reliability analysis**: local reports summarize workflow completion,
-   recoverable friction, latency percentiles, repeated actions, error bursts,
-   incomplete workflows, unknown schemas, and uncontrolled termination
-   candidates. Every anomaly remains a human-review signal.
-5. **In-app and CLI reporting**: Settings can open the local audit
-   folder or generate a Markdown report; `scripts/summarize_audit_events.py`
-   provides the same analysis in Markdown or JSON.
-6. **Automatic version synchronization**: `make bump-version BUMP=patch|minor|major`
-   calculates the next semantic version and synchronizes package metadata,
-   runtime metadata, release date, README version rows, the latest-update
-   heading, window title, audit events, runtime reports, and the bottom status
-   bar from the same runtime version.
-
-Validation passed `289` tests. The PyQt control smoke produced `8` ordered
-events with integrity `PASS`; the updated desktop process subsequently wrote
-`23` content-free runtime, UI, navigation, import, and summary events in one
-active session with `0` provisional review signals. The next validation layer
-confirms normal session termination and calibrates UI-friction thresholds after
-at least `20` valid sessions or two weeks of local evidence.
-
-Canonical design: [`docs/audit-event-system-design.md`](docs/audit-event-system-design.md).
-
-## Previous Update (2026-06-11)
-
-Project AURA now records each live recording as a reviewable execution package, not only as transcript text. The contribution in this update is operational observability: every recording folder now preserves both a raw runtime log and a structured event log, while live ASR exposes enough telemetry to distinguish normal verbose logging from real latency buildup. The recording audio export path now defaults to clearer M4A/AAC output while retaining MP3 as a legacy compatibility option.
-
-This update adds five durable capabilities:
-
-1. **Per-recording runtime logs**: each recording folder now includes `{base}_runtime.log`, a Python logging capture for that recording session. This preserves third-party logger lines such as `faster_whisper` processing-duration messages alongside AURA's own runtime events.
-2. **Structured recording event logs**: each recording folder now includes `{base}_event_log.json`. The event log records UI status updates, live transcript updates, live ASR telemetry, recording start/stop events, final ASR drain, optional summary activity, save stages, and recording audio export start/finish/failure events.
-3. **Live ASR telemetry**: every live ASR chunk reports `chunk_duration`, `queue_size`, `asr_elapsed`, `realtime_factor`, and `queue_backlog`. This makes it possible to tell whether AURA is merely producing normal logs or whether ASR is falling behind the capture queue.
-4. **Live capture tuning for noisy environments**: the live maximum segment length is now configurable through settings and defaults to `16.0` seconds. The live energy gate is also settings-owned and defaults to `1000.0` RMS, so background system audio and room noise are less likely to force premature ASR segmentation.
-5. **M4A/AAC recording export**: recorded WAV normalization now defaults to `M4A / AAC-LC 96k`, which preserves clearer meeting speech at practical file sizes. Advanced Settings can still select `MP3 / LAME VBR q0` for legacy workflows, and both paths apply the limiter after gain adjustment.
-
-The supported scope is practical debugging and daily use. AURA now leaves enough evidence in the recording folder to inspect what happened after the meeting: which runtime settings were used, whether ASR queued up, whether recording audio export completed, where every artifact was written, and which stage consumed time. This is especially important for diagnosing live recordings that sound degraded, transcribe slowly, or produce many `faster_whisper` processing lines.
-
-The recording artifact set now includes:
-
-```text
-{base}_raw.txt
-{base}_corrected.txt
-{base}_final.txt
-{base}_summary.txt
-{base}_correction_log.json
-{base}_processing_metrics.json
-{base}_event_log.json
-{base}_runtime.log
-```
-
-The implementation is covered by focused tests for transcript artifact naming, event-log writing, structured live ASR telemetry, live segment/gate defaults, M4A/AAC recording export, MP3 legacy export, normalization limiter behavior, and import smoke coverage.
-
-## Previous Update (2026-06-09)
-
-Project AURA now has a more grounded daily meeting-summary path that turns the corrected transcript into structured meeting notes through the approved local Gemma 4 E4B Ollama runner. The 2026-06-09 correction removes the earlier Layer 1 / Layer 2 grouped prompts and runs the nine final summary fields as one parallel batch. The contribution is operational: **Summarize Current Transcript** no longer depends on one-shot free-form summary generation, grouped prompt examples, or a manually pre-started LLM runtime. It now runs nine field-level extractors in one parallel batch, validates every structured field in Python, writes session-bound artifacts to the selected output and direct-API fallback artifacts to the user's local data directory, renders Markdown deterministically from the final JSON, and performs a local Ollama runtime preflight before any LLM call.
-
-This update adds five durable capabilities:
-
-1. **Parallel field-batch summary extraction**: `src/summary/layered_summary_pipeline.py` runs nine single-field extractors in one parallel batch: `meeting_topic`, `participants`, `executive_summary`, `key_points`, `decisions`, `action_items`, `open_questions`, `risks`, and `next_steps`. This removes the earlier Layer 1 / Layer 2 split, avoids a single oversized all-fields prompt, and reduces cross-field example leakage.
-2. **Fixed local Gemma 4 E4B contract**: summary generation uses only the local Ollama tag `gemma4:e4b-it-qat` for base model `google/gemma-4-E4B-it`, with `reasoning=true` (Ollama `think=true`), `temperature=0`, `num_ctx=32768`, `num_predict=1536`, and `stream=false`. AURA treats the returned thinking stream as ephemeral runtime output; only the validated final response enters the summary artifact. AURA checks `http://localhost:11434/api/tags` before generation and refuses fallback models or cloud calls.
-3. **Corrected-transcript-only input boundary**: the model receives only the current corrected transcript. Raw ASR text, `correction_log`, private audit logs, and review notes stay outside the prompt. This preserves the fuzzy-correction audit trail while keeping summary generation focused on the user-facing transcript.
-4. **Structured JSON source of truth**: every extractor has its own prompt, minimal valid output example, strict JSON shape, Python validation, and one repair attempt. Python merges the validated outputs into the final schema, validates the full summary, and renders Markdown without using the LLM for formatting.
-5. **Ollama runtime preflight and model-install guardrail**: `src/aura/llm/ollama_runtime.py` checks whether the local Ollama server is reachable, starts `ollama serve` when the server is unavailable, waits for `http://localhost:11434/api/tags`, verifies `gemma4:e4b-it-qat`, and separates missing-command, server-timeout, missing-model, pull-failure, and summary-failure states. If the model tag is missing, the UI shows a **Local Gemma model not installed** dialog with **Pull Model**, **Copy Command**, and **Cancel**. AURA never silently downloads a large model.
-
-The practical workflow is now:
-
-```text
-Audio
-↓
-Breeze-ASR
-↓
-Raw Transcript
-↓
-Fuzzy Glossary Correction
-↓
-Corrected Transcript
-↓
-Local Gemma 4 E4B parallel field extraction
-↓
-Validated JSON
-↓
-Markdown meeting report
-```
-
-The supported scope is a local, user-facing meeting-notes feature. It does not create a new research gate, benchmark, or claim about summary quality. The next validation layer is real daily use: lab meetings, advisor syncs, industry discussions, and course recordings should produce paste-ready notes that are easy to inspect and revise.
-
-The new runtime safety path is:
-
-```text
-Summarize Current Transcript
-↓
-Transcript content check
-↓
-Ollama localhost /api/tags preflight
-↓
-Start local ollama serve if needed
-↓
-Verify gemma4:e4b-it-qat
-↓
-If missing: Pull Model / Copy Command / Cancel
-↓
-Run the reasoning-enabled field batch only after the local runner is ready
-```
-
-The implementation is covered by focused runtime and UI-adjacent tests: `tests/test_ollama_runtime.py` validates server detection, command lookup, startup timeout, model-tag checks, pull success/failure, and localhost-only host policy; `tests/test_summary_ui_runtime.py` verifies that UI summary starts only after runtime-ready, model-missing does not call summary, and empty transcript does not start runtime.
-
-## Previous Update (2026-05-29)
-
-Project AURA `v1.13.0` is the Windows User Onboarding Release. The contribution in this update is user-facing: Windows users can now start from a portable folder, run one check, launch one script, and get a copyable diagnostic report when the machine is not ready. The implementation keeps the same RTX/CUDA-only ASR policy while reducing the setup flow from a developer command sequence to `Start-AURA.bat` / `Start-AURA.ps1` and `Check-AURA.bat`.
-
-This release adds three onboarding layers:
-
-1. **One-click Windows launch**: `Start-AURA.ps1` and `Start-AURA.bat` check Python 3.11, create `.venv`, install dependencies, verify FFmpeg, verify `nvidia-smi`, run `windows_gpu_smoke.py`, write `diagnostic_report.txt`, and then start the PyQt UI.
-2. **Portable Windows ZIP layout**: `scripts/build_windows_portable.ps1` now produces `dist/aura-windows-portable-v1.13.0.zip` with root-level `Start-AURA.bat`, `Check-AURA.bat`, `app/`, `scripts/`, `docs/`, `sample_audio/`, and a placeholder `diagnostic_report.txt`.
-3. **First Launch Check in the UI**: Runtime Diagnostics now includes GPU Ready, CUDA Ready, FFmpeg Ready, Microphone Ready, Output Folder, and ASR Model Load checks. Each failed item exposes Fix Guide, Copy Diagnostic Report, Open Setup Folder, and Retry Check actions beside the failed gate.
-
-The supported scope is practical: the portable ZIP is the preferred Windows onboarding artifact before a full installer. CUDA, cuDNN, Qt plugin, and audio-device behavior still need repeated validation on real Windows RTX machines before moving to PyInstaller, Nuitka, or an installer.
-
-## Previous Update (2026-05-29, v1.12.0)
-
-Project AURA has moved from an Ubuntu-focused refactor into a cross-platform RTX workstation foundation. The contribution in this update is practical: AURA now has a Windows native validation path, a shared runtime diagnostics layer, a workstation-oriented PyQt layout, Windows CI coverage, and a portable developer release path. The evidence is concrete: the local CUDA smoke check loaded the default `SoybeanMilk/faster-whisper-Breeze-ASR-25` model on `cuda/int8`, the ASR artifact smoke wrote raw/final/metrics transcript outputs, and both Ubuntu and Windows GitHub Actions completed successfully after the hosted Windows runner was given FFmpeg.
-
-This release adds four durable capabilities:
-
-1. **Windows native RTX validation**: `scripts/windows_gpu_smoke.py` checks `nvidia-smi`, Python imports, CUDA runtime visibility, cuBLAS/cuDNN, `ctranslate2`, and the required `WhisperModel(..., device="cuda", compute_type="int8")` load path.
-2. **Copyable runtime diagnostics**: `scripts/runtime_report.py` and the new `src/aura/system/` diagnostics modules report OS, Python, GPU, CUDA, cuBLAS, cuDNN, `ctranslate2`, `faster-whisper`, FFmpeg, audio devices, and output-folder writability.
-3. **Windows-friendly workstation UI**: the transcription workspace now exposes left-side workflow commands, top GPU/model/device status, a central transcript workspace, right-side artifact/export/summary/settings controls, and a bottom runtime log. Runtime Diagnostics can copy the diagnostic report, and error dialogs expose the same report.
-4. **Windows CI and portable release path**: `.github/workflows/windows.yml` runs hosted Windows tests, PyQt import smoke, runtime-report smoke, and portable packaging smoke. A gated self-hosted Windows RTX job can run both the GPU model-load smoke and the ASR artifact smoke. `scripts/build_windows_portable.ps1` prepares `dist/aura-windows-portable/` with setup docs, runtime checkers, known issues, and a generated sample WAV.
-
-The supported scope is clear: hosted Windows CI verifies source compatibility and non-GPU runtime reporting; self-hosted RTX validation is the gate for CUDA performance claims. Installer work remains a planned extension after the portable developer release has been exercised on real Windows RTX hardware.
-
-## Previous Update (2026-05-25)
-
-The real problem in meeting transcription is rarely that a person does not know how to press a button. The problem is that humans are busy, meetings start while we are still switching context, and recordings often keep running long after the real conversation has ended. A transcription tool should protect attention instead of demanding more of it.
-
-Before today, AURA already had the essential professional workflow: live recording, real-time ASR, optional summary generation, automatic transcript artifact saving, and an output folder policy. But it still depended on one fragile human habit: remember exactly when to start, and remember exactly when to stop.
-
-Today we added two safety rails:
-
-1. **Scheduled live recording**: AURA can now arm a recording for a specific wall-clock `HH:mm` start time, with an optional `HH:mm` auto-stop time. If the selected time has already passed today, AURA rolls it to the next matching time. If the stop time is earlier than the start time, AURA treats it as a next-day stop.
-2. **No-voice failsafe**: if live capture detects no human voice for 20 continuous minutes, AURA automatically stops the recording and trims the final no-voice audio before exporting the selected recording format. This prevents forgotten recordings from turning into long silent files.
-
-We compared four implementation paths before choosing this design:
-
-- OS-level scheduling such as cron/systemd timers: powerful, but too detached from the desktop recording state and transcript artifact workflow.
-- A UI-only countdown timer: simple, but it cannot know whether the room is still active or only silent.
-- A fixed maximum recording duration: safe, but it can interrupt long lectures or research meetings at the worst moment.
-- Capture-layer voice-aware stopping: slightly more work, but it uses the same live audio stream that drives ASR and can trim the saved audio at the exact place where useful speech ends.
-
-The final decision is intentionally hybrid: wall-clock scheduling belongs in the PyQt interaction layer, while the 20-minute no-voice guard belongs in the audio capture layer. That keeps the feature predictable for the user and keeps the saved transcript/audio artifacts consistent with the same recording pipeline AURA already trusts.
-
-## v1.13.0 Windows Onboarding Changes
-
-`v1.13.0` turned the Windows native validation foundation into a simpler Windows onboarding path. Its goals were to let Windows users run one check and one launch command, keep ASR on the required RTX/CUDA path, produce `diagnostic_report.txt` automatically, package a real portable ZIP layout, and expose first-launch readiness checks in the UI.
-
-### User Workflow Changes
-
-- The primary transcription tab now uses a workstation layout: left-side workflow actions, top GPU/model/device status, central waveform/transcript workspace, right-side artifact/export/summary/settings controls, and a bottom runtime log.
-- Windows users can now launch with `Start-AURA.bat` / `Start-AURA.ps1`, which prepares `.venv`, installs dependencies, checks FFmpeg and NVIDIA driver visibility, runs the CUDA smoke test, writes `diagnostic_report.txt`, and starts the app.
-- Windows users can run `Check-AURA.bat` first to execute the same setup and RTX/CUDA validation flow without launching the UI.
-- Runtime Diagnostics can be refreshed from the UI and copied as a developer-ready report.
-- Runtime Diagnostics now includes a First Launch Check for GPU, CUDA, FFmpeg, microphone, output-folder writability, and ASR model load status, with Fix Guide buttons for failed gates.
-- Error dialogs for model loading, file transcription, and summary failures expose the same diagnostic report through details and a copy button.
-- The main transcription controls are simplified around the actual user actions: **Start/Stop Recording**, **Import Media**, optional **Cancel Import**, optional **Open Output Folder**, and **Summarize Current Transcript**.
-- Live recording can be armed from Advanced Settings to start at a selected wall-clock time. The same schedule can optionally auto-stop at a selected wall-clock time, including next-day stop times when the end time is earlier than the start time.
-- Live recording now has a 20-minute no-voice failsafe: if AURA does not detect human voice for 20 continuous minutes, it auto-stops and trims the trailing no-voice audio before saving the recording.
-- The previous standalone **Save Transcript** and **Clear Transcript** buttons are removed from the primary workflow.
-- After **Stop Recording**, AURA now waits for the live ASR queue to finish, runs the optional LLM summary if enabled, saves transcript artifacts automatically, clears the visible transcript pane, and removes the temporary transcript backup.
-- After an auto-save, **Open Output Folder** becomes available so the user can inspect the generated files without searching manually.
-- Import wording is shortened to **Import Media** because the import action already starts transcription automatically.
-- The transcript field is now treated as a working display, not the user's permanent storage layer. The permanent record is the artifact set saved under the selected output policy.
-
-### Transcript Artifact Changes
-
-Transcripts are now saved as a durable artifact set instead of one manually saved text file:
-
-```text
-{base}_raw.txt
-{base}_corrected.txt
-{base}_final.txt
-{base}_summary.txt
-{base}_correction_log.json
-{base}_processing_metrics.json
-{base}_event_log.json
-{base}_runtime.log
-```
-
-- `raw.txt` contains the ASR transcript only.
-- `corrected.txt` contains conservative glossary-corrected ASR output.
-- `final.txt` contains the corrected transcript plus the LLM summary when a summary is available.
-- `summary.txt` contains only the LLM summary and is written only when a summary is produced.
-- `correction_log.json` records each accepted fuzzy glossary correction.
-- `processing_metrics.json` records the workflow type, source path, output policy, output paths, total elapsed time, coarse stage durations, runtime configuration, and status-event summary.
-- `event_log.json` records structured per-run events. For live recordings, it includes runtime configuration, UI status updates, live transcript updates, ASR telemetry, recording start/stop events, final ASR drain, optional summary activity, save stages, and recording audio export status.
-- `runtime.log` records raw Python logging for the recording session, including third-party logger lines such as `faster_whisper` processing-duration messages.
-
-This split makes it possible to compare the original ASR output with the final user-facing transcript and audit where the file was saved.
-
-### ASR Post-Processing
-
-After Breeze-ASR-25 emits a transcript, AURA now runs a conservative domain-glossary fuzzy correction layer before summary generation. The glossary lives in [`config/domain_glossary.yaml`](config/domain_glossary.yaml), and the implementation is in [`src/asr_postprocess/fuzzy_corrector.py`](src/asr_postprocess/fuzzy_corrector.py).
-
-The first version uses `rapidfuzz`, does not use LLM verification, and only corrects high-confidence glossary terms. It preserves `{base}_raw.txt`, writes `{base}_corrected.txt`, writes `{base}_correction_log.json`, and uses the corrected transcript for `{base}_final.txt` and downstream summary. The detailed policy and next validation path are recorded in [`docs/asr_postprocess_fuzzy_glossary.md`](docs/asr_postprocess_fuzzy_glossary.md).
-
-### Import And Batch Processing Changes
-
-- Imported audio/video files are processed as a queue.
-- When **Summarize transcript after ASR** is enabled, each imported file now completes ASR, summary, and artifact saving before the next queued file begins.
-- This prevents later batch files from skipping summary when a previous summary is still running.
-- **Cancel Import** now clears the remaining queue and requests cancellation of the active import worker.
-- Supported import formats include common audio/video containers such as `mp3`, `mp4`, `m4a`, `wav`, `flac`, `mkv`, `mov`, `ogg`, `aac`, `wma`, `aiff`, `opus`, `webm`, `avi`, `m4v`, `3gp`, and `3g2`, with an **All Files** fallback for other FFmpeg-supported media.
-- Each imported file records status events in metrics, including preparation, normalization, ASR, optional punctuation restoration, optional diarization, optional summary, and artifact save stages.
-
-### Live Capture And Audio Quality Changes
-
-- Live recording can now request **System audio + microphone**, **System audio only**, or **Microphone only** from Advanced Settings.
-- On PulseAudio/PipeWire systems, AURA uses `pactl` to discover the default sink monitor and default microphone source, then uses `parec` readers for precise source capture.
-- When PulseAudio/PipeWire source discovery is unavailable, the app reports the fallback and records from the default PyAudio/Pulse input instead of failing silently.
-- System-audio plus microphone capture is mixed before VAD/ASR as 16 kHz mono `int16` frames.
-- Mixed live capture now applies RMS-based active-source balancing. Silent/background-only chunks are ignored, active sources receive limited gain, and mix headroom is preserved so microphone speech and system audio do not clip or drown each other out.
-- Live ASR segmentation now uses a settings-owned maximum segment length, default `16.0` seconds, so long speech runs are less fragmented while still bounded for live feedback.
-- The live energy gate is settings-owned and defaults to `1000.0` RMS. This raises the background-noise threshold from the earlier hard-coded value and makes future tuning easier without editing recorder internals.
-- If no voice-like live audio is detected for 20 continuous minutes, the capture layer stops the recording and removes the final no-voice tail before the WAV is normalized/exported.
-- The selected live capture mode is stored in recording metrics as `capture_source`.
-- Recording audio export now defaults to `M4A / AAC-LC 96k`, with `MP3 / LAME VBR q0` available from Advanced Settings for legacy compatibility. Both export paths use the FFmpeg-first normalization path and apply a limiter after gain adjustment.
-
-### ASR, GPU, And Readability Changes
-
-- ASR model loading is pinned to `cuda`. CPU fallback is intentionally disabled so transcription never silently leaves the RTX GPU path.
-- CUDA runtime/cuBLAS/cuDNN availability is checked before loading the ASR model; missing runtime libraries produce a product-facing RTX/CUDA activation error with platform-specific guidance for Windows native, WSL, Linux native, and Docker.
-- Windows native feasibility is covered by `scripts/windows_gpu_smoke.py`, which verifies `nvidia-smi`, Python imports, CUDA DLL/runtime visibility, cuBLAS/cuDNN, and the actual `WhisperModel(..., device="cuda", compute_type="int8")` model-load path.
-- `scripts/runtime_report.py` produces a copyable report covering OS, Python, GPU, CUDA, cuBLAS, cuDNN, `ctranslate2`, `faster-whisper`, FFmpeg, audio I/O, and output-folder writability.
-- File ASR keeps the Traditional Mandarin meeting-record prompt by default; live ASR keeps a separate live prompt default.
-- Traditional Chinese transcript text now runs through post-ASR punctuation restoration with the available `p208p2002/zh-wiki-punctuation-restore` token-classification model.
-- If punctuation dependencies or model weights are unavailable, AURA uses deterministic full-width punctuation cleanup instead of blocking ASR or transcript saving.
-- Punctuation restoration is conservative: it adds/normalizes punctuation for readability but does not translate Simplified Chinese, rewrite vocabulary, or replace the ASR text.
-
-### Advanced Settings Changes
-
-Advanced Settings now includes a transcript output policy:
-
-- **Same folder as source/recording**: default; keeps imported transcripts beside the source file and live-recording transcripts in the recording folder.
-- **Project outputs/transcripts folder**: writes transcript artifacts under `outputs/transcripts/` in this repo.
-- **Custom folder**: writes all transcript artifacts to a user-selected folder.
-
-Existing advanced options remain available: live capture source, denoise mode, speaker diarization, LLM summary, recording audio format, target volume normalization, beam size, initial prompt, language, compute precision, output policy, and model reload.
-
-Runtime Diagnostics now appears alongside these controls. It reports GPU detection, CUDA runtime status, ASR model load status, audio input/output status, output-folder writability, and includes a **Copy Diagnostic Report** action.
-
-The First Launch Check inside Runtime Diagnostics shows:
-
-- **GPU Ready**
-- **CUDA Ready**
-- **FFmpeg Ready**
-- **Microphone Ready**
-- **Output Folder**
-- **ASR Model Load**
-
-Failed checks expose **Fix Guide**, **Copy Diagnostic Report**, **Open Setup Folder**, and **Retry Check** actions beside the failed gate so users do not need to interpret raw PowerShell output first.
-
-Advanced Settings also includes scheduled live recording:
-
-- **Schedule recording start** turns the main recording button into **Schedule Recording** and starts live recording/transcription at the selected `HH:mm` wall-clock time.
-- **Auto-stop at** is optional. When enabled, AURA automatically stops the scheduled recording at the selected `HH:mm` wall-clock time and then uses the normal transcript finalization and artifact save workflow.
-- If the selected start time has already passed for the day, AURA schedules the next matching wall-clock time. If the selected stop time is not after the scheduled start, AURA treats it as a next-day stop.
-
-### Progress And Performance Visibility Changes
-
-- Import normalization progress is surfaced in the status line, including CPU thread budget, FFmpeg volume-analysis pass, detected mean volume, gain amount, export progress percentage, and completion.
-- Imported-file status events are retained in `processing_metrics.json`, so users can inspect what happened after the run finishes.
-- Live ASR telemetry is emitted for each live chunk: `chunk_duration`, `queue_size`, `asr_elapsed`, `realtime_factor`, and `queue_backlog`. These fields identify whether live ASR is keeping up with capture or accumulating delay.
-- Live recording folders now retain `{base}_event_log.json` for structured events and `{base}_runtime.log` for raw Python logging. The raw log captures `faster_whisper` processing lines, while the structured log keeps per-recording settings, transcript updates, status events, ASR telemetry, summary stages, save stages, and recording audio export outcomes.
-- FFmpeg normalization uses a multi-core CPU policy of `CPU count - 6` threads, with a minimum of `1`.
-- CPU count detection tries multiple probes and reports clearly if CPU count cannot be detected.
-- ASR remains RTX/CUDA-only. CPU fallback is disabled so transcription never silently leaves the GPU path.
-- Traditional Chinese transcripts now run through post-ASR punctuation restoration. When the optional punctuation dependencies and model are available, AURA uses a local Chinese punctuation model; otherwise it falls back to safe full-width punctuation normalization and sentence-final punctuation.
-- The app surfaces long-running import stages through the status line instead of leaving the user unsure whether normalization or ASR is still running.
-
-### Dependency And Optional Model Changes
-
-- Core ASR dependencies stay in the base install.
-- Speaker diarization remains an optional `diarization` extra because it pulls in `pyannote.audio` and PyTorch.
-- LLM summary remains an optional `summary` extra because it loads a local 9B model.
-- Traditional Chinese punctuation model support is available through the optional `punctuation` extra. Without it, the built-in rule fallback still improves saved Traditional Chinese transcripts.
-
-### Documentation And Test Changes
-
-- `docs/windows_setup.md` documents the Windows native setup path, including Python 3.11 venv creation, optional extras, GPU smoke testing, and app launch.
-- `docs/windows_known_issues.md` records the current Windows CUDA/audio/packaging boundaries.
-- Root-level `Start-AURA.ps1`, `Start-AURA.bat`, `Check-AURA.ps1`, and `Check-AURA.bat` provide the Windows onboarding entrypoints.
-- `scripts/build_windows_portable.ps1` creates both `dist/aura-windows-portable/` and a versioned `dist/aura-windows-portable-v<version>.zip`, reading the release version from `pyproject.toml`, with the onboarding scripts at the archive root.
-- `.github/workflows/windows.yml` adds hosted Windows checks for unit tests, PyQt import smoke, runtime-report smoke, and portable packaging smoke; the gated self-hosted RTX lane runs CUDA model-load and ASR artifact smoke tests.
-- `scripts/windows_asr_artifact_smoke.py` generates a tiny WAV, runs a CUDA/int8 ASR pass, and verifies raw/final/metrics transcript artifact output.
-- README workflow documentation now matches the simplified UI and automatic transcript-saving behavior.
-- `docs/architecture_decisions.md` records the first-principles ownership split for transcript artifacts, output policy, progress visibility, UI interaction policy, live capture ownership, and Traditional Chinese punctuation post-processing.
-- [`docs/first-principles-aura-meetily-review.md`](docs/first-principles-aura-meetily-review.md) records the 2026-07-13 cross-repo architecture review, completed simplification work, measured verification evidence, and activation gates for capability migration into Meetily.
-- [`docs/aura-llm-agent-product-strategy.md`](docs/aura-llm-agent-product-strategy.md) preserves the 2026-07-23 AURA-specific LLM Agent necessity assessment, representative market pain evidence, evidence-first product direction, bounded-Agent activation gates, and frontier roadmap.
-- Tests now cover transcript artifact naming, raw/final/summary splitting, metrics JSON writing, event-log writing, structured live ASR telemetry, FFmpeg progress parsing, M4A/AAC recording export, MP3 legacy export, normalization limiter behavior, CPU-count detection, live capture source selection, RMS-based source mixing, live segment/gate defaults, scheduled wall-clock calculation, no-voice auto-stop/trailing-trim helpers, Traditional Chinese punctuation post-processing, runtime diagnostics reporting, first-launch check gates, and propagation of normalization progress into the import pipeline.
-
-### Current Architecture Health
-
-The project is still within a maintainable size for a desktop transcription tool, but three areas are now clear refactor candidates:
-
-- `src/aura/ui/transcription_tab.py` should be split further because it still coordinates UI widgets, import queue state, recording session state, summary scheduling, metrics, and transcript saving.
-- `src/aura/audio/capture.py` should eventually be split into PulseAudio/PipeWire source discovery, audio readers, source mixing, and recorder-thread orchestration.
-- Windows audio should get a dedicated system module once real Windows RTX hardware confirms which microphone, system-audio, and loopback paths are stable.
-
-The guiding rule remains: if behavior can be tested without launching Qt, it should live outside `src/aura/ui/`.
-
-The supported meeting-summary path is the local Gemma field-batch pipeline documented below. Comparative retrieval architectures begin from a licensed paired corpus and measured correction-time or evidence-grounding gap; this keeps evaluation driven by a real product decision instead of a dry-run architecture scaffold.
-
-## Windows Native Runtime Path
-
-AURA now has a Windows native RTX validation and onboarding path. The supported direction is to prove the CUDA runtime and `faster-whisper` model load first, give users one-click check/start scripts, keep platform differences in shared diagnostics modules, and use the portable ZIP path before installer work.
-
-The implementation and remaining validation path are tracked in [`docs/windows_native_roadmap.md`](docs/windows_native_roadmap.md), [`docs/windows_setup.md`](docs/windows_setup.md), and [`docs/windows_known_issues.md`](docs/windows_known_issues.md).
-
-## Feature Implementation Checklist
-
-| Feature Category | Implementation Details |
+Project AURA v1.15.0 establishes an evidence-first local meeting workflow.
+Each recording or import creates one canonical session that connects audio,
+transcript revisions, structured summary claims, and human review.
+
+### Durable meeting sessions
+
+- Multi-source capture writes mixed, system, and microphone PCM journals as
+  sources become available.
+- Capture journals flush every second and reach an `fsync` checkpoint every
+  five seconds.
+- Atomic `session.json` updates preserve meeting identity, runtime state,
+  artifact locators, and recovery guidance.
+- Startup discovery presents recoverable sessions to the operator.
+- Recovery reconstructs review-ready WAV evidence from the durable PCM
+  journal and records the recovery acknowledgement.
+- Recording and media import share the same transcript preparation and
+  evidence model.
+
+### Reviewable transcript and claims
+
+- Live ASR provides provisional feedback while durable audio remains the source
+  for the final timestamped pass.
+- Transcript segments progress through `provisional`, `final`, and `confirmed`
+  states.
+- Operators can edit text, rename speakers across the meeting, navigate review
+  signals, and open the matching audio span.
+- Transcript edits append review events and activate summary invalidation
+  before the revised canonical transcript is saved.
+- Decisions and action items retain stable claim identity, source segment IDs,
+  support status, and review status.
+- Confirmed actions emerge from current source evidence and human review.
+
+### Local structured summary runtime
+
+- Summary generation receives the prepared corrected transcript from the
+  current session.
+- Nine field extractors run as one parallel application batch:
+  `meeting_topic`, `participants`, `executive_summary`, `key_points`,
+  `decisions`, `action_items`, `open_questions`, `risks`, and `next_steps`.
+- Each field uses a dedicated prompt, an explicit JSON shape, Python
+  validation, and one format-repair path.
+- Python merges the validated fields and renders deterministic Markdown.
+- The supported runner is local Ollama `gemma4:e4b-it-qat` through
+  `/api/chat`, with `think=true`, `format=json`, `num_ctx=32768`,
+  `num_predict=1536`, and `temperature=0`.
+- Reasoning remains ephemeral runtime data; validated final content becomes the
+  summary artifact.
+- The local server starts with loopback binding, cloud access inactive, one
+  server-side parallel sequence, Flash Attention, and q8 KV cache.
+
+### Release validation
+
+The v1.15.0 runtime correction passes `398` regression tests. The live local
+LLM packet records 12 real model calls, including one complete nine-field
+product pipeline. All nine final fields passed schema validation while AURA
+ASR remained resident on the same 16 GB GPU.
+
+The next validation layer uses a paired reviewed meeting corpus to measure
+summary quality, source support, human correction time, queue time, and peak
+VRAM. The complete product direction and activation gates live in
+[`docs/aura-llm-agent-product-strategy.md`](docs/aura-llm-agent-product-strategy.md).
+
+## Core Capabilities
+
+| Capability | Current operating scope |
 | --- | --- |
-| Real-time Transcription | Live system-audio, microphone, or system+microphone recording plus streaming ASR via `faster-whisper`; stopping a recording waits for final ASR, auto-saves transcript artifacts, and keeps the final timestamped rows available for correction, confirmation, and source playback. |
-| Scheduled Live Recording | Optional wall-clock scheduled start for live recording/transcription, with optional wall-clock auto-stop and normal transcript artifact finalization. |
-| No-Voice Failsafe | Automatically stops live recording after 20 continuous minutes without detected human voice and trims the trailing no-voice audio before export. |
-| Batch Transcription | Import multiple audio/video files with queue scheduling, cancellation, serialized optional summaries, and progress tracking. |
-| Transcript Artifacts | Auto-saves raw transcript, corrected/final transcript, optional summary, correction log, processing metrics, structured event log, and recording runtime log to the selected output policy. |
-| Traditional Chinese Punctuation | Detects Traditional Chinese ASR output and restores readable full-width punctuation after ASR, using a local model when available and rule fallback when not. |
-| System + Mic Capture | Uses PulseAudio/PipeWire monitor and microphone sources when available, mixes them to mono, balances active source RMS levels, and reports fallback behavior in the UI. |
-| Speaker Diarization | Optional imported-file speaker labeling through `pyannote.audio`, with configurable speaker-count bounds. |
-| Real-time Denoising | Optional `noisereduce` processing before ASR for noisy environments. |
-| Volume Normalization | Dynamically standardizes imported and recorded audio to a target dBFS, default `-20`, using a fast FFmpeg path when denoise is off. Recorded audio defaults to `M4A / AAC-LC 96k`, with `MP3 / LAME VBR q0` retained as a legacy option; both use a limiter after gain adjustment. The FFmpeg path uses `CPU count - 6` worker threads, with a minimum of `1`, and reports clearly if CPU count cannot be detected. |
-| Progress Telemetry | Surfaces import normalization and processing stages in the status line, stores imported-file status events in processing metrics, and records live ASR chunk telemetry for recordings. |
-| Recording Observability | Writes `{base}_event_log.json` and `{base}_runtime.log` beside each recording so ASR latency, queue backlog, runtime settings, recording audio export status, and third-party logger output can be inspected after the run. |
-| Local Product Audit | Writes content-free app/UI/workflow events to a local daily JSONL chain with redaction, retention, owner-only permissions, integrity verification, KPI/friction summaries, provisional anomaly signals, and in-app or CLI report generation. |
-| Runtime Diagnostics | Reports GPU detection, CUDA runtime status, ASR model load status, FFmpeg, audio input/output devices, and output-folder writability through CLI scripts and the PyQt UI. |
-| Windows Onboarding | Provides `Start-AURA.bat`, `Check-AURA.bat`, automatic `.venv` preparation, dependency installation, diagnostic report writing, and a versioned portable ZIP layout. |
-| Windows Native Validation | Provides Windows setup docs, GPU smoke checks, runtime reports, hosted Windows CI, gated self-hosted RTX smoke tests, and a portable release builder. |
-| Asynchronous Architecture | `ModelLoaderThread` prevents UI freezing during initialization and compute-type switching. |
-| RTX/CUDA-only ASR | ASR model loading is pinned to `cuda`; CPU fallback is disabled so transcription never silently leaves the RTX GPU path. |
-| System Tray Integration | Minimizes to background with `QSystemTrayIcon`. |
-| Auto-update Checker | Background GitHub release check preserved from the original app. |
-| Track Splitter | Uses silence detection to cut near natural pauses and preserves original bitrate when possible. |
-| Modern Desktop UI | PyQt6 workstation layout with workflow actions, top runtime status, transcript workspace, output/review panel, foldable settings, live waveform visualization, and activity log. |
+| Live recording | Captures system audio, microphone audio, or a balanced mixed stream through PulseAudio/PipeWire sources |
+| Durable capture | Writes append-only PCM journals and atomic session state for recovery and final audio reconstruction |
+| Scheduled recording | Arms a wall-clock start time and an optional wall-clock stop time through the standard recording path |
+| Media import | Processes common FFmpeg audio and video containers through a visible, cancellable queue |
+| GPU-only ASR | Runs Breeze ASR 25 through `faster-whisper` on the activated RTX/CUDA runtime |
+| Traditional Chinese punctuation | Applies local model-backed punctuation when activated and deterministic full-width cleanup as the always-available preparation layer |
+| Domain glossary correction | Uses conservative RapidFuzz thresholds and records each accepted correction |
+| Transcript review | Supports timestamped edits, speaker renaming, review signals, audio-span playback, and revision-aware confirmation |
+| Speaker diarization | Adds optional imported-file speaker labels through `pyannote.audio` |
+| Local summary | Extracts nine structured meeting fields with local Gemma 4 and renders stable JSON and Markdown |
+| Claim review | Connects decisions and actions to source segments, support status, review status, and append-only review events |
+| Evidence search | Rebuilds a local SQLite FTS5 index for meetings, segments, and confirmed actions |
+| Audio preparation | Provides FFmpeg normalization, bounded denoise presets, level protection, and progress telemetry |
+| Meeting-distance modes | Offers `off`, `normal`, `far-speaker`, and `rescue-offline` policies with explicit activation paths |
+| Track Splitter | Finds natural pause points around a target duration and exports ordered media chunks |
+| Runtime Diagnostics | Reports GPU, CUDA, ASR model, FFmpeg, audio device, disk capacity, and output-path readiness |
+| First Launch Check | Presents readiness gates and direct setup actions in the desktop UI |
+| Local audit trail | Records content-free app and workflow events with redaction, retention, owner permissions, and hash-chain integrity |
+| Windows onboarding | Provides check/start wrappers, diagnostic reports, hosted CI, RTX smoke scripts, and portable release packaging |
 
-## What Changed In This Refactor
+## Architecture and Ownership
 
-The original project used a monolithic script. This repo keeps the behavior but splits the code by responsibility:
+The codebase keeps testable product logic outside Qt widgets and gives each
+runtime concern one clear owner.
 
 ```text
 project_aura/
-├── Check-AURA.bat
-├── Check-AURA.ps1
-├── Start-AURA.bat
-├── Start-AURA.ps1
-├── pyproject.toml
-├── README.md
-├── docs/
-│   ├── architecture_decisions.md
-│   ├── denoise_upgrade_plan.md
-│   ├── first-principles-aura-meetily-review.md
-│   ├── refactor_plan.md
-│   ├── windows_known_issues.md
-│   ├── windows_native_roadmap.md
-│   ├── windows_setup.md
-│   └── versioning.md
-├── img/
-│   ├── advanced-settings-v1.14.0.png
-│   ├── track-splitter-v1.14.0.png
-│   └── transcription-workspace-v1.14.0.png
-├── src/aura/
-│   ├── app.py                    # QApplication entrypoint
-│   ├── config.py                 # Runtime constants
-│   ├── metadata.py               # Version and project metadata
-│   ├── settings.py               # Testable runtime defaults
-│   ├── asr/
-│   │   ├── file_pipeline.py      # File prep, formatting, cancellation, and transcription services
-│   │   ├── punctuation.py        # Traditional Chinese punctuation restoration and fallback cleanup
-│   │   └── threads.py            # Thin Qt wrappers for model loading, live ASR, batch file ASR
-│   ├── audio/
-│   │   ├── capture.py            # PyAudio/PulseAudio recording thread
-│   │   ├── denoise.py            # Safe noisereduce wrapper
-│   │   ├── export.py             # Recording normalization/export helpers
-│   │   ├── normalization.py      # FFmpeg normalization, CPU-count detection, and progress parsing
-│   │   ├── splitter.py           # Thin Qt wrapper for smart audio splitting
-│   │   └── splitter_pipeline.py  # Testable split-point detection and export service
-│   ├── llm/
-│   │   ├── summary.py            # Optional local LLM summary service
-│   │   └── threads.py            # Qt wrapper for summary generation
-│   ├── system/
-│   │   ├── audio_diagnostics.py  # FFmpeg/PyAudio input/output runtime report helpers
-│   │   ├── cuda.py               # CUDA runtime preload and required-library detection
-│   │   ├── gpu_diagnostics.py    # nvidia-smi, CUDA library, faster-whisper, and ctranslate2 checks
-│   │   ├── native_audio.py       # ALSA/JACK stderr suppression helpers
-│   │   ├── platform.py           # Linux/WSL/Windows/Docker environment classification
-│   │   ├── runtime_paths.py      # Runtime temp paths and transcript backup helpers
-│   │   ├── runtime_report.py     # Copyable developer-facing diagnostic report
-│   │   └── update_checker.py     # Background GitHub release check
-│   └── ui/
-│       ├── messages.py           # User-facing strings and dynamic UI message formatting
-│       ├── main_window.py
-│       ├── splitter_tab.py
-│       ├── transcript_io.py      # Transcript artifact writing helpers
-│       └── transcription_tab.py
-├── scripts/
-│   ├── build_windows_portable.ps1
-│   ├── check_windows_runtime.ps1
-│   ├── run_aura_windows.ps1
-│   ├── runtime_report.py
-│   ├── windows_asr_artifact_smoke.py
-│   └── windows_gpu_smoke.py
-└── tests/
-    ├── test_audio_capture.py
-    ├── test_audio_normalization.py
-    ├── test_file_pipeline.py
-    ├── test_punctuation.py
-    ├── test_transcript_io.py
-    └── ...
+├── pyproject.toml                  # package and dependency contract
+├── Makefile                       # setup, check, build, and version commands
+├── Start-AURA.* / Check-AURA.*    # Windows onboarding entry points
+├── config/
+│   └── domain_glossary.yaml        # conservative ASR correction terms
+├── src/
+│   ├── aura/
+│   │   ├── asr/                    # transcription and punctuation services
+│   │   ├── audio/                  # capture, denoise, export, and splitting
+│   │   ├── diarization/            # optional speaker labeling
+│   │   ├── llm/                    # local summary runtime integration
+│   │   ├── system/                 # CUDA, paths, diagnostics, and updates
+│   │   ├── ui/                     # PyQt6 widgets and interaction wiring
+│   │   ├── audit.py                # content-free local audit events
+│   │   ├── evidence_search.py      # rebuildable SQLite FTS5 index
+│   │   ├── review.py               # transcript review and revision state
+│   │   └── scheduling.py           # wall-clock scheduling rules
+│   ├── asr_postprocess/            # glossary correction package
+│   └── summary/                    # schemas, prompts, validation, rendering
+├── scripts/                        # diagnostics, evaluation, and release tools
+├── tests/                          # standard-library regression suite
+├── docs/                           # design, setup, strategy, and roadmaps
+├── artifacts/                      # measured public runtime evidence
+└── img/                            # semantic product screenshots
 ```
 
-## Fixed From The v1.5.0 Baseline
+### Module ownership
 
-- Short live denoise buffers now use adaptive `n_fft`, `win_length`, and `hop_length`.
-- Native JACK/PortAudio probe noise is suppressed during audio device initialization.
-- The default prompt path is explicit and tested for both batch and live ASR.
-- Runtime outputs are ignored without hiding source files.
-- The app source is importable and testable as a package.
-- File import transcription is extracted into a testable pipeline service outside the Qt thread.
-- Smart audio splitting is extracted into a testable pipeline service outside the Qt thread.
-- Runtime defaults and UI messages are centralized in testable modules.
-- Runtime diagnostics are centralized in `src/aura/system/` so scripts, ASR error handling, and the UI share the same platform facts.
-- Windows onboarding is now root-level and portable-friendly through `Check-AURA.bat`, `Start-AURA.bat`, automatic dependency preparation, and `diagnostic_report.txt`.
-- Imported-file volume normalization uses an FFmpeg fast path when denoise is off.
-- CPU count detection uses multiple probes and reports clearly when no CPU count can be detected.
-- ASR is now explicitly RTX/CUDA-only; CPU fallback is treated as a configuration error.
-- Windows native RTX validation now has CLI smoke tests, a setup document, hosted Windows CI, and a gated self-hosted RTX lane.
-- Live capture can record system audio, microphone audio, or both when PulseAudio/PipeWire exposes the sources.
-- System+microphone mixing balances active source RMS levels before VAD/ASR.
-- Traditional Chinese punctuation restoration is extracted into a testable ASR post-processing module.
+- `src/aura/settings.py` owns inspectable runtime defaults.
+- `src/aura/asr/` owns file and live transcription behavior.
+- `src/aura/audio/` owns source discovery, capture, mixing, denoise, export,
+  recording durability, and media splitting.
+- `src/aura/diarization/` owns speaker-model activation and timestamp overlap
+  assignment.
+- `src/aura/llm/` and `src/summary/` own local summary runtime, field schemas,
+  validation, and deterministic rendering.
+- `src/aura/review.py` owns transcript states, revisions, review events, and
+  summary invalidation.
+- `src/aura/evidence_search.py` owns rebuildable cross-meeting retrieval.
+- `src/aura/system/` owns platform facts and readiness checks shared by the UI
+  and command-line diagnostics.
+- `src/aura/ui/` owns presentation, signals, and operator interaction.
 
-## Environment Requirements
+The architecture rule is simple: behavior that can be verified independently
+from Qt belongs in a service module with a focused regression check.
 
-### Recommended Runtime
+## Evidence-First Session Contract
 
-- OS: Ubuntu 22.04 / 24.04 desktop
-- Python: 3.10+
-- GPU: NVIDIA RTX / CUDA-capable GPU is required for ASR
-- Audio stack: PulseAudio or PipeWire with PulseAudio compatibility
+### One meeting identity
 
-### System Packages
+Every recording or import receives one `meeting_id`. The corresponding
+`session.json` acts as the artifact locator for audio, transcript segments,
+summary claims, review events, and exported files. Each downstream stage reuses
+the same identity.
+
+### Durable audio source
+
+The capture loop appends PCM frames to `.capture/` journals for the mixed
+stream and each active source. Final WAV files are reconstructed from these
+journals. Delivery formats such as M4A and MP3 are produced from the preserved
+audio source, while the mixed WAV anchors transcript review and timestamp
+playback.
+
+### Transcript states and revisions
+
+Live recognition supports operator awareness through provisional text. The
+durable audio pass creates final timestamped segments. Human edits and
+confirmation create revision-aware review events. Confidence, speaker
+assignment, and overlap signals help operators prioritize attention.
+
+### Source-linked summary claims
+
+The structured summary records decisions and action items as claims with source
+segment IDs. Each claim carries support and review state. Transcript revisions
+activate a fresh summary evidence identity so confirmation always maps to the
+current source.
+
+### Rebuildable local retrieval
+
+Canonical session artifacts remain the source of truth. `aura-evidence rebuild`
+creates an atomic SQLite FTS5 derivative for fast local search. Query commands
+open the index in read-only mode, and index replacement begins after schema and
+version validation.
+
+The current tool surface focuses on review and retrieval:
+
+- meeting search;
+- segment search;
+- audio-span lookup;
+- confirmed action retrieval.
+
+External action connectors form a separately activated work package after a
+real consumer, repeated operational demand, item-level approval, and audit
+evidence establish the value.
+
+## Desktop Workflow
+
+### Transcription workspace
+
+1. Open **Settings** and select the capture source, output policy, meeting
+   distance mode, denoise profile, speaker labeling, and summary options.
+2. Run **First Launch Check** to confirm GPU, CUDA, FFmpeg, audio devices,
+   output capacity, ASR model, and local summary readiness.
+3. Complete the meeting notice and consent confirmation.
+4. Select **Start Recording** for live capture or **Import Media** for file
+   transcription.
+5. Follow waveform, status, transcript, progress, and activity feedback in the
+   primary workspace.
+6. Review timestamped segments, correct text, rename speakers, and open source
+   audio spans.
+7. Select **Summarize Transcript** or activate the post-ASR summary option.
+8. Review source-linked decisions and actions, then export the required
+   transcript and evidence formats.
+9. Select **Open Output Folder** to inspect the complete session package.
+
+### Settings and Runtime Diagnostics
+
+![Project AURA Settings panel with audio, scheduling, summary, output, model, and diagnostics controls](./img/advanced-settings-v1.14.0.png)
+
+*Figure 2. The Settings panel groups audio preparation, capture policy, scheduling, local summary, output location, model controls, and Runtime Diagnostics so operators can activate each capability from one workspace.*
+
+Runtime Diagnostics reports:
+
+- GPU identity and CUDA runtime readiness;
+- ASR model load state and compute type;
+- FFmpeg availability;
+- input and output audio devices;
+- selected output path and available disk capacity;
+- local Ollama command, server, and model-tag readiness;
+- speaker-diarization token readiness when that feature is selected.
+
+The First Launch Check pairs each activation gate with focused setup guidance,
+report copy, setup-folder access, and retry actions.
+
+### Track Splitter
+
+![Project AURA Track Splitter with source, output, target duration, tolerance, progress, and processing details](./img/track-splitter-v1.14.0.png)
+
+*Figure 3. Track Splitter presents the complete source-to-output sequence and keeps duration targets, tolerance, progress, and processing details visible during long media jobs.*
+
+The Track Splitter workflow:
+
+1. Select an audio or video source.
+2. Select the output directory.
+3. Set the target segment length and tolerance.
+4. Start processing.
+5. Review ordered chunks created near natural pauses.
+
+## Installation
+
+### Recommended Linux runtime
+
+- Ubuntu 22.04 or 24.04 desktop
+- Python 3.10 or newer
+- NVIDIA RTX GPU with an activated CUDA runtime
+- PulseAudio or PipeWire with PulseAudio compatibility
+- FFmpeg, PortAudio development headers, and Python development headers
+- `uv` for the repository Make targets
+
+Install system packages:
 
 ```bash
 sudo apt-get update
-sudo apt-get install -y portaudio19-dev python3-dev ffmpeg
+sudo apt-get install -y ffmpeg portaudio19-dev python3-dev
 ```
 
-`portaudio19-dev` and `python3-dev` are needed for PyAudio. `ffmpeg` is required by `pydub` for media import/export.
+### Standard application environment
 
-## Install
+The standard profile includes the application and the model-backed
+Traditional Chinese punctuation path:
 
-Use a fresh virtual environment in this repo:
+```bash
+make setup-app
+uv run aura
+```
+
+`pyproject.toml` and `uv.lock` form the dependency contract for local setup,
+CI, and release builds.
+
+### Pip environment
 
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
 python -m pip install --upgrade pip
 python -m pip install -e ".[punctuation]"
+aura
 ```
 
-`pyproject.toml` is the single dependency contract for pip, uv, CI, and release builds.
-This standard app profile activates both deterministic punctuation cleanup and the local
-model-backed punctuation path. For a complete uv development environment, use one command:
+The package exposes three entry points:
+
+- `aura`
+- `project-aura`
+- `aura-evidence`
+
+### Complete development environment
 
 ```bash
 make setup-dev
 ```
 
-Speaker diarization is optional because it adds heavyweight ML dependencies:
+This profile installs every declared optional dependency group for development,
+testing, evaluation, diarization, punctuation, and model research.
+
+### Local meeting summary
+
+Install Ollama, activate the local service, and pull the supported model:
+
+```bash
+ollama pull gemma4:e4b-it-qat
+```
+
+AURA verifies `http://localhost:11434/api/tags`, starts the local service when
+the command is available, checks the exact model tag, and presents model-pull
+actions through the desktop UI.
+
+### Speaker diarization
 
 ```bash
 python -m pip install -e ".[diarization]"
 export HUGGINGFACE_TOKEN=hf_your_token_here
 ```
 
-For local development, AURA also reads `/home/jnclaw/.codex/secrets/project-aura-hf.env`
-when `HF_TOKEN` / `HUGGINGFACE_TOKEN` is not already set. This keeps `uv run aura`
-usable without storing tokens in the repository.
-
-Before using the default `pyannote/speaker-diarization-community-1` model, accept its Hugging Face terms for your account.
-
-The daily meeting-summary path uses the local Ollama API and needs no additional
-Python dependency group. The `summary` extra supports explicitly activated
-Transformers evaluation scripts under `scripts/`.
-
-The approved summary backend is the local Ollama tag `gemma4:e4b-it-qat`, corresponding to base model `google/gemma-4-E4B-it`. Pull the active model explicitly with `ollama pull gemma4:e4b-it-qat`. Before generation, AURA runs a local runtime preflight: it checks `http://localhost:11434/api/tags`, starts `ollama serve` if the local server is not already running, waits for the localhost runner to become ready, and verifies the exact model tag. AURA's server process uses local-only single-user defaults: cloud access disabled, one parallel sequence, Flash Attention enabled, and q8 KV cache. Every `/api/chat` generation request enables reasoning with Ollama `think=true`; `message.thinking` remains ephemeral and only validated `message.content` is persisted. If the model is missing, AURA shows a local-model dialog with **Pull Model**, **Copy Command**, and **Cancel** actions. Model download is never silent, no fallback model is used, and no cloud API is called.
-
-Traditional Chinese punctuation restoration can use an optional local Hugging Face token-classification model:
-
-```bash
-python -m pip install -e ".[punctuation]"
-```
-
-With `uv`, install the same optional dependency group with:
-
-```bash
-make setup-app
-```
-
-`make setup-app` adds the standard punctuation profile without removing optional packages already
-present in the environment. `make setup-dev` selects every declared extra for the complete
-development/test feature set. Without the punctuation extra, AURA still applies safe Traditional
-Chinese punctuation cleanup and reports the exact activation command in runtime diagnostics.
-
-### Windows 3-Step Quick Start
-
-For the Windows portable onboarding path:
-
-1. Install or update the NVIDIA driver.
-2. Unzip `aura-windows-portable-v<version>.zip`.
-3. Double-click `Check-AURA.bat`, then double-click `Start-AURA.bat`.
-
-`Check-AURA.bat` and `Start-AURA.bat` create `.venv`, install dependencies, check FFmpeg, check the NVIDIA driver, run the RTX/CUDA smoke path, and write `diagnostic_report.txt`.
-
-For developer-level Windows RTX validation, follow [`docs/windows_setup.md`](docs/windows_setup.md), then run:
-
-```powershell
-nvidia-smi
-python scripts/runtime_report.py
-python scripts/windows_gpu_smoke.py
-```
-
-The smoke script checks `nvidia-smi`, Python imports for `faster_whisper` and `ctranslate2`, CUDA runtime DLL visibility, cuBLAS/cuDNN visibility, and the required `WhisperModel(..., device="cuda", compute_type="int8")` load path.
-
-## Run
-
-From the repository root:
-
-```bash
-python -m aura
-```
-
-or, after editable install:
-
-```bash
-aura
-```
-
-The packaged entrypoints are defined in `pyproject.toml`:
-
-- `aura`
-- `project-aura`
-- `aura-evidence`
-
-## UI Workflow
-
-### Tab 1: Transcription
-
-1. Wait for the background `ModelLoaderThread` to initialize the ASR model.
-2. Open **Settings** to adjust live capture source, target dBFS, compute type, beam size, language, initial prompt, denoise, optional speaker diarization, optional LLM summary, and transcript output location.
-3. Click **Start Recording** for live recording and live transcription. The default live capture source tries to mix system audio and microphone audio through PulseAudio/PipeWire; Settings can switch to system-only or microphone-only capture.
-4. Click **Import Media** for batch transcription. Speaker diarization runs only on imported files when enabled.
-   The import dialog lists common media containers including `mp3`, `mp4`, `m4a`, `wav`, `flac`, `mkv`, `mov`, `ogg`, `aac`, `wma`, `aiff`, `opus`, `webm`, `avi`, `m4v`, `3gp`, and `3g2`; the fallback **All Files** filter can still be used for other ffmpeg-supported media. Each imported transcript is auto-saved according to the selected transcript output policy.
-   Use **Cancel Import** to stop the active import when possible and skip the remaining queue.
-5. Enable **Summarize transcript after ASR** or click **Summarize Transcript** to append a local Gemma 4 E4B summary.
-6. Click **Stop Recording** to finish live recording. The app waits for the durable WAV and final ASR text, runs glossary correction and optional summary if enabled, saves the transcript, metrics, event log, runtime log, and recording audio together, then keeps the final rows in the review pane. Starting the next workflow clears the pane after the current session is durable.
-7. Use **Open Output Folder** after an auto-save to inspect the generated transcript artifacts.
-
-### Settings and Runtime Diagnostics
-
-The scrollable **Settings** panel keeps audio preparation, speaker labeling,
-scheduling, local summary, output policy, model controls, runtime diagnostics,
-first-launch checks, and local audit actions in one operator surface.
-
-![Project AURA v1.14.0 Settings panel with meeting-distance, denoise, speaker, capture, scheduling, summary, output, and recording controls](./img/advanced-settings-v1.14.0.png)
-
-*Settings keep optional capabilities and output choices available without
-competing with the primary recording and import actions.*
-
-Runtime Diagnostics appears lower in the same panel. It reports GPU, CUDA,
-model, FFmpeg, audio-device, and output-folder readiness, then provides a
-First Launch Check and a focused **Fix Guide** for each activation gate.
-
-### Transcript Output Policy
-
-Settings exposes three output modes:
-
-- **Same folder as source/recording**: default; imported-file artifacts stay beside the source media, and live-recording artifacts stay in the recording folder.
-- **Project outputs/transcripts folder**: stores artifacts under `outputs/transcripts/` in this repo.
-- **Custom folder**: stores all transcript artifacts in the selected folder.
-
-For each transcript base name, AURA writes:
-
-```text
-{base}_raw.txt
-{base}_corrected.txt
-{base}_correction_log.json
-{base}_final.txt
-{base}_summary.txt                  # only when a summary is produced
-{base}_processing_metrics.json
-{base}_event_log.json
-{base}_runtime.log                  # live recordings only
-```
-
-`final.txt` uses the corrected transcript plus optional summary. The metrics JSON includes output policy, source path, saved artifact paths, glossary correction status, total elapsed time, coarse stage durations, and imported-file status events such as FFmpeg normalization progress.
-
-### Tab 2: Track Splitter
-
-1. Select source audio or video.
-2. Select output folder.
-3. Set target segment length and tolerance.
-4. Start splitting to export chunks near natural pauses.
-
-![Project AURA v1.14.0 Track Splitter with target length, tolerance, source, output, progress, and processing details](./img/track-splitter-v1.14.0.png)
-
-*Track Splitter presents the complete source-to-output sequence and keeps
-progress and processing details visible during long media jobs.*
+Accept the Hugging Face terms for
+`pyannote/speaker-diarization-community-1`, then provide
+`HUGGINGFACE_TOKEN`, `HF_TOKEN`, or an `AURA_HF_TOKEN_FILE` path through the
+local secret environment.
 
 ## Configuration Defaults
 
 | Setting | Default |
 | --- | --- |
-| Sample Rate | `16000` |
-| Chunk Size | `30 ms` / `480 samples` |
-| VAD Level | `3` |
-| ASR Model | `SoybeanMilk/faster-whisper-Breeze-ASR-25` |
-| Device | `cuda` only; CPU fallback is disabled |
-| Compute Type | `int8` on CUDA/RTX GPU by default |
-| Target Volume | `-20 dBFS` |
-| Live Capture Source | System audio + microphone when PulseAudio/PipeWire exposes both sources; otherwise default input fallback |
-| Meeting Distance Mode | Off by default; Settings can choose `normal`, `far-speaker`, or `rescue-offline` |
-| Traditional Chinese Punctuation | Enabled; the `p208p2002/zh-wiki-punctuation-restore` token-classification model activates when the punctuation extra is installed |
-| Denoise | Off in UI by default |
-| Speaker Diarization | Off by default; imported-file range defaults to `2-6` speakers |
-| LLM Summary | Off by default; local Ollama `gemma4:e4b-it-qat` parallel field-batch extraction with `reasoning=true` (`think=true`) when enabled |
+| Sample rate | `16000 Hz` |
+| Audio frame | `30 ms` / `480 samples` |
+| WebRTC VAD level | `3` |
+| ASR model | `SoybeanMilk/faster-whisper-Breeze-ASR-25` |
+| ASR device | `cuda` |
+| ASR compute type | `int8` |
+| ASR beam size | `5` |
+| Language | `zh` |
+| Target volume | `-20 dBFS` |
+| Live capture source | System audio and microphone |
+| Live maximum segment | `16.0 seconds` |
+| Live energy gate | `1000.0 RMS` |
+| Recording delivery format | `M4A / AAC-LC 96k` |
+| Meeting distance mode | `off` |
+| Denoise preset | `off` |
+| Speaker diarization | Operator-activated; imported media; `2-6` speakers |
+| Traditional Chinese punctuation | Active |
+| Local summary | Operator-activated |
+| Splitter target | `40 minutes` |
+| Splitter tolerance | `5 minutes` |
 
-## Runtime Files
+### Runtime environment variables
 
-Temporary transcription files are written outside the source tree by default:
+| Variable | Purpose |
+| --- | --- |
+| `AURA_RUNTIME_DIR` | Location for transient normalized WAV files and live transcript backup |
+| `AURA_AUDIT_DIR` | Local audit-event directory |
+| `AURA_AUDIT_ENABLED` | Audit-event activation control |
+| `AURA_AUDIT_RETENTION_DAYS` | Local audit retention period; default `90` days |
+| `HUGGINGFACE_TOKEN` / `HF_TOKEN` | Speaker-diarization model access |
+| `AURA_HF_TOKEN_FILE` | Local file path that supplies the diarization token |
+| `AURA_CLEARVOICE_PYTHON` | Python runtime for the separately activated ClearVoice evaluation path |
+
+The default transient runtime directory is:
 
 ```text
 /tmp/project_aura/
 ```
 
-Set `AURA_RUNTIME_DIR` to override this location:
+Set a dedicated path when the runtime needs a different temporary storage
+location:
 
 ```bash
 export AURA_RUNTIME_DIR=/path/to/runtime
 ```
 
-The runtime directory stores transient normalized WAV files and the live transcript backup. It is not intended for permanent recordings or final transcript exports.
+## Feature Behavior
 
-## Default Prompt Behavior
+### GPU-only ASR
 
-The default file-transcription prompt is:
+AURA ASR runs on the CUDA execution contract. The settings layer, model loader,
+file pipeline, live queue, runtime report, and smoke scripts share the same
+device requirement. Runtime activation stops at a clear product-facing gate
+when CUDA libraries or the ASR model require attention.
 
-```text
-這是一份專業的繁體中文會議紀錄，請務必根據語氣加上正確的全形標點符號。
-```
+The file-transcription prompt guides the recognizer toward a professional
+Traditional Chinese meeting record with full-width punctuation that follows
+the speaker's tone. The Settings panel provides an editable prompt for each
+workflow.
 
-It is loaded into the Settings prompt field at startup and is passed to both batch file transcription and live recording when recording starts.
+### Live capture and audio preservation
 
-The lower-level ASR threads also have explicit defaults:
+- Capture source choices include system audio, microphone, and a mixed stream.
+- PulseAudio/PipeWire discovery resolves the default sink monitor and
+  microphone source.
+- Active-source RMS balancing applies bounded gain and mix headroom.
+- The live queue records segment duration, ASR elapsed time, real-time factor,
+  queue size, and backlog.
+- The inactivity safeguard closes a live recording after 20 continuous minutes
+  of speech inactivity and trims the trailing inactive frames.
+- Recorded delivery audio uses M4A/AAC by default, with MP3 as an available
+  compatibility format.
 
-- File transcription uses the Traditional Mandarin meeting-record prompt when no prompt is supplied.
-- Live transcription uses `The following is a professional meeting record.` when no live prompt is supplied.
-- If a caller explicitly passes an empty string, the app respects that as "no prompt".
+### Traditional Chinese punctuation and glossary correction
 
-## Traditional Chinese Punctuation Behavior
+The punctuation layer recognizes Traditional Chinese transcript content and
+applies readable full-width punctuation. The model-backed path uses
+`p208p2002/zh-wiki-punctuation-restore`. The deterministic preparation path
+normalizes punctuation width, spacing, duplicates, and sentence endings.
 
-Traditional Chinese punctuation is a post-ASR readability layer. AURA first keeps ASR on the required RTX/CUDA path, then checks the detected or selected language plus the transcript text. When the output looks like Traditional Chinese, it restores readable full-width punctuation before imported-file artifacts are saved and while live-recording segments are emitted.
+Glossary correction runs after ASR and before summary generation. RapidFuzz
+matches terms against `config/domain_glossary.yaml` with category-specific
+confidence thresholds. Each accepted change appears in the correction log,
+while raw ASR text remains available for comparison.
 
-The model-backed path uses `p208p2002/zh-wiki-punctuation-restore`, a Hugging Face `transformers` token-classification model that supports `，`, `、`, `。`, `？`, `！`, and `；` and includes a Traditional Chinese usage example. If `torch`/`transformers` or the model weights need activation, AURA keeps deterministic cleanup available: ASCII punctuation beside Chinese text is converted to full-width punctuation, duplicate punctuation is collapsed, spacing around Chinese punctuation is normalized, and a final `。` is added when a Chinese line has no terminal punctuation.
+### Speaker diarization
 
-This post-processing is intentionally conservative: it does not translate Simplified Chinese into Traditional Chinese, rewrite words, or block transcript saving when the model cannot load.
+Speaker diarization is an imported-media capability. The pipeline:
 
-## Speaker Diarization Behavior
+1. prepares the source audio;
+2. runs Breeze ASR;
+3. runs `pyannote/speaker-diarization-community-1`;
+4. maps each transcript segment to the speaker turn with the greatest timestamp
+   overlap;
+5. emits labels such as `SPEAKER_00` and `SPEAKER_01`;
+6. presents speaker labels for operator review and meeting-wide renaming.
 
-Speaker diarization is an optional imported-file workflow. Live recording still uses the low-latency ASR queue without speaker labels.
+Equal minimum and maximum speaker counts activate an exact speaker count.
+Different values activate the configured speaker range.
 
-When enabled in Settings, the file pipeline:
+### Local structured summary
 
-1. Decodes the source media with `pydub`.
-2. Optionally applies the selected denoise preset.
-3. Normalizes the file to the target dBFS and writes a temporary WAV under `AURA_RUNTIME_DIR`. The normal no-denoise path uses FFmpeg `volumedetect` plus `volume` filtering to avoid slow Python/pydub processing; FFmpeg is configured with `CPU count - 6` threads, with a minimum of `1`. CPU count detection tries `os.cpu_count()`, Linux CPU affinity, `nproc`, and `/proc/cpuinfo`; if all probes fail, the UI reports that CPU count is unavailable and uses one FFmpeg normalization thread. During import, the status line reports CPU budget, volume-analysis pass, detected mean volume, gain, export progress, and completion. Denoise-enabled imports still use the Python audio path because denoise operates on an in-memory `AudioSegment`.
-4. Runs `faster-whisper` transcription on that prepared WAV.
-5. Runs `pyannote.audio` speaker diarization on the same prepared WAV.
-6. Assigns each transcript segment to the speaker turn with the largest timestamp overlap.
-7. Emits speaker-labeled lines such as:
+The summary pipeline receives the corrected transcript associated with the
+current session. Its source of truth is structured JSON. Deterministic Markdown
+rendering creates stable meeting notes for review, GitHub, Notion, Google Docs,
+and email handoff.
 
-```text
-[00:01:12] SPEAKER_00: 今天先看這個案子。
-[00:01:18] SPEAKER_01: 好，我補充一下背景。
-```
-
-The UI exposes a minimum and maximum speaker count. If both values are equal, AURA passes an exact `num_speakers` value to pyannote. If they differ, AURA passes `min_speakers` and `max_speakers`, which is safer when the meeting size is uncertain.
-
-The default backend is `pyannote/speaker-diarization-community-1`. The implementation uses pyannote's exclusive diarization output when available because it is easier to reconcile with ASR timestamps.
-
-Known limits:
-
-- Speaker labels are anonymous (`SPEAKER_00`, `SPEAKER_01`) unless a future speaker-enrollment layer is added.
-- Overlapped speech, far-field microphones, noisy rooms, and similar voices can still produce wrong labels.
-- If `pyannote.audio` is not installed or no Hugging Face token is configured, imported-file transcription reports a clear setup error instead of failing silently.
-
-## LLM Summary Behavior
-
-LLM summary is an optional post-ASR workflow. It is intentionally separate from ASR so the app can still run transcription without the local Gemma 4 E4B Ollama runner.
-
-When enabled in Settings:
-
-- imported-file transcription starts summary after each file's transcript is complete and waits for that summary/save step before starting the next queued file
-- live recording schedules summary shortly after the user stops recording, giving the ASR queue a short drain window
-- the **Summarize Transcript** button can run summary manually on the current transcript area
-
-The summary model contract is fixed:
-
-- base model id: `google/gemma-4-E4B-it`
-- Ollama model tag: `gemma4:e4b-it-qat`
-- runner: `ollama`
-- reasoning: `true` (Ollama `think=true`)
-- context window: `32768`
-- generation budget: `1536`
-- external calls: `false`
-- cloud calls: `false`
-- fallback model: disabled
-
-When **Summarize Transcript** runs, AURA uses the current corrected transcript only. It does not send the raw transcript, correction log, audit logs, or review notes to the model. Ollama returns reasoning as `message.thinking` and the final response as `message.content`; AURA keeps reasoning ephemeral and persists only the validated structured response and deterministic Markdown.
-
-Before starting the LLM call, AURA performs a local Ollama preflight. If the localhost server is unavailable, AURA attempts to start `ollama serve` and waits for `http://localhost:11434/api/tags`. If the required `gemma4:e4b-it-qat` tag is missing, AURA asks before running `ollama pull gemma4:e4b-it-qat` or lets the user copy the command. Missing server, missing command, missing model tag, and pull failure are surfaced as separate runtime states.
-
-Summary generation uses nine parallel single-field extractors instead of one-shot full-summary generation, two-layer grouped extraction, or 9 sequential field calls. AURA runs all nine field prompts in one parallel batch against the same corrected transcript, then merges and validates the final JSON in Python:
-
-- Parallel batch: `meeting_topic`, `participants`, `executive_summary`, `key_points`, `decisions`, `action_items`, `open_questions`, `risks`, and `next_steps`.
-
-Each extractor has a dedicated prompt, minimal valid output example, strict expected JSON shape, Python validation for each field, and one optional extractor-level format-repair attempt. Field types remain explicit:
-
-- `meeting_topic`: string
-- `participants`: list of strings
-- `executive_summary`: string
-- `key_points`: list of strings
-- `decisions`: list of explicit decision objects
-- `action_items`: list of task objects
-- `open_questions`: list of strings
-- `risks`: list of strings
-- `next_steps`: list of strings
-
-The final JSON is the source of truth. Markdown is rendered deterministically from that JSON, which keeps the report stable for Notion, GitHub, Google Docs, or email paste-in.
-
-### Practical Meeting Summary Pipeline
-
-For daily meeting notes, generate a Markdown report from the corrected transcript artifact:
+The direct script path supports repeatable summary generation:
 
 ```bash
-PYTHONPATH=. uv run python scripts/generate_meeting_summary.py \
+PYTHONPATH=src uv run python scripts/generate_meeting_summary.py \
   --transcript path/to/meeting_corrected.txt \
   --output-md reports/meeting_summary.md \
   --output-json reports/meeting_summary.json
 ```
 
-This practical pipeline uses only the corrected transcript as model input. It does not pass the correction log to Gemma, does not create research claims or benchmark metrics, and writes a paste-ready Markdown report with topic, participants, executive summary, key points, decisions, action items, open questions, risks, and next steps. UI summaries stay in the selected session output; direct API calls without a session use `${XDG_DATA_HOME:-~/.local/share}/project_aura/meeting_summary/`. The public dry-run sample is stored at [`reports/sample_meeting_summary.md`](reports/sample_meeting_summary.md).
+The validated generation contract is:
 
-Summary evaluation uses the same corrected transcript, structured JSON schema, deterministic Markdown renderer, and field-level validation as the product path. New retrieval or model variants enter only through a paired benchmark with real inference outputs, source-linked evidence, failure records, and human correction-time results. vLLM remains a measured activation gate: it becomes an implementation candidate only when repeated same-corpus runs show sustained concurrent demand or the Ollama runtime misses an agreed latency, queue-time, or throughput target.
+| Parameter | Value |
+| --- | --- |
+| Base model | `google/gemma-4-E4B-it` |
+| Ollama model tag | `gemma4:e4b-it-qat` |
+| Endpoint | Local `/api/chat` |
+| Reasoning | `think=true` |
+| Context window | `32768` |
+| Generation budget | `1536` |
+| Temperature | `0` |
+| Server parallelism | `1` |
 
-## Denoise Behavior
+vLLM is the next throughput candidate. Its implementation gate opens when
+paired measurements demonstrate sustained concurrent demand or an agreed
+queue-time, latency, throughput, or VRAM advantage.
 
-Live denoise is intentionally conservative and policy-driven:
+### Denoise and meeting-distance modes
 
-- Settings includes `Meeting Distance Mode`: `off`, `normal`, `far-speaker`, and `rescue-offline`.
-- `normal` applies at least `light` denoise for normal meeting-room audio.
-- `far-speaker` applies at least `medium` denoise, uses a longer live VAD energy bridge, lowers the live energy gate for weak speech, applies bounded segment gain before live ASR, and attempts DeepFilterNet3 on imported files when the optional backend is installed.
-- `rescue-offline` attempts ClearVoice/ClearerVoice enhancement for difficult imported recordings when the optional backend is installed; live recording still uses the conservative fallback path until transcript evaluation promotes a model backend.
-- Denoise is represented internally as explicit presets: `off`, `light`, and `medium`.
-- The Settings UI exposes these presets as a `Denoise Mode` combo box; meeting-distance mode provides the minimum safe denoise floor.
-- Silent and near-silent buffers are returned unchanged.
-- Very tiny buffers are skipped because spectral reduction has too little context.
-- Non-silent `light` buffers use `noisereduce` in non-stationary mode with gentle reduction, `prop_decrease=0.35`.
-- `medium` uses `prop_decrease=0.55`; it may affect speech detail more.
-- FFT and hop sizes are capped dynamically so short live buffers cannot trigger `noverlap must be less than nperseg`.
+The desktop UI offers four meeting-distance policies:
 
-For the model-based denoise roadmap, see `docs/denoise_upgrade_plan.md`. The short version is: keep `noisereduce` as the lightweight fallback, evaluate DeepFilterNet3 first for near-real-time far-speaker preprocessing, evaluate ClearVoice/ClearerVoice for offline rescue imports, and add WPE/dereverberation only after far-field transcript metrics justify it. The local comparison harness is `scripts/evaluate_denoise_backends.py`; DeepFilterNet is called through an external `deep-filter` CLI, and ClearVoice can run through `AURA_CLEARVOICE_PYTHON` with `scripts/run_clearvoice_enhancement.py`. The harness adds a recommendation table only for categories with reference-backed ASR metrics, so process-only runs do not change defaults.
+- `off`: direct capture and preparation;
+- `normal`: lightweight meeting-room preparation;
+- `far-speaker`: stronger VAD bridging, bounded segment gain, and the medium
+  preparation floor;
+- `rescue-offline`: an imported-media evaluation path for ClearVoice or
+  ClearerVoice.
 
-To prepare the private fixed clip set:
+The built-in denoise presets are `off`, `light`, and `medium`. Short buffers use
+adaptive FFT and hop sizes. Silent buffers remain intact. DeepFilterNet3 and
+ClearVoice stay in separate environments so the primary NumPy 2 application
+contract remains stable.
 
-```bash
-python scripts/init_denoise_eval_workspace.py --input-dir ~/record_jn/aura_eval_audio
-python scripts/discover_denoise_eval_candidates.py \
-  --root ~/record_jn/record_audio_ubuntu \
-  --output local_outputs/denoise_eval_candidates/candidates.md
-python scripts/prepare_denoise_eval_case.py \
-  --source /path/to/source_recording.wav \
-  --case-dir ~/record_jn/aura_eval_audio/far_speaker_reverb \
-  --start 120 \
-  --duration 60 \
-  --reference-file /path/to/trusted_reference.txt \
-  --rare-term DeepFilterNet \
-  --rare-term MossFormer
-python scripts/check_denoise_eval_workspace.py \
-  --input-dir ~/record_jn/aura_eval_audio \
-  --min-cases 10 \
-  --max-reference-chars-per-second 45
+Promotion of a new default begins with a fixed, reference-backed far-field
+corpus and measured transcript quality. See
+[`docs/denoise_upgrade_plan.md`](docs/denoise_upgrade_plan.md).
+
+### Runtime diagnostics and local audit
+
+The runtime report centralizes platform facts for command-line tools, ASR
+activation guidance, and the desktop UI. The local audit system records
+content-free lifecycle, UI, model, recording, import, summary, splitter, and
+diagnostic events.
+
+Audit stewardship includes:
+
+- transcript, summary, audio, prompt, credential, and path redaction;
+- stable lowercase event identifiers;
+- per-session sequence numbers;
+- SHA-256 hash-chain integrity;
+- owner-focused local permissions;
+- configurable retention;
+- Markdown and JSON analysis reports;
+- workflow completion, latency, repeated-action, and anomaly review signals.
+
+Canonical design:
+[`docs/audit-event-system-design.md`](docs/audit-event-system-design.md).
+
+### Track Splitter
+
+Track Splitter decodes the source through FFmpeg/pydub, locates silence near
+the configured target duration, exports ordered chunks, and reports progress.
+MP3 exports reuse the source bitrate when the media metadata provides it.
+
+## Session Artifacts and Data Layout
+
+### Output location policy
+
+Settings provides three output policies:
+
+- **Same folder as source/recording** keeps artifacts beside the selected
+  source or recording package.
+- **Project outputs/transcripts folder** stores artifacts under
+  `outputs/transcripts/`.
+- **Custom folder** sends session artifacts to an operator-selected location.
+
+### Canonical session package
+
+A completed workflow can contain a canonical session directory:
+
+```text
+{base}_session/
+├── session.json
+├── .capture/
+│   ├── mixed.pcm
+│   ├── system.pcm
+│   └── microphone.pcm
+├── {recording}.wav
+├── {recording}_system.wav
+├── {recording}_microphone.wav
+├── prepared_transcript.json
+├── segments.json
+├── summary.json
+└── review_events.jsonl
 ```
 
-The discovery manifest lists transcript files only as review sources. A `reference.txt` should be a clip-level trusted transcript for the selected 30-90 second window, not an unreviewed full-recording transcript. The workspace checker rejects references that are implausibly long for the clip duration.
+Operator-facing transcript and telemetry artifacts remain beside the session
+directory under the selected output policy:
 
-After generating an evaluation report, gate any default-promotion decision against reference-backed ASR metrics:
-
-```bash
-python scripts/gate_denoise_default_promotion.py \
-  --report-json reports/denoise_eval_YYYYMMDD.json \
-  --baseline off \
-  --candidate deepfilternet3 \
-  --min-cases 10
+```text
+{base}_raw.txt
+{base}_corrected.txt
+{base}_summary.txt
+{base}_final.txt
+{base}_correction_log.json
+{base}_processing_metrics.json
+{base}_event_log.json
+{base}_runtime.log
+review exports in JSON, Markdown, SRT, or VTT
 ```
 
-On the current workstation using the legacy `.record` environment, rough timings were:
+The exact set reflects the selected capture sources and activated processing
+features. `session.json` records the authoritative artifact locators.
 
-| Buffer | Approx. audio length | Runtime |
-| --- | ---: | ---: |
-| 480 samples | 30 ms | ~11 ms |
-| 8,000 samples | 0.5 s | ~12 ms |
-| 16,000 samples | 1.0 s | ~13 ms |
-| 128,000 samples | 8.0 s | ~33 ms |
+### Evidence search commands
 
-A synthetic 2-second noisy tone check improved estimated SNR by about `+0.43 dB` without NaN/Inf output. This is a smoke test, not a substitute for listening tests on real meeting audio.
+```bash
+aura-evidence rebuild outputs/transcripts outputs/aura-evidence.sqlite3
+aura-evidence search-meetings outputs/aura-evidence.sqlite3 "acceptance"
+aura-evidence search-segments outputs/aura-evidence.sqlite3 "organization name"
+aura-evidence confirmed-actions outputs/aura-evidence.sqlite3
+```
 
-## Test
+The rebuild command writes an atomic derivative from canonical session
+artifacts. Meeting, segment, and confirmed-action queries use read-only index
+connections.
 
-The regression tests use the Python standard library:
+## Validation and Evidence
+
+### Current evidence summary
+
+| Evidence layer | Result |
+| --- | --- |
+| Regression suite | `398` tests pass for the v1.15.0 runtime correction |
+| AURA ASR live minimum | 10 real CUDA/int8 transcriptions over five public Common Voice 24 zh-TW clips |
+| Paired ASR runtime | AURA Breeze ASR 25 and Meetily Breeze ASR 26 each classify as `valid_target_runtime` |
+| Local LLM live minimum | 12 real calls, including one complete nine-field product pipeline |
+| LLM schema validity | 9 of 9 final product fields pass schema validation |
+| CI | Ubuntu compile/unit checks and Windows hosted smoke and packaging checks |
+
+### GPU-only ASR packet
+
+[`artifacts/asr-benchmark/2026-07-13-common-voice24-minimum/`](artifacts/asr-benchmark/2026-07-13-common-voice24-minimum/)
+contains:
+
+- five public Common Voice 24 zh-TW clips with reference text;
+- 20 real transcriptions across the paired AURA and Meetily paths;
+- request summaries and run configuration;
+- event traces and error logs;
+- GPU telemetry;
+- latency analysis;
+- runtime validity classification;
+- source manifest and final decision report.
+
+The clean-speech minimum validates the paired GPU execution contract.
+Long-form, far-field, overlapping, and noisy meeting speech form the next
+comparison layer.
+
+Audit event:
+[`docs/audit-events/2026-07-14-gpu-only-asr-live-benchmark/audit-event.md`](docs/audit-events/2026-07-14-gpu-only-asr-live-benchmark/audit-event.md).
+
+### Local Gemma 4 packet
+
+[`artifacts/llm-runtime/2026-07-23-ollama-gemma4-e4b-qat-minimum/`](artifacts/llm-runtime/2026-07-23-ollama-gemma4-e4b-qat-minimum/)
+contains:
+
+- the exact Ollama and model configuration;
+- 12 real model requests;
+- a complete nine-field AURA summary run;
+- request summaries and event traces;
+- GPU telemetry with AURA ASR resident;
+- schema and runtime validity reports;
+- latency, analysis, source manifest, and final product decision.
+
+This packet validates local execution, reasoning/content separation,
+structured completion, and shared-GPU operation. The paired reviewed corpus
+adds product-quality and human-effort evidence.
+
+## Development and Testing
+
+### Run the complete check
+
+```bash
+make check
+```
+
+This command compiles source and tests, then runs the standard-library
+regression suite.
+
+Equivalent commands:
 
 ```bash
 PYTHONPATH=src python -m unittest discover -s tests
+python -m compileall src tests
 ```
 
-The repo also includes repeatable Make targets:
+### Focused release checks
 
 ```bash
-make check PYTHON=/path/to/python
-make test PYTHON=/path/to/python
-make compile PYTHON=/path/to/python
+PYTHONPATH=src python -m unittest -q \
+  tests.test_versioning \
+  tests.test_bump_version
 ```
 
-Current coverage includes:
+### Coverage areas
 
-- file transcription pipeline formatting, prep, cleanup, and cancellation behavior
-- runtime diagnostic report formatting, CUDA activation guidance, and preload status reconciliation
-- recording M4A/AAC default export and MP3 legacy export behavior
-- smart splitter extension handling, split-point selection, export, and progress callbacks
-- multi-chunk splitter workflow behavior using synthetic audio
-- runtime settings and UI message formatting defaults
-- speaker diarization timestamp assignment and speaker-count argument handling
-- LLM summary prompts and the local Gemma 4 E4B QAT/reasoning runtime contract
-- import smoke coverage for every `aura` package module
-- transcript artifact naming, final/raw/summary splitting, and metrics JSON writing
-- live capture PulseAudio/PipeWire source parsing, source selection, and system+microphone RMS mixing
-- imported-media FFmpeg normalization progress parsing and CPU thread-budget policy
-- Traditional Chinese punctuation detection, model-label decoding, line-prefix preservation, and rule fallback
-- RTX/CUDA-only model-loading policy and CUDA runtime error handling
-- short-buffer denoise stability
-- denoise preset normalization and `off` bypass behavior
-- silence denoise bypass
-- synthetic signal preservation smoke check
-- runtime temp path and backup cleanup behavior
-- default prompt behavior for batch and live ASR
-- transcribe keyword construction for language and prompt handling
-- Windows-hosted CI compatibility, including FFmpeg setup, PyQt import smoke, runtime report smoke, and portable packaging layout smoke
+The regression suite covers:
 
-GitHub Actions runs Ubuntu compile/unit tests and Windows hosted checks on pushes to `main`, `refactor/**`, and pull requests. The Windows workflow also defines a gated self-hosted RTX job for `scripts/windows_gpu_smoke.py` and `scripts/windows_asr_artifact_smoke.py` when `AURA_RUN_WINDOWS_RTX_SMOKE=true`.
+- file import preparation, formatting, cleanup, queueing, and cancellation;
+- durable recording journals, checkpoints, recovery, and partial audio
+  preservation;
+- session identity, transcript revisions, review events, and stale-summary
+  invalidation;
+- source-linked decisions, actions, claim review, and confirmed-action search;
+- SQLite schema validation, atomic rebuild, read-only queries, and path
+  containment;
+- CUDA activation, model loading, runtime diagnostics, and report formatting;
+- live capture source discovery, RMS mixing, VAD, inactivity safeguards, and
+  telemetry;
+- M4A and MP3 export, normalization, limiter behavior, and FFmpeg progress;
+- punctuation, glossary correction, correction logs, and artifact naming;
+- speaker diarization timestamps and speaker-count policy;
+- local Gemma prompts, schemas, reasoning contract, output validation, and UI
+  runtime integration;
+- denoise presets, meeting-distance modes, and evaluation gates;
+- scheduled recording calculations;
+- Track Splitter selection, ordering, export, and progress;
+- audit redaction, integrity, retention, reporting, and workflow analysis;
+- Windows-hosted setup, packaging layout, and RTX smoke contracts.
 
-## Release Build
-
-Build a source distribution and wheel from a clean checkout:
+### Build artifacts
 
 ```bash
-python -m pip install --upgrade build
-python -m build
+make build
 ```
 
-or use the repository command:
+The build uses `uv build` to produce a source distribution and wheel from the
+package metadata.
+
+## Windows Runtime Path
+
+### Portable onboarding
+
+1. Install or update the NVIDIA driver.
+2. Extract `aura-windows-portable-v<version>.zip`.
+3. Run `Check-AURA.bat`.
+4. Review `diagnostic_report.txt`.
+5. Run `Start-AURA.bat`.
+
+The wrappers prepare `.venv`, install dependencies, verify FFmpeg and NVIDIA
+visibility, run the shared RTX/CUDA diagnostics, and launch the same PyQt6
+application used by Linux.
+
+### Developer validation
+
+```powershell
+nvidia-smi
+python scripts/runtime_report.py
+python scripts/windows_gpu_smoke.py
+python scripts/windows_asr_artifact_smoke.py
+```
+
+The Windows path includes:
+
+- hosted GitHub Actions for compile, unit, PyQt import, runtime report, and
+  portable packaging;
+- a gated self-hosted RTX lane for real model-load and ASR artifact smoke;
+- root-level PowerShell and batch entry points;
+- a versioned portable ZIP builder;
+- platform-specific setup and activation guidance.
+
+Detailed guides:
+
+- [`docs/windows_setup.md`](docs/windows_setup.md)
+- [`docs/windows_native_roadmap.md`](docs/windows_native_roadmap.md)
+- [`docs/windows_known_issues.md`](docs/windows_known_issues.md)
+
+## Release and Versioning
+
+Project AURA uses semantic versioning. Package versions use
+`MAJOR.MINOR.PATCH`; Git tags and GitHub Releases use `vMAJOR.MINOR.PATCH`.
+
+Prepare a version:
 
 ```bash
-make build UV=/path/to/uv
+make bump-version BUMP=patch RELEASE_DATE=YYYY-MM-DD
+make check
+make build
 ```
 
-Before tagging or publishing a release, run:
+The version helper synchronizes:
 
-```bash
-make check PYTHON=/path/to/python
-```
+- `pyproject.toml`;
+- `src/aura/metadata.py`;
+- `uv.lock`;
+- the README `Refactor Version` row;
+- the README `Next Release Candidate` row;
+- the README `Latest Update` heading.
 
-Version bumps follow [`docs/versioning.md`](docs/versioning.md). Use
-`make bump-version BUMP=patch|minor|major RELEASE_DATE=YYYY-MM-DD` to calculate
-the next semantic version automatically, or provide `VERSION=X.Y.Z` explicitly.
-The helper synchronizes package/runtime metadata and README release surfaces;
-`make check` enforces the contract before tagging with `vX.Y.Z`.
+`Latest Published Tag` records the release tag that currently exists. The
+candidate row records the package version preparing for its next annotated tag
+and GitHub Release.
 
-This update uses `v1.14.0` because it adds the operator workspace, local audit
-event system, integrity/privacy controls, UI and anomaly summaries, live audit
-activation evidence, and automatic semantic-version synchronization. Package
-metadata, runtime metadata, README release surfaces, and the application bottom
-bar are synchronized for `2026-07-14`.
+The complete release contract is documented in
+[`docs/versioning.md`](docs/versioning.md).
 
 ## Troubleshooting
 
-### GPU Out Of Memory
+### GPU memory pressure
 
-- Open Settings and keep Compute Type on `int8` for the default RTX GPU path.
-- Close other GPU-heavy applications.
-- The app releases model references, runs garbage collection, and clears CUDA cache during cleanup when PyTorch is available.
+- Keep ASR compute type at `int8`.
+- Close other GPU-intensive applications before long recordings.
+- Use Runtime Diagnostics to review device state and model readiness.
+- AURA releases model references and clears available CUDA cache during
+  lifecycle cleanup.
 
-### CUDA Runtime Missing
+### CUDA activation
 
-The refactor keeps CUDA runtime preload logic in `src/aura/system/cuda.py`. If required CUDA libraries are unavailable, ASR model loading fails with a clear error. It does not fall back to CPU.
+- Run `nvidia-smi`.
+- Run `python scripts/runtime_report.py`.
+- Confirm CUDA, cuBLAS, cuDNN, `ctranslate2`, and `faster-whisper` readiness.
+- Refresh the environment with `uv sync` after dependency updates.
 
-For `uv` installs on Linux x86_64, the project metadata includes NVIDIA cuBLAS
-and cuDNN runtime wheels. Re-sync the environment after pulling this change:
+### Audio source discovery
 
-```bash
-uv sync
-uv run aura
-```
-
-### JACK / ALSA Probe Noise
-
-Linux audio backends can emit JACK/ALSA diagnostics even when the app uses PulseAudio successfully. The refactor suppresses native stderr during device probing and stream opening.
-
-### Mic Device Issues
-
-AURA prioritizes PulseAudio devices for automatic resampling. Confirm the microphone works in system settings and that PulseAudio/PipeWire is active.
-
-### System Audio + Microphone Capture
-
-Live recording can mix the active output monitor source and the default microphone source through `pactl`/`parec`. On PipeWire/PulseAudio systems this usually means:
-
-- system audio source: the default sink's `.monitor` source
-- microphone source: the default non-monitor source
-
-When both sources are active, AURA balances each 30 ms audio chunk before it reaches VAD/ASR. It measures each source's RMS level, ignores silent/background-only chunks, applies limited gain to bring active sources closer together, and keeps mix headroom so system audio and microphone speech do not clip or drown each other out.
-
-If either source is not exposed, AURA reports the fallback in the status line and records from the default PyAudio/Pulse input. To diagnose source visibility manually:
+- Confirm microphone and output devices in system settings.
+- Confirm the PulseAudio/PipeWire compatibility service.
+- Inspect sources with:
 
 ```bash
 pactl info
 pactl list short sources
 ```
 
-### File Bloat In Track Splitter
+- Runtime status and event logs record the selected source and active capture
+  path.
 
-The splitter attempts to detect and reuse the original bitrate for MP3 export. Ensure `ffmpeg` is installed and visible on PATH.
+### Local summary activation
 
-## Repository Data Boundary
+- Confirm `ollama` is available on `PATH`.
+- Confirm the loopback service at `http://localhost:11434`.
+- Confirm the exact model tag:
 
-- Keep `.record/`, generated recordings, transcripts, split media, and other large runtime outputs in `record_audio_ubuntu`, `outputs/`, or another data folder.
-- Version small, stable fixtures under `tests/fixtures/` when they support regression checks.
-- Use `docs/refactor_plan.md` for the next architecture phase.
+```bash
+ollama list
+ollama pull gemma4:e4b-it-qat
+```
+
+- Retry First Launch Check after the service and model become ready.
+
+### Speaker diarization activation
+
+- Install the `diarization` extra.
+- Accept the model terms for
+  `pyannote/speaker-diarization-community-1`.
+- Provide `HUGGINGFACE_TOKEN`, `HF_TOKEN`, or `AURA_HF_TOKEN_FILE`.
+- Run Runtime Diagnostics to confirm token and model readiness.
+
+### Long media and output size
+
+- Keep FFmpeg visible on `PATH`.
+- Select an output location with at least 1 GiB of available capacity.
+- Use Track Splitter for delivery-sized media chunks.
+- Review processing metrics for normalization stages, elapsed time, and export
+  paths.
+
+## Documentation Map
+
+| Document | Purpose |
+| --- | --- |
+| [`docs/architecture_decisions.md`](docs/architecture_decisions.md) | Module ownership, GPU execution, session identity, evidence, output, and platform decisions |
+| [`docs/aura-llm-agent-product-strategy.md`](docs/aura-llm-agent-product-strategy.md) | Product positioning, public pain evidence, local summary strategy, and Agent activation gates |
+| [`docs/audit-event-system-design.md`](docs/audit-event-system-design.md) | Audit schema, privacy, integrity, retention, analysis, and operator controls |
+| [`docs/asr_postprocess_fuzzy_glossary.md`](docs/asr_postprocess_fuzzy_glossary.md) | Glossary correction thresholds, artifacts, and validation path |
+| [`docs/denoise_upgrade_plan.md`](docs/denoise_upgrade_plan.md) | Far-field corpus, denoise candidates, evaluation metrics, and promotion gate |
+| [`docs/first-principles-aura-meetily-review.md`](docs/first-principles-aura-meetily-review.md) | Cross-repository product ownership and capability migration evidence |
+| [`docs/refactor_plan.md`](docs/refactor_plan.md) | Refactor phases, module boundaries, and acceptance checks |
+| [`docs/versioning.md`](docs/versioning.md) | Semantic version synchronization, checks, builds, tags, and releases |
+| [`docs/windows_setup.md`](docs/windows_setup.md) | Windows environment preparation and RTX validation |
+| [`docs/windows_native_roadmap.md`](docs/windows_native_roadmap.md) | Windows runtime and portable release direction |
+| [`docs/windows_known_issues.md`](docs/windows_known_issues.md) | Platform activation guidance and tracked validation layers |
+
+## Repository Data Stewardship
+
+- Application source, tests, small stable fixtures, documentation, and public
+  evidence packets belong in version control.
+- Private recordings and transcripts belong in the operator-selected output
+  location, `outputs/`, or a dedicated data repository.
+- `tests/fixtures/` carries small, stable samples that directly support
+  regression checks.
+- `artifacts/` carries public, source-described, reproducible runtime evidence.
+- `.record/`, local virtual environments, build products, transient runtime
+  files, and private operator data stay within their designated local storage.
+- Audit events remain content-free and apply redaction, local permissions,
+  retention, and integrity controls.
+- Credentials remain in local environment or secret-store paths.
 
 ## License
 
-This project is licensed under the [MIT License](./LICENSE).
+Project AURA is available under the [MIT License](./LICENSE).
 
-© 2026 Jason Chia-Sheng Lin (NYCU)
+Copyright (c) 2026 Jason Chia-Sheng Lin.
