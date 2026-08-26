@@ -706,6 +706,13 @@ connections.
 | LLM schema validity | 9 of 9 final product fields pass schema validation |
 | CI | Ubuntu compile/unit checks and Windows hosted smoke and packaging checks |
 
+The
+[2026-08-26 Linux native readiness snapshot](artifacts/runtime-readiness/2026-08-26-092252-linux-native-preflight.md)
+records the activated RTX/CUDA ASR model-load path, audio and output readiness,
+and the separate Ollama service and model-inventory activation gate. Its status
+is `PREFLIGHT_ONLY`; the dated live packets below retain runtime-validity
+ownership.
+
 ### GPU-only ASR packet
 
 [`artifacts/asr-benchmark/2026-07-13-common-voice24-minimum/`](artifacts/asr-benchmark/2026-07-13-common-voice24-minimum/)
