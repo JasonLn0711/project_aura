@@ -961,6 +961,8 @@ ollama pull gemma4:e4b-it-qat
   evidence packets belong in version control.
 - Private recordings and transcripts belong in the operator-selected output
   location, `outputs/`, or a dedicated data repository.
+- Canonical `*_session/` directories created inside the checkout remain
+  ignored local operator data.
 - `tests/fixtures/` carries small, stable samples that directly support
   regression checks.
 - `artifacts/` carries public, source-described, reproducible runtime evidence.
