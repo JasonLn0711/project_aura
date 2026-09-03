@@ -39,7 +39,7 @@ Do not change the default denoise or meeting-distance behavior until the fixed e
 
 3. Default-promotion gate has not been run successfully.
 
-   Reason: there is no reference-backed evaluation JSON report yet. The promotion gate requires enough comparable baseline/candidate cases and checks WER, CER, and rare-term hit-rate deltas.
+   Reason: the separately activated preprocessing-effect study requires enough comparable baseline/candidate cases, reviewed ground truth, and one fixed ASR-A001 runtime.
 
 4. DeepFilterNet3 and ClearVoice have not been validated on the fixed set.
 
@@ -108,7 +108,7 @@ The blocked state is resolved only when:
 - At least 10 private evaluation cases pass the workspace readiness checker.
 - The evaluation harness produces Markdown and JSON reports with reference-backed ASR metrics.
 - The promotion gate has been run for the candidate backend under consideration.
-- Any recommendation to change defaults is supported by WER/CER and rare-term evidence, not by listening quality alone.
+- Any recommendation to change defaults is supported by CER/MER, omission, and rare-term evidence from the fixed-runtime preprocessing study.
 - The default remains conservative unless the evidence supports promotion.
 
 ## Privacy Notes

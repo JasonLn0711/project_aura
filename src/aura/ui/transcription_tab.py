@@ -111,7 +111,6 @@ class TranscriptionTab(QWidget):
         self.transcriber_thread = TranscriberThread()
         self.transcriber_thread.text_updated.connect(self.update_log)
         self.transcriber_thread.status_updated.connect(self.update_status_only)
-        self.transcriber_thread.telemetry_updated.connect(self.on_live_asr_telemetry)
         self.transcriber_thread.start()
         self.executor = ThreadPoolExecutor(max_workers=2)
         self.pending_files = []
@@ -2562,16 +2561,6 @@ class TranscriptionTab(QWidget):
         if hasattr(self, "runtime_log"):
             self.runtime_log.append(f"{datetime.datetime.now().strftime('%H:%M:%S')} {text}")
             self.runtime_log.verticalScrollBar().setValue(self.runtime_log.verticalScrollBar().maximum())
-
-    @pyqtSlot(object)
-    def on_live_asr_telemetry(self, telemetry):
-        if not isinstance(telemetry, dict):
-            self.append_recording_event("live_asr_telemetry", str(telemetry))
-            return
-        fields = dict(telemetry)
-        category = fields.pop("category", "live_asr_telemetry")
-        message = fields.pop("message", "Live ASR telemetry captured.")
-        self.append_recording_event(category, message, **fields)
 
     def summary_settings(self, prepared: PreparedTranscript | None = None) -> SummarySettings:
         metrics = self.current_recording_metrics or self.current_import_metrics

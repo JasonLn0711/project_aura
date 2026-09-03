@@ -7,8 +7,6 @@ from aura.asr.file_pipeline import build_transcribe_kwargs, resolve_initial_prom
 from aura.asr.threads import (
     FileTranscriberThread,
     TranscriberThread,
-    live_asr_telemetry_event,
-    live_asr_telemetry_message,
 )
 from aura.audio.denoise import DEFAULT_ACTIVE_DENOISE_PRESET, OFF_DENOISE_PRESET
 from aura.config import DEFAULT_LIVE_PROMPT, DEFAULT_PROMPT
@@ -64,33 +62,6 @@ class PromptDefaultTests(unittest.TestCase):
         thread.update_live_settings()
 
         self.assertEqual(thread.live_initial_prompt, DEFAULT_LIVE_PROMPT)
-
-    def test_live_asr_telemetry_reports_duration_speed_and_backlog(self):
-        message = live_asr_telemetry_message(
-            chunk_duration_seconds=16.48,
-            queue_size=2,
-            elapsed_seconds=8.24,
-        )
-
-        self.assertIn("chunk_duration=16.480s", message)
-        self.assertIn("queue_size=2", message)
-        self.assertIn("asr_elapsed=8.240s", message)
-        self.assertIn("realtime_factor=0.50", message)
-        self.assertIn("queue_backlog=yes", message)
-
-    def test_live_asr_telemetry_event_keeps_structured_fields(self):
-        event = live_asr_telemetry_event(
-            chunk_duration_seconds=16.48,
-            queue_size=0,
-            elapsed_seconds=8.24,
-        )
-
-        self.assertEqual(event["category"], "live_asr_telemetry")
-        self.assertEqual(event["chunk_duration_seconds"], 16.48)
-        self.assertEqual(event["queue_size"], 0)
-        self.assertEqual(event["asr_elapsed_seconds"], 8.24)
-        self.assertEqual(event["realtime_factor"], 0.5)
-        self.assertFalse(event["queue_backlog"])
 
     def test_live_transcript_timestamps_follow_stream_elapsed_time(self):
         thread = TranscriberThread()

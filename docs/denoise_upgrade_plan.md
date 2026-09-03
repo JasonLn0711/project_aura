@@ -116,17 +116,16 @@ Use two classes of checks:
 
 | Check | Purpose |
 | --- | --- |
-| WER / CER | Measures transcript accuracy against `reference.txt` |
+| CER / MER | Measures preprocessing effects against reviewed `reference.txt` with one fixed ASR runtime |
 | Rare-term hit rate | Measures whether domain vocabulary survives enhancement |
-| ASR runtime | Ensures enhancement does not make the workflow too slow |
 | Listening spot check | Catches artifacts that metrics miss |
 
 For Project AURA, the recommended ranking rule is:
 
-1. Prefer lower CER/WER.
-2. If CER/WER is tied, prefer higher rare-term hit rate.
-3. If transcript quality is tied, prefer lower latency and fewer dependencies.
-4. Do not promote a backend if it sounds cleaner but harms ASR output.
+1. Prefer lower CER/MER with reviewed ground truth.
+2. If CER/MER is tied, prefer fewer omissions and higher rare-term hit rate.
+3. If transcript quality is tied, prefer fewer dependencies.
+4. Keep the fixed ASR-A001 runtime unchanged across every preprocessing arm.
 
 ## CLI Harness
 
@@ -165,7 +164,7 @@ python scripts/gate_denoise_default_promotion.py \
   --min-cases 10
 ```
 
-The gate passes only when the baseline and candidate both have reference-backed ASR metrics on enough cases, average WER and CER do not regress, and rare-term hit rate does not regress. This makes the first-principles rule explicit: cleaner audio is not enough; transcript quality and domain terms must survive.
+The gate passes only after the preprocessing-effect study is explicitly activated, ground truth is reviewed, and the baseline and candidate both have comparable fixed-runtime evidence on enough cases. CER, MER, omissions, and rare-term retention decide whether the preprocessing change advances.
 
 ## Backend Integration Shape
 

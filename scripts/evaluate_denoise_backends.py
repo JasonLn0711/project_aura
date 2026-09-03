@@ -2,7 +2,6 @@
 import argparse
 import json
 import shutil
-import time
 from dataclasses import asdict, dataclass
 from pathlib import Path
 
@@ -16,6 +15,7 @@ from aura.audio.meeting_distance import (
     MEETING_DISTANCE_OFF,
     MEETING_DISTANCE_RESCUE_OFFLINE,
 )
+from aura.config import MODEL_ID
 
 
 SUPPORTED_BACKENDS = (
@@ -49,7 +49,6 @@ class BackendResult:
     wer: float | None = None
     rare_term_hits: list[str] | None = None
     rare_term_misses: list[str] | None = None
-    runtime_seconds: float | None = None
     note: str = ""
 
 
@@ -247,7 +246,6 @@ def evaluate_case_backend(
     compute_type: str,
     language: str | None,
 ) -> BackendResult:
-    started = time.perf_counter()
     backend_dir = output_dir / case.category / backend
     processed_path = backend_dir / "processed.wav"
     transcript_path = backend_dir / "transcript.txt"
@@ -278,7 +276,6 @@ def evaluate_case_backend(
     except Exception as exc:
         result.status = "skipped"
         result.note = str(exc)
-    result.runtime_seconds = round(time.perf_counter() - started, 3)
     return result
 
 
@@ -290,8 +287,7 @@ def _recommendation_sort_key(result: BackendResult):
     wer = result.wer if result.wer is not None else float("inf")
     cer = result.cer if result.cer is not None else float("inf")
     hit_rate = rare_term_hit_rate(result)
-    runtime = result.runtime_seconds if result.runtime_seconds is not None else float("inf")
-    return (wer, cer, -(hit_rate if hit_rate is not None else 0.0), runtime, result.backend)
+    return (wer, cer, -(hit_rate if hit_rate is not None else 0.0), result.backend)
 
 
 def _recommendation_reason(result: BackendResult) -> str:
@@ -303,8 +299,6 @@ def _recommendation_reason(result: BackendResult) -> str:
     hit_rate = rare_term_hit_rate(result)
     if hit_rate is not None:
         parts.append(f"rare-term hit rate {hit_rate:.2%}")
-    if result.runtime_seconds is not None:
-        parts.append(f"runtime {result.runtime_seconds:.3f}s")
     return "; ".join(parts) if parts else "transcript metrics unavailable"
 
 
@@ -345,19 +339,18 @@ def render_markdown(results: list[BackendResult]) -> str:
     lines = [
         "# Denoise Backend Evaluation",
         "",
-        "| Category | Backend | Mode | Status | CER | WER | Rare hits | Rare misses | Runtime | Note |",
-        "| --- | --- | --- | --- | ---: | ---: | --- | --- | ---: | --- |",
+        "| Category | Backend | Mode | Status | CER | WER | Rare hits | Rare misses | Note |",
+        "| --- | --- | --- | --- | ---: | ---: | --- | --- | --- |",
     ]
     for result in results:
         hits = ", ".join(result.rare_term_hits or [])
         misses = ", ".join(result.rare_term_misses or [])
         cer = "" if result.cer is None else f"{result.cer:.4f}"
         wer = "" if result.wer is None else f"{result.wer:.4f}"
-        runtime = "" if result.runtime_seconds is None else f"{result.runtime_seconds:.3f}"
         note = result.note.replace("|", "/")
         lines.append(
             f"| {result.category} | {result.backend} | {result.meeting_distance_mode} | {result.status} | "
-            f"{cer} | {wer} | {hits} | {misses} | {runtime} | {note} |"
+            f"{cer} | {wer} | {hits} | {misses} | {note} |"
         )
     recommendations = recommend_backends_by_category(results)
     lines.extend(
@@ -403,7 +396,8 @@ def parse_args():
     parser = argparse.ArgumentParser(description="Evaluate AURA denoise/speech-enhancement backends.")
     parser.add_argument("--input-dir", required=True, type=Path)
     parser.add_argument("--backends", default="off,noisereduce-light,noisereduce-medium")
-    parser.add_argument("--model", default=None, help="faster-whisper model id. Omit to process audio without ASR.")
+    parser.add_argument("--model", choices=(MODEL_ID,), default=None, help="Pinned ASR-A001 model. Omit to process audio without ASR.")
+    parser.add_argument("--activate-preprocessing-effect", action="store_true")
     parser.add_argument("--device", choices=("cuda",), default="cuda")
     parser.add_argument("--compute-type", default="int8")
     parser.add_argument("--language", default="zh")
@@ -414,6 +408,11 @@ def parse_args():
 
 def main():
     args = parse_args()
+    if args.model and not args.activate_preprocessing_effect:
+        raise SystemExit(
+            "ASR-backed scoring requires --activate-preprocessing-effect, reviewed ground truth, "
+            "and the fixed ASR-A001 runtime."
+        )
     backends = ensure_supported_backends([item.strip() for item in args.backends.split(",") if item.strip()])
     cases = discover_eval_cases(args.input_dir)
     if not cases:

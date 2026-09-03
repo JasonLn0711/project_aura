@@ -230,7 +230,7 @@ def prepare_import_audio(
         if enhancement.status != "not_requested" and status_callback:
             status_callback(
                 f"🎚️ Import enhancement {enhancement.backend}: {enhancement.status} "
-                f"({enhancement.note}; {enhancement.runtime_seconds:.3f}s)."
+                f"({enhancement.note})."
             )
         if enhancement.succeeded:
             source_path = enhancement.output_path

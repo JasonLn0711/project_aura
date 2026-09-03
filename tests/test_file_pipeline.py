@@ -159,7 +159,6 @@ class FilePipelineTests(unittest.TestCase):
                     status="ok",
                     output_path=Path(output_path),
                     note="test enhancement",
-                    runtime_seconds=0.01,
                 )
 
             def fake_normalize_media_to_wav(file_path, temp_path, target_dbfs, progress_callback=None):
@@ -200,7 +199,6 @@ class FilePipelineTests(unittest.TestCase):
                     status="skipped",
                     output_path=None,
                     note="not installed",
-                    runtime_seconds=0.01,
                 )
 
             with patch("aura.asr.file_pipeline.enhance_import_audio_if_available", side_effect=fake_enhance):

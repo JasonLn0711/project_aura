@@ -67,6 +67,6 @@ Use this sibling repository as the new maintainable Python codebase. Keep `recor
 
 10. GPU-only ASR and cross-repo capability evaluation
    - Make GPU inference an invariant rather than a preference. Done; `AppSettings` and ASR-backed evaluation reject CPU, while live and file transcription already load CUDA explicitly and fail closed on activation errors.
-   - Provide one reproducible paired benchmark for AURA and Meetily. Done; `scripts/prepare_common_voice24_benchmark.py` creates a fixed public zh-TW manifest and `scripts/benchmark_aura_meetily_asr.py` records randomized repeated CUDA runs, real audio, event traces, errors, GPU telemetry, latency, validity, and decision artifacts.
+   - Preserve the dated paired benchmark as historical evidence. Done; its artifacts remain available while `scripts/benchmark_aura_meetily_asr.py` is now a retired entry point that exits before model loading.
    - Validate the minimum real runtime before performance claims. Done for five Common Voice 24 zh-TW clips, two repetitions, and both Breeze GPU runtimes; 20 real runs completed with an empty error log.
-   - Expand the decision corpus to licensed long-form, far-field, overlapping, and noisy meeting speech. This next gate owns correction effort, peak VRAM, cancellation, recovery, crash rate, and user confirmation time before either runtime becomes the product default.
+   - Prepare licensed long-form, far-field, overlapping, and noisy meeting speech for the separately activated preprocessing-effect study. This gate keeps one fixed ASR runtime and reviewed ground truth so VAD and denoise effects remain distinct from ASR model evaluation.

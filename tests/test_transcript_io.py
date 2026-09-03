@@ -202,8 +202,8 @@ class TranscriptIoTests(unittest.TestCase):
                 "status_events": [
                     {
                         "timestamp": "2026-06-11T17:00:01+08:00",
-                        "category": "live_asr_telemetry",
-                        "queue_backlog": False,
+                        "category": "status",
+                        "message": "transcription available",
                     }
                 ],
             }
@@ -215,7 +215,7 @@ class TranscriptIoTests(unittest.TestCase):
             self.assertEqual(payload["runtime_config"]["live_energy_gate_rms"], 1000.0)
             text = path.read_text(encoding="utf-8")
             self.assertIn('"workflow": "recording"', text)
-            self.assertIn('"category": "live_asr_telemetry"', text)
+            self.assertIn('"category": "status"', text)
 
     def test_write_transcript_artifacts_persists_the_exact_prepared_transcript(self):
         with tempfile.TemporaryDirectory() as tmpdir:

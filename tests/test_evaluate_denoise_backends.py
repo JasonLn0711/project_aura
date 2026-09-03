@@ -100,7 +100,6 @@ class EvaluateDenoiseBackendsTests(unittest.TestCase):
                 cer=0.31,
                 rare_term_hits=["DeepFilterNet"],
                 rare_term_misses=["MossFormer"],
-                runtime_seconds=1.0,
             ),
             BackendResult(
                 category="far_room",
@@ -112,7 +111,6 @@ class EvaluateDenoiseBackendsTests(unittest.TestCase):
                 cer=0.2,
                 rare_term_hits=["DeepFilterNet", "MossFormer"],
                 rare_term_misses=[],
-                runtime_seconds=2.0,
             ),
             BackendResult(
                 category="far_room",
@@ -141,7 +139,6 @@ class EvaluateDenoiseBackendsTests(unittest.TestCase):
                 meeting_distance_mode="off",
                 status="processed",
                 input_path="input.wav",
-                runtime_seconds=1.0,
             )
         ]
 

@@ -25,7 +25,7 @@ This folder is intentionally outside git because it may contain private meeting 
 Each case folder should contain:
 
 - `input.wav`: 30-90 seconds of representative audio, preferably 16 kHz or 48 kHz mono WAV.
-- `reference.txt`: trusted transcript for CER/WER.
+- `reference.txt`: reviewed transcript for CER/MER in the separately activated preprocessing study.
 - `rare_terms.txt`: one expected domain term per line.
 - `notes.md`: room, microphone, distance, language, and why this clip matters.
 
@@ -51,6 +51,7 @@ python scripts/evaluate_denoise_backends.py \\
   --input-dir {workspace} \\
   --backends off,noisereduce-light,noisereduce-medium,deepfilternet3,clearvoice,wpe \\
   --model SoybeanMilk/faster-whisper-Breeze-ASR-25 \\
+  --activate-preprocessing-effect \\
   --output reports/denoise_eval_YYYYMMDD.md
 
 python scripts/gate_denoise_default_promotion.py \\

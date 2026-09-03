@@ -516,8 +516,8 @@ workflow.
 - PulseAudio/PipeWire discovery resolves the default sink monitor and
   microphone source.
 - Active-source RMS balancing applies bounded gain and mix headroom.
-- The live queue records segment duration, ASR elapsed time, real-time factor,
-  queue size, and backlog.
+- The live queue preserves ordered transcript segments and visible status
+  events without collecting ASR model timing or ranking telemetry.
 - The inactivity safeguard closes a live recording after 20 continuous minutes
   of speech inactivity and trims the trailing inactive frames.
 - Recorded delivery audio uses M4A/AAC by default, with MP3 as an available
@@ -715,6 +715,13 @@ ownership.
 
 ### GPU-only ASR packet
 
+This dated packet preserves the historical paired study. The active ASR
+validation contract is availability-first: one explicitly activated real
+inference confirms that the pinned system is available and produces a usable
+transcript. Accuracy, latency, throughput, VRAM, and cross-model ranking remain
+outside that availability check. The retired
+`scripts/benchmark_aura_meetily_asr.py` entry point exits before model loading.
+
 [`artifacts/asr-benchmark/2026-07-13-common-voice24-minimum/`](artifacts/asr-benchmark/2026-07-13-common-voice24-minimum/)
 contains:
 
@@ -727,9 +734,10 @@ contains:
 - runtime validity classification;
 - source manifest and final decision report.
 
-The clean-speech minimum validates the paired GPU execution contract.
-Long-form, far-field, overlapping, and noisy meeting speech form the next
-comparison layer.
+The clean-speech packet remains historical evidence for its dated execution.
+Future audio preprocessing research uses a separately activated study with one
+fixed ASR runtime and reviewed ground truth; it evaluates preprocessing effects,
+not ASR model performance.
 
 Audit event:
 [`docs/audit-events/2026-07-14-gpu-only-asr-live-benchmark/audit-event.md`](docs/audit-events/2026-07-14-gpu-only-asr-live-benchmark/audit-event.md).
