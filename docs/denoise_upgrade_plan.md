@@ -8,6 +8,20 @@ The first-principles target is transcript quality under degraded capture, not pr
 
 Current blocked handoff: `docs/denoise_blocked_handoff.md`.
 
+## Dataset Readiness, 2026-09-04
+
+`DATA-AURA-PREPROCESS-v2` now provides five unchanged public controls and twelve
+private cases with `SOURCE_RECONCILED_GT`. Two independent gpt-5.6-sol passes
+aligned the private references to the existing timestamped transcripts;
+`audioReviewStatus=NOT_PERFORMED` keeps acoustic review as a separate future
+layer. The dataset remains in owner-only local custody and records
+`asrExecuted=false`.
+
+This closes dataset preparation for `EXP-20260903-08-preprocessing-effect`.
+Execution remains a separately activated work package with one fixed ASR-A001
+runtime. The completed alpha.2 ASR run validates system availability only and
+does not supply preprocessing-effect evidence.
+
 The next backend candidates are:
 
 | Backend | Primary use | Integration priority |

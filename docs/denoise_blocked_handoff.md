@@ -2,7 +2,22 @@
 
 Date: 2026-06-23
 
-## Status
+## Current Update, 2026-09-04
+
+The dataset-readiness blocker is resolved. Owner-only
+`DATA-AURA-PREPROCESS-v2` contains five unchanged public controls and twelve
+private cases with `SOURCE_RECONCILED_GT`; its manifest SHA-256 is
+`c83460554d7eadf579cf3abb3570ee8200b53b878f8190c90280b5f7e78047b3`.
+The source-reconciliation and independent-verification gates passed `12/12`
+with gpt-5.6-sol, while `audioReviewStatus=NOT_PERFORMED` preserves acoustic
+review as its own future layer.
+
+`EXP-20260903-08-preprocessing-effect` is now `DATASET_READY`. Its live
+comparison remains a separate explicit activation with one fixed ASR-A001
+runtime. The alpha.2 availability run confirms that the product system works;
+it does not activate this preprocessing study or change the denoise default.
+
+## Historical Status
 
 The Meeting Distance Mode implementation and evaluation tooling are in place. The remaining blocker is evidence, not application code: AURA still needs a fixed private evaluation set with clip-level trusted references before DeepFilterNet3, ClearVoice, WPE, or any stronger default can be promoted.
 
