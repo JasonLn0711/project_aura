@@ -1,5 +1,7 @@
 # Project AURA LLM Agent 必要性與產品策略完整評估
 
+> September 7, 2026: See the [current transcription update](transcription-front-end-2026-09-07.md) for summary retirement, repaired punctuation, live VAD, and evaluation candidates. The dated evidence below retains its original scope.
+
 紀錄日期：2026-07-23
 Canonical home：`project_aura/docs/`
 紀錄狀態：`source preserved`

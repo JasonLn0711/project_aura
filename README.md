@@ -46,51 +46,23 @@ them during release preparation.
 -->
 
 Project AURA is a local desktop audio assistant for professional meetings,
-lectures, and review-intensive transcription workflows. It brings recording,
-RTX/CUDA speech recognition, Traditional Chinese transcript preparation,
-human review, local structured summaries, and evidence export into one
-recoverable workflow.
+lectures, and transcription workflows. It brings durable recording,
+RTX/CUDA speech recognition, Traditional Chinese punctuation, a plain text
+editor, and local export into one recoverable workflow.
 
 ![Project AURA transcription workspace with CUDA status, waveform, Traditional Chinese transcript, and review controls](./img/transcription-workspace-v1.14.0.png)
 
-*Figure 1. The transcription workspace keeps capture controls, CUDA readiness, waveform feedback, Traditional Chinese transcript review, output actions, and the local activity log in one operator view.*
+*Figure 1. Historical v1.14.0 workspace layout shows capture, waveform, and output placement; the current transcript area is a plain text editor.*
 
 ## Product Purpose
 
-AURA turns audio into a durable, reviewable meeting record. The application
-keeps audio, transcript states, summary claims, and review events connected
-through one session identity so operators can move from capture to confirmed
-actions with a visible evidence path.
+AURA turns live audio and imported media into an editable transcript backed by
+preserved audio. The current flow is capture → Breeze ASR on RTX/CUDA →
+Mandarin punctuation → plain text editing → local export. Stopping a recording
+saves the live text first, then refines the full recording automatically.
 
-The active product flow is:
-
-```text
-Live capture or media import
-        |
-        v
-Breeze ASR on RTX/CUDA
-        |
-        v
-Traditional Chinese punctuation and glossary correction
-        |
-        v
-Timestamped human review
-        |
-        v
-Local Gemma 4 structured summary
-        |
-        v
-Source-linked claims, exports, and evidence search
-```
-
-Use this repository for:
-
-- the maintained PyQt6 desktop application;
-- reusable audio, ASR, review, summary, diagnostics, and evidence services;
-- regression tests and platform smoke checks;
-- release packaging and semantic version automation;
-- public runtime evidence with source manifests and measured event traces;
-- architecture, product strategy, governance, and platform documentation.
+The repository owns the desktop application, reusable audio and ASR services,
+regression checks, platform packaging, and dated runtime evidence.
 
 ## Project Status
 
@@ -100,12 +72,12 @@ Use this repository for:
 | Refactor Version | `1.15.0` |
 | Latest Published Tag | `v1.14.0` |
 | Next Release Candidate | `v1.15.0` |
-| Release State | `v1.15.0` source candidate is published on `main`; the annotated tag and GitHub Release form the next release gate |
+| Release State | Local transcription-focused changes under validation; published release identifiers below retain their existing values |
 | Primary Platform | Ubuntu 22.04 / 24.04 desktop |
 | Python Runtime | Python 3.10+ |
 | ASR Model | `SoybeanMilk/faster-whisper-Breeze-ASR-25` |
 | ASR Runtime | NVIDIA RTX/CUDA with `int8` compute |
-| Summary Runtime | Local Ollama `gemma4:e4b-it-qat` with reasoning enabled |
+| Transcript Editor | Plain text with persistent local hotword hints |
 | Desktop UI | PyQt6 |
 | Project Lead | Jason Chia-Sheng Lin, National Yang Ming Chiao Tung University |
 | License | MIT |
@@ -114,7 +86,7 @@ Use this repository for:
 
 | Release | Contribution |
 | --- | --- |
-| `v1.15.0` candidate | Durable meeting sessions, crash recovery, timestamped transcript review, source-linked summary claims, and rebuildable local evidence search |
+| `v1.15.0` candidate | Durable sessions, crash recovery, plain text editing, and local evidence search |
 | `v1.14.0` | Operator-focused workspace, content-free local audit events, runtime diagnostics, integrity checks, and synchronized version automation |
 | `v1.13.0` | Windows onboarding, portable packaging, RTX diagnostics, output policy, scheduling, and broader artifact visibility |
 | `v1.12.0` | Structured transcript artifacts, progress telemetry, audio-quality controls, and modular transcription services |
@@ -125,67 +97,26 @@ canonical design or evidence source.
 
 ## Latest Update — v1.15.0 (2026-07-23)
 
-Project AURA v1.15.0 establishes an evidence-first local meeting workflow.
-Each recording or import creates one canonical session that connects audio,
-transcript revisions, structured summary claims, and human review.
+The September 7 working-tree update focuses AURA on transcription. The release
+version and published tag remain separate from these local changes.
 
-### Durable meeting sessions
+- Live capture uses stateful bundled Silero v6 with a visible WebRTC fallback.
+  Continuous chunks retain internal pauses, source sample positions, about
+  320 ms of pre-roll, and 800 ms of endpoint silence; the maximum is 12 seconds.
+- Mandarin punctuation runs on partially punctuated text and overlapping token
+  windows. Protected terms and lexical-content checks preserve transcript words.
+- A plain text editor replaces per-line verification. UTF-8 hotword import and
+  local persistence feed live, imported, and final ASR.
+- Stop saves a live snapshot before full-recording refinement. Edits made during
+  refinement remain in the editor; the refined result is saved separately.
+- Summary runtime, prompts, scripts, UI controls, and dedicated dependencies
+  have been removed. Historical session data and evidence remain available.
+- Export preserves editor text; automatic fuzzy glossary replacement is off.
+  Denoising remains off by default. FastEnhancer-B and DPDFNet2 are evaluation
+  candidates in the existing denoise harness.
 
-- Multi-source capture writes mixed, system, and microphone PCM journals as
-  sources become available.
-- Capture journals flush every second and reach an `fsync` checkpoint every
-  five seconds.
-- Atomic `session.json` updates preserve meeting identity, runtime state,
-  artifact locators, and recovery guidance.
-- Startup discovery presents recoverable sessions to the operator.
-- Recovery reconstructs review-ready WAV evidence from the durable PCM
-  journal and records the recovery acknowledgement.
-- Recording and media import share the same transcript preparation and
-  evidence model.
-
-### Reviewable transcript and claims
-
-- Live ASR provides provisional feedback while durable audio remains the source
-  for the final timestamped pass.
-- Transcript segments progress through `provisional`, `final`, and `confirmed`
-  states.
-- Operators can edit text, rename speakers across the meeting, navigate review
-  signals, and open the matching audio span.
-- Transcript edits append review events and activate summary invalidation
-  before the revised canonical transcript is saved.
-- Decisions and action items retain stable claim identity, source segment IDs,
-  support status, and review status.
-- Confirmed actions emerge from current source evidence and human review.
-
-### Local structured summary runtime
-
-- Summary generation receives the prepared corrected transcript from the
-  current session.
-- Nine field extractors run as one parallel application batch:
-  `meeting_topic`, `participants`, `executive_summary`, `key_points`,
-  `decisions`, `action_items`, `open_questions`, `risks`, and `next_steps`.
-- Each field uses a dedicated prompt, an explicit JSON shape, Python
-  validation, and one format-repair path.
-- Python merges the validated fields and renders deterministic Markdown.
-- The supported runner is local Ollama `gemma4:e4b-it-qat` through
-  `/api/chat`, with `think=true`, `format=json`, `num_ctx=32768`,
-  `num_predict=1536`, and `temperature=0`.
-- Reasoning remains ephemeral runtime data; validated final content becomes the
-  summary artifact.
-- The local server starts with loopback binding, cloud access inactive, one
-  server-side parallel sequence, Flash Attention, and q8 KV cache.
-
-### Release validation
-
-The v1.15.0 runtime correction passes `398` regression tests. The live local
-LLM packet records 12 real model calls, including one complete nine-field
-product pipeline. All nine final fields passed schema validation while AURA
-ASR remained resident on the same 16 GB GPU.
-
-The next validation layer uses a paired reviewed meeting corpus to measure
-summary quality, source support, human correction time, queue time, and peak
-VRAM. The complete product direction and activation gates live in
-[`docs/aura-llm-agent-product-strategy.md`](docs/aura-llm-agent-product-strategy.md).
+Implementation details, source comparisons, and validation scope:
+[`docs/transcription-front-end-2026-09-07.md`](docs/transcription-front-end-2026-09-07.md).
 
 ## Core Capabilities
 
@@ -196,12 +127,10 @@ VRAM. The complete product direction and activation gates live in
 | Scheduled recording | Arms a wall-clock start time and an optional wall-clock stop time through the standard recording path |
 | Media import | Processes common FFmpeg audio and video containers through a visible, cancellable queue |
 | GPU-only ASR | Runs Breeze ASR 25 through `faster-whisper` on the activated RTX/CUDA runtime |
-| Traditional Chinese punctuation | Applies local model-backed punctuation when activated and deterministic full-width cleanup as the always-available preparation layer |
-| Domain glossary correction | Uses conservative RapidFuzz thresholds and records each accepted correction |
-| Transcript review | Supports timestamped edits, speaker renaming, review signals, audio-span playback, and revision-aware confirmation |
+| Traditional Chinese punctuation | Restores punctuation during ASR, with protected terms and a visible rule fallback |
+| Hotwords | Saves a local editable vocabulary list and imports UTF-8 text; combined prompt and hotwords are validated before ASR |
+| Transcript editor | Supports ordinary text editing and export with concurrent-edit protection during refinement |
 | Speaker diarization | Adds optional imported-file speaker labels through `pyannote.audio` |
-| Local summary | Extracts nine structured meeting fields with local Gemma 4 and renders stable JSON and Markdown |
-| Claim review | Connects decisions and actions to source segments, support status, review status, and append-only review events |
 | Evidence search | Rebuilds a local SQLite FTS5 index for meetings, segments, and confirmed actions |
 | Audio preparation | Provides FFmpeg normalization, bounded denoise presets, level protection, and progress telemetry |
 | Meeting-distance modes | Offers `off`, `normal`, `far-speaker`, and `rescue-offline` policies with explicit activation paths |
@@ -228,21 +157,21 @@ project_aura/
 │   │   ├── asr/                    # transcription and punctuation services
 │   │   ├── audio/                  # capture, denoise, export, and splitting
 │   │   ├── diarization/            # optional speaker labeling
-│   │   ├── llm/                    # local summary runtime integration
 │   │   ├── system/                 # CUDA, paths, diagnostics, and updates
 │   │   ├── ui/                     # PyQt6 widgets and interaction wiring
 │   │   ├── audit.py                # content-free local audit events
 │   │   ├── evidence_search.py      # rebuildable SQLite FTS5 index
 │   │   ├── review.py               # transcript review and revision state
 │   │   └── scheduling.py           # wall-clock scheduling rules
-│   ├── asr_postprocess/            # glossary correction package
-│   └── summary/                    # schemas, prompts, validation, rendering
+│   └── asr_postprocess/            # glossary correction package
 ├── scripts/                        # diagnostics, evaluation, and release tools
 ├── tests/                          # standard-library regression suite
 ├── docs/                           # design, setup, strategy, and roadmaps
 ├── artifacts/                      # measured public runtime evidence
 └── img/                            # semantic product screenshots
 ```
+
+*Figure 4. Module ownership keeps audio, ASR, UI, and evidence services independently testable.*
 
 ### Module ownership
 
@@ -252,10 +181,8 @@ project_aura/
   recording durability, and media splitting.
 - `src/aura/diarization/` owns speaker-model activation and timestamp overlap
   assignment.
-- `src/aura/llm/` and `src/summary/` own local summary runtime, field schemas,
-  validation, and deterministic rendering.
-- `src/aura/review.py` owns transcript states, revisions, review events, and
-  summary invalidation.
+- `src/aura/review.py` preserves segment serialization and historical review
+  compatibility for local retrieval.
 - `src/aura/evidence_search.py` owns rebuildable cross-meeting retrieval.
 - `src/aura/system/` owns platform facts and readiness checks shared by the UI
   and command-line diagnostics.
@@ -270,7 +197,7 @@ from Qt belongs in a service module with a focused regression check.
 
 Every recording or import receives one `meeting_id`. The corresponding
 `session.json` acts as the artifact locator for audio, transcript segments,
-summary claims, review events, and exported files. Each downstream stage reuses
+and exported files. Each downstream stage reuses
 the same identity.
 
 ### Durable audio source
@@ -278,22 +205,20 @@ the same identity.
 The capture loop appends PCM frames to `.capture/` journals for the mixed
 stream and each active source. Final WAV files are reconstructed from these
 journals. Delivery formats such as M4A and MP3 are produced from the preserved
-audio source, while the mixed WAV anchors transcript review and timestamp
-playback.
+audio source, while the mixed WAV anchors the final full-recording transcription.
 
 ### Transcript states and revisions
 
-Live recognition supports operator awareness through provisional text. The
-durable audio pass creates final timestamped segments. Human edits and
-confirmation create revision-aware review events. Confidence, speaker
-assignment, and overlap signals help operators prioritize attention.
+Live recognition provides provisional text. The durable audio pass creates final
+machine segments for local retrieval. The editor supports free-form corrections;
+export preserves its text, including whitespace. A trailing newline is added when
+needed. Per-line confirmation and claim-review screens have been removed.
 
-### Source-linked summary claims
+### Historical session compatibility
 
-The structured summary records decisions and action items as claims with source
-segment IDs. Each claim carries support and review state. Transcript revisions
-activate a fresh summary evidence identity so confirmation always maps to the
-current source.
+Historical summaries and review events remain readable in local session custody.
+New sessions produce transcript artifacts. Summary generation and claim-review
+implementation have been retired from the application.
 
 ### Rebuildable local retrieval
 
@@ -307,7 +232,7 @@ The current tool surface focuses on review and retrieval:
 - meeting search;
 - segment search;
 - audio-span lookup;
-- confirmed action retrieval.
+- confirmed action retrieval from historical sessions.
 
 External action connectors form a separately activated work package after a
 real consumer, repeated operational demand, item-level approval, and audit
@@ -317,27 +242,23 @@ evidence establish the value.
 
 ### Transcription workspace
 
-1. Open **Settings** and select the capture source, output policy, meeting
-   distance mode, denoise profile, speaker labeling, and summary options.
-2. Run **First Launch Check** to confirm GPU, CUDA, FFmpeg, audio devices,
-   output capacity, ASR model, and local summary readiness.
-3. Complete the meeting notice and consent confirmation.
-4. Select **Start Recording** for live capture or **Import Media** for file
-   transcription.
-5. Follow waveform, status, transcript, progress, and activity feedback in the
-   primary workspace.
-6. Review timestamped segments, correct text, rename speakers, and open source
-   audio spans.
-7. Select **Summarize Transcript** or activate the post-ASR summary option.
-8. Review source-linked decisions and actions, then export the required
-   transcript and evidence formats.
-9. Select **Open Output Folder** to inspect the complete session package.
+1. Open **Settings** and select capture source, output location, language,
+   optional speaker labels, and audio preparation settings.
+2. Run **First Launch Check** for GPU, CUDA, FFmpeg, audio and storage readiness.
+3. Enter hotwords one per line or import a UTF-8 `.txt` list. The list persists
+   locally through Qt settings. Shorten it if the combined prompt/hotword budget
+   exceeds 200 tokenizer tokens.
+4. Complete recording consent, then start recording or import media.
+5. Read and edit the transcript in the plain text editor.
+6. Stop recording to save live text and start full-recording refinement.
+   Concurrent edits remain in place and refined text receives a separate file.
+7. Save the editor text and open the output folder to inspect session artifacts.
 
 ### Settings and Runtime Diagnostics
 
 ![Project AURA Settings panel with audio, scheduling, summary, output, model, and diagnostics controls](./img/advanced-settings-v1.14.0.png)
 
-*Figure 2. The Settings panel groups audio preparation, capture policy, scheduling, local summary, output location, model controls, and Runtime Diagnostics so operators can activate each capability from one workspace.*
+*Figure 2. Historical v1.14.0 settings layout shows operator controls; current settings add persistent hotwords and remove summary controls.*
 
 Runtime Diagnostics reports:
 
@@ -346,7 +267,6 @@ Runtime Diagnostics reports:
 - FFmpeg availability;
 - input and output audio devices;
 - selected output path and available disk capacity;
-- local Ollama command, server, and model-tag readiness;
 - speaker-diarization token readiness when that feature is selected.
 
 The First Launch Check pairs each activation gate with focused setup guidance,
@@ -422,17 +342,10 @@ make setup-dev
 This profile installs every declared optional dependency group for development,
 testing, evaluation, diarization, punctuation, and model research.
 
-### Local meeting summary
+### Transcription-only setup
 
-Install Ollama, activate the local service, and pull the supported model:
-
-```bash
-ollama pull gemma4:e4b-it-qat
-```
-
-AURA verifies `http://localhost:11434/api/tags`, starts the local service when
-the command is available, checks the exact model tag, and presents model-pull
-actions through the desktop UI.
+The transcription application requires no LLM service. Existing Ollama
+installations and user model files are left under their owner's control.
 
 ### Speaker diarization
 
@@ -452,7 +365,7 @@ local secret environment.
 | --- | --- |
 | Sample rate | `16000 Hz` |
 | Audio frame | `30 ms` / `480 samples` |
-| WebRTC VAD level | `3` |
+| Live VAD | Stateful bundled Silero v6; WebRTC level `3` fallback |
 | ASR model | `SoybeanMilk/faster-whisper-Breeze-ASR-25` |
 | ASR device | `cuda` |
 | ASR compute type | `int8` |
@@ -460,14 +373,13 @@ local secret environment.
 | Language | `zh` |
 | Target volume | `-20 dBFS` |
 | Live capture source | System audio and microphone |
-| Live maximum segment | `16.0 seconds` |
+| Live maximum segment | `12.0 seconds` |
 | Live energy gate | `1000.0 RMS` |
 | Recording delivery format | `M4A / AAC-LC 96k` |
 | Meeting distance mode | `off` |
 | Denoise preset | `off` |
 | Speaker diarization | Operator-activated; imported media; `2-6` speakers |
 | Traditional Chinese punctuation | Active |
-| Local summary | Operator-activated |
 | Splitter target | `40 minutes` |
 | Splitter tolerance | `5 minutes` |
 
@@ -516,24 +428,26 @@ workflow.
 - PulseAudio/PipeWire discovery resolves the default sink monitor and
   microphone source.
 - Active-source RMS balancing applies bounded gain and mix headroom.
-- The live queue preserves ordered transcript segments and visible status
-  events without collecting ASR model timing or ranking telemetry.
+- The live queue retains source timestamps and reports processing and queue time.
+  Denoising and segment gain run in the ASR worker so capture can keep journaling.
 - The inactivity safeguard closes a live recording after 20 continuous minutes
   of speech inactivity and trims the trailing inactive frames.
 - Recorded delivery audio uses M4A/AAC by default, with MP3 as an available
   compatibility format.
 
-### Traditional Chinese punctuation and glossary correction
+### Traditional Chinese punctuation and hotwords
 
-The punctuation layer recognizes Traditional Chinese transcript content and
-applies readable full-width punctuation. The model-backed path uses
-`p208p2002/zh-wiki-punctuation-restore`. The deterministic preparation path
-normalizes punctuation width, spacing, duplicates, and sentence endings.
+The CPU punctuation model `p208p2002/zh-wiki-punctuation-restore` loads with ASR
+and retries when the model is reloaded. Its tokenizer uses overlapping windows
+for long passages; existing punctuation no longer skips restoration. Offset-based
+insertion protects identifiers, URLs, decimals, and mixed English terms. A content
+check rejects any model result that rewrites words. Model failure uses a visible
+rule fallback while transcription stays available.
 
-Glossary correction runs after ASR and before summary generation. RapidFuzz
-matches terms against `config/domain_glossary.yaml` with category-specific
-confidence thresholds. Each accepted change appears in the correction log,
-while raw ASR text remains available for comparison.
+Hotwords are recognizer hints, shared by live, file, and final transcription.
+The recording keeps the vocabulary snapshot used when it started. Automatic fuzzy
+replacement on save is disabled. The standalone glossary research helper remains
+available only through explicit opt-in.
 
 ### Speaker diarization
 
@@ -545,43 +459,16 @@ Speaker diarization is an imported-media capability. The pipeline:
 4. maps each transcript segment to the speaker turn with the greatest timestamp
    overlap;
 5. emits labels such as `SPEAKER_00` and `SPEAKER_01`;
-6. presents speaker labels for operator review and meeting-wide renaming.
+6. writes speaker labels into the editable transcript.
 
 Equal minimum and maximum speaker counts activate an exact speaker count.
 Different values activate the configured speaker range.
 
-### Local structured summary
+### Summary retirement
 
-The summary pipeline receives the corrected transcript associated with the
-current session. Its source of truth is structured JSON. Deterministic Markdown
-rendering creates stable meeting notes for review, GitHub, Notion, Google Docs,
-and email handoff.
-
-The direct script path supports repeatable summary generation:
-
-```bash
-PYTHONPATH=src uv run python scripts/generate_meeting_summary.py \
-  --transcript path/to/meeting_corrected.txt \
-  --output-md reports/meeting_summary.md \
-  --output-json reports/meeting_summary.json
-```
-
-The validated generation contract is:
-
-| Parameter | Value |
-| --- | --- |
-| Base model | `google/gemma-4-E4B-it` |
-| Ollama model tag | `gemma4:e4b-it-qat` |
-| Endpoint | Local `/api/chat` |
-| Reasoning | `think=true` |
-| Context window | `32768` |
-| Generation budget | `1536` |
-| Temperature | `0` |
-| Server parallelism | `1` |
-
-vLLM is the next throughput candidate. Its implementation gate opens when
-paired measurements demonstrate sustained concurrent demand or an agreed
-queue-time, latency, throughput, or VRAM advantage.
+New transcripts contain no generated summary. Dedicated LLM code, prompts,
+dependencies, UI controls, and summary evaluation runners have been removed.
+Historical reports remain dated evidence of the former implementation.
 
 ### Denoise and meeting-distance modes
 
@@ -607,7 +494,7 @@ corpus and measured transcript quality. See
 
 The runtime report centralizes platform facts for command-line tools, ASR
 activation guidance, and the desktop UI. The local audit system records
-content-free lifecycle, UI, model, recording, import, summary, splitter, and
+content-free lifecycle, UI, model, recording, import, splitter, and
 diagnostic events.
 
 Audit stewardship includes:
@@ -657,10 +544,10 @@ A completed workflow can contain a canonical session directory:
 ├── {recording}_system.wav
 ├── {recording}_microphone.wav
 ├── prepared_transcript.json
-├── segments.json
-├── summary.json
-└── review_events.jsonl
+└── segments.json
 ```
+
+*Figure 5. The session package preserves source audio and machine transcript segments under one meeting identity.*
 
 Operator-facing transcript and telemetry artifacts remain beside the session
 directory under the selected output policy:
@@ -668,14 +555,16 @@ directory under the selected output policy:
 ```text
 {base}_raw.txt
 {base}_corrected.txt
-{base}_summary.txt
 {base}_final.txt
 {base}_correction_log.json
 {base}_processing_metrics.json
 {base}_event_log.json
 {base}_runtime.log
-review exports in JSON, Markdown, SRT, or VTT
+{base}_live.txt       # recording snapshot before refinement
+{base}_refined.txt    # refinement when concurrent edits exist
 ```
+
+*Figure 6. Transcript and telemetry files preserve live, edited, and separately refined outputs for inspection.*
 
 The exact set reflects the selected capture sources and activated processing
 features. `session.json` records the authoritative artifact locators.
@@ -699,17 +588,16 @@ connections.
 
 | Evidence layer | Result |
 | --- | --- |
-| Regression suite | `398` tests pass for the v1.15.0 runtime correction |
+| Regression suite | See the current September 7 validation receipt linked below |
 | AURA ASR live minimum | 10 real CUDA/int8 transcriptions over five public Common Voice 24 zh-TW clips |
 | Paired ASR runtime | AURA Breeze ASR 25 and Meetily Breeze ASR 26 each classify as `valid_target_runtime` |
-| Local LLM live minimum | 12 real calls, including one complete nine-field product pipeline |
-| LLM schema validity | 9 of 9 final product fields pass schema validation |
+| Historical LLM packet | Retained evidence for the retired implementation |
 | CI | Ubuntu compile/unit checks and Windows hosted smoke and packaging checks |
 
 The
 [2026-08-26 Linux native readiness snapshot](artifacts/runtime-readiness/2026-08-26-092252-linux-native-preflight.md)
 records the activated RTX/CUDA ASR model-load path, audio and output readiness,
-and the separate Ollama service and model-inventory activation gate. Its status
+and the former Ollama activation gate. Its status
 is `PREFLIGHT_ONLY`; the dated live packets below retain runtime-validity
 ownership.
 
@@ -755,9 +643,9 @@ contains:
 - schema and runtime validity reports;
 - latency, analysis, source manifest, and final product decision.
 
-This packet validates local execution, reasoning/content separation,
-structured completion, and shared-GPU operation. The paired reviewed corpus
-adds product-quality and human-effort evidence.
+This historical packet records the retired implementation. Current transcription
+uses no LLM runtime. September 7 front-end checks are recorded in
+[`artifacts/asr-front-end/2026-09-07/runtime-smoke.json`](artifacts/asr-front-end/2026-09-07/runtime-smoke.json).
 
 ## Development and Testing
 
@@ -792,9 +680,8 @@ The regression suite covers:
 - file import preparation, formatting, cleanup, queueing, and cancellation;
 - durable recording journals, checkpoints, recovery, and partial audio
   preservation;
-- session identity, transcript revisions, review events, and stale-summary
-  invalidation;
-- source-linked decisions, actions, claim review, and confirmed-action search;
+- session identity and historical transcript/review artifact compatibility;
+- historical confirmed-action search;
 - SQLite schema validation, atomic rebuild, read-only queries, and path
   containment;
 - CUDA activation, model loading, runtime diagnostics, and report formatting;
@@ -803,8 +690,7 @@ The regression suite covers:
 - M4A and MP3 export, normalization, limiter behavior, and FFmpeg progress;
 - punctuation, glossary correction, correction logs, and artifact naming;
 - speaker diarization timestamps and speaker-count policy;
-- local Gemma prompts, schemas, reasoning contract, output validation, and UI
-  runtime integration;
+- plain text editing, hotwords, concurrent-edit protection, and summary-free packaging;
 - denoise presets, meeting-distance modes, and evaluation gates;
 - scheduled recording calculations;
 - Track Splitter selection, ordering, export, and progress;
@@ -918,18 +804,11 @@ pactl list short sources
 - Runtime status and event logs record the selected source and active capture
   path.
 
-### Local summary activation
+### Punctuation activation
 
-- Confirm `ollama` is available on `PATH`.
-- Confirm the loopback service at `http://localhost:11434`.
-- Confirm the exact model tag:
-
-```bash
-ollama list
-ollama pull gemma4:e4b-it-qat
-```
-
-- Retry First Launch Check after the service and model become ready.
+If punctuation falls back to rules, install the `punctuation` extra and reload
+the ASR model. Reload clears the cached punctuation load failure and retries.
+Keep the runtime log for the exact dependency or model-access error.
 
 ### Speaker diarization activation
 
@@ -952,7 +831,7 @@ ollama pull gemma4:e4b-it-qat
 | Document | Purpose |
 | --- | --- |
 | [`docs/architecture_decisions.md`](docs/architecture_decisions.md) | Module ownership, GPU execution, session identity, evidence, output, and platform decisions |
-| [`docs/aura-llm-agent-product-strategy.md`](docs/aura-llm-agent-product-strategy.md) | Product positioning, public pain evidence, local summary strategy, and Agent activation gates |
+| [`docs/aura-llm-agent-product-strategy.md`](docs/aura-llm-agent-product-strategy.md) | Historical product strategy; summary implementation retired September 7 |
 | [`docs/audit-event-system-design.md`](docs/audit-event-system-design.md) | Audit schema, privacy, integrity, retention, analysis, and operator controls |
 | [`docs/asr_postprocess_fuzzy_glossary.md`](docs/asr_postprocess_fuzzy_glossary.md) | Glossary correction thresholds, artifacts, and validation path |
 | [`docs/denoise_upgrade_plan.md`](docs/denoise_upgrade_plan.md) | Far-field corpus, denoise candidates, evaluation metrics, and promotion gate |

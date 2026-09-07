@@ -1,5 +1,7 @@
 # Denoise Blocked Handoff
 
+> September 7, 2026: See the [current transcription update](transcription-front-end-2026-09-07.md) for summary retirement, repaired punctuation, live VAD, and evaluation candidates. The dated evidence below retains its original scope.
+
 Date: 2026-06-23
 
 ## Current Update, 2026-09-04

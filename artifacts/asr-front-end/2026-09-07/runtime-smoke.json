@@ -1,0 +1,68 @@
+{
+  "scope": "CPU enhancement/VAD smoke, punctuation inference, and one CUDA ASR availability check; speech quality and microphone acceptance pending",
+  "fastenhancer": {
+    "checkpoint": "onnx-dns-v1.0.0/fastenhancer_b.onnx",
+    "sha256": "e2d8758a91a5c7d59334fdd4b871900cbd311d6694d99d9e0a77662063e60434",
+    "input_samples": 192000,
+    "output_samples": 192000,
+    "finite": true,
+    "seconds_including_load": 0.16209851299936417,
+    "rtf_including_load": 0.013508209416613681
+  },
+  "silero": {
+    "checkpoint": "faster-whisper bundled silero_vad_v6.onnx",
+    "frames": 400,
+    "seconds": 0.017552592002175516,
+    "final_silence_probability": 0.003419548273086548
+  },
+  "quality_evaluation": "NOT_RUN: documented DATA-AURA-PREPROCESS-v2 absent from expected local custody path",
+  "denoise_default": "off",
+  "dpdfnet2": {
+    "package": "0.6.0",
+    "sample_rate": 16000,
+    "attn_limit_db": 12,
+    "input_samples": 192000,
+    "output_samples": 192000,
+    "finite": true,
+    "seconds_including_first_activation": 5.406692155000201,
+    "scope": "synthetic signal; isolated Python environment"
+  },
+  "asr_availability": {
+    "model": "SoybeanMilk/faster-whisper-Breeze-ASR-25",
+    "device": "cuda",
+    "compute_type": "int8",
+    "input_seconds": 12.0,
+    "hotwords_accepted": true,
+    "nonempty_transcript": true,
+    "scope": "One local audio excerpt; transcript retained privately; no accuracy ranking"
+  },
+  "punctuation_smoke": [
+    {
+      "input_characters": 23,
+      "output_characters": 25,
+      "backend": "model",
+      "error": ""
+    },
+    {
+      "input_characters": 61,
+      "output_characters": 62,
+      "backend": "model",
+      "error": ""
+    },
+    {
+      "input_characters": 675,
+      "output_characters": 725,
+      "backend": "model",
+      "error": ""
+    }
+  ],
+  "validation": {
+    "regression_tests": 286,
+    "result": "PASS",
+    "versioning_tests": 8,
+    "readme_local_links_and_images": 27,
+    "readme_missing_paths": [],
+    "command": "QT_QPA_PLATFORM=offscreen .venv/bin/python -m unittest discover -s tests",
+    "quality_claim": "Runtime and regression evidence; no comparative speech-quality claim"
+  }
+}

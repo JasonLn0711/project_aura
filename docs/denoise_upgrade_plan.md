@@ -1,5 +1,7 @@
 # Denoise Upgrade Plan
 
+> September 7, 2026: See the [current transcription update](transcription-front-end-2026-09-07.md) for summary retirement, repaired punctuation, live VAD, and evaluation candidates. The dated evidence below retains its original scope.
+
 ## Decision
 
 Keep the current `noisereduce` spectral-gating path as the lightweight fallback, expose its presets clearly in the desktop UI, and evaluate model-based speech enhancement before adding heavyweight runtime dependencies.
