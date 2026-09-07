@@ -7,12 +7,12 @@ from pathlib import Path
 import numpy as np
 import pyaudio
 import webrtcvad
+from aura.audio.vad import SileroStreamVAD, SpeechIntervals
 from PyQt6.QtCore import QThread, pyqtSignal
 
-from aura.audio.denoise import OFF_DENOISE_PRESET, normalize_denoise_preset, reduce_noise_safely
+from aura.audio.denoise import OFF_DENOISE_PRESET, normalize_denoise_preset
 from aura.audio.meeting_distance import (
     DEFAULT_MEETING_DISTANCE_MODE,
-    apply_live_segment_agc,
     effective_denoise_preset_for_mode,
     meeting_distance_policy_for,
 )
@@ -412,12 +412,15 @@ class AudioRecorderThread(QThread):
             selected_denoise,
         )
         self.enable_denoise = self.denoise_preset != OFF_DENOISE_PRESET
+        self.transcriber.live_denoise_preset = self.denoise_preset
+        self.transcriber.live_audio_policy = self.meeting_distance_policy
         self.running = True
-        self.vad = webrtcvad.Vad(VAD_LEVEL)
+        self.vad = None
+        self.vad_backend = "silero-v6"
         self.full_frame_voice_flags = []
         self.recorded_frame_count = 0
         self.recording_session = None
-        self.min_speech_len_sec = 0.5
+        self.min_speech_len_sec = 0.8
         self.max_segment_len_sec = float(max_segment_len_sec)
         self.energy_gate_rms = (
             float(self.meeting_distance_policy.live_energy_gate_rms)
@@ -429,24 +432,10 @@ class AudioRecorderThread(QThread):
         self.auto_stopped_for_no_voice = False
         self.trimmed_trailing_no_voice_frames = 0
 
-    def _flush_speech_buffer(self, speech_buffer):
-        if not speech_buffer:
-            return []
-
-        audio_np = np.concatenate(speech_buffer).flatten().astype(np.float32) / 32768.0
-
-        if self.enable_denoise:
-            try:
-                audio_np = reduce_noise_safely(audio_np, SAMPLE_RATE, preset=self.denoise_preset)
-            except Exception as e:
-                logger.warning("Denoising failed; continuing without denoise: %s", e)
-
-        audio_np = apply_live_segment_agc(audio_np, self.meeting_distance_policy)
-        padding_length = int(SAMPLE_RATE * 0.5)
-        silence_padding = np.zeros(padding_length, dtype=np.float32)
-        padded_audio_np = np.concatenate([audio_np, silence_padding])
-        self.transcriber.add_audio(padded_audio_np)
-        return []
+    def _submit_chunk(self, chunk):
+        if chunk is None:
+            return
+        self.transcriber.add_audio(chunk)
 
     def _open_pulse_reader(self):
         if not shutil.which("pactl") or not shutil.which("parec"):
@@ -549,11 +538,17 @@ class AudioRecorderThread(QThread):
                 f"{self.meeting_distance_policy.enhancement_backend} "
                 f"({self.meeting_distance_policy.backend_role})."
             )
-        silence_frames = 0
+        if self.vad is None:
+            try:
+                self.vad = SileroStreamVAD()
+            except Exception as exc:
+                self.vad = webrtcvad.Vad(VAD_LEVEL)
+                self.vad_backend = "webrtc"
+                self.status_signal.emit(f"Neural VAD unavailable; using WebRTC fallback: {exc}")
+        self.status_signal.emit(f"Live VAD: {self.vad_backend}")
+        intervals = SpeechIntervals(CHUNK_SIZE, self.max_segment_len_sec,
+                                    silence_ms=round(self.min_speech_len_sec * 1000))
         no_voice_frames = 0
-        speech_buffer = []
-        min_silence_frames = int((1000 / CHUNK_MS) * self.min_speech_len_sec)
-        max_speech_frames = int((1000 / CHUNK_MS) * self.max_segment_len_sec)
         max_energy_bridge_frames = frames_for_duration_seconds(self.energy_bridge_ms / 1000)
         no_voice_auto_stop_frames = frames_for_duration_seconds(self.no_voice_auto_stop_minutes * 60)
         consecutive_vad_miss_frames = 0
@@ -570,7 +565,15 @@ class AudioRecorderThread(QThread):
 
                 self.waveform_signal.emit(np_data)
 
-                vad_is_speech = self.vad.is_speech(vad_data, SAMPLE_RATE)
+                try:
+                    vad_is_speech = self.vad.is_speech(vad_data, SAMPLE_RATE)
+                except Exception as exc:
+                    if self.vad_backend == "webrtc":
+                        raise
+                    self.vad = webrtcvad.Vad(VAD_LEVEL)
+                    self.vad_backend = "webrtc"
+                    self.status_signal.emit(f"Neural VAD failed; using WebRTC fallback: {exc}")
+                    vad_is_speech = self.vad.is_speech(vad_data, SAMPLE_RATE)
                 frame_rms_value = float(np.sqrt(np.mean(np_data.astype(np.float32) ** 2)))
                 if vad_is_speech:
                     consecutive_vad_miss_frames = 0
@@ -579,7 +582,7 @@ class AudioRecorderThread(QThread):
                 is_speech = should_treat_frame_as_speech(
                     vad_is_speech=vad_is_speech,
                     frame_rms_value=frame_rms_value,
-                    has_active_segment=bool(speech_buffer),
+                    has_active_segment=intervals.active,
                     consecutive_vad_miss_frames=consecutive_vad_miss_frames,
                     energy_gate_rms=self.energy_gate_rms,
                     max_energy_bridge_frames=max_energy_bridge_frames,
@@ -587,19 +590,8 @@ class AudioRecorderThread(QThread):
 
                 self.full_frame_voice_flags.append(is_speech)
                 self.recorded_frame_count += 1
-                if is_speech:
-                    speech_buffer.append(np_data)
-                    silence_frames = 0
-                    no_voice_frames = 0
-                else:
-                    silence_frames += 1
-                    no_voice_frames += 1
-
-                reached_silence_boundary = len(speech_buffer) > 0 and silence_frames > min_silence_frames
-                reached_max_segment = len(speech_buffer) >= max_speech_frames
-                if reached_silence_boundary or reached_max_segment:
-                    speech_buffer = self._flush_speech_buffer(speech_buffer)
-                    silence_frames = 0
+                no_voice_frames = 0 if is_speech else no_voice_frames + 1
+                self._submit_chunk(intervals.push(np_data, is_speech))
                 if should_auto_stop_for_no_voice(no_voice_frames, no_voice_auto_stop_frames):
                     self.auto_stopped_for_no_voice = True
                     self.status_signal.emit(
@@ -612,7 +604,7 @@ class AudioRecorderThread(QThread):
                 capture_error = e
                 break
 
-        speech_buffer = self._flush_speech_buffer(speech_buffer)
+        self._submit_chunk(intervals.finish())
         try:
             reader.close()
         except Exception as e:

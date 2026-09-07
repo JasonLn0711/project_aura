@@ -9,7 +9,6 @@ from aura.ui.transcript_io import (
     collision_safe_transcript_base_path,
     event_log_payload,
     ensure_transcript_session,
-    final_transcript_text,
     prepare_transcript,
     split_transcript_sections,
     transcript_artifact_paths,
@@ -93,6 +92,7 @@ class TranscriptIoTests(unittest.TestCase):
             "[00:00:01] 志德灣和 iMBS 開會",
             language="zh",
             enable_punctuation=True,
+            enable_glossary_correction=True,
             enable_punctuation_model=False,
         )
 
@@ -106,7 +106,7 @@ class TranscriptIoTests(unittest.TestCase):
         self.assertEqual(len(prepared.correction_log), 2)
 
     def test_transcript_text_for_save_strips_and_adds_newline(self):
-        self.assertEqual(transcript_text_for_save("  hello\n"), "hello\n")
+        self.assertEqual(transcript_text_for_save("  hello\n"), "  hello\n")
 
     def test_transcript_text_for_save_keeps_empty_content_empty(self):
         self.assertEqual(transcript_text_for_save(" \n "), "")
@@ -118,7 +118,7 @@ class TranscriptIoTests(unittest.TestCase):
             saved = write_transcript_file(path, "  [00:00:01] hello\n\n")
 
             self.assertTrue(saved)
-            self.assertEqual(path.read_text(encoding="utf-8"), "[00:00:01] hello\n")
+            self.assertEqual(path.read_text(encoding="utf-8"), "  [00:00:01] hello\n\n")
 
     def test_write_transcript_file_skips_empty_content(self):
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -135,10 +135,6 @@ class TranscriptIoTests(unittest.TestCase):
         self.assertEqual(raw, "[00:00:01] hello")
         self.assertEqual(summary, "重點摘要")
 
-    def test_final_transcript_text_combines_raw_and_summary(self):
-        text = final_transcript_text("[00:00:01] hello", f"\n\n{SUMMARY_MARKER}\n重點摘要")
-
-        self.assertEqual(text, f"[00:00:01] hello\n\n{SUMMARY_MARKER}\n重點摘要")
 
     def test_transcript_artifact_paths_use_base_path(self):
         paths = transcript_artifact_paths("/tmp/meeting")
@@ -146,20 +142,19 @@ class TranscriptIoTests(unittest.TestCase):
         self.assertEqual(paths["raw"], Path("/tmp/meeting_raw.txt"))
         self.assertEqual(paths["corrected"], Path("/tmp/meeting_corrected.txt"))
         self.assertEqual(paths["final"], Path("/tmp/meeting_final.txt"))
-        self.assertEqual(paths["summary"], Path("/tmp/meeting_summary.txt"))
+        self.assertNotIn("summary", paths)
         self.assertEqual(paths["correction_log"], Path("/tmp/meeting_correction_log.json"))
         self.assertEqual(paths["metrics"], Path("/tmp/meeting_processing_metrics.json"))
         self.assertEqual(paths["event_log"], Path("/tmp/meeting_event_log.json"))
         self.assertEqual(paths["runtime_log"], Path("/tmp/meeting_runtime.log"))
 
-    def test_write_transcript_artifacts_writes_raw_corrected_final_summary_log_and_metrics(self):
+    def test_write_transcript_artifacts_preserves_editor_text_without_summary(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             base = Path(tmpdir) / "meeting"
 
             saved = write_transcript_artifacts(
                 base,
                 "[00:00:01] 志德灣和 iMBS 開會",
-                f"\n\n{SUMMARY_MARKER}\n重點摘要",
                 metrics={
                     "workflow": "unit",
                     "outputs": {"ignored": Path("/tmp/old")},
@@ -169,22 +164,20 @@ class TranscriptIoTests(unittest.TestCase):
 
             self.assertEqual(
                 set(saved),
-                {"raw", "corrected", "final", "summary", "correction_log", "metrics", "event_log"},
+                {"raw", "final", "metrics", "event_log"},
             )
             self.assertEqual(saved["raw"].read_text(encoding="utf-8"), "[00:00:01] 志德灣和 iMBS 開會\n")
-            self.assertEqual(saved["corrected"].read_text(encoding="utf-8"), "[00:00:01] 智德萬和 iMVS 開會\n")
-            self.assertEqual(saved["summary"].read_text(encoding="utf-8"), "重點摘要\n")
+            self.assertNotIn("corrected", saved)
+            self.assertNotIn("summary", saved)
             self.assertEqual(
                 saved["final"].read_text(encoding="utf-8"),
-                f"[00:00:01] 智德萬和 iMVS 開會\n\n{SUMMARY_MARKER}\n重點摘要\n",
+                "[00:00:01] 志德灣和 iMBS 開會\n",
             )
-            correction_log_text = saved["correction_log"].read_text(encoding="utf-8")
-            self.assertIn('"original": "志德灣"', correction_log_text)
-            self.assertIn('"corrected": "iMVS"', correction_log_text)
+            self.assertNotIn("correction_log", saved)
             metrics_text = saved["metrics"].read_text(encoding="utf-8")
             self.assertIn('"workflow": "unit"', metrics_text)
             self.assertIn('"glossary_correction"', metrics_text)
-            self.assertIn('"correction_count": 2', metrics_text)
+            self.assertIn('"correction_count": 0', metrics_text)
             self.assertIn("meeting_final.txt", metrics_text)
             event_log_text = saved["event_log"].read_text(encoding="utf-8")
             self.assertIn('"events"', event_log_text)
@@ -224,6 +217,7 @@ class TranscriptIoTests(unittest.TestCase):
                 "[00:00:01] 志德灣和 iMBS 開會",
                 language="zh",
                 enable_punctuation=True,
+            enable_glossary_correction=True,
                 enable_punctuation_model=False,
             )
 

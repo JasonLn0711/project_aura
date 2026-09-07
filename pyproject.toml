@@ -38,12 +38,6 @@ diarization = [
   "torchaudio>=2.11,<2.12",
   "torchcodec>=0.11,<0.12",
 ]
-summary = [
-  "accelerate>=1.0",
-  "bitsandbytes>=0.45",
-  "torch>=2.0",
-  "transformers>=4.55",
-]
 punctuation = [
   "torch>=2.0",
   "transformers>=4.55",
@@ -62,7 +56,6 @@ where = ["src"]
 
 [tool.setuptools.package-data]
 asr_postprocess = ["domain_glossary.yaml"]
-summary = ["meeting_summary_layers/*.system.txt"]
 
 [tool.uv.sources]
 torch = [

@@ -19,7 +19,7 @@ class FakeRestorer:
 
     def restore(self, text):
         self.calls.append(text)
-        return f"{text}，完成"
+        return f"{text}。"
 
 
 class PunctuationTests(unittest.TestCase):
@@ -43,7 +43,7 @@ class PunctuationTests(unittest.TestCase):
 
         result = restore_chinese_punctuation("這是一段需要標點的會議紀錄", language="zh", restorer=restorer)
 
-        self.assertEqual(result.text, "這是一段需要標點的會議紀錄，完成。")
+        self.assertEqual(result.text, "這是一段需要標點的會議紀錄。")
         self.assertEqual(result.backend, "model")
         self.assertEqual(restorer.calls, ["這是一段需要標點的會議紀錄"])
 

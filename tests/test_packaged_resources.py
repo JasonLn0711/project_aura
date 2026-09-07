@@ -8,7 +8,7 @@ from pathlib import Path
 
 
 class PackagedResourcesTests(unittest.TestCase):
-    def test_wheel_reads_prompts_and_default_glossary_outside_checkout(self) -> None:
+    def test_wheel_excludes_summary_and_reads_glossary_outside_checkout(self) -> None:
         uv = shutil.which("uv")
         if not uv:
             self.skipTest("uv is required to build the release wheel")
@@ -43,31 +43,6 @@ class PackagedResourcesTests(unittest.TestCase):
                 text=True,
             )
             wheel = next(dist.glob("*.whl"))
-            expected_prompts = {
-                "action_items.system.txt",
-                "decisions.system.txt",
-                "executive_summary.system.txt",
-                "format_repair.system.txt",
-                "key_points.system.txt",
-                "meeting_topic.system.txt",
-                "next_steps.system.txt",
-                "open_questions.system.txt",
-                "participants.system.txt",
-                "risks.system.txt",
-            }
-            for name in expected_prompts:
-                self.assertEqual(
-                    (
-                        repo / "prompts" / "meeting_summary_layers" / name
-                    ).read_bytes(),
-                    (
-                        repo
-                        / "src"
-                        / "summary"
-                        / "meeting_summary_layers"
-                        / name
-                    ).read_bytes(),
-                )
             self.assertEqual(
                 (repo / "config" / "domain_glossary.yaml").read_bytes(),
                 (
@@ -79,12 +54,7 @@ class PackagedResourcesTests(unittest.TestCase):
             )
             with zipfile.ZipFile(wheel) as archive:
                 names = set(archive.namelist())
-            self.assertTrue(
-                {
-                    f"summary/meeting_summary_layers/{name}"
-                    for name in expected_prompts
-                }.issubset(names)
-            )
+            self.assertFalse(any(name.startswith(("summary/", "aura/llm/")) for name in names))
             self.assertIn("asr_postprocess/domain_glossary.yaml", names)
             self.assertIn("aura/audio/run_clearvoice_enhancement.py", names)
 
@@ -94,10 +64,8 @@ class PackagedResourcesTests(unittest.TestCase):
 import sys
 sys.path.insert(0, sys.argv[1])
 from importlib.resources import files
-from summary.layered_summary_pipeline import read_extractor_prompt
 from aura.ui.transcript_io import prepare_transcript
 
-assert "Minimal valid output example" in read_extractor_prompt("meeting_topic")
 assert "ClearVoice" in files("aura.audio").joinpath(
     "run_clearvoice_enhancement.py"
 ).read_text(encoding="utf-8")
@@ -105,6 +73,7 @@ prepared = prepare_transcript(
     "[00:00:01] 志德灣和 iMBS 開會",
     language="zh",
     enable_punctuation=False,
+    enable_glossary_correction=True,
 )
 assert prepared.corrected_text == "[00:00:01] 智德萬和 iMVS 開會"
 """

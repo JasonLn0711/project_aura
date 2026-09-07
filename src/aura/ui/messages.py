@@ -63,12 +63,6 @@ class UIStrings:
     )
     speaker_min_label: str = "Min Speakers:"
     speaker_max_label: str = "Max Speakers:"
-    llm_summary_label: str = "Summarize transcript after ASR"
-    llm_summary_tooltip: str = (
-        "Uses the fixed local Ollama tag gemma4:e4b-it-qat with reasoning enabled after ASR. "
-        "摘要採用台灣繁體中文，並保留來源片段供人員覆核。"
-    )
-    llm_summary_button: str = "Summarize Transcript"
     output_policy_label: str = "Session Output:"
     output_policy_same_folder: str = "Same folder as source/recording"
     output_policy_session_folder: str = "Project outputs/transcripts folder"
@@ -161,19 +155,7 @@ class UIStrings:
     batch_tasks_cancelled: str = "⚠️ Batch import cancelled"
     import_cancel_requested: str = "⚠️ Cancelling import and skipping remaining files..."
     import_cancel_after_current: str = "⚠️ Current file is finishing; remaining imports will be skipped..."
-    summary_already_running: str = "A transcript summary is already running. Please wait for it to finish before importing files."
     file_transcription_failed: str = "File Transcription Failed"
-    summary_failed: str = "LLM Summary Failed"
-    ollama_model_missing_title: str = "Local Gemma model not installed"
-    ollama_model_missing_message: str = (
-        "AURA found Ollama, but the required local model is not installed:\n\n"
-        "{model_tag}\n\n"
-        "This model is required for local transcript summary. AURA will not use a fallback model or cloud API."
-    )
-    ollama_pull_model: str = "Pull Model"
-    ollama_copy_command: str = "Copy Command"
-    ollama_cancel: str = "Cancel"
-    ollama_pull_command_copied: str = "📋 Ollama pull command copied to clipboard"
     transcript_artifacts_saved: str = "💾 Transcript artifacts saved: {file_path} ({elapsed_seconds:.1f}s)"
     transcript_artifacts_saved_remaining_skipped: str = (
         "💾 Transcript artifacts saved: {file_path} ({elapsed_seconds:.1f}s); remaining imports skipped"

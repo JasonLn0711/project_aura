@@ -196,15 +196,15 @@ class AudioCaptureTests(unittest.TestCase):
             trim_trailing_unvoiced_frames([b"frame"], [])
 
     def test_recorder_uses_live_segment_and_energy_gate_defaults(self):
-        recorder = AudioRecorderThread("recording", transcriber_thread=object())
+        recorder = AudioRecorderThread("recording", transcriber_thread=type("Transcriber", (), {})())
 
-        self.assertEqual(recorder.max_segment_len_sec, 16.0)
+        self.assertEqual(recorder.max_segment_len_sec, 12.0)
         self.assertEqual(recorder.energy_gate_rms, 1000.0)
 
     def test_recorder_allows_live_segment_and_energy_gate_overrides(self):
         recorder = AudioRecorderThread(
             "recording",
-            transcriber_thread=object(),
+            transcriber_thread=type("Transcriber", (), {})(),
             max_segment_len_sec=12.5,
             energy_gate_rms=1200.0,
         )
@@ -215,7 +215,7 @@ class AudioCaptureTests(unittest.TestCase):
     def test_far_speaker_mode_overrides_live_gate_bridge_and_denoise(self):
         recorder = AudioRecorderThread(
             "recording",
-            transcriber_thread=object(),
+            transcriber_thread=type("Transcriber", (), {})(),
             denoise_preset="off",
             meeting_distance_mode=MEETING_DISTANCE_FAR_SPEAKER,
             energy_gate_rms=1200.0,

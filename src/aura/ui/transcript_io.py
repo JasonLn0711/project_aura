@@ -108,12 +108,12 @@ def prepare_transcript(
     raw_transcript: str,
     *,
     language: str | None = None,
-    enable_punctuation: bool = True,
+    enable_punctuation: bool = False,
     enable_punctuation_model: bool = False,
-    enable_glossary_correction: bool = True,
+    enable_glossary_correction: bool = False,
     glossary_path: str | Path = DEFAULT_GLOSSARY_PATH,
 ) -> PreparedTranscript:
-    raw_text = raw_transcript.strip()
+    raw_text = raw_transcript
     punctuation_result = restore_chinese_punctuation_for_transcript(
         raw_text,
         language=language,
@@ -137,10 +137,9 @@ def prepare_transcript(
 
 
 def transcript_text_for_save(content: str) -> str:
-    cleaned = content.strip()
-    if not cleaned:
+    if not content.strip():
         return ""
-    return f"{cleaned}\n"
+    return content if content.endswith("\n") else content + "\n"
 
 
 def _atomic_write_text(path: Path, text: str) -> Path:
@@ -166,15 +165,6 @@ def write_transcript_file(file_path: str | Path, content: str) -> bool:
     return True
 
 
-def summary_text_for_save(content: str) -> str:
-    cleaned = content.strip()
-    if not cleaned:
-        return ""
-    if SUMMARY_MARKER in cleaned:
-        cleaned = cleaned.split(SUMMARY_MARKER, 1)[1].strip()
-    return cleaned
-
-
 def split_transcript_sections(content: str) -> tuple[str, str]:
     cleaned = content.strip()
     if SUMMARY_MARKER not in cleaned:
@@ -183,23 +173,12 @@ def split_transcript_sections(content: str) -> tuple[str, str]:
     return raw.strip(), summary.strip()
 
 
-def final_transcript_text(raw_transcript: str, summary_text: str | None = None) -> str:
-    raw = raw_transcript.strip()
-    summary = summary_text_for_save(summary_text or "")
-    if raw and summary:
-        return f"{raw}\n\n{SUMMARY_MARKER}\n{summary}"
-    if summary:
-        return f"{SUMMARY_MARKER}\n{summary}"
-    return raw
-
-
 def transcript_artifact_paths(base_path: str | Path) -> dict[str, Path]:
     path = Path(base_path)
     return {
         "raw": path.with_name(f"{path.name}_raw.txt"),
         "corrected": path.with_name(f"{path.name}_corrected.txt"),
         "final": path.with_name(f"{path.name}_final.txt"),
-        "summary": path.with_name(f"{path.name}_summary.txt"),
         "correction_log": path.with_name(f"{path.name}_correction_log.json"),
         "prepared": path.with_name(f"{path.name}_prepared_transcript.json"),
         "metrics": path.with_name(f"{path.name}_processing_metrics.json"),
@@ -245,9 +224,8 @@ def write_event_log_file(base_path: str | Path, metrics: dict[str, Any]) -> Path
 def write_transcript_artifacts(
     base_path: str | Path,
     raw_transcript: str | PreparedTranscript,
-    summary_text: str | None = None,
     metrics: dict[str, Any] | None = None,
-    enable_glossary_correction: bool = True,
+    enable_glossary_correction: bool = False,
     glossary_path: str | Path = DEFAULT_GLOSSARY_PATH,
     session: TranscriptSession | None = None,
 ) -> dict[str, Path]:
@@ -284,11 +262,7 @@ def write_transcript_artifacts(
             saved["corrected"] = paths["corrected"]
         saved["correction_log"] = write_correction_log(paths["correction_log"], correction_log)
 
-    summary = summary_text_for_save(summary_text or "")
-    if summary and write_transcript_file(paths["summary"], summary):
-        saved["summary"] = paths["summary"]
-
-    final_text = final_transcript_text(transcript_for_final, summary)
+    final_text = transcript_for_final
     if write_transcript_file(paths["final"], final_text):
         saved["final"] = paths["final"]
 

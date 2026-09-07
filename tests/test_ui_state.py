@@ -4,11 +4,11 @@ import tempfile
 import unittest
 from types import SimpleNamespace
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import patch, MagicMock
 
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
-from PyQt6.QtWidgets import QApplication
+from PyQt6.QtWidgets import QApplication, QPlainTextEdit
 from aura.review import FINAL, ReviewSegment
 from aura.ui.messages import UI_TEXT
 from aura.ui.transcript_io import prepare_transcript
@@ -113,6 +113,29 @@ class UiStateTests(unittest.TestCase):
             self.assertFalse(tab.time_schedule_start.isEnabled())
             self.assertFalse(tab.check_schedule_auto_stop.isEnabled())
             self.assertFalse(tab.time_schedule_end.isEnabled())
+            self.assertIsInstance(tab.text_area, QPlainTextEdit)
+            self.assertFalse(hasattr(tab, "btn_summary"))
+            tab.update_log("[00:00:00] 原始逐字稿")
+            self.assertFalse(tab.editor_edited)
+            with tempfile.TemporaryDirectory() as tmpdir:
+                for edited in (False, True):
+                    tab.text_area.setPlainText("使用者編輯" if edited else "原始逐字稿")
+                    tab.editor_edited = edited
+                    tab.refinement_revision = tab.transcript_revision
+                    tab.current_recording_metrics = {}
+                    tab.final_recording_thread = SimpleNamespace(
+                        result_lines=["[00:00:00] 精確逐字稿"],
+                        result_segments=[ReviewSegment("seg-test", 0, 1000, "精確逐字稿", state=FINAL)],
+                    )
+                    tab.default_transcript_base_path = lambda: str(Path(tmpdir) / "meeting")
+                    tab.finalize_recording_after_live_asr_idle = MagicMock()
+                    tab.on_final_recording_pass_finished()
+                    if edited:
+                        self.assertEqual(tab.text_area.toPlainText(), "使用者編輯")
+                        self.assertEqual((Path(tmpdir) / "meeting_refined.txt").read_text(), "[00:00:00] 精確逐字稿\n")
+                    else:
+                        self.assertEqual(tab.text_area.toPlainText(), "[00:00:00] 精確逐字稿")
+
         finally:
             tab.executor.shutdown(wait=False, cancel_futures=True)
             tab.deleteLater()
@@ -139,26 +162,6 @@ class UiStateTests(unittest.TestCase):
         self.assertEqual(tab.btn_toggle_runtime_log.text, UI_TEXT.hide_runtime_log)
         self.assertTrue(tab.runtime_log.visible)
 
-    def test_summary_stays_disabled_until_transcript_exists(self):
-        tab = self.make_tab()
-        tab.btn_summary = FakeButton()
-        tab.text_area = FakeTextArea("")
-        tab.pending_files = []
-        tab.file_thread = None
-        tab.import_summary_pending = False
-        tab.finalize_recording_pending = False
-        tab.scheduled_recording_pending = False
-        tab.recorder_thread = None
-        tab.summary_thread = None
-        tab.ollama_runtime_thread = None
-        tab.ollama_pull_thread = None
-
-        tab.update_summary_button_state()
-        self.assertFalse(tab.btn_summary.enabled)
-
-        tab.text_area.text = "A reviewed transcript"
-        tab.update_summary_button_state()
-        self.assertTrue(tab.btn_summary.enabled)
 
     def test_recording_button_uses_danger_state_while_recording(self):
         tab = self.make_tab()
@@ -195,51 +198,14 @@ class UiStateTests(unittest.TestCase):
             self.assertEqual(resolved, output.resolve())
             self.assertEqual(list(output.iterdir()), [])
 
-    def test_summary_input_is_prepared_with_punctuation_then_glossary_correction(self):
+    def test_editor_input_is_preserved_on_save(self):
         tab = self.make_tab()
         tab.settings = SimpleNamespace(chinese_punctuation_enabled=True)
         tab.combo_lang = FakeCombo()
 
         prepared = tab.prepare_transcript_input("[00:00:01] 志德灣和 iMBS 開會")
 
-        self.assertEqual(prepared.corrected_text, "[00:00:01] 智德萬和 iMVS 開會。")
-
-    def test_summary_settings_use_the_canonical_session_and_review_segments(self):
-        with tempfile.TemporaryDirectory() as tmpdir:
-            recording_dir = Path(tmpdir) / "meeting"
-            session_dir = recording_dir / "meeting_session"
-            session_dir.mkdir(parents=True)
-            (session_dir / "session.json").write_text(
-                json.dumps({"meeting_id": "meeting-canonical"}),
-                encoding="utf-8",
-            )
-            tab = self.make_tab()
-            tab.settings = SimpleNamespace(
-                chinese_punctuation_enabled=True,
-            )
-            tab.current_recording_metrics = {
-                "workflow": "recording",
-                "base_path": str(recording_dir / "meeting"),
-                "source_path": str(recording_dir / "meeting.wav"),
-            }
-            tab.current_import_metrics = None
-            tab.current_meeting_id = None
-            tab.text_area = SimpleNamespace(
-                review=SimpleNamespace(
-                    segments=[
-                        ReviewSegment("seg-1", 0, 1000, "確認內容", state=FINAL),
-                    ]
-                )
-            )
-
-            prepared = prepare_transcript("確認內容。", language="zh")
-            settings = tab.summary_settings(prepared)
-
-            self.assertEqual(settings.session_dir, str(session_dir))
-            self.assertEqual(settings.meeting_id, "meeting-canonical")
-            self.assertEqual(settings.evidence_segments[0]["segment_id"], "seg-1")
-            self.assertEqual(settings.transcript_sha256, prepared.content_sha256)
-            self.assertEqual(tab.current_recording_metrics["meeting_id"], "meeting-canonical")
+        self.assertEqual(prepared.corrected_text, "[00:00:01] 志德灣和 iMBS 開會")
 
 
 if __name__ == "__main__":

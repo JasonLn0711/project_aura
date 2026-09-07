@@ -87,7 +87,6 @@ class RecordingShutdownTests(unittest.TestCase):
             with patch("aura.ui.transcription_tab.QTimer.singleShot"):
                 tab.on_recording_thread_finished(recorder, str(partial))
 
-            tab.set_review_audio_source.assert_called_once_with(str(partial))
             tab.process_audio.assert_called_once_with(str(partial))
             self.assertEqual(
                 tab.current_recording_metrics["recording_outcome"],

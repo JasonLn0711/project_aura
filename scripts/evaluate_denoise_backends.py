@@ -2,6 +2,9 @@
 import argparse
 import json
 import shutil
+import re
+import time
+from functools import lru_cache
 from dataclasses import asdict, dataclass
 from pathlib import Path
 
@@ -25,6 +28,8 @@ SUPPORTED_BACKENDS = (
     "deepfilternet3",
     "clearvoice",
     "wpe",
+    "fastenhancer-b",
+    "dpdfnet2",
 )
 
 
@@ -50,6 +55,9 @@ class BackendResult:
     rare_term_hits: list[str] | None = None
     rare_term_misses: list[str] | None = None
     note: str = ""
+    mer: float | None = None
+    enhancement_seconds: float | None = None
+    enhancement_rtf: float | None = None
 
 
 @dataclass(frozen=True)
@@ -165,7 +173,7 @@ def meeting_distance_mode_for_backend(backend: str) -> str:
         return MEETING_DISTANCE_NORMAL
     if backend in {"noisereduce-medium", "deepfilternet3"}:
         return MEETING_DISTANCE_FAR_SPEAKER
-    if backend in {"clearvoice", "wpe"}:
+    if backend in {"clearvoice", "wpe", "fastenhancer-b", "dpdfnet2"}:
         return MEETING_DISTANCE_RESCUE_OFFLINE
     raise ValueError(f"Unsupported backend: {backend}")
 
@@ -204,6 +212,39 @@ def process_wpe(_case: EvalCase, _output_path: Path) -> str:
     raise RuntimeError("WPE backend is intentionally pending a dedicated dereverb implementation")
 
 
+def process_neural_candidate(case: EvalCase, backend: str, output_path: Path) -> str:
+    import numpy as np
+    audio = AudioSegment.from_file(case.input_path).set_channels(1).set_frame_rate(16000).set_sample_width(2)
+    samples = np.asarray(audio.get_array_of_samples(), dtype=np.float32) / 32768
+    if backend == "fastenhancer-b":
+        from aura.audio.fastenhancer import enhance
+        enhanced = enhance(samples)
+    else:
+        from dpdfnet import enhance
+        enhanced = enhance(samples, sample_rate=16000, model="dpdfnet2", attn_limit_db=12)
+    enhanced = np.asarray(enhanced)
+    if enhanced.shape != samples.shape or not np.isfinite(enhanced).all():
+        raise ValueError("Enhancer must preserve sample count and finite mono audio")
+    audio._spawn((np.clip(enhanced, -1, 1) * 32767).astype(np.int16).tobytes()).export(output_path, format="wav")
+    return f"{backend}: evaluation candidate, state reset per utterance"
+
+
+def mixed_error_rate(reference: str, hypothesis: str) -> float | None:
+    tokenize = lambda text: re.findall(r"[\u3400-\u9fff]|[a-z0-9]+(?:[._'-][a-z0-9]+)*", text.lower())
+    ref, hyp = tokenize(reference), tokenize(hypothesis)
+    return levenshtein_distance(ref, hyp) / len(ref) if ref else None
+
+
+@lru_cache(maxsize=1)
+def evaluation_model(model_id: str, device: str, compute_type: str):
+    from aura.system.cuda import preload_cuda_runtime_libraries
+    from faster_whisper import WhisperModel
+    ready, detail = preload_cuda_runtime_libraries()
+    if not ready:
+        raise RuntimeError(detail)
+    return WhisperModel(model_id, device=device, compute_type=compute_type)
+
+
 def process_backend(case: EvalCase, backend: str, output_path: Path) -> str:
     output_path.parent.mkdir(parents=True, exist_ok=True)
     if backend == "off":
@@ -216,6 +257,8 @@ def process_backend(case: EvalCase, backend: str, output_path: Path) -> str:
         return process_deepfilternet(case, output_path)
     if backend == "clearvoice":
         return process_clearvoice(case, output_path)
+    if backend in {"fastenhancer-b", "dpdfnet2"}:
+        return process_neural_candidate(case, backend, output_path)
     if backend == "wpe":
         return process_wpe(case, output_path)
     raise ValueError(f"Unsupported backend: {backend}")
@@ -227,9 +270,7 @@ def transcribe_audio(path: Path, model_id: str, device: str, compute_type: str, 
             "AURA ASR evaluation requires --device cuda; CPU inference is outside the supported runtime."
         )
 
-    from faster_whisper import WhisperModel
-
-    model = WhisperModel(model_id, device=device, compute_type=compute_type)
+    model = evaluation_model(model_id, device, compute_type)
     kwargs = {"beam_size": 5, "condition_on_previous_text": True}
     if language:
         kwargs["language"] = language
@@ -257,7 +298,12 @@ def evaluate_case_backend(
         input_path=str(case.input_path),
     )
     try:
+        started = time.perf_counter()
         note = process_backend(case, backend, processed_path)
+        result.enhancement_seconds = time.perf_counter() - started
+        with case.input_path.open("rb") as source:
+            duration = AudioSegment.from_file(source).duration_seconds
+        result.enhancement_rtf = result.enhancement_seconds / duration if duration else None
         result.processed_path = str(processed_path)
         result.note = note
         if model_id:
@@ -265,6 +311,7 @@ def evaluate_case_backend(
             transcript_path.write_text(transcript + "\n", encoding="utf-8")
             result.transcript_path = str(transcript_path)
             if case.reference_text:
+                result.mer = mixed_error_rate(case.reference_text, transcript)
                 result.cer = character_error_rate(case.reference_text, transcript)
                 result.wer = word_error_rate(case.reference_text, transcript)
             hits, misses = rare_term_report(case.rare_terms, transcript)

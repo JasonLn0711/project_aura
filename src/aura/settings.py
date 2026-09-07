@@ -23,7 +23,7 @@ class AppSettings:
     language: str | None = "zh"
     live_capture_source: str = DEFAULT_LIVE_CAPTURE_SOURCE
     meeting_distance_mode: str = DEFAULT_MEETING_DISTANCE_MODE
-    live_max_segment_len_sec: float = 16.0
+    live_max_segment_len_sec: float = 12.0
     live_energy_gate_rms: float = 1000.0
     recording_audio_format: str = "m4a"
     file_initial_prompt: str | None = DEFAULT_PROMPT
@@ -36,7 +36,6 @@ class AppSettings:
     speaker_diarization_model: str = DIARIZATION_MODEL_ID
     speaker_diarization_device: str = DEVICE
     speaker_diarization_use_exclusive: bool = True
-    llm_summary_enabled: bool = False
     chinese_punctuation_enabled: bool = True
     chinese_punctuation_model: str = CHINESE_PUNCTUATION_MODEL_ID
     splitter_target_minutes: int = 40

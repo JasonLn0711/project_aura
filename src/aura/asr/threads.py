@@ -7,7 +7,10 @@ import time
 from faster_whisper import WhisperModel
 from PyQt6.QtCore import QThread, pyqtSignal
 
-from aura.audio.denoise import OFF_DENOISE_PRESET, normalize_denoise_preset
+from aura.asr.hotwords import validate_context
+from aura.audio.vad import AudioChunk
+from aura.audio.denoise import OFF_DENOISE_PRESET, normalize_denoise_preset, reduce_noise_safely
+from aura.audio.meeting_distance import apply_live_segment_agc
 from aura.asr.file_pipeline import (
     CancellationToken,
     FileTranscriptionCancelled,
@@ -19,7 +22,7 @@ from aura.asr.file_pipeline import (
     transcribe_file,
 )
 from aura.config import SAMPLE_RATE
-from aura.asr.punctuation import restore_chinese_punctuation
+from aura.asr.punctuation import restore_chinese_punctuation, default_restorer
 from aura.settings import DEFAULT_SETTINGS
 from aura.diarization.pyannote_pipeline import DiarizationSettings
 from aura.system.cuda import is_cuda_runtime_error, preload_cuda_runtime_libraries
@@ -63,6 +66,7 @@ class FileTranscriberThread(QThread):
         enable_speaker_diarization=DEFAULT_SETTINGS.speaker_diarization_enabled,
         min_speakers=DEFAULT_SETTINGS.speaker_min_speakers,
         max_speakers=DEFAULT_SETTINGS.speaker_max_speakers,
+        hotwords="",
     ):
         super().__init__()
         resolved_denoise_preset = normalize_denoise_preset(enable_denoise, denoise_preset)
@@ -73,6 +77,7 @@ class FileTranscriberThread(QThread):
             beam_size=beam_size,
             initial_prompt=resolve_initial_prompt(initial_prompt),
             language=language,
+            hotwords=hotwords,
             meeting_distance_mode=meeting_distance_mode,
             enable_denoise=resolved_denoise_preset != OFF_DENOISE_PRESET,
             denoise_preset=resolved_denoise_preset,
@@ -185,6 +190,17 @@ class ModelLoaderThread(QThread):
                 device=REQUIRED_ASR_DEVICE,
                 compute_type=self.actual_compute_type,
             )
+            if DEFAULT_SETTINGS.chinese_punctuation_enabled:
+                restorer = default_restorer()
+                restorer.reset()
+                restorer.model_ids = (DEFAULT_SETTINGS.chinese_punctuation_model,)
+                restorer.model_id = DEFAULT_SETTINGS.chinese_punctuation_model
+                try:
+                    with restorer.lock:
+                        restorer._load()
+                    self.status_signal.emit(f"Punctuation ready: {restorer.model_id} ({restorer.device})")
+                except Exception as exc:
+                    self.status_signal.emit(f"Punctuation model unavailable; transcription remains available. {exc}")
             self.finished_signal.emit(model)
         except Exception as e:
             error_msg = str(e)
@@ -204,11 +220,14 @@ class TranscriberThread(QThread):
         self.audio_queue = queue.Queue()
         self.running = True
         self.processing = False
+        self.live_audio_policy = None
+        self.live_denoise_preset = OFF_DENOISE_PRESET
         self.model = None
         self.device = DEFAULT_SETTINGS.device
         self.compute_type = DEFAULT_SETTINGS.compute_type
         self.live_beam_size = DEFAULT_SETTINGS.beam_size
         self.live_language = DEFAULT_SETTINGS.language
+        self.live_hotwords = ""
         self.live_initial_prompt = DEFAULT_SETTINGS.live_initial_prompt
         self.live_chinese_punctuation_enabled = DEFAULT_SETTINGS.chinese_punctuation_enabled
         self.punctuation_status_emitted = False
@@ -219,35 +238,50 @@ class TranscriberThread(QThread):
         beam_size=DEFAULT_SETTINGS.beam_size,
         language=DEFAULT_SETTINGS.language,
         initial_prompt=None,
+        hotwords="",
     ):
+        if self.model is not None and hasattr(self.model, "hf_tokenizer"):
+            validate_context(self.model.hf_tokenizer, initial_prompt, hotwords)
+        self.live_hotwords = hotwords
         self.live_beam_size = int(beam_size) if beam_size else DEFAULT_SETTINGS.beam_size
         self.live_language = language
         self.live_initial_prompt = resolve_initial_prompt(initial_prompt, DEFAULT_SETTINGS.live_initial_prompt)
 
     def run(self):
         while self.running:
+            claimed = False
             try:
                 if self.model is None:
                     time.sleep(0.5)
                     continue
 
-                audio_data = self.audio_queue.get(timeout=1)
+                chunk = self.audio_queue.get(timeout=1)
+                claimed = True
+                self.processing = True
+                started = time.monotonic()
+                queue_age = max(0.0, started - chunk.queued_at) if chunk.queued_at else 0.0
+                audio_data = chunk.samples
+                if self.live_denoise_preset != OFF_DENOISE_PRESET:
+                    try:
+                        audio_data = reduce_noise_safely(audio_data, SAMPLE_RATE, preset=self.live_denoise_preset)
+                    except Exception as exc:
+                        self.status_updated.emit(f"Denoising unavailable; using original audio: {exc}")
+                if self.live_audio_policy is not None:
+                    audio_data = apply_live_segment_agc(audio_data, self.live_audio_policy)
                 transcribe_kwargs = build_transcribe_kwargs(
                     beam_size=self.live_beam_size,
                     language=self.live_language,
                     initial_prompt=self.live_initial_prompt,
                     condition_on_previous_text=False,
+                    hotwords=self.live_hotwords,
                 )
 
-                self.processing = True
-                chunk_duration_seconds = len(audio_data) / SAMPLE_RATE
-                chunk_start_seconds = self._stream_elapsed_seconds
-                self._stream_elapsed_seconds += chunk_duration_seconds
+                chunk_start_seconds = chunk.start_sample / SAMPLE_RATE
                 segments, info = self.model.transcribe(audio_data, **transcribe_kwargs)
                 detected_language = getattr(info, "language", None) or self.live_language
                 text_segment = "".join([s.text for s in segments])
                 if self.live_chinese_punctuation_enabled:
-                    punctuation_result = restore_chinese_punctuation(text_segment, language=detected_language)
+                    punctuation_result = restore_chinese_punctuation(text_segment, language=detected_language, terminal=chunk.terminal)
                     text_segment = punctuation_result.text
                     if punctuation_result.backend != "skipped" and not self.punctuation_status_emitted:
                         if punctuation_result.backend == "model":
@@ -260,6 +294,7 @@ class TranscriberThread(QThread):
                             self.status_updated.emit("🔤 Traditional Chinese punctuation normalized with rule fallback.")
                         self.punctuation_status_emitted = True
                 if text_segment.strip():
+                    self.status_updated.emit(f"Live ASR: {time.monotonic() - started:.2f}s processing, {queue_age:.2f}s queued")
                     timestamp = format_timestamp(chunk_start_seconds)
                     formatted_text = f"[{timestamp}] {text_segment}"
                     self.text_updated.emit(formatted_text)
@@ -271,16 +306,20 @@ class TranscriberThread(QThread):
                 logger.exception(err)
                 self.status_updated.emit(f"⚠️ {err}")
             finally:
+                if claimed:
+                    self.audio_queue.task_done()
                 self.processing = False
 
-    def add_audio(self, audio_np):
-        self.audio_queue.put(audio_np)
+    def add_audio(self, chunk: AudioChunk):
+        if not isinstance(chunk, AudioChunk):
+            raise TypeError("Live ASR requires audio with source sample positions")
+        self.audio_queue.put(chunk)
 
     def reset_stream_elapsed(self):
         self._stream_elapsed_seconds = 0.0
 
     def is_idle(self):
-        return self.audio_queue.empty() and not self.processing
+        return self.audio_queue.unfinished_tasks == 0 and not self.processing
 
     def stop(self):
         self.running = False

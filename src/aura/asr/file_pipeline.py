@@ -14,6 +14,7 @@ from aura.audio.meeting_distance import (
     meeting_distance_policy_for,
 )
 from aura.audio.normalization import FfmpegUnavailable, normalize_media_to_wav, normalization_cpu_status
+from aura.asr.hotwords import validate_context
 from aura.asr.punctuation import restore_chinese_punctuation, should_restore_traditional_chinese_punctuation
 from aura.diarization.pyannote_pipeline import DiarizationSettings, diarize_audio_file, validate_diarization_runtime
 from aura.diarization.speaker_assignment import (
@@ -63,6 +64,7 @@ class FileTranscriptionSettings:
     enable_denoise: bool = DEFAULT_SETTINGS.denoise_enabled
     denoise_preset: str = DEFAULT_SETTINGS.denoise_preset
     diarization: DiarizationSettings = field(default_factory=DiarizationSettings)
+    hotwords: str = ""
     chinese_punctuation_enabled: bool = DEFAULT_SETTINGS.chinese_punctuation_enabled
 
     def __post_init__(self):
@@ -90,11 +92,13 @@ def resolve_initial_prompt(prompt, default_prompt=DEFAULT_SETTINGS.file_initial_
     return str(prompt).strip()
 
 
-def build_transcribe_kwargs(beam_size=5, language="zh", initial_prompt=None, condition_on_previous_text=True):
+def build_transcribe_kwargs(beam_size=5, language="zh", initial_prompt=None, condition_on_previous_text=True, hotwords=None):
     kwargs = {
         "beam_size": int(beam_size) if beam_size else 5,
         "condition_on_previous_text": condition_on_previous_text,
     }
+    if hotwords:
+        kwargs["hotwords"] = hotwords
     if language:
         kwargs["language"] = language
     if initial_prompt:
@@ -145,25 +149,16 @@ def restore_transcript_segments_punctuation(
     if status_callback:
         status_callback("🔤 Restoring Traditional Chinese punctuation...")
 
-    restored_segments = []
-    backend = "skipped"
-    detail = ""
-    for segment in transcript_segments:
-        result = restore_chinese_punctuation(segment.text, language=language)
-        restored_segments.append(
-            TranscriptSegment(
-                start=segment.start,
-                end=segment.end,
-                text=result.text,
-                asr_logprob=segment.asr_logprob,
-            )
-        )
-        if result.backend == "model":
-            backend = "model"
-        elif backend == "skipped" and result.backend == "rule_fallback":
-            backend = "rule_fallback"
-        if result.detail and not detail:
-            detail = result.detail
+    result = restore_chinese_punctuation("\n".join(segment.text for segment in transcript_segments), language=language)
+    texts = result.text.split("\n")
+    if len(texts) != len(transcript_segments):
+        return transcript_segments
+    restored_segments = [
+        TranscriptSegment(start=segment.start, end=segment.end, text=text,
+                          asr_logprob=segment.asr_logprob)
+        for segment, text in zip(transcript_segments, texts)
+    ]
+    backend, detail = result.backend, result.detail
 
     if status_callback and backend != "skipped":
         if backend == "model":
@@ -283,13 +278,18 @@ def prepare_import_audio(
 
 
 def transcribe_prepared_file(model, prepared_path: Path, settings: FileTranscriptionSettings):
+    if hasattr(model, "hf_tokenizer"):
+        validate_context(model.hf_tokenizer, settings.initial_prompt, settings.hotwords)
     return model.transcribe(
         str(prepared_path),
+        vad_filter=True,
+        vad_parameters={"min_silence_duration_ms": 800, "speech_pad_ms": 320},
         **build_transcribe_kwargs(
             beam_size=settings.beam_size,
             language=settings.language,
             initial_prompt=settings.initial_prompt,
             condition_on_previous_text=True,
+            hotwords=settings.hotwords,
         ),
     )
 

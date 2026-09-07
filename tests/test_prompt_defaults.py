@@ -63,7 +63,8 @@ class PromptDefaultTests(unittest.TestCase):
 
         self.assertEqual(thread.live_initial_prompt, DEFAULT_LIVE_PROMPT)
 
-    def test_live_transcript_timestamps_follow_stream_elapsed_time(self):
+    def test_live_transcript_timestamps_follow_source_positions(self):
+        from aura.audio.vad import AudioChunk
         thread = TranscriberThread()
         thread.live_chinese_punctuation_enabled = False
         emitted = []
@@ -83,13 +84,15 @@ class PromptDefaultTests(unittest.TestCase):
                 )()
 
         thread.model = Model()
-        thread.add_audio(np.zeros(2 * 16_000, dtype=np.float32))
-        thread.add_audio(np.zeros(3 * 16_000, dtype=np.float32))
+        thread.add_audio(AudioChunk(np.zeros(2 * 16_000, dtype=np.float32), 160_000, 192_000))
+        thread.add_audio(AudioChunk(np.zeros(3 * 16_000, dtype=np.float32), 320_000, 368_000))
 
         with patch("aura.asr.threads.append_transcript_backup"):
             thread.run()
 
-        self.assertEqual(emitted, ["[00:00:00]  chunk-1", "[00:00:02]  chunk-2"])
+        self.assertEqual(emitted, ["[00:00:10]  chunk-1", "[00:00:20]  chunk-2"]
+        )
+        self.assertTrue(thread.is_idle())
 
     def test_explicit_empty_prompt_remains_empty(self):
         self.assertEqual(resolve_initial_prompt("", DEFAULT_PROMPT), "")
