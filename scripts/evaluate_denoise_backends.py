@@ -3,7 +3,6 @@ import argparse
 import json
 import shutil
 import re
-import time
 from functools import lru_cache
 from dataclasses import asdict, dataclass
 from pathlib import Path
@@ -56,8 +55,6 @@ class BackendResult:
     rare_term_misses: list[str] | None = None
     note: str = ""
     mer: float | None = None
-    enhancement_seconds: float | None = None
-    enhancement_rtf: float | None = None
 
 
 @dataclass(frozen=True)
@@ -298,12 +295,7 @@ def evaluate_case_backend(
         input_path=str(case.input_path),
     )
     try:
-        started = time.perf_counter()
         note = process_backend(case, backend, processed_path)
-        result.enhancement_seconds = time.perf_counter() - started
-        with case.input_path.open("rb") as source:
-            duration = AudioSegment.from_file(source).duration_seconds
-        result.enhancement_rtf = result.enhancement_seconds / duration if duration else None
         result.processed_path = str(processed_path)
         result.note = note
         if model_id:
@@ -334,11 +326,14 @@ def _recommendation_sort_key(result: BackendResult):
     wer = result.wer if result.wer is not None else float("inf")
     cer = result.cer if result.cer is not None else float("inf")
     hit_rate = rare_term_hit_rate(result)
-    return (wer, cer, -(hit_rate if hit_rate is not None else 0.0), result.backend)
+    mer = result.mer if result.mer is not None else float("inf")
+    return (mer, cer, wer, -(hit_rate if hit_rate is not None else 0.0), result.backend)
 
 
 def _recommendation_reason(result: BackendResult) -> str:
     parts = []
+    if result.mer is not None:
+        parts.append(f"MER {result.mer:.4f}")
     if result.wer is not None:
         parts.append(f"WER {result.wer:.4f}")
     if result.cer is not None:
