@@ -28,5 +28,5 @@ class RecordingShutdownTests(unittest.TestCase):
             tab.current = {'id':'session-test'}
             tab.text_area.setPlainText('尚未送出的編輯\n  保留空白')
             tab.stop_threads()
-            self.assertEqual((Path(root)/'drafts/session-test.txt').read_text(), '尚未送出的編輯\n  保留空白')
+            self.assertEqual((Path(root)/'drafts/session-test.txt').read_text(encoding="utf-8"), '尚未送出的編輯\n  保留空白')
             tab.deleteLater()

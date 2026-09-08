@@ -45,7 +45,8 @@ class AuditTests(unittest.TestCase):
             self.assertEqual(events[0]["sequence"], 1)
             self.assertEqual(events[1]["integrity"]["previous_event_hash"], events[0]["integrity"]["event_hash"])
             self.assertEqual(verify_audit_integrity(events), [])
-            self.assertEqual(Path(events[0]["_source_path"]).stat().st_mode & 0o777, 0o600)
+            if os.name == "posix":
+                self.assertEqual(Path(events[0]["_source_path"]).stat().st_mode & 0o777, 0o600)
 
     def test_integrity_verifier_detects_tampering(self):
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -136,7 +137,8 @@ class AuditTests(unittest.TestCase):
             text = output.read_text(encoding="utf-8")
             self.assertIn("Project AURA 本機稽核摘要", text)
             self.assertIn("Integrity：`PASS`", text)
-            self.assertEqual(output.stat().st_mode & 0o777, 0o600)
+            if os.name == "posix":
+                self.assertEqual(output.stat().st_mode & 0o777, 0o600)
 
     def test_active_session_is_not_flagged_as_uncontrolled_termination(self):
         with tempfile.TemporaryDirectory() as tmpdir:

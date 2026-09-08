@@ -1,3 +1,4 @@
+from contextlib import closing
 import argparse
 import json
 import os
@@ -177,7 +178,7 @@ def rebuild_evidence_index(artifact_root: str | Path, index_path: str | Path) ->
         raise ValueError("Evidence index target must be a SQLite database path")
     if target.exists():
         try:
-            with sqlite3.connect(f"{target.as_uri()}?mode=ro", uri=True) as existing:
+            with closing(sqlite3.connect(f"{target.as_uri()}?mode=ro", uri=True)) as existing:
                 version = existing.execute("PRAGMA user_version").fetchone()[0]
                 tables = {
                     row[0]
@@ -197,7 +198,7 @@ def rebuild_evidence_index(artifact_root: str | Path, index_path: str | Path) ->
     segment_count = 0
     action_count = 0
     try:
-        with sqlite3.connect(temporary) as connection:
+        with closing(sqlite3.connect(temporary)) as connection, connection:
             connection.executescript(
                 """
                 CREATE TABLE meetings (

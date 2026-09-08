@@ -32,7 +32,7 @@ function Invoke-Python {
         & $PythonCommand @Arguments
     }
     if ($LASTEXITCODE -ne 0) {
-        throw "Python command failed with exit code $LASTEXITCODE: $PythonCommand $($Arguments -join ' ')"
+        throw "Python command failed with exit code ${LASTEXITCODE}: $PythonCommand $($Arguments -join ' ')"
     }
 }
 
