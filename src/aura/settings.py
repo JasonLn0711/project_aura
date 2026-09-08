@@ -28,8 +28,8 @@ class AppSettings:
     recording_audio_format: str = "m4a"
     file_initial_prompt: str | None = DEFAULT_PROMPT
     live_initial_prompt: str | None = DEFAULT_LIVE_PROMPT
-    denoise_enabled: bool = False
-    denoise_preset: str = "off"
+    denoise_enabled: bool = True
+    denoise_preset: str = "light"
     speaker_diarization_enabled: bool = False
     speaker_min_speakers: int = 2
     speaker_max_speakers: int = 6

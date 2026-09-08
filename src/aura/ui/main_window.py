@@ -1,4 +1,3 @@
-import gc
 import json
 import logging
 from pathlib import Path
@@ -18,7 +17,6 @@ from PyQt6.QtWidgets import (
 
 from aura.audit import AuditRecorder
 from aura.audio.recording_session import discover_recoverable_sessions, recover_recording_session
-from aura.system.runtime_paths import remove_transcript_backup
 from aura.ui.messages import UI_TEXT
 from aura.ui.splitter_tab import SplitterTab
 from aura.ui.transcription_tab import TranscriptionTab
@@ -246,22 +244,6 @@ class MainWindow(QMainWindow):
         )
         self.tab_transcription.stop_threads()
 
-        t_thread = self.tab_transcription.transcriber_thread
-        if hasattr(t_thread, "model") and t_thread.model is not None:
-            del t_thread.model
-            t_thread.model = None
-
-        gc.collect()
-        try:
-            import torch
-
-            if torch.cuda.is_available():
-                torch.cuda.empty_cache()
-        except ImportError:
-            pass
-
-        if vars(self.tab_transcription).get("shutdown_backup_preserved", True):
-            remove_transcript_backup()
         self.audit.record(
             "app.session_ended",
             category="app.lifecycle",

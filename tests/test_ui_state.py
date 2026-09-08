@@ -1,91 +1,16 @@
 import os
-import json
 import tempfile
 import unittest
-from types import SimpleNamespace
 from pathlib import Path
 from unittest.mock import patch, MagicMock
-
-os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
-
+os.environ.setdefault('QT_QPA_PLATFORM', 'offscreen')
 from PyQt6.QtWidgets import QApplication, QPlainTextEdit
-from aura.review import FINAL, ReviewSegment
-from aura.ui.messages import UI_TEXT
-from aura.ui.transcript_io import prepare_transcript
-from aura.ui.transcription_tab import (
-    TranscriptionTab,
-    ensure_output_directory_writable,
-    safe_recording_suffix,
-)
+from aura.ui.transcription_tab import TranscriptionTab, safe_recording_suffix, ensure_output_directory_writable
 
 
-class FakeStyle:
-    def unpolish(self, _widget):
-        pass
-
-    def polish(self, _widget):
-        pass
-
-
-class FakeButton:
-    def __init__(self, checked=False):
-        self.checked = checked
-        self.enabled = None
-        self.properties = {}
-        self.text = ""
-        self._style = FakeStyle()
-
-    def isChecked(self):
-        return self.checked
-
-    def setEnabled(self, enabled):
-        self.enabled = enabled
-
-    def setProperty(self, key, value):
-        self.properties[key] = value
-
-    def setText(self, text):
-        self.text = text
-
-    def style(self):
-        return self._style
-
-
-class FakePanel:
-    def __init__(self):
-        self.visible = None
-
-    def setVisible(self, visible):
-        self.visible = visible
-
-
-class FakeSplitter:
-    def __init__(self):
-        self.sizes = None
-
-    def setSizes(self, sizes):
-        self.sizes = sizes
-
-
-class FakeTextArea:
-    def __init__(self, text):
-        self.text = text
-
-    def toPlainText(self):
-        return self.text
-
-
-class FakeCombo:
-    def currentData(self):
-        return "zh"
-
-
-class FakeAudit:
-    def __init__(self):
-        self.events = []
-
-    def record(self, name, **fields):
-        self.events.append((name, fields))
+def snapshot(**changes):
+    return dict(id='test-session', title='Meeting', state='recording', source='microphone', capture_location='server',
+                options={'profile':'light'}, transcript='原始文字', revision=1, **changes)
 
 
 class UiStateTests(unittest.TestCase):
@@ -93,120 +18,62 @@ class UiStateTests(unittest.TestCase):
     def setUpClass(cls):
         cls.app = QApplication.instance() or QApplication([])
 
-    def make_tab(self):
-        tab = TranscriptionTab.__new__(TranscriptionTab)
-        tab.strings = UI_TEXT
-        tab.audit = FakeAudit()
-        return tab
+    def setUp(self):
+        self.patch = patch('aura.ui.transcription_tab.ServiceWorker')
+        self.worker = self.patch.start().return_value
+        self.tab = TranscriptionTab(audit=MagicMock())
 
-    def test_transcription_tab_initializes_schedule_and_consent_controls(self):
-        with (
-            patch("aura.ui.transcription_tab.TranscriberThread.start"),
-            patch.object(TranscriptionTab, "apply_model_settings"),
-            patch.object(TranscriptionTab, "refresh_runtime_diagnostics"),
-            patch.object(TranscriptionTab, "check_for_updates"),
-        ):
-            tab = TranscriptionTab(audit=FakeAudit())
+    def tearDown(self):
+        self.tab.editor_edited = False
+        self.tab.stop_threads()
+        self.tab.deleteLater()
+        self.patch.stop()
 
-        try:
-            self.assertTrue(tab.check_recording_consent.isEnabled())
-            self.assertFalse(tab.time_schedule_start.isEnabled())
-            self.assertFalse(tab.check_schedule_auto_stop.isEnabled())
-            self.assertFalse(tab.time_schedule_end.isEnabled())
-            self.assertIsInstance(tab.text_area, QPlainTextEdit)
-            self.assertFalse(hasattr(tab, "btn_summary"))
-            tab.update_log("[00:00:00] 原始逐字稿")
-            self.assertFalse(tab.editor_edited)
-            with tempfile.TemporaryDirectory() as tmpdir:
-                for edited in (False, True):
-                    tab.text_area.setPlainText("使用者編輯" if edited else "原始逐字稿")
-                    tab.editor_edited = edited
-                    tab.refinement_revision = tab.transcript_revision
-                    tab.current_recording_metrics = {}
-                    tab.final_recording_thread = SimpleNamespace(
-                        result_lines=["[00:00:00] 精確逐字稿"],
-                        result_segments=[ReviewSegment("seg-test", 0, 1000, "精確逐字稿", state=FINAL)],
-                    )
-                    tab.default_transcript_base_path = lambda: str(Path(tmpdir) / "meeting")
-                    tab.finalize_recording_after_live_asr_idle = MagicMock()
-                    tab.on_final_recording_pass_finished()
-                    if edited:
-                        self.assertEqual(tab.text_area.toPlainText(), "使用者編輯")
-                        self.assertEqual((Path(tmpdir) / "meeting_refined.txt").read_text(), "[00:00:00] 精確逐字稿\n")
-                    else:
-                        self.assertEqual(tab.text_area.toPlainText(), "[00:00:00] 精確逐字稿")
+    def test_shared_workspace_uses_plain_editor_and_explicit_consent(self):
+        self.assertIsInstance(self.tab.text_area, QPlainTextEdit)
+        self.assertFalse(self.tab.recording_consent_confirmed())
+        self.assertEqual(self.tab.profile.currentData(), 'light')
+        self.tab.start_recording_session()
+        command, args = self.worker.submit.call_args.args
+        self.assertEqual(command, 'record')
+        self.assertFalse(args['consent'])
+        self.assertFalse(hasattr(self.tab, 'transcriber_thread'))
 
-        finally:
-            tab.executor.shutdown(wait=False, cancel_futures=True)
-            tab.deleteLater()
+    def test_pause_and_stop_target_the_attached_session(self):
+        self.tab.current = snapshot()
+        self.tab.pause_resume()
+        self.worker.submit.assert_called_with('pause', {'session_id':'test-session'})
+        self.tab.current['state'] = 'paused'
+        self.tab.pause_resume()
+        self.worker.submit.assert_called_with('resume', {'session_id':'test-session'})
+        self.tab.command('stop')
+        self.worker.submit.assert_called_with('stop', {'session_id':'test-session'})
 
-    def test_settings_toggle_opens_readable_side_panel(self):
-        tab = self.make_tab()
-        tab.btn_toggle_settings = FakeButton(checked=True)
-        tab.settings_scroll = FakePanel()
-        tab.body_splitter = FakeSplitter()
+    def test_incoming_transcript_preserves_unsaved_edit_and_base_revision(self):
+        s = snapshot()
+        self.tab.current = s
+        self.tab.render(s)
+        self.tab.text_area.setPlainText('使用者編輯')
+        updated = {**s, 'transcript':'辨識更新', 'revision':2}
+        self.tab.receive('sessions', [updated], {})
+        self.assertEqual(self.tab.text_area.toPlainText(), '使用者編輯')
+        self.assertEqual(self.tab.current['revision'], 1)
+        self.tab.save_editor_transcript()
+        self.worker.submit.assert_called_with('edit', {'session_id':'test-session','revision':1,'text':'使用者編輯'})
 
-        tab.toggle_settings()
+    def test_edit_ack_does_not_clear_newer_local_changes(self):
+        s = snapshot()
+        self.tab.current = s
+        self.tab.text_area.setPlainText('new edit')
+        self.tab.receive('edit', s, {'text':'old edit'})
+        self.assertTrue(self.tab.editor_edited)
 
-        self.assertEqual(tab.btn_toggle_settings.text, UI_TEXT.hide_advanced_settings)
-        self.assertTrue(tab.settings_scroll.visible)
-        self.assertEqual(tab.body_splitter.sizes, [180, 460, 590])
+    def test_recording_suffix_and_output_probe(self):
+        self.assertEqual(safe_recording_suffix('../../董事會 / Q3'), '董事會_Q3')
+        with tempfile.TemporaryDirectory() as root:
+            path = ensure_output_directory_writable(Path(root)/'custom')
+            self.assertEqual(list(path.iterdir()), [])
 
-    def test_runtime_log_toggle_controls_log_visibility(self):
-        tab = self.make_tab()
-        tab.btn_toggle_runtime_log = FakeButton(checked=True)
-        tab.runtime_log = FakePanel()
-
-        tab.toggle_runtime_log()
-
-        self.assertEqual(tab.btn_toggle_runtime_log.text, UI_TEXT.hide_runtime_log)
-        self.assertTrue(tab.runtime_log.visible)
-
-
-    def test_recording_button_uses_danger_state_while_recording(self):
-        tab = self.make_tab()
-        tab.btn_record = FakeButton()
-        tab.scheduled_recording_pending = False
-        tab.recorder_thread = object()
-
-        tab.update_record_button_label()
-
-        self.assertEqual(tab.btn_record.text, UI_TEXT.stop_recording)
-        self.assertEqual(tab.btn_record.properties["role"], "danger")
-
-    def test_recording_consent_is_explicit_for_each_session(self):
-        tab = self.make_tab()
-        tab.check_recording_consent = FakeButton(checked=False)
-
-        self.assertFalse(TranscriptionTab.recording_consent_confirmed(tab))
-
-        tab.check_recording_consent.checked = True
-        self.assertTrue(TranscriptionTab.recording_consent_confirmed(tab))
-
-    def test_recording_suffix_cannot_escape_the_session_folder(self):
-        self.assertEqual(
-            safe_recording_suffix("../../董事會 / Q3"),
-            "董事會_Q3",
-        )
-
-    def test_output_write_probe_leaves_no_artifact(self):
-        with tempfile.TemporaryDirectory() as tmpdir:
-            output = Path(tmpdir) / "custom"
-
-            resolved = ensure_output_directory_writable(output)
-
-            self.assertEqual(resolved, output.resolve())
-            self.assertEqual(list(output.iterdir()), [])
-
-    def test_editor_input_is_preserved_on_save(self):
-        tab = self.make_tab()
-        tab.settings = SimpleNamespace(chinese_punctuation_enabled=True)
-        tab.combo_lang = FakeCombo()
-
-        prepared = tab.prepare_transcript_input("[00:00:01] 志德灣和 iMBS 開會")
-
-        self.assertEqual(prepared.corrected_text, "[00:00:01] 志德灣和 iMBS 開會")
-
-
-if __name__ == "__main__":
-    unittest.main()
+    def test_editor_input_preserves_lexical_content(self):
+        self.assertEqual(self.tab.prepare_transcript_input('[00:00:01] 志德灣和 iMBS 開會').corrected_text,
+                         '[00:00:01] 志德灣和 iMBS 開會')

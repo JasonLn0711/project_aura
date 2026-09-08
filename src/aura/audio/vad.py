@@ -113,3 +113,18 @@ class SpeechIntervals:
 
     def finish(self) -> AudioChunk | None:
         return self._flush(True)
+
+
+def should_treat_frame_as_speech(
+    vad_is_speech: bool,
+    frame_rms_value: float,
+    has_active_segment: bool,
+    consecutive_vad_miss_frames: int,
+    energy_gate_rms: float,
+    max_energy_bridge_frames: int,
+) -> bool:
+    if vad_is_speech:
+        return True
+    if not has_active_segment or max_energy_bridge_frames <= 0:
+        return False
+    return consecutive_vad_miss_frames <= max_energy_bridge_frames and frame_rms_value >= energy_gate_rms

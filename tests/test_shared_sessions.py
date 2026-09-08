@@ -1,0 +1,220 @@
+import json
+import multiprocessing
+import os
+from pathlib import Path
+import tempfile
+import time
+import unittest
+from unittest.mock import patch
+
+from aura.session_core import SessionCore
+from aura.sdk import AuraClient
+
+
+def fake_inference(kind, payload):
+    if kind == "load":
+        return {"model": "test-double", "device": "test"}
+    if kind == "chunk":
+        return dict(text="測試逐字稿", start_sample=payload["start"], end_sample=payload["end"])
+    if kind == "export":
+        return {"path": payload["path"]}
+    return {"text": "精修版本", "segments": []}
+
+
+class Speech:
+    def is_speech(self, *args):
+        return True
+
+
+def test_server(root):
+    from aura.service import serve
+    with patch("aura.audio.vad.SileroStreamVAD", return_value=Speech()):
+        serve(root, core=SessionCore(root, executor=fake_inference))
+
+
+def wait_state(client, sid, state):
+    deadline = time.monotonic() + 10
+    while time.monotonic() < deadline:
+        s = client.request("get", {"session_id": sid})
+        if s["state"] == state:
+            return s
+        if s["state"] == "failed":
+            raise AssertionError(s["error"])
+        time.sleep(0.02)
+    raise AssertionError(f"Expected {state}, got {s['state']}")
+
+
+class SharedSessionTests(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.root = Path(self.tmp.name)
+        self.core = SessionCore(self.root, executor=fake_inference)
+
+    def tearDown(self):
+        self.core.close()
+        self.tmp.cleanup()
+
+    def test_shared_preferences_validate_and_survive_restart(self):
+        self.core.request("preferences.set", {"profile": "off", "hotwords": "AURA"})
+        with self.assertRaises(ValueError):
+            self.core.request("preferences.set", {"beam_size": 0})
+        self.core.close()
+        self.core = SessionCore(self.root, executor=fake_inference)
+        sid = self.record()
+        self.assertEqual(self.core.request("get", {"session_id": sid})["options"]["profile"], "off")
+
+    def record(self):
+        s = self.core.request("record", {"consent": True, "capture_location": "client", "options": {"audio_format": "wav"}})
+        wait_state(self.core, s["id"], "recording")
+        return s["id"]
+
+    def test_cross_client_pause_resume_stop_preserves_samples_and_edits(self):
+        sid = self.record()
+        self.core.request("producer.open", {"session_id": sid})
+        with patch("aura.audio.vad.SileroStreamVAD", return_value=Speech()):
+            for seq in range(4):
+                self.core.ingest(sid, seq, b"\x01\x00" * 480, ["mixed"])
+            self.core.request("pause", {"session_id": sid})
+            self.core.request("producer.paused", {"session_id": sid})
+            with self.assertRaisesRegex(ValueError, "not accepting audio"):
+                self.core.ingest(sid, 4, bytes(960), ["mixed"])
+            s = self.core.request("get", {"session_id": sid})
+            self.core.request("edit", dict(session_id=sid, revision=s["revision"], text="使用者的文字\n  保留空白"))
+            self.core.request("resume", {"session_id": sid})
+            self.core.ingest(sid, 4, bytes(960), ["mixed"])
+        self.core.request("stop", {"session_id": sid})
+        self.core.request("producer.stopped", {"session_id": sid})
+        s = wait_state(self.core, sid, "ready")
+        self.assertEqual(s["samples"], 2400)
+        self.assertEqual(s["transcript"], "使用者的文字\n  保留空白")
+        import wave
+        with wave.open(s["artifacts"]["wav"]) as f:
+            self.assertEqual(f.getnframes(), 2400)
+        self.assertNotIn("refined.txt", s["artifacts"])
+        self.core.request("refine", {"session_id": sid})
+        s = wait_state(self.core, sid, "ready")
+        self.assertEqual(s["transcript"], "使用者的文字\n  保留空白")
+        self.assertEqual(Path(s["artifacts"]["refined.txt"]).read_text(), "精修版本\n")
+        self.assertEqual(self.core.request("export", {"session_id": sid, "format": "refined"})["path"], s["artifacts"]["refined.txt"])
+
+    def test_request_replay_cannot_duplicate_recording_or_change_payload(self):
+        a = self.core.request("record", {"consent": True}, request_id="same")
+        b = self.core.request("record", {"consent": True}, request_id="same")
+        self.assertEqual(a, b)
+        with self.assertRaises(ValueError):
+            self.core.request("record", {"consent": False}, request_id="same")
+        self.assertEqual(len(self.core.request("sessions")), 1)
+
+    def test_stale_editor_revision_is_rejected(self):
+        sid = self.record()
+        self.core.request("edit", dict(session_id=sid, revision=0, text="first"))
+        with self.assertRaisesRegex(ValueError, "Transcript changed"):
+            self.core.request("edit", dict(session_id=sid, revision=0, text="overwrite"))
+
+    def test_consent_rescue_and_frame_validation(self):
+        with self.assertRaises(ValueError):
+            self.core.request("record")
+        with self.assertRaises(ValueError):
+            self.core.request("record", {"consent": True, "options": {"profile": "rescue-offline"}})
+        sid = self.record()
+        with self.assertRaises(ValueError):
+            self.core.ingest(sid, 0, b"broken", ["mixed"])
+        with self.assertRaises(ValueError):
+            self.core.ingest(sid, 1, bytes(960), ["mixed"])
+
+    def test_failed_disk_write_does_not_claim_saved_edit(self):
+        sid = self.record()
+        with patch.object(self.core, "_write_text", side_effect=OSError("disk full")):
+            with self.assertRaises(OSError):
+                self.core.request("edit", dict(session_id=sid, revision=0, text="important"))
+        self.assertEqual(self.core.request("get", {"session_id": sid})["revision"], 0)
+
+    def test_restart_retains_session_identity_and_recovery_status(self):
+        sid = self.record()
+        with patch("aura.audio.vad.SileroStreamVAD", return_value=Speech()):
+            self.core.ingest(sid, 0, bytes(960), ["mixed"])
+        self.core.close()
+        self.core = SessionCore(self.root, executor=fake_inference)
+        s = self.core.request("get", {"session_id": sid})
+        self.assertEqual(s["state"], "recoverable")
+        self.core.request("refine", {"session_id": sid})
+        wait_state(self.core, sid, "ready")
+
+
+class TransportTests(unittest.TestCase):
+    def test_real_transport_two_clients_audio_and_export(self):
+        with tempfile.TemporaryDirectory() as root:
+            process = multiprocessing.get_context("spawn").Process(target=test_server, args=(root,))
+            process.start()
+            try:
+                path = Path(root) / "connection.json"
+                for _ in range(150):
+                    if path.exists():
+                        break
+                    time.sleep(0.05)
+                connection = json.loads(path.read_text())
+                with AuraClient(connection) as gui, AuraClient(connection) as cli:
+                    s = gui.request("record", {"consent": True, "capture_location": "client", "options": {"audio_format": "wav"}})
+                    sid = s["id"]
+                    wait_state(cli, sid, "recording")
+                    gui.open_audio(sid, ["mixed"])
+                    gui.send_audio(sid, 0, bytes(960))
+                    cli.request("pause", {"session_id": sid})
+                    gui.request("producer.paused", {"session_id": sid})
+                    self.assertEqual(cli.request("get", {"session_id": sid})["state"], "paused")
+                    cli.request("stop", {"session_id": sid})
+                    gui.request("producer.stopped", {"session_id": sid})
+                    wait_state(cli, sid, "ready")
+                    target = Path(root) / "export.txt"
+                    cli.download(sid, "txt", target)
+                    self.assertIn("測試", target.read_text())
+                    with self.assertRaises(ValueError):
+                        cli.download(sid, "txt", target)
+                # Exercise the real detached producer control loop with a synthetic device.
+                import threading
+                import numpy as np
+                from aura.producer import capture
+                class Device:
+                    def read_tracks(self):
+                        time.sleep(.03)
+                        return {"mixed": np.ones(480, dtype=np.int16)}
+                    def close(self):
+                        pass
+                errors = []
+                with AuraClient(connection) as controller:
+                    sid = controller.request("record", {"consent": True, "capture_location": "client", "options": {"audio_format": "wav"}})["id"]
+                    wait_state(controller, sid, "recording")
+                    def run_capture():
+                        try:
+                            capture(sid)
+                        except Exception as exc:
+                            errors.append(exc)
+                    with patch("aura.producer.AuraClient", side_effect=lambda *a, **k: AuraClient(connection)), patch("aura.audio.inputs.open_audio_reader", return_value=Device()), patch.dict(os.environ, {"AURA_DATA_DIR": root}):
+                        thread = threading.Thread(target=run_capture, daemon=True)
+                        thread.start()
+                        for _ in range(100):
+                            if controller.request("get", {"session_id": sid})["samples"] >= 480:
+                                break
+                            time.sleep(.02)
+                        controller.request("pause", {"session_id": sid})
+                        paused = wait_state(controller, sid, "paused")
+                        self.assertGreater(paused["samples"], 0)
+                        time.sleep(.1)
+                        self.assertEqual(controller.request("get", {"session_id": sid})["samples"], paused["samples"])
+                        controller.request("resume", {"session_id": sid})
+                        time.sleep(.2)
+                        controller.request("stop", {"session_id": sid})
+                        wait_state(controller, sid, "ready")
+                        thread.join(5)
+                        self.assertFalse(thread.is_alive())
+                        self.assertEqual(errors, [])
+                from websockets.sync.client import connect
+                with self.assertRaises(Exception):
+                    connect(connection["url"], additional_headers={"Authorization": "Bearer wrong"}, proxy=None)
+            finally:
+                process.terminate()
+                process.join(10)
+                if process.is_alive():
+                    process.kill()
+                    process.join()
+                process.close()

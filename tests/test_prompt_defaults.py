@@ -17,8 +17,8 @@ class PromptDefaultTests(unittest.TestCase):
         thread = FileTranscriberThread(model=object(), file_path="input.wav")
 
         self.assertEqual(thread.initial_prompt, DEFAULT_PROMPT)
-        self.assertFalse(thread.enable_denoise)
-        self.assertEqual(thread.settings.denoise_preset, OFF_DENOISE_PRESET)
+        self.assertTrue(thread.enable_denoise)
+        self.assertEqual(thread.settings.denoise_preset, DEFAULT_ACTIVE_DENOISE_PRESET)
 
     def test_file_thread_maps_legacy_denoise_flag_to_light_preset(self):
         thread = FileTranscriberThread(model=object(), file_path="input.wav", enable_denoise=True)

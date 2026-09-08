@@ -1,4 +1,4 @@
-from aura.app import main
+from aura.cli import main
 
 
 if __name__ == "__main__":

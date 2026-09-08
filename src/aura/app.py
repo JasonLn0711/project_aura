@@ -144,22 +144,6 @@ QLineEdit:focus, QComboBox:focus, QSpinBox:focus,
 QTimeEdit:focus, QTextEdit:focus, QTableWidget:focus {
     border: 1px solid #48c7b8;
 }
-QTableWidget#transcriptArea {
-    font-size: 13px;
-    gridline-color: #24313d;
-    alternate-background-color: #121d26;
-}
-QTableWidget#transcriptArea::item {
-    padding: 8px;
-}
-QTableWidget#transcriptArea QHeaderView::section {
-    color: #b9c8d3;
-    background: #17222c;
-    border: 0;
-    border-bottom: 1px solid #324252;
-    padding: 8px;
-    font-weight: 700;
-}
 QTextEdit#runtimeLog {
     font-family: "Noto Sans Mono", "Consolas", monospace;
     color: #9bb8b4;
@@ -221,7 +205,7 @@ def main():
         level=logging.INFO,
         format="%(asctime)s %(levelname)s [%(name)s] %(message)s",
     )
-    app = QApplication(sys.argv)
+    app = QApplication([sys.argv[0]])
     apply_stylesheet(app, theme="dark_teal.xml")
     app.setFont(QFont("Noto Sans CJK TC", 10))
     app.setStyleSheet(app.styleSheet() + AURA_STYLE)

@@ -134,7 +134,7 @@ class FilePipelineTests(unittest.TestCase):
             ):
                 result = prepare_import_audio(
                     file_path=str(source),
-                    settings=FileTranscriptionSettings(target_dbfs=-20.0),
+                    settings=FileTranscriptionSettings(target_dbfs=-20.0, enable_denoise=False, denoise_preset="off"),
                     temp_path=target,
                     status_callback=statuses.append,
                 )

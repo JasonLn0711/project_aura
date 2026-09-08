@@ -26,7 +26,7 @@ class SettingsTests(unittest.TestCase):
         self.assertEqual(DEFAULT_SETTINGS.live_max_segment_len_sec, 12.0)
         self.assertEqual(DEFAULT_SETTINGS.live_energy_gate_rms, 1000.0)
         self.assertEqual(DEFAULT_SETTINGS.recording_audio_format, "m4a")
-        self.assertEqual(DEFAULT_SETTINGS.denoise_preset, "off")
+        self.assertEqual(DEFAULT_SETTINGS.denoise_preset, "light")
         self.assertFalse(DEFAULT_SETTINGS.speaker_diarization_enabled)
         self.assertEqual(DEFAULT_SETTINGS.speaker_min_speakers, 2)
         self.assertEqual(DEFAULT_SETTINGS.speaker_max_speakers, 6)
