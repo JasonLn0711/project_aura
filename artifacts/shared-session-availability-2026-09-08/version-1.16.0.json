@@ -1,0 +1,23 @@
+{
+  "version": "1.16.0",
+  "date": "2026-09-08",
+  "regression": {
+    "command": "make check",
+    "tests": 295,
+    "result": "passed"
+  },
+  "lock_check": "passed",
+  "cli_version": "AURA 1.16.0",
+  "gui_banner": "AURA v1.16.0",
+  "gui_render": "passed_persisted_public_session",
+  "package_build": "sdist_and_wheel_passed",
+  "readme_links_and_images": "passed",
+  "new_asr_runs": 0,
+  "windows_ci": "pending_native_validation",
+  "latest_published_release_tag": "v1.14.0",
+  "source_release_candidate": "v1.16.0",
+  "direct_recording": "passed_gui_cli_service_and_schedule",
+  "terminal_pty": "passed_synthetic_audio_and_asr",
+  "terminal_graphs": "actual_audio_level_and_job_counts",
+  "legacy_consent_argument": "accepted_ignored"
+}

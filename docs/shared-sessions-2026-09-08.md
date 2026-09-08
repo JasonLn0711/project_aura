@@ -1,4 +1,4 @@
-# Shared GUI, terminal, and SSH sessions
+# Shared GUI, terminal, and SSH sessions — v1.16.0
 
 AURA now runs one session service per operating-system account. The desktop and
 terminal use `aura.sdk.AuraClient` for the same sessions, settings, revision
@@ -6,14 +6,19 @@ checks, exports, and recording controls. Closing a client detaches it. An
 explicit Stop finalizes the recording. This implementation belongs to the
 Python `project_aura` repository.
 
+The GUI banner, window title, footer, CLI welcome, and `aura --version` share
+`aura.metadata.__version__`. The repository bump script synchronizes package,
+metadata, lockfile, README version, and release-candidate markers.
+
 ## Install and operate
 
 ```bash
 make setup-app
+uv run --no-sync aura --version
 uv run --no-sync aura                  # interactive terminal with slash commands
 uv run --no-sync aura gui              # desktop; project-aura is also supported
 uv run --no-sync aura sessions
-uv run --no-sync aura record --source microphone --consent --detach
+uv run --no-sync aura record --source microphone --detach
 uv run --no-sync aura attach SESSION_ID
 uv run --no-sync aura pause SESSION_ID
 uv run --no-sync aura resume SESSION_ID
@@ -28,11 +33,12 @@ Use `/help`, `/record`, `/sessions`, `/attach ID`, `/pause`, `/resume`, `/stop`,
 `/refine`, `/export`, `/transcribe`, `/schedule`, `/detach`, and `/quit` in the
 interactive terminal. Arguments follow the corresponding command's `--help`.
 The interface provides command completion and a transcript that updates above
-the prompt. It owns transcription operations; an LLM agent is a separate
+the prompt. `/status` prints the current state; `/graphs on|off` controls the
+compact audio and pending-work history. It owns transcription operations; an LLM agent is a separate
 product work package.
 
 `aura schedule --start-at 2026-10-01T09:00:00+08:00 --stop-at
-2026-10-01T10:00:00+08:00 --consent --source microphone` schedules capture on
+2026-10-01T10:00:00+08:00 --source microphone` schedules capture on
 the service host. The service must remain running. One active recording owns
 the inference slot; imported media queues serially.
 
@@ -56,6 +62,13 @@ Prepare the connecting computer (omit capture for a terminal-only client):
 uv sync --locked --extra cli --extra capture
 ```
 
+For direct SSH terminal use with server-side devices:
+
+```bash
+ssh -t jnclaw@SERVER_IP 'cd /home/jnclaw/every_on_git_jnclaw/project_aura && uv run --no-sync aura'
+```
+
+For client-side audio forwarding, the SDK invokes the server command by name.
 Make the host’s uv-installed `.venv/bin/aura` entry point available as `aura`
 in its SSH command environment. Verify with `ssh HOST command -v aura`.
 Configure a working
@@ -63,8 +76,8 @@ OpenSSH host alias with key authentication and a verified host key.
 
 ```bash
 uv run --no-sync aura --ssh gpu-host sessions
-uv run --no-sync aura --ssh gpu-host record --source microphone --capture-location server --consent
-uv run --no-sync aura --ssh gpu-host record --source microphone --capture-location client --consent
+uv run --no-sync aura --ssh gpu-host record --source microphone --capture-location server
+uv run --no-sync aura --ssh gpu-host record --source microphone --capture-location client
 uv run --no-sync aura --ssh gpu-host export SESSION_ID --format txt --output meeting.txt
 ```
 
@@ -173,7 +186,7 @@ also rendered the resulting persisted public transcript through the actual
 service. Regression tests use explicit test doubles for deterministic control
 and failure cases.
 
-The full regression suite passes 289 tests. A clean CLI-only installation
+The v1.16.0 full regression suite passes 295 tests. A clean CLI-only installation
 imports the SDK without Qt, PyAudio, NumPy, or model dependencies. The detached
 producer control loop passes with a synthetic device; this is a functional
 test distinct from physical microphone acceptance.
@@ -196,4 +209,42 @@ from a release tag or completion of the quality comparison.
 Source checkpoints: `4de00a4` owns the shared runtime and clients; `0cabed3`
 owns functional and review-gated study checks; `5aa5b13` owns the uv setup,
 CI and Windows launcher changes. Source publication uses remote `main`;
-`v1.15.0` remains a separately governed release candidate.
+`v1.16.0` remains a separately governed release candidate.
+
+## v1.16.0 validation and compatibility
+
+Version display uses runtime metadata in the GUI banner, title and footer, and
+in the CLI welcome and `--version`. The CLI version command exits before service
+connection. The version bump includes package metadata, lockfile, README and date.
+The [version receipt](../artifacts/shared-session-availability-2026-09-08/version-1.16.0.json)
+records current local checks; the earlier WAV/M4A receipts retain their original
+execution provenance. No new ASR inference is counted for this presentation update.
+
+Windows CI on the preceding source exposed open SQLite connections during
+atomic index replacement, locale-dependent test reads, and POSIX permission
+assertions. Explicit connection closure and UTF-8 reads address the first two;
+mode-bit assertions apply on POSIX, while Windows access remains governed by
+its account directory and ACLs. Native Windows validation runs in hosted CI.
+
+## Direct recording and terminal presentation
+
+Record and Schedule use the selected source immediately. The GUI checkbox and
+service confirmation gate have been removed. Old `--consent` flags and SDK
+fields remain accepted as ignored compatibility inputs. Device availability,
+source validation and explicit Stop retain their operating roles. Finish active
+recordings before restarting an older service process to load updated code.
+
+The scrolling terminal uses the existing prompt toolkit, AURA teal accents and
+an original pixel owl. The prompt remains usable while commands and transcript
+updates arrive. Audio level and pending-work graphs use actual session values,
+with client history bounded to 60 observations and refresh capped at four times
+per second. Captured-audio duration comes from source samples. Uploads show byte
+progress; downloads report transferred bytes; stopped-recording queues show
+completed versus total chunk jobs. Open-ended recording and unknown-duration
+jobs display state/activity rather than a percentage. Disconnects stop graph
+updates, narrow terminals collapse the display, and JSON stays decoration-free.
+
+`uv run --no-sync python scripts/check_terminal_pty.py` exercises owl/version,
+transcript arrival during partially typed input, graph toggling and clean exit
+with synthetic audio/ASR. Linux CI runs it separately from the regression suite.
+The command-line version remains available without starting the service.

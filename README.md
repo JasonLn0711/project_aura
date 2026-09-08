@@ -69,10 +69,10 @@ regression checks, platform packaging, and dated runtime evidence.
 | Field | Value |
 | --- | --- |
 | Project Name | Project AURA / Ultimate Audio Assistant |
-| Refactor Version | `1.15.0` |
+| Refactor Version | `1.16.0` |
 | Latest Published Tag | `v1.14.0` |
-| Next Release Candidate | `v1.15.0` |
-| Release State | Local transcription-focused changes under validation; published release identifiers below retain their existing values |
+| Next Release Candidate | `v1.16.0` |
+| Release State | Versioned shared-service source; physical-device, SSH and quality acceptance follow the documented gates |
 | Primary Platform | Ubuntu 22.04 / 24.04 desktop |
 | Python Runtime | Python 3.10+ |
 | ASR Model | `SoybeanMilk/faster-whisper-Breeze-ASR-25` |
@@ -86,7 +86,8 @@ regression checks, platform packaging, and dated runtime evidence.
 
 | Release | Contribution |
 | --- | --- |
-| `v1.15.0` candidate | Durable sessions, crash recovery, plain text editing, and local evidence search |
+| `v1.16.0` candidate | Shared GUI/CLI/SSH sessions, explicit refinement, Light profile, uv setup, and synchronized interface versions |
+| `v1.15.0` source checkpoint | Durable sessions, crash recovery, plain text editing, and local evidence search |
 | `v1.14.0` | Operator-focused workspace, content-free local audit events, runtime diagnostics, integrity checks, and synchronized version automation |
 | `v1.13.0` | Windows onboarding, portable packaging, RTX diagnostics, output policy, scheduling, and broader artifact visibility |
 | `v1.12.0` | Structured transcript artifacts, progress telemetry, audio-quality controls, and modular transcription services |
@@ -95,28 +96,25 @@ GitHub Releases owns the durable release chronology. The sections below
 describe the current product contract and link each capability to its
 canonical design or evidence source.
 
-## Latest Update — v1.15.0 (2026-07-23)
+## Latest Update — v1.16.0 (2026-09-08)
 
-The September 7 working-tree update focuses AURA on transcription. The release
-version and published tag remain separate from these local changes.
+AURA v1.16.0 gives the desktop and terminal one shared session service and SDK.
+The GUI banner, window title, footer, CLI startup banner and `aura --version`
+read the same runtime metadata; the package and lockfile carry that version.
 
-- Live capture uses stateful bundled Silero v6 with a visible WebRTC fallback.
-  Continuous chunks retain internal pauses, source sample positions, about
-  320 ms of pre-roll, and 800 ms of endpoint silence; the maximum is 12 seconds.
-- Mandarin punctuation runs on partially punctuated text and overlapping token
-  windows. Protected terms and lexical-content checks preserve transcript words.
-- A plain text editor replaces per-line verification. UTF-8 hotword import and
-  local persistence feed live, imported, and final ASR.
-- Stop saves a live snapshot; explicit refinement preserves a separate result. Edits made during
-  refinement remain in the editor; the refined result is saved separately.
-- Summary runtime, prompts, scripts, UI controls, and dedicated dependencies
-  have been removed. Historical session data and evidence remain available.
-- Export preserves editor text; automatic fuzzy glossary replacement is off.
-  Denoising remains off by default. FastEnhancer-B and DPDFNet2 are evaluation
-  candidates in the existing denoise harness.
+- GUI and CLI start recording directly and share pause, resume and stop controls.
+- The terminal adds an original pixel owl, a scrolling transcript, live audio and
+  queue graphs, and progress indicators based on available work totals.
+- SSH supports service-host capture and forwarding audio from the connecting computer.
+- Light denoise is the requested default; Off and far-speaker remain selectable.
+- Explicit refinement exports a separate result while preserving editor text.
+- uv manages setup, test and build environments through the checked-in lockfile.
+- Public-audio availability receipts establish the exercised CUDA path; physical
+  devices, second-host SSH and reviewed preprocessing quality retain separate gates.
 
-Implementation details, source comparisons, and validation scope:
-[`docs/transcription-front-end-2026-09-07.md`](docs/transcription-front-end-2026-09-07.md).
+[Setup, SSH, architecture and validation](docs/shared-sessions-2026-09-08.md)
+provide the operator route. The [September 7 checkpoint](docs/transcription-front-end-2026-09-07.md)
+preserves the earlier transcription work and decisions.
 
 ## Core Capabilities
 
@@ -249,7 +247,7 @@ evidence establish the value.
 2. Select a session or choose microphone, system audio, or both for a new recording.
 3. Open advanced settings for the audio profile, language, hotwords, scheduling,
    speaker labels, and shared GUI/CLI defaults.
-4. Confirm recording consent, then start recording or import media.
+4. Start recording or import media directly.
 5. Edit and save transcript text. Pause holds capture and queued recognition;
    the current inference completes safely.
 6. Stop to save accepted audio and text. Select Refine for an explicit second pass.
@@ -257,9 +255,9 @@ evidence establish the value.
 
 ### Settings and Runtime Diagnostics
 
-![AURA shared workspace displaying a public transcript from the session service](img/shared-workspace-2026-09-08.png)
+![AURA shared workspace displaying a public transcript from the session service](img/shared-workspace-v1.16.0.png)
 
-*Figure 2. The desktop displays a persisted public-audio session through the same SDK used by the terminal.*
+*Figure 2. The v1.16.0 desktop banner identifies the source version while displaying a persisted public-audio session through the shared SDK.*
 
 Advanced settings exposes a service capability check and shared defaults. The
 connection field accepts an SSH host alias; the capture-location selector
