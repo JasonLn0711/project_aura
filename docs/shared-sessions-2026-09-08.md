@@ -312,3 +312,7 @@ updates, and clean exit using synthetic audio and ASR. Session tests establish
 read-only reopening across paused, active, completed, failed, and recoverable
 states, while `unpause` exercises the existing service recording operation.
 The earlier public-audio receipts retain their original live inference counts.
+
+Hosted [Linux CI](https://github.com/JasonLn0711/project_aura/actions/runs/34222936459)
+and [Windows CI](https://github.com/JasonLn0711/project_aura/actions/runs/34222936393)
+passed for source `412bbc8`, including the Linux terminal interaction check.

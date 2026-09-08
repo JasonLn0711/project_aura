@@ -32,5 +32,11 @@
   "physical_capture": "separate_acceptance_gate",
   "second_host_ssh": "separate_acceptance_gate",
   "lab_pc_capture_failure": "awaiting_saved_error_for_device_specific_diagnosis",
-  "latest_published_release_tag": "v1.14.0"
+  "latest_published_release_tag": "v1.14.0",
+  "hosted_ci": {
+    "source_commit": "412bbc8256ee14cd2d3603a94e35b89b1ce9bf9f",
+    "linux": "https://github.com/JasonLn0711/project_aura/actions/runs/34222936459",
+    "windows": "https://github.com/JasonLn0711/project_aura/actions/runs/34222936393",
+    "result": "passed"
+  }
 }
