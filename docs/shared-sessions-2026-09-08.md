@@ -1,4 +1,4 @@
-# Shared GUI, terminal, and SSH sessions — v1.16.0
+# Shared GUI, terminal, and SSH sessions — v1.17.0
 
 AURA now runs one session service per operating-system account. The desktop and
 terminal use `aura.sdk.AuraClient` for the same sessions, settings, revision
@@ -21,7 +21,7 @@ uv run --no-sync aura sessions
 uv run --no-sync aura record --source microphone --detach
 uv run --no-sync aura attach SESSION_ID
 uv run --no-sync aura pause SESSION_ID
-uv run --no-sync aura resume SESSION_ID
+uv run --no-sync aura unpause SESSION_ID
 uv run --no-sync aura stop SESSION_ID
 uv run --no-sync aura refine SESSION_ID
 uv run --no-sync aura export SESSION_ID --format refined --output refined.txt
@@ -29,8 +29,8 @@ uv run --no-sync aura export SESSION_ID --format txt --output meeting.txt
 uv run --no-sync aura transcribe meeting.wav --profile light
 ```
 
-Use `/help`, `/record`, `/sessions`, `/attach ID`, `/pause`, `/resume`, `/stop`,
-`/refine`, `/export`, `/transcribe`, `/schedule`, `/detach`, and `/quit` in the
+Use `/help`, `/record`, `/sessions`, `/resume`, `/attach ID`, `/pause`, `/unpause`, `/stop`,
+`/inspect`, `/doctor`, `/refine`, `/export`, `/transcribe`, `/schedule`, `/detach`, and `/quit` in the
 interactive terminal. Arguments follow the corresponding command's `--help`.
 The interface provides command completion and a transcript that updates above
 the prompt. `/status` prints the current state; `/graphs on|off` controls the
@@ -47,6 +47,59 @@ libraries, NVIDIA drivers, and OpenSSH are installed through the operating
 system. Install uv before setup. Startup uses `--no-sync` so the chosen profile
 stays intact; update dependencies deliberately through `uv sync --locked` with
 the same extras. Stop active sessions and the service before changing its environment.
+
+## Resume history and diagnose sessions
+
+```bash
+uv run --no-sync aura resume --all       # searchable picker on this service
+uv run --no-sync aura resume --last      # most recently updated session
+uv run --no-sync aura resume SESSION_ID  # full UUID or unique UUID prefix
+uv run --no-sync aura inspect SESSION_ID
+uv run --no-sync aura doctor
+uv run --no-sync aura --ssh gpu-host resume --all
+uv run --no-sync aura --json resume --all
+uv run --no-sync aura --json inspect SESSION_ID
+```
+
+`resume` with no arguments opens the same picker as `resume --all`. History
+includes sessions created through the GUI, CLI, or SDK on the selected service.
+Each operating-system account and `AURA_DATA_DIR` owns its history; an SSH host
+selects that remote service. The current checkout folder does not filter history.
+The picker searches titles and IDs. Arrow keys move through a bounded list,
+Enter opens the selected workspace, and Escape cancels. Rows show session ID,
+state, last update, and title. Duplicate titles remain distinguishable by ID.
+UUID prefixes must resolve uniquely; ambiguous prefixes list matching full IDs.
+
+Reopening restores the saved transcript and follows new updates while retaining
+the session's recording state. Use `/unpause` to restart a paused recording.
+Completed, failed, and recoverable sessions open for inspection and available
+exports; fresh capture begins through `/record`. `/resume` and `/attach` switch
+workspaces, and `/quit` or `/detach` leave capture under explicit `/stop` control.
+`--last` selects the most recently updated session, with UUID as a stable tie
+breaker. Choose either an explicit ID or `--last`.
+
+**CLI migration from v1.16.0:** scripts that used `aura resume ID` to restart
+capture now use `aura unpause ID`. The SDK/service `resume` operation and GUI
+pause/resume button retain their recording behavior. `aura attach ID` retains
+its transcript-following behavior. Existing `sessions` API responses remain
+available; the new SDK requests summary rows for history navigation.
+
+The interactive workspace prints a saved error when it changes. `/status`
+includes that error; `/inspect [ID]` shows timestamps, capture source and location,
+work counts, and artifact paths. `/doctor` reports client and running-service
+versions, existing capabilities, and log locations. Older services report
+`unknown` version, and a mismatch is visible at startup. Diagnostics use the
+normal connection flow, including service startup when needed. Finish active
+recordings and jobs before restarting an older service to load updated code.
+The service's version is independent of the CLI's `aura --version` output.
+
+Global `--ssh` and `--json` options precede the command. JSON output contains
+session snapshots for explicit selections and summary arrays for picker modes.
+Redirected/noninteractive resume follows the same selection rules using plain
+output, so scripts receive data without an interactive picker. Diagnostics
+report connection and dependency metadata; physical device capture and model
+inference have their own validation paths. The lab PC's reported zero-audio
+failure can be inspected by its saved ID before selecting a device-specific fix.
 
 ## Remote operation
 
@@ -209,7 +262,7 @@ from a release tag or completion of the quality comparison.
 Source checkpoints: `4de00a4` owns the shared runtime and clients; `0cabed3`
 owns functional and review-gated study checks; `5aa5b13` owns the uv setup,
 CI and Windows launcher changes. Source publication uses remote `main`;
-`v1.16.0` remains a separately governed release candidate.
+`v1.17.0` remains a separately governed release candidate.
 
 ## v1.16.0 validation and compatibility
 
@@ -217,7 +270,7 @@ Version display uses runtime metadata in the GUI banner, title and footer, and
 in the CLI welcome and `--version`. The CLI version command exits before service
 connection. The version bump includes package metadata, lockfile, README and date.
 The [version receipt](../artifacts/shared-session-availability-2026-09-08/version-1.16.0.json)
-records current local checks; the earlier WAV/M4A receipts retain their original
+records the v1.16.0 checks; the earlier WAV/M4A receipts retain their original
 execution provenance. No new ASR inference is counted for this presentation update.
 
 Windows CI on the preceding source exposed open SQLite connections during
@@ -248,3 +301,14 @@ updates, narrow terminals collapse the display, and JSON stays decoration-free.
 transcript arrival during partially typed input, graph toggling and clean exit
 with synthetic audio/ASR. Linux CI runs it separately from the regression suite.
 The command-line version remains available without starting the service.
+
+## v1.17.0 validation
+
+The [v1.17.0 receipt](../artifacts/shared-session-availability-2026-09-08/version-1.17.0.json)
+records 302 passing regression tests, version/lock/link checks, and package
+builds. The Linux PTY check exercises title search, arrow selection, Escape
+cancellation, restored transcripts, saved failure reasons, typing during live
+updates, and clean exit using synthetic audio and ASR. Session tests establish
+read-only reopening across paused, active, completed, failed, and recoverable
+states, while `unpause` exercises the existing service recording operation.
+The earlier public-audio receipts retain their original live inference counts.

@@ -1,0 +1,36 @@
+{
+  "version": "1.17.0",
+  "date": "2026-09-08",
+  "regression": {
+    "command": "make check",
+    "tests": 302,
+    "result": "passed"
+  },
+  "terminal_pty": {
+    "command": "uv run --no-sync python scripts/check_terminal_pty.py",
+    "result": "passed",
+    "input": "synthetic_audio_and_asr",
+    "checks": [
+      "title_search",
+      "arrow_selection",
+      "escape_cancel",
+      "restored_transcript",
+      "failure_reason",
+      "typing_during_updates",
+      "clean_exit"
+    ]
+  },
+  "lock_check": "passed",
+  "package_build": "sdist_and_wheel_passed",
+  "readme_links_and_images": "passed",
+  "resume_semantics": "reopen_workspace_preserving_capture_state",
+  "recording_resume_command": "unpause",
+  "sdk_recording_resume_operation": "resume_unchanged",
+  "history_scope": "all_sessions_on_selected_service",
+  "diagnostics": "client_service_versions_capabilities_and_log_locations",
+  "new_asr_runs": 0,
+  "physical_capture": "separate_acceptance_gate",
+  "second_host_ssh": "separate_acceptance_gate",
+  "lab_pc_capture_failure": "awaiting_saved_error_for_device_specific_diagnosis",
+  "latest_published_release_tag": "v1.14.0"
+}
