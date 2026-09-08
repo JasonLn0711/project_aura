@@ -11,6 +11,18 @@ def safe_text(value):
     return ''.join(c for c in ANSI.sub('', str(value)) if c in '\n\t' or ord(c) >= 32 and ord(c) != 127)
 
 
+def clip_line(line, width):
+    from prompt_toolkit.utils import get_cwidth
+    text, cells = '', 0
+    for char in safe_text(line).replace('\n', ' ').replace('\t', ' '):
+        size = get_cwidth(char)
+        if cells + size > max(1, width - 1):
+            break
+        text += char
+        cells += size
+    return text
+
+
 def bar(done, total, width=16):
     fraction = min(1, max(0, done / total)) if total else 0
     filled = round(width * fraction)
@@ -72,25 +84,82 @@ class TerminalStatus:
             total = sum(work.values())
             if total:
                 lines.append(('class:accent', 'Transcription queue ' + bar(work['done'], total)))
+        if s.get('error'):
+            lines.append(('class:error', safe_text(s['error'])))
         if self.graphs and width >= 60:
             ceiling = max(1, max(self.queue, default=0))
             lines.append(('class:accent', 'Audio ' + graph(self.audio, 20) + '  Queue ' + graph([v / ceiling for v in self.queue], 20) + f' (0–{ceiling})'))
-        lines.append(('class:muted', '/pause · /resume · /stop · /detach · /graphs off'))
+        lines.append(('class:muted', '/unpause · /stop · /inspect · /detach' if state == 'paused' else
+                      '/pause · /stop · /inspect · /detach' if state == 'recording' else
+                      '/inspect · /export · /resume · /detach' if state in ('ready', 'failed', 'recoverable') else
+                      '/inspect · /detach · /graphs off'))
         return lines
 
     def toolbar(self, width):
-        from prompt_toolkit.utils import get_cwidth
         result = []
         for style, line in self.lines(width):
-            # Cell-aware truncation keeps Chinese text inside narrow terminals.
-            text, cells = '', 0
-            for char in safe_text(line).replace('\n', ' '):
-                size = get_cwidth(char)
-                if cells + size > max(1, width - 1):
-                    break
-                text += char
-                cells += size
             if result:
                 result.append(('', '\n'))
-            result.append((style, text))
+            result.append((style, clip_line(line, width)))
         return result
+
+
+def pick_session(rows):
+    """Search saved sessions in a bounded inline prompt, preserving scrollback."""
+    from prompt_toolkit import PromptSession
+    from prompt_toolkit.key_binding import KeyBindings
+    import shutil
+
+    if not rows:
+        print('No saved sessions. Use /record to start a session.')
+        return None
+    index = 0
+    bindings = KeyBindings()
+    prompt = None
+
+    def matches():
+        query = prompt.default_buffer.text.casefold()
+        return [row for row in rows if query in (row['title'] + ' ' + row['id']).casefold()]
+
+    @bindings.add('up')
+    def previous(event):
+        nonlocal index
+        index = max(0, index - 1)
+
+    @bindings.add('down')
+    def following(event):
+        nonlocal index
+        index = min(max(0, len(matches()) - 1), index + 1)
+
+    @bindings.add('enter')
+    def choose(event):
+        found = matches()
+        if found:
+            event.app.exit(result=found[min(index, len(found) - 1)]['id'])
+
+    @bindings.add('escape')
+    @bindings.add('c-c')
+    @bindings.add('c-d')
+    def cancel(event):
+        event.app.exit(result=None)
+
+    def changed(_):
+        nonlocal index
+        index = 0
+
+    def toolbar():
+        found = matches()
+        start = index // 8 * 8
+        lines = ['↑/↓ select · Enter reopen · Esc cancel · search title or ID']
+        for i, row in enumerate(found[start:start + 8], start):
+            lines.append(f'{">" if i == index else " "} {row["id"][:8]}  {row["state"]}  '
+                         f'{clip_line(row["title"], 25)}  {row.get("updated_at", row.get("created_at", ""))}')
+        lines.append(f'{len(found)} matching sessions')
+        width = shutil.get_terminal_size().columns
+        return '\n'.join(clip_line(line, width) for line in lines)
+
+    prompt = PromptSession(key_bindings=bindings, bottom_toolbar=toolbar)
+    prompt.app.ttimeoutlen = 0.05
+    prompt.app.timeoutlen = 0.3
+    prompt.default_buffer.on_text_changed += changed
+    return prompt.prompt('Find session> ')

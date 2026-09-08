@@ -9,6 +9,7 @@ import sqlite3
 import threading
 import uuid
 
+from aura.metadata import __version__
 from aura.audio.recording_session import RecordingSession, write_session_manifest
 
 PROFILES = {
@@ -183,9 +184,14 @@ class SessionCore:
             return values
         if command == "capabilities":
             import shutil
-            return dict(protocol=1, ffmpeg=bool(shutil.which("ffmpeg")), profiles=list(PROFILES), capture_format="s16le/16000/mono", single_owner=True,
+            return dict(protocol=1, service_version=__version__,
+                        diagnostics={"data_dir": str(self.root), "service_log": str(self.root / "service.log"),
+                                     "capture_log": str(self.root / "capture.log")}, ffmpeg=bool(shutil.which("ffmpeg")), profiles=list(PROFILES), capture_format="s16le/16000/mono", single_owner=True,
                         deepfilternet=bool(shutil.which("deep-filter")), clearvoice=bool(os.environ.get("AURA_CLEARVOICE_PYTHON")))
         if command == "sessions":
+            if args.get("summary"):
+                from aura.sdk import session_summary, session_order
+                return sorted((session_summary(s) for s in self.sessions.values()), key=session_order, reverse=True)
             return list(reversed(list(self.sessions.values())))
         if command == "get":
             s = self._get(args["session_id"])

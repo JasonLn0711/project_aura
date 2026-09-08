@@ -69,9 +69,9 @@ regression checks, platform packaging, and dated runtime evidence.
 | Field | Value |
 | --- | --- |
 | Project Name | Project AURA / Ultimate Audio Assistant |
-| Refactor Version | `1.16.0` |
+| Refactor Version | `1.17.0` |
 | Latest Published Tag | `v1.14.0` |
-| Next Release Candidate | `v1.16.0` |
+| Next Release Candidate | `v1.17.0` |
 | Release State | Versioned shared-service source; physical-device, SSH and quality acceptance follow the documented gates |
 | Primary Platform | Ubuntu 22.04 / 24.04 desktop |
 | Python Runtime | Python 3.10+ |
@@ -86,7 +86,8 @@ regression checks, platform packaging, and dated runtime evidence.
 
 | Release | Contribution |
 | --- | --- |
-| `v1.16.0` candidate | Shared GUI/CLI/SSH sessions, explicit refinement, Light profile, uv setup, and synchronized interface versions |
+| `v1.17.0` candidate | Searchable session history, workspace resume, capture unpause, and client/service diagnostics |
+| `v1.16.0` source checkpoint | Shared GUI/CLI/SSH sessions, explicit refinement, Light profile, uv setup, and synchronized interface versions |
 | `v1.15.0` source checkpoint | Durable sessions, crash recovery, plain text editing, and local evidence search |
 | `v1.14.0` | Operator-focused workspace, content-free local audit events, runtime diagnostics, integrity checks, and synchronized version automation |
 | `v1.13.0` | Windows onboarding, portable packaging, RTX diagnostics, output policy, scheduling, and broader artifact visibility |
@@ -96,13 +97,17 @@ GitHub Releases owns the durable release chronology. The sections below
 describe the current product contract and link each capability to its
 canonical design or evidence source.
 
-## Latest Update — v1.16.0 (2026-09-08)
+## Latest Update — v1.17.0 (2026-09-08)
 
-AURA v1.16.0 gives the desktop and terminal one shared session service and SDK.
+AURA v1.17.0 adds searchable session history and diagnostics to the shared
+desktop and terminal service. Reopen a workspace with `aura resume --all`,
+`aura resume --last`, or `aura resume SESSION_ID`.
 The GUI banner, window title, footer, CLI startup banner and `aura --version`
 read the same runtime metadata; the package and lockfile carry that version.
 
-- GUI and CLI start recording directly and share pause, resume and stop controls.
+- GUI and CLI start recording directly. CLI `resume` reopens a workspace;
+  `unpause` restarts paused capture. `inspect` shows saved failures and artifacts,
+  and `doctor` identifies the running service version and diagnostic locations.
 - The terminal adds an original pixel owl, a scrolling transcript, live audio and
   queue graphs, and progress indicators based on available work totals.
 - SSH supports service-host capture and forwarding audio from the connecting computer.

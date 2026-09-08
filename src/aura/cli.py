@@ -28,7 +28,13 @@ def parser():
     subs.add_parser("connection-info").add_argument("--json", action="store_true")
     subs.add_parser("sessions")
     subs.add_parser("capabilities")
-    for command in ("attach", "pause", "resume", "stop", "refine", "capture"):
+    subs.add_parser("doctor")
+    resume = subs.add_parser("resume", help="Reopen a saved workspace; audio capture stays unchanged",
+                             description="Reopen saved transcripts and controls. Use unpause to restart paused audio capture.")
+    resume.add_argument("session_id", nargs="?")
+    resume.add_argument("--all", action="store_true", help="Show all sessions on the selected service")
+    resume.add_argument("--last", action="store_true", help="Reopen the most recently updated session")
+    for command in ("attach", "inspect", "pause", "unpause", "stop", "refine", "capture"):
         sub = subs.add_parser(command)
         sub.add_argument("session_id")
     for command in ("record", "transcribe", "schedule"):
@@ -71,7 +77,7 @@ def show(value, machine=False):
         print(json.dumps(value, ensure_ascii=False), flush=True)
     elif isinstance(value, list):
         for s in value:
-            print(safe_text(f'{s["id"]}  {s["state"]:12} {s["title"]}'))
+            print(safe_text(f'{s["id"]}  {s["state"]:12} {s.get("updated_at", s.get("created_at", ""))}  {s["title"]}'))
     elif isinstance(value, dict) and "id" in value:
         print(safe_text(f'{value["id"]}  {value["state"]}  {value["title"]}'), flush=True)
         if value.get("error"):
@@ -101,8 +107,58 @@ def attach(client, sid, machine=False):
         return 0
 
 
+def inspect_session(session, machine=False):
+    if machine:
+        show(session, True)
+    else:
+        fields = ("id", "title", "state", "created_at", "updated_at", "source", "capture_location",
+                  "error", "work", "artifacts")
+        print(safe_text(json.dumps({k: session[k] for k in fields if k in session}, ensure_ascii=False, indent=2)))
+
+
+def diagnostics(client, host=None):
+    capabilities = client.request("capabilities")
+    service_version = capabilities.get("service_version")
+    return dict(client_version=__version__, service_version=service_version or "unknown",
+                connection="connected", host=host or client.ssh or "local service",
+                version_status="unknown" if not service_version else "matched" if service_version == __version__ else "mismatch",
+                capabilities={k: capabilities[k] for k in ("protocol", "ffmpeg", "profiles", "capture_format", "single_owner", "deepfilternet", "clearvoice") if k in capabilities},
+                diagnostics=capabilities.get("diagnostics", {}),
+                guidance="Finish active recordings and jobs before restarting an older service. Device capture requires its own check.")
+
+
+def resume_selection(client, args, *, terminal):
+    if args.session_id or args.last:
+        return client.resolve_session(args.session_id, last=args.last)
+    rows = client.session_summaries()
+    if not terminal or args.json:
+        show(rows, args.json)
+        return None
+    from aura.terminal import pick_session
+    sid = pick_session(rows)
+    return client.resolve_session(sid) if sid else None
+
+
 def execute(client, args, *, on_progress=None):
     command = args.command
+    if command == "sessions":
+        show(client.session_summaries(), args.json)
+        return 0
+    if command == "doctor":
+        result = diagnostics(client, args.ssh)
+        if args.json:
+            show(result, True)
+        else:
+            print(safe_text(json.dumps(result, ensure_ascii=False, indent=2)))
+        return 0
+    if command in ("inspect", "unpause", "attach"):
+        session = client.resolve_session(args.session_id)
+        args.session_id = session["id"]
+        if command == "inspect":
+            inspect_session(session, args.json)
+            return 0
+        if command == "unpause":
+            command = "resume"
     if command == "attach":
         return attach(client, args.session_id, args.json)
     if command == "export":
@@ -137,7 +193,7 @@ def execute(client, args, *, on_progress=None):
     return result if command in ("record", "transcribe") else 0
 
 
-def interactive(client, ssh=None):
+def interactive(client, ssh=None, initial=None):
     import queue
     import shutil
     from prompt_toolkit import PromptSession
@@ -145,19 +201,22 @@ def interactive(client, ssh=None):
     from prompt_toolkit.patch_stdout import patch_stdout
     from prompt_toolkit.styles import Style
     from aura.terminal import TerminalStatus, safe_text
-    commands = ["/record", "/schedule", "/sessions", "/attach", "/pause", "/resume", "/stop", "/refine", "/export", "/transcribe", "/status", "/graphs", "/detach", "/help", "/quit"]
+    commands = ["/record", "/schedule", "/sessions", "/attach", "/pause", "/resume", "/unpause", "/inspect", "/doctor", "/stop", "/refine", "/export", "/transcribe", "/status", "/graphs", "/detach", "/help", "/quit"]
     view = TerminalStatus()
     prompt = PromptSession(completer=WordCompleter(commands), complete_while_typing=False,
         bottom_toolbar=lambda: view.toolbar(shutil.get_terminal_size().columns), refresh_interval=.25,
         style=Style.from_dict({'accent': '#48c7b8', 'owl': '#e4b56b', 'muted': '#888888', 'error': '#ef7777'}))
-    selected = {"id": None, "text": "", "state": ""}
+    selected = {"id": None, "text": "", "state": "", "error": ""}
     done = threading.Event()
     pending = queue.Queue(maxsize=8)
     def select(sid):
-        selected.update(id=sid, text="", state="")
+        selected.update(id=sid, text="", state="", error="")
         view.session = None
         view.audio.clear()
         view.queue.clear()
+    if initial:
+        select(initial['id'])
+        view.update(initial)
     def follow():
         with AuraClient(connection=client.connection) as watcher:
             while not done.wait(.25):
@@ -172,6 +231,9 @@ def interactive(client, ssh=None):
                     if s['state'] != selected['state']:
                         print(safe_text(f'[{s["state"]}] {s["title"]} · {s["id"]}'))
                         selected['state'] = s['state']
+                    if s.get('error') and s['error'] != selected['error']:
+                        print(safe_text(f'AURA: {s["error"]}'))
+                    selected['error'] = s.get('error') or ''
                     if s['transcript'] != selected['text']:
                         text = s['transcript']
                         print(safe_text(text[len(selected['text']):] if text.startswith(selected['text']) else text))
@@ -196,9 +258,13 @@ def interactive(client, ssh=None):
                 finally:
                     view.transfer = None
                     pending.task_done()
+    report = diagnostics(client)
     print("  /\\_/\\    " + CLI_BANNER)
     print(" ( o.o )   Connected: " + safe_text(ssh or 'local service'))
-    print("  > ^ <    /help for commands · /record to start")
+    print("  > ^ <    /help · /record · /resume --all")
+    print(safe_text(f'Service version: {report["service_version"]} · {report["version_status"]}'))
+    if report['version_status'] != 'matched':
+        print(report['guidance'])
     with patch_stdout():
         threads = [threading.Thread(target=f, daemon=True) for f in (follow, operate)]
         for thread in threads:
@@ -214,7 +280,8 @@ def interactive(client, ssh=None):
                         break
                     if command == 'help':
                         print(' '.join(commands))
-                        print('/record --source microphone · /attach ID · /stop · /export ID --output meeting.txt')
+                        print('/resume [ID|--last|--all] reopens history · /unpause [ID] restarts paused capture')
+                        print('/record --source microphone · /inspect [ID] · /doctor · /stop · /export ID --output meeting.txt')
                         continue
                     if command == 'graphs':
                         if len(words) != 2 or words[1] not in ('on', 'off'):
@@ -227,20 +294,29 @@ def interactive(client, ssh=None):
                     if command == 'detach':
                         select(None)
                         continue
+                    if command == 'resume':
+                        args = parser().parse_args(['resume', *words[1:]])
+                        s = resume_selection(client, args, terminal=True)
+                        if s:
+                            select(s['id'])
+                            view.update(s)
+                        continue
                     if command == 'attach':
-                        s = client.request('get', {'session_id': words[1]})
+                        if len(words) != 2:
+                            raise ValueError('Use /attach SESSION_ID')
+                        s = client.resolve_session(words[1])
                         select(s['id'])
                         view.update(s)
                         continue
                     words[0] = command
-                    if command in ('pause', 'resume', 'stop', 'refine', 'export') and len(words) == 1:
+                    if command in ('pause', 'unpause', 'inspect', 'stop', 'refine', 'export') and len(words) == 1:
                         if not selected['id']:
                             raise ValueError('Attach a session first')
                         words.append(selected['id'])
                     if command in ('record', 'transcribe'):
                         words.append('--detach')
                     args = parser().parse_args(words)
-                    if args.command not in ('record', 'transcribe', 'schedule', 'sessions', 'pause', 'resume', 'stop', 'refine', 'export', 'capabilities'):
+                    if args.command not in ('record', 'transcribe', 'schedule', 'sessions', 'pause', 'unpause', 'inspect', 'doctor', 'stop', 'refine', 'export', 'capabilities'):
                         raise ValueError('Use /help for workspace commands')
                     args.ssh = ssh
                     pending.put_nowait(args)
@@ -291,6 +367,14 @@ def main(argv=None):
                     parser().print_help()
                     return 2
                 return interactive(client, args.ssh)
+            if args.command == "resume":
+                terminal = sys.stdin.isatty() and sys.stdout.isatty()
+                session = resume_selection(client, args, terminal=terminal)
+                if session:
+                    if terminal and not args.json:
+                        return interactive(client, args.ssh, initial=session)
+                    inspect_session(session, args.json)
+                return 0
             result = execute(client, args)
             return result if isinstance(result, int) else 0
     except (RuntimeError, ValueError, OSError, subprocess.SubprocessError) as exc:

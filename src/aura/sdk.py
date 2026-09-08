@@ -1,5 +1,6 @@
 """AURA's shared, Qt/CUDA-independent client API."""
 import json
+from datetime import datetime
 import os
 from pathlib import Path
 import socket
@@ -9,6 +10,21 @@ import sys
 import threading
 import time
 import uuid
+
+
+SUMMARY_FIELDS = ("id", "title", "state", "created_at", "updated_at", "source", "capture_location", "error")
+
+
+def session_summary(session):
+    return {key: session[key] for key in SUMMARY_FIELDS if key in session}
+
+
+def session_order(session):
+    try:
+        updated = datetime.fromisoformat(session.get("updated_at") or session.get("created_at") or "").timestamp()
+    except (TypeError, ValueError):
+        updated = 0
+    return updated, session["id"]
 
 
 def connection_file():
@@ -74,6 +90,32 @@ class AuraClient:
         self.audio_socket = None
         self.audio_session = None
         self.closed = False
+
+    def session_summaries(self):
+        # Older services may return full snapshots; project them at the SDK boundary too.
+        rows = self.request("sessions", {"summary": True})
+        return sorted((session_summary(row) for row in rows), key=session_order, reverse=True)
+
+    def resolve_session(self, selector=None, *, last=False):
+        if last and selector:
+            raise ValueError("Choose a session ID or --last")
+        if selector:
+            selector = selector.lower()
+            try:
+                canonical = str(uuid.UUID(selector))
+            except ValueError:
+                canonical = None
+            if canonical == selector:
+                return self.request("get", {"session_id": selector})
+            if any(c not in "0123456789abcdef-" for c in selector):
+                raise ValueError("Use a session UUID or unique UUID prefix; search titles in aura resume")
+        rows = self.session_summaries()
+        matches = rows[:1] if last else [row for row in rows if selector and row["id"].startswith(selector)]
+        if not matches:
+            raise ValueError("No saved sessions" if last else f"Unknown session: {selector}")
+        if len(matches) > 1:
+            raise ValueError("Ambiguous session prefix; choose an ID: " + ", ".join(row["id"] for row in matches))
+        return self.request("get", {"session_id": matches[0]["id"]})
 
     def _connect(self):
         from websockets.sync.client import connect

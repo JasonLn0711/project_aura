@@ -21,7 +21,7 @@ def main():
     sid=client.request('record',{'capture_location':'client','title':'Synthetic terminal check','options':{'audio_format':'wav'}})['id']
     wait_state(client,sid,'recording');client.open_audio(sid,['mixed'])
     master,slave=pty.openpty()
-    proc=subprocess.Popen([sys.executable,'-m','aura.cli'],stdin=slave,stdout=slave,stderr=slave,env={**os.environ,'AURA_DATA_DIR':root,'TERM':'xterm-256color','PROMPT_TOOLKIT_NO_CPR':'1'})
+    proc=subprocess.Popen([sys.executable,'-m','aura.cli','resume','--all'],stdin=slave,stdout=slave,stderr=slave,env={**os.environ,'AURA_DATA_DIR':root,'TERM':'xterm-256color','PROMPT_TOOLKIT_NO_CPR':'1'})
     data=bytearray()
     def read(seconds):
      end=time.monotonic()+seconds
@@ -29,17 +29,30 @@ def main():
       if select.select([master],[],[],.05)[0]:
        try:data.extend(os.read(master,65536))
        except OSError:break
-    read(.8);os.write(master,f'/attach {sid}\n'.encode());read(.5)
+    read(.8);os.write(master,b'Synthetic terminal check\r');read(.5)
     os.write(master,b'/gra')
     for seq in range(4):client.send_audio(sid,seq,b'\x00\x10'*480)
     client.request('stop',{'session_id':sid});client.request('producer.stopped',{'session_id':sid});wait_state(client,sid,'ready');read(.7)
-    os.write(master,b'phs off\n');read(.4);os.write(master,b'/status\n');read(.3);os.write(master,b'/quit\n');proc.wait(timeout=8);read(.1)
+    os.write(master,b'phs off\n');read(.4)
+    os.write(master,b'/resume\n');read(.3);os.write(master,b'\x1b');read(.8)
+    os.write(master,b'/status\n');read(.3)
+    failed=client.request('record',{'capture_location':'client','title':'Synthetic failure'})['id']
+    wait_state(client,failed,'recording')
+    client.request('capture.failed',{'session_id':failed,'error':'Synthetic capture device unavailable'})
+    os.write(master,f'/resume {failed[:8]}\n'.encode());read(.5)
+    os.write(master,b'/inspect\n');read(.4)
+    os.write(master,b'/resume --all\n');read(.4)
+    os.write(master,b'Synthetic');read(.2);os.write(master,b'\x1b[B');read(.2);os.write(master,b'\r');read(.4)
+    os.write(master,b'/quit\n');read(2);Path('/tmp/aura-terminal-pty.txt').write_text(data.decode('utf-8',errors='replace'));proc.wait(timeout=8);read(.1)
     text=data.decode('utf-8',errors='replace')
     assert f'AURA v{__version__}' in text and '測試逐字稿' in text,text[-2000:]
     assert 'unrecognized arguments' not in text and 'Use /graphs' not in text
+    assert 'Synthetic capture device unavailable' in text and 'Find session>' in text
+    assert 'Service version:' in text and 'matched' in text
+    assert text.count('測試逐字稿') >= 2, text[-3000:]
     assert proc.returncode==0
     Path('/tmp/aura-terminal-pty.txt').write_text(text)
-    print('PTY passed: owl/version, live transcript during partial command input, graphs toggle, status and exit; synthetic device/ASR.')
+    print('PTY passed: searchable resume picker, arrows, cancellation, saved transcript, visible failure, partial command input and clean exit; synthetic device/ASR.')
   finally:
    if proc and proc.poll() is None:proc.terminate();proc.wait()
    for fd in (master,slave):
