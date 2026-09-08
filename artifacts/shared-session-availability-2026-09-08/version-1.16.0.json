@@ -13,11 +13,17 @@
   "package_build": "sdist_and_wheel_passed",
   "readme_links_and_images": "passed",
   "new_asr_runs": 0,
-  "windows_ci": "pending_native_validation",
+  "windows_ci": "passed",
   "latest_published_release_tag": "v1.14.0",
   "source_release_candidate": "v1.16.0",
   "direct_recording": "passed_gui_cli_service_and_schedule",
   "terminal_pty": "passed_synthetic_audio_and_asr",
   "terminal_graphs": "actual_audio_level_and_job_counts",
-  "legacy_consent_argument": "accepted_ignored"
+  "legacy_consent_argument": "accepted_ignored",
+  "hosted_ci": {
+    "source_commit": "2078955",
+    "linux": "https://github.com/JasonLn0711/project_aura/actions/runs/34217275621",
+    "windows": "https://github.com/JasonLn0711/project_aura/actions/runs/34217275589",
+    "result": "passed"
+  }
 }
