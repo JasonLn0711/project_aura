@@ -33,15 +33,19 @@ jobs:
             portaudio19-dev \
             python3-dev
 
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.11.6"
+
       - name: Install package
         run: |
-          python -m pip install --upgrade pip
-          python -m pip install -e .
+          uv sync --python 3.12 --locked --extra cli --extra gui --extra capture --extra server --extra punctuation
 
       - name: Compile source
-        run: python -m compileall src tests
+        run: uv run --no-sync python -m compileall src tests
 
       - name: Run tests
         env:
           QT_QPA_PLATFORM: offscreen
-        run: PYTHONPATH=src python -m unittest discover -s tests
+        run: PYTHONPATH=src uv run --no-sync python -m unittest discover -s tests

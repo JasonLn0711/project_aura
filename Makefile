@@ -1,14 +1,14 @@
-PYTHON ?= python
+PYTHON ?= $(UV) run --no-sync python
 PYTHONPATH ?= src
 UV ?= uv
 
 .PHONY: setup-app setup-dev check test compile build bump-version clean
 
 setup-app:
-	$(UV) sync --extra punctuation --inexact
+	$(UV) sync --locked --extra cli --extra gui --extra capture --extra server --extra punctuation --inexact
 
 setup-dev:
-	$(UV) sync --all-extras
+	$(UV) sync --locked --all-extras
 
 check: compile test
 

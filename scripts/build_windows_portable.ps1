@@ -6,12 +6,6 @@ $DistRoot = Join-Path $RepoRoot "dist"
 $PortableRoot = Join-Path $DistRoot "aura-windows-portable"
 
 Set-Location $RepoRoot
-if (Test-Path ".\.venv\Scripts\python.exe") {
-    $Python = ".\.venv\Scripts\python.exe"
-} else {
-    $Python = "python"
-}
-
 $PyProjectText = Get-Content "pyproject.toml" -Raw
 if ($PyProjectText -notmatch '(?m)^version\s*=\s*"([^"]+)"') {
     throw "Could not read package version from pyproject.toml"
@@ -34,6 +28,7 @@ Copy-Item "Start-AURA.bat" $PortableRoot -Force
 Copy-Item "Check-AURA.ps1" $PortableRoot -Force
 Copy-Item "Check-AURA.bat" $PortableRoot -Force
 Copy-Item "pyproject.toml" (Join-Path $PortableRoot "app") -Force
+Copy-Item "uv.lock" (Join-Path $PortableRoot "app") -Force
 Copy-Item "README.md" (Join-Path $PortableRoot "app") -Force
 Copy-Item "LICENSE" (Join-Path $PortableRoot "app") -Force
 Copy-Item "src" (Join-Path $PortableRoot "app") -Recurse -Force
@@ -51,11 +46,11 @@ Copy-Item "scripts\run_aura_windows.ps1" (Join-Path $PortableRoot "scripts") -Fo
 
 Version: v$Version
 
-1. Install or update the NVIDIA driver.
+1. Install uv, FFmpeg, and the NVIDIA driver.
 2. Double-click Check-AURA.bat.
 3. Double-click Start-AURA.bat.
 
-Check-AURA.bat and Start-AURA.bat create .venv, install Project AURA dependencies,
+Check-AURA.bat and Start-AURA.bat use uv and the included lockfile to prepare .venv and Project AURA dependencies,
 write diagnostic_report.txt, run the RTX/CUDA smoke check, and keep failures visible.
 
 This portable folder is the supported Windows onboarding artifact before a full installer.
@@ -87,7 +82,7 @@ with wave.open(path, "wb") as wav_file:
         frames.extend(struct.pack("<h", value))
     wav_file.writeframes(bytes(frames))
 "@ | Set-Content -Encoding UTF8 $SampleGenerator
-& $Python $SampleGenerator $SamplePath
+& uv run --no-sync python $SampleGenerator $SamplePath
 Remove-Item $SampleGenerator -Force
 
 @"

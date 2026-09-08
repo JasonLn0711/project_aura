@@ -12,37 +12,12 @@ if (Test-Path (Join-Path $LaunchRoot "app\pyproject.toml")) {
 }
 $VenvRoot = Join-Path $LaunchRoot ".venv"
 $VenvPython = Join-Path $VenvRoot "Scripts\python.exe"
-$DependencyStamp = Join-Path $VenvRoot ".aura_deps_installed"
 $DiagnosticReport = Join-Path $LaunchRoot "diagnostic_report.txt"
 
 function Write-Step {
     param([string]$Message)
     Write-Host ""
     Write-Host "== $Message =="
-}
-
-function Resolve-Python311 {
-    if (Test-Path $VenvPython) {
-        return $VenvPython
-    }
-
-    $pyLauncher = Get-Command py -ErrorAction SilentlyContinue
-    if ($pyLauncher) {
-        & py -3.11 -c "import sys; raise SystemExit(0 if sys.version_info[:2] == (3, 11) else 1)" | Out-Null
-        if ($LASTEXITCODE -eq 0) {
-            return "py -3.11"
-        }
-    }
-
-    $python = Get-Command python -ErrorAction SilentlyContinue
-    if ($python) {
-        & python -c "import sys; raise SystemExit(0 if sys.version_info[:2] == (3, 11) else 1)" | Out-Null
-        if ($LASTEXITCODE -eq 0) {
-            return "python"
-        }
-    }
-
-    throw "Python 3.11 was not found. Install Python 3.11, then run Start-AURA again."
 }
 
 function Invoke-Python {
@@ -101,37 +76,16 @@ $ResolvedPython = ""
 try {
     Set-Location $AppRoot
 
-    Write-Step "Checking Python 3.11"
-    $ResolvedPython = Resolve-Python311
-    Write-Host "Python command: $ResolvedPython"
-
-    if (-not (Test-Path $VenvPython)) {
-        Write-Step "Creating virtual environment"
-        Invoke-Python $ResolvedPython @("-m", "venv", $VenvRoot)
+    Write-Step "Preparing the locked uv environment"
+    if (-not (Get-Command uv -ErrorAction SilentlyContinue)) {
+        throw "uv was not found. Install uv, then run Start-AURA again."
     }
-
+    $env:UV_PROJECT_ENVIRONMENT = $VenvRoot
+    & uv sync --python 3.11 --locked --inexact --extra cli --extra gui --extra capture --extra server --extra punctuation
+    if ($LASTEXITCODE -ne 0) {
+        throw "uv sync failed with exit code $LASTEXITCODE"
+    }
     $ResolvedPython = $VenvPython
-
-    Write-Step "Preparing pip"
-    Invoke-Python $ResolvedPython @("-m", "ensurepip", "--upgrade")
-    Invoke-Python $ResolvedPython @("-m", "pip", "install", "-U", "pip")
-
-    $pyproject = Join-Path $AppRoot "pyproject.toml"
-    $needsInstall = -not (Test-Path $DependencyStamp)
-    if ((Test-Path $pyproject) -and (Test-Path $DependencyStamp)) {
-        $needsInstall = (Get-Item $pyproject).LastWriteTimeUtc -gt (Get-Item $DependencyStamp).LastWriteTimeUtc
-    }
-    if (-not $needsInstall) {
-        & $ResolvedPython -c "import aura, torch, transformers" 2>$null
-        $needsInstall = $LASTEXITCODE -ne 0
-    }
-    if ($needsInstall) {
-        Write-Step "Installing Project AURA dependencies"
-        Invoke-Python $ResolvedPython @("-m", "pip", "install", "-e", ".[summary,punctuation]")
-        Set-Content -Encoding ASCII -Path $DependencyStamp -Value (Get-Date -Format o)
-    } else {
-        Write-Step "Dependencies already prepared"
-    }
 
     Write-Step "Checking FFmpeg"
     if (-not (Get-Command ffmpeg -ErrorAction SilentlyContinue)) {
@@ -168,7 +122,8 @@ try {
     }
 
     Write-Step "Starting Project AURA"
-    Invoke-Python $ResolvedPython @("-m", "aura")
+    & uv run --no-sync aura gui
+    if ($LASTEXITCODE -ne 0) { throw "AURA exited with code $LASTEXITCODE" }
 } catch {
     $message = $_.Exception.Message
     Write-Host ""

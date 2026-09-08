@@ -13,7 +13,7 @@ Kali 或 Docker。AURA 的 ASR 路徑維持 RTX/CUDA-only；CPU fallback 持續�
 - Windows 10/11 64-bit
 - NVIDIA RTX GPU
 - 最新 NVIDIA driver，且 `nvidia-smi` 可在 PowerShell 執行
-- Python 3.11
+- uv（管理 Python 3.11 與鎖定的相依套件）
 - FFmpeg 已加入 `PATH`
 - 可用的 microphone 或 audio input device
 
@@ -28,7 +28,7 @@ Kali 或 Docker。AURA 的 ASR 路徑維持 RTX/CUDA-only；CPU fallback 持續�
 
 `Check-AURA.bat` 和 `Start-AURA.bat` 會自動執行：
 
-- 檢查 Python 3.11
+- 透過 uv 準備 Python 3.11
 - 建立 `.venv`
 - 安裝 Project AURA dependencies
 - 檢查 FFmpeg / ffprobe
@@ -44,13 +44,10 @@ Kali 或 Docker。AURA 的 ASR 路徑維持 RTX/CUDA-only；CPU fallback 持續�
 在 repo root 開啟 PowerShell，仍可手動執行：
 
 ```powershell
-py -3.11 -m venv .venv
-.\.venv\Scripts\Activate.ps1
-pip install -U pip
-pip install -e ".[punctuation]"
+uv sync --python 3.11 --locked --extra cli --extra gui --extra capture --extra server --extra punctuation
 python scripts/runtime_report.py
 python scripts/windows_gpu_smoke.py
-python -m aura
+uv run --no-sync aura gui
 ```
 
 `windows_gpu_smoke.py` 會先檢查 `nvidia-smi`、Python imports、CUDA runtime DLL、cuBLAS、
