@@ -29,14 +29,16 @@ class UiStateTests(unittest.TestCase):
         self.tab.deleteLater()
         self.patch.stop()
 
-    def test_shared_workspace_uses_plain_editor_and_explicit_consent(self):
+    def test_shared_workspace_records_directly(self):
+        from aura.metadata import __version__
+        self.assertEqual(self.tab.version_banner.text(), f"AURA v{__version__}")
         self.assertIsInstance(self.tab.text_area, QPlainTextEdit)
-        self.assertFalse(self.tab.recording_consent_confirmed())
+        self.assertFalse(hasattr(self.tab, "check_recording_consent"))
         self.assertEqual(self.tab.profile.currentData(), 'light')
         self.tab.start_recording_session()
         command, args = self.worker.submit.call_args.args
         self.assertEqual(command, 'record')
-        self.assertFalse(args['consent'])
+        self.assertNotIn("consent", args)
         self.assertFalse(hasattr(self.tab, 'transcriber_thread'))
 
     def test_pause_and_stop_target_the_attached_session(self):

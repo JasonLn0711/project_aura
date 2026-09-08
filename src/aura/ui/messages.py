@@ -18,7 +18,7 @@ class UIStrings:
     tray_exit_program: str = "Exit Program"
     tray_message_title: str = "Comprehensive Audio Assistant"
     tray_message_body: str = "Program minimized to tray. Recording and transcription will continue in the background."
-    status_idle_gpu: str = "Status: Idle | GPU: Allocating..."
+    status_idle_gpu: str = "Session service manages recording and GPU work"
 
     status_waiting_gpu: str = "Status: Waiting for GPU initialization..."
     recording_suffix_placeholder: str = "Recording filename suffix"
@@ -132,10 +132,6 @@ class UIStrings:
         "Use Microphone when system audio is not exposed."
     )
     live_waveform_title: str = "Live Waveform"
-    recording_consent_label: str = "我已完成本場錄音告知與同意確認"
-    recording_consent_tooltip: str = "每場錄音開始前確認；錄音完成後會自動重設。"
-    recording_consent_title: str = "錄音同意確認"
-    recording_consent_required: str = "請先完成本場參與者的錄音告知與同意確認，再啟動錄音。"
     start_recording: str = "Start Recording"
     stop_recording: str = "Stop Recording"
     schedule_recording_button: str = "Schedule Recording"

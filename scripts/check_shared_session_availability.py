@@ -53,7 +53,7 @@ def main():
         connection = json.loads(connection_file.read_text())
         with AuraClient(connection) as gui, AuraClient(connection) as cli:
             receipt["health"] = cli.request("capabilities")
-            s = gui.request("record", dict(consent=True, title="Controlled availability audio", capture_location="client",
+            s = gui.request("record", dict(title="Controlled availability audio", capture_location="client",
                 source="microphone", options={"audio_format": args.audio_format, "punctuation": False}))
             sid = s["id"]
             s = wait(cli, sid, "recording")

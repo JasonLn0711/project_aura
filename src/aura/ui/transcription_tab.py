@@ -14,6 +14,7 @@ from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QFormLayout, QSp
     QPlainTextEdit, QListWidget, QListWidgetItem, QFileDialog, QMessageBox, QGroupBox,
     QDateTimeEdit)
 from PyQt6.QtCore import Qt, QDateTime
+from aura.metadata import __version__
 from aura.sdk import AuraClient
 from aura.ui.messages import UI_TEXT
 from aura.ui.transcript_io import prepare_transcript
@@ -89,6 +90,9 @@ class TranscriptionTab(QWidget):
         self.setObjectName("transcriptionWorkspace")
         layout = QVBoxLayout(self)
         header = QHBoxLayout()
+        self.version_banner = QLabel(f"AURA v{__version__}")
+        self.version_banner.setObjectName("workspaceStatus")
+        header.addWidget(self.version_banner)
         self.host = QLineEdit()
         self.host.setPlaceholderText("本機服務；輸入 SSH 主機別名可連線至遠端")
         connect = QPushButton("連線")
@@ -139,8 +143,6 @@ class TranscriptionTab(QWidget):
         for button in (self.btn_record, self.btn_pause, self.btn_stop, self.btn_import, self.btn_refine, self.btn_save, self.btn_export):
             actions.addWidget(button)
         main.addLayout(actions)
-        self.check_recording_consent = QCheckBox("我已確認本次錄音來源及參與者的錄音同意")
-        main.addWidget(self.check_recording_consent)
         self.session_status = QLabel("選取工作階段，或開始新錄音。暫停會同時停止收音與新的辨識工作。")
         self.session_status.setWordWrap(True)
         main.addWidget(self.session_status)
@@ -234,11 +236,11 @@ class TranscriptionTab(QWidget):
             self.show_error("請先儲存逐字稿編輯。")
             return
         self.submit("record", dict(title=self.name_input.text() or "Meeting", source=self.combo_source.currentData(),
-            capture_location=self.combo_location.currentData(), consent=self.check_recording_consent.isChecked(), options=self.options()))
+            capture_location=self.combo_location.currentData(), options=self.options()))
 
     def schedule_recording(self):
         self.submit("schedule", dict(title=self.name_input.text() or "Meeting", source=self.combo_source.currentData(),
-            capture_location="server", consent=self.check_recording_consent.isChecked(), options=self.options(),
+            capture_location="server", options=self.options(),
             start_at=self.schedule_start.dateTime().toPyDateTime().astimezone().isoformat(),
             stop_at=self.schedule_end.dateTime().toPyDateTime().astimezone().isoformat()))
 
@@ -342,7 +344,6 @@ class TranscriptionTab(QWidget):
             if not self.editor_edited:
                 self.current = result
                 self.render(result)
-            self.check_recording_consent.setChecked(False)
             if command == "record" and result["capture_location"] == "client":
                 from aura.cli import start_client_capture
                 start_client_capture(result["id"], self.host.text().strip() or None)
@@ -370,9 +371,6 @@ class TranscriptionTab(QWidget):
             path.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
             path.write_text(self.text_area.toPlainText(), encoding="utf-8")
         self.worker.stop()
-
-    def recording_consent_confirmed(self):
-        return self.check_recording_consent.isChecked()
 
     def prepare_transcript_input(self, text):
         return prepare_transcript(text, enable_punctuation=False, enable_glossary_correction=False)

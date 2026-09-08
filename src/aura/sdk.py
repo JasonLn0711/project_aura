@@ -130,18 +130,23 @@ class AuraClient:
         self.audio_socket.send(struct.pack("<Q", sequence) + pcm)
         return self._result(self.audio_socket)
 
-    def upload(self, path):
+    def upload(self, path, *, on_progress=None):
         path = Path(path)
         with self._connect() as ws, path.open("rb") as f:
             ws.send(json.dumps(dict(version=1, id=str(uuid.uuid4()), command="upload",
                 args={"name": path.name, "size": path.stat().st_size})))
             self._result(ws)
+            sent = 0
+            total = path.stat().st_size
             while block := f.read(1024 * 1024):
                 ws.send(block)
+                sent += len(block)
+                if on_progress:
+                    on_progress(sent, total)
             ws.send("end")
             return self._result(ws)["path"]
 
-    def download(self, session_id, fmt, destination):
+    def download(self, session_id, fmt, destination, *, on_progress=None):
         destination = Path(destination)
         if destination.exists():
             raise ValueError("Export destination already exists")
@@ -158,6 +163,8 @@ class AuraClient:
                             raise RuntimeError(result["error"])
                         break
                     f.write(block)
+                    if on_progress:
+                        on_progress(f.tell(), None)
                 f.flush()
                 os.fsync(f.fileno())
             # Exclusive destination creation also protects a concurrent export.

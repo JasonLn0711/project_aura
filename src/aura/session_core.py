@@ -190,11 +190,11 @@ class SessionCore:
         if command == "get":
             s = self._get(args["session_id"])
             s["backlog"] = self.db.execute("SELECT count(*) FROM jobs WHERE session=? AND state IN ('queued','running')", (s["id"],)).fetchone()[0]
+            counts = dict(self.db.execute("SELECT state,count(*) FROM jobs WHERE session=? AND kind='chunk' GROUP BY state", (s["id"],)).fetchall())
+            s["work"] = {k: counts.get(k, 0) for k in ("queued", "running", "done", "failed")}
             return s
         if command == "record":
             self._available()
-            if args.get("consent") is not True:
-                raise ValueError("Confirm recording consent before starting")
             if args.get("source", "system_microphone") not in ("microphone", "system", "system_microphone"):
                 raise ValueError("Unknown capture source")
             if args.get("capture_location", "server") not in ("server", "client"):
@@ -206,8 +206,8 @@ class SessionCore:
             self._job(s, "load", **{k: opts[k] for k in ("prompt", "hotwords")})
             return s
         if command == "schedule":
-            if args.get("consent") is not True or args.get("capture_location", "server") != "server":
-                raise ValueError("Scheduled recording requires confirmed consent and server-side capture")
+            if args.get("capture_location", "server") != "server":
+                raise ValueError("Scheduled recording requires server-side capture")
             start = datetime.datetime.fromisoformat(args["start_at"])
             end = datetime.datetime.fromisoformat(args["stop_at"])
             if start.tzinfo is None or end.tzinfo is None or start <= datetime.datetime.now(datetime.timezone.utc) or end <= start:
@@ -397,7 +397,9 @@ class SessionCore:
             from aura.audio.vad import should_treat_frame_as_speech
             policy = meeting_distance_policy_for(s["options"]["distance"])
             samples = np.frombuffer(data["mixed"], dtype="<i2")
-            speech = should_treat_frame_as_speech(speech, float(np.sqrt(np.mean(samples.astype(np.float32) ** 2))),
+            rms = float(np.sqrt(np.mean(samples.astype(np.float32) ** 2)))
+            s["audio_level"] = min(1.0, rms / 32768)
+            speech = should_treat_frame_as_speech(speech, rms,
                 intervals.active, stats["misses"], policy.live_energy_gate_rms, (policy.live_energy_bridge_ms + 29) // 30)
             chunk = intervals.push(samples, speech)
             s["samples"] += CHUNK_SIZE

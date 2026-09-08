@@ -49,3 +49,6 @@ jobs:
         env:
           QT_QPA_PLATFORM: offscreen
         run: PYTHONPATH=src uv run --no-sync python -m unittest discover -s tests
+
+      - name: Terminal interaction smoke
+        run: uv run --no-sync python scripts/check_terminal_pty.py

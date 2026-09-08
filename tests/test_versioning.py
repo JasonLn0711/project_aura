@@ -1,4 +1,6 @@
 import re
+import contextlib
+import io
 import unittest
 from pathlib import Path
 
@@ -11,6 +13,16 @@ SEMVER_PATTERN = re.compile(r"^\d+\.\d+\.\d+$")
 
 
 class VersioningTests(unittest.TestCase):
+    def test_cli_version_exits_before_connecting_and_matches_banner(self):
+        from aura.cli import parser, CLI_BANNER
+        output = io.StringIO()
+        with contextlib.redirect_stdout(output), self.assertRaises(SystemExit) as exit_result:
+            parser().parse_args(["--version"])
+        self.assertEqual(exit_result.exception.code, 0)
+        self.assertEqual(output.getvalue().strip(), f"AURA {__version__}")
+        self.assertIn(f"v{__version__}", CLI_BANNER)
+        self.assertIn(f"v{__version__}", UI_TEXT.window_title)
+
     def test_package_metadata_version_matches_runtime_metadata(self):
         pyproject_block = (
             (REPO_ROOT / "pyproject.toml")

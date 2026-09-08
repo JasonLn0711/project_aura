@@ -63,8 +63,16 @@ class SharedSessionTests(unittest.TestCase):
         sid = self.record()
         self.assertEqual(self.core.request("get", {"session_id": sid})["options"]["profile"], "off")
 
+    def test_schedule_without_confirmation_and_legacy_false_field(self):
+        import datetime
+        start = datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(days=1)
+        s = self.core.request("schedule", {"start_at": start.isoformat(), "stop_at": (start + datetime.timedelta(hours=1)).isoformat()})
+        self.assertEqual(s["state"], "scheduled")
+        s = self.core.request("record", {"consent": False, "capture_location": "client"})
+        self.assertEqual(s["state"], "starting")
+
     def record(self):
-        s = self.core.request("record", {"consent": True, "capture_location": "client", "options": {"audio_format": "wav"}})
+        s = self.core.request("record", {"capture_location": "client", "options": {"audio_format": "wav"}})
         wait_state(self.core, s["id"], "recording")
         return s["id"]
 
@@ -94,7 +102,7 @@ class SharedSessionTests(unittest.TestCase):
         self.core.request("refine", {"session_id": sid})
         s = wait_state(self.core, sid, "ready")
         self.assertEqual(s["transcript"], "使用者的文字\n  保留空白")
-        self.assertEqual(Path(s["artifacts"]["refined.txt"]).read_text(), "精修版本\n")
+        self.assertEqual(Path(s["artifacts"]["refined.txt"]).read_text(encoding="utf-8"), "精修版本\n")
         self.assertEqual(self.core.request("export", {"session_id": sid, "format": "refined"})["path"], s["artifacts"]["refined.txt"])
 
     def test_request_replay_cannot_duplicate_recording_or_change_payload(self):
@@ -111,11 +119,9 @@ class SharedSessionTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "Transcript changed"):
             self.core.request("edit", dict(session_id=sid, revision=0, text="overwrite"))
 
-    def test_consent_rescue_and_frame_validation(self):
+    def test_rescue_and_frame_validation(self):
         with self.assertRaises(ValueError):
-            self.core.request("record")
-        with self.assertRaises(ValueError):
-            self.core.request("record", {"consent": True, "options": {"profile": "rescue-offline"}})
+            self.core.request("record", {"options": {"profile": "rescue-offline"}})
         sid = self.record()
         with self.assertRaises(ValueError):
             self.core.ingest(sid, 0, b"broken", ["mixed"])
@@ -152,9 +158,9 @@ class TransportTests(unittest.TestCase):
                     if path.exists():
                         break
                     time.sleep(0.05)
-                connection = json.loads(path.read_text())
+                connection = json.loads(path.read_text(encoding="utf-8"))
                 with AuraClient(connection) as gui, AuraClient(connection) as cli:
-                    s = gui.request("record", {"consent": True, "capture_location": "client", "options": {"audio_format": "wav"}})
+                    s = gui.request("record", {"capture_location": "client", "options": {"audio_format": "wav"}})
                     sid = s["id"]
                     wait_state(cli, sid, "recording")
                     gui.open_audio(sid, ["mixed"])
@@ -166,8 +172,16 @@ class TransportTests(unittest.TestCase):
                     gui.request("producer.stopped", {"session_id": sid})
                     wait_state(cli, sid, "ready")
                     target = Path(root) / "export.txt"
-                    cli.download(sid, "txt", target)
-                    self.assertIn("測試", target.read_text())
+                    progress = []
+                    cli.download(sid, "txt", target, on_progress=lambda done,total: progress.append((done,total)))
+                    self.assertEqual(progress[-1], (target.stat().st_size, None))
+                    media = Path(root) / "upload.wav"
+                    media.write_bytes(bytes(44))
+                    uploaded = []
+                    remote = cli.upload(media, on_progress=lambda done,total: uploaded.append((done,total)))
+                    self.assertEqual(Path(remote).read_bytes(), media.read_bytes())
+                    self.assertEqual(uploaded[-1], (44,44))
+                    self.assertIn("測試", target.read_text(encoding="utf-8"))
                     with self.assertRaises(ValueError):
                         cli.download(sid, "txt", target)
                 # Exercise the real detached producer control loop with a synthetic device.
@@ -182,7 +196,7 @@ class TransportTests(unittest.TestCase):
                         pass
                 errors = []
                 with AuraClient(connection) as controller:
-                    sid = controller.request("record", {"consent": True, "capture_location": "client", "options": {"audio_format": "wav"}})["id"]
+                    sid = controller.request("record", {"capture_location": "client", "options": {"audio_format": "wav"}})["id"]
                     wait_state(controller, sid, "recording")
                     def run_capture():
                         try:
