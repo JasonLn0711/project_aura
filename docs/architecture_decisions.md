@@ -1,5 +1,13 @@
 # Architecture Decisions
 
+## Current shared-session architecture — 2026-09-08
+
+The active implementation is documented in [Shared sessions](shared-sessions-2026-09-08.md).
+The service owns sessions and one CUDA worker; GUI and CLI use the same SDK.
+Explicit refinement preserves edits. The following sections retain historical
+design provenance, including retired summary workflows.
+
+
 ## First-Principles Ownership Split
 
 Project AURA is a desktop audio application, but its core value is not the UI framework. Its core value is reliable audio capture, preparation, transcription, splitting, and export.

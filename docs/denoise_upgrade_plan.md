@@ -1,5 +1,14 @@
 # Denoise Upgrade Plan
 
+## Operating update — 2026-09-08
+
+The requested product default is Light; Off remains selectable. The current
+17-case corpus is present locally. Acoustic reference review and speech-boundary
+annotations activate the paired comparison. See [Shared sessions and audio
+profiles](shared-sessions-2026-09-08.md#audio-profiles-and-evidence). Earlier Off
+default and missing-corpus statements below describe the historical decision state.
+
+
 > September 7, 2026: See the [current transcription update](transcription-front-end-2026-09-07.md) for summary retirement, repaired punctuation, live VAD, and evaluation candidates. The dated evidence below retains its original scope.
 
 ## Decision

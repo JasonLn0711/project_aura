@@ -1,0 +1,32 @@
+{
+  "date": "2026-09-08",
+  "regression": {
+    "command": "make check",
+    "tests": 289,
+    "result": "passed"
+  },
+  "readme_links_and_images": "passed",
+  "versioning_tests": 4,
+  "clean_cli_install": "passed_without_qt_or_model_dependencies",
+  "desktop_service_render": "passed_public_persisted_transcript",
+  "producer_control": "passed_with_synthetic_device",
+  "physical_device_capture": "not_evaluated",
+  "ssh_second_host": "not_evaluated",
+  "preprocessing_study": "PREFLIGHT_ONLY",
+  "preprocessing_gate": "acoustic_reference_and_speech_boundary_review",
+  "publication": "recorded_before_source_publication",
+  "uv": {
+    "version": "0.11.6",
+    "lock_check": "passed",
+    "clean_client_sync": "passed",
+    "clean_desktop_sync": "passed",
+    "windows_runtime": "pending_hosted_ci",
+    "powershell_local_parser": "unavailable_pwsh_not_installed",
+    "clean_server_sync": "passed",
+    "clean_desktop_regression": {
+      "tests": 289,
+      "result": "passed"
+    },
+    "build": "sdist_and_wheel_passed"
+  }
+}

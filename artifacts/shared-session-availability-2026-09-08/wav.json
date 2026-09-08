@@ -1,0 +1,42 @@
+{
+  "validation_mode": "availability_validation",
+  "status": "LIVE_MINIMUM_COMPLETED",
+  "accuracy": "not_evaluated",
+  "latency": "not_evaluated",
+  "ground_truth_read": false,
+  "input_sha256": "4c396b26175096642276cc52e2daab62727eabf7f2ec3eb679fb8cd616aa8063",
+  "decoded_sha256": "700b3642c99f85ef7f9e57a194d0e564667ff08d0347d7916c6eb14c861867ed",
+  "health": {
+    "protocol": 1,
+    "profiles": [
+      "off",
+      "light",
+      "medium",
+      "far-speaker",
+      "rescue-offline"
+    ],
+    "capture_format": "s16le/16000/mono",
+    "single_owner": true,
+    "deepfilternet": false,
+    "clearvoice": false
+  },
+  "runtime": {
+    "model": "SoybeanMilk/faster-whisper-Breeze-ASR-25",
+    "device": "cuda",
+    "compute_type": "int8"
+  },
+  "source_samples": 35456,
+  "functional_result": "available_and_working",
+  "runtime_validity": "valid_target_runtime",
+  "sessions": 1,
+  "audio_files": 1,
+  "transcript_nonempty": true,
+  "shared_control": true,
+  "pause_resume": true,
+  "exports": true,
+  "session_id": "4e4bed78-eae9-40d1-8a12-56942a445a30",
+  "physical_microphone_acceptance": "not_evaluated",
+  "ssh_second_host": "not_evaluated",
+  "run_id": "RUN-20260908-01-shared-availability-r02",
+  "study_id": "STUDY-AURA-FRONTEND-001"
+}

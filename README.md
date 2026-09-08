@@ -59,7 +59,7 @@ editor, and local export into one recoverable workflow.
 AURA turns live audio and imported media into an editable transcript backed by
 preserved audio. The current flow is capture → Breeze ASR on RTX/CUDA →
 Mandarin punctuation → plain text editing → local export. Stopping a recording
-saves the live text first, then refines the full recording automatically.
+saves the live text and audio; full-recording refinement runs on explicit request.
 
 The repository owns the desktop application, reusable audio and ASR services,
 regression checks, platform packaging, and dated runtime evidence.
@@ -107,7 +107,7 @@ version and published tag remain separate from these local changes.
   windows. Protected terms and lexical-content checks preserve transcript words.
 - A plain text editor replaces per-line verification. UTF-8 hotword import and
   local persistence feed live, imported, and final ASR.
-- Stop saves a live snapshot before full-recording refinement. Edits made during
+- Stop saves a live snapshot; explicit refinement preserves a separate result. Edits made during
   refinement remain in the editor; the refined result is saved separately.
 - Summary runtime, prompts, scripts, UI controls, and dedicated dependencies
   have been removed. Historical session data and evidence remain available.
@@ -124,8 +124,8 @@ Implementation details, source comparisons, and validation scope:
 | --- | --- |
 | Live recording | Captures system audio, microphone audio, or a balanced mixed stream through PulseAudio/PipeWire sources |
 | Durable capture | Writes append-only PCM journals and atomic session state for recovery and final audio reconstruction |
-| Scheduled recording | Arms a wall-clock start time and an optional wall-clock stop time through the standard recording path |
-| Media import | Processes common FFmpeg audio and video containers through a visible, cancellable queue |
+| Scheduled recording | Persists a timezone-aware start and stop time for service-host capture |
+| Media import | Processes common FFmpeg audio and video containers through the shared serial queue |
 | GPU-only ASR | Runs Breeze ASR 25 through `faster-whisper` on the activated RTX/CUDA runtime |
 | Traditional Chinese punctuation | Restores punctuation during ASR, with protected terms and a visible rule fallback |
 | Hotwords | Saves a local editable vocabulary list and imports UTF-8 text; combined prompt and hotwords are validated before ASR |
@@ -136,7 +136,7 @@ Implementation details, source comparisons, and validation scope:
 | Meeting-distance modes | Offers `off`, `normal`, `far-speaker`, and `rescue-offline` policies with explicit activation paths |
 | Track Splitter | Finds natural pause points around a target duration and exports ordered media chunks |
 | Runtime Diagnostics | Reports GPU, CUDA, ASR model, FFmpeg, audio device, disk capacity, and output-path readiness |
-| First Launch Check | Presents readiness gates and direct setup actions in the desktop UI |
+| Service capability check | Reports available profiles, FFmpeg, and optional enhancement runners |
 | Local audit trail | Records content-free app and workflow events with redaction, retention, owner permissions, and hash-chain integrity |
 | Windows onboarding | Provides check/start wrappers, diagnostic reports, hosted CI, RTX smoke scripts, and portable release packaging |
 
@@ -175,7 +175,10 @@ project_aura/
 
 ### Module ownership
 
-- `src/aura/settings.py` owns inspectable runtime defaults.
+- `src/aura/session_core.py` owns shared sessions, persisted preferences, and the job queue.
+- `src/aura/sdk.py` provides the common GUI, CLI, and SSH API.
+- `src/aura/session_runtime.py` owns the single CUDA inference subprocess.
+- `src/aura/settings.py` retains inspectable defaults for existing utilities.
 - `src/aura/asr/` owns file and live transcription behavior.
 - `src/aura/audio/` owns source discovery, capture, mixing, denoise, export,
   recording durability, and media splitting.
@@ -242,35 +245,30 @@ evidence establish the value.
 
 ### Transcription workspace
 
-1. Open **Settings** and select capture source, output location, language,
-   optional speaker labels, and audio preparation settings.
-2. Run **First Launch Check** for GPU, CUDA, FFmpeg, audio and storage readiness.
-3. Enter hotwords one per line or import a UTF-8 `.txt` list. The list persists
-   locally through Qt settings. Shorten it if the combined prompt/hotword budget
-   exceeds 200 tokenizer tokens.
-4. Complete recording consent, then start recording or import media.
-5. Read and edit the transcript in the plain text editor.
-6. Stop recording to save live text and start full-recording refinement.
-   Concurrent edits remain in place and refined text receives a separate file.
-7. Save the editor text and open the output folder to inspect session artifacts.
+1. Run `aura gui` or `project-aura`. The shared service starts locally.
+2. Select a session or choose microphone, system audio, or both for a new recording.
+3. Open advanced settings for the audio profile, language, hotwords, scheduling,
+   speaker labels, and shared GUI/CLI defaults.
+4. Confirm recording consent, then start recording or import media.
+5. Edit and save transcript text. Pause holds capture and queued recognition;
+   the current inference completes safely.
+6. Stop to save accepted audio and text. Select Refine for an explicit second pass.
+7. Export text, JSON, or WAV. Attach from `aura` to control the same session.
 
 ### Settings and Runtime Diagnostics
 
-![Project AURA Settings panel with audio, scheduling, summary, output, model, and diagnostics controls](./img/advanced-settings-v1.14.0.png)
+![AURA shared workspace displaying a public transcript from the session service](img/shared-workspace-2026-09-08.png)
 
-*Figure 2. Historical v1.14.0 settings layout shows operator controls; current settings add persistent hotwords and remove summary controls.*
+*Figure 2. The desktop displays a persisted public-audio session through the same SDK used by the terminal.*
 
-Runtime Diagnostics reports:
+Advanced settings exposes a service capability check and shared defaults. The
+connection field accepts an SSH host alias; the capture-location selector
+chooses the service host or this computer. The runtime log displays service
+errors and command results. Full platform diagnostics remain available through
+the repository diagnostic scripts.
 
-- GPU identity and CUDA runtime readiness;
-- ASR model load state and compute type;
-- FFmpeg availability;
-- input and output audio devices;
-- selected output path and available disk capacity;
-- speaker-diarization token readiness when that feature is selected.
-
-The First Launch Check pairs each activation gate with focused setup guidance,
-report copy, setup-folder access, and retry actions.
+For slash commands, server installation, SSH forwarding, recovery, and the
+validation scope, see [Shared sessions](docs/shared-sessions-2026-09-08.md).
 
 ### Track Splitter
 
@@ -311,26 +309,23 @@ Traditional Chinese punctuation path:
 
 ```bash
 make setup-app
-uv run aura
+uv run --no-sync aura gui
 ```
 
 `pyproject.toml` and `uv.lock` form the dependency contract for local setup,
 CI, and release builds.
 
-### Pip environment
+### Direct uv setup
 
 ```bash
-python3 -m venv .venv
-source .venv/bin/activate
-python -m pip install --upgrade pip
-python -m pip install -e ".[punctuation]"
-aura
+uv sync --locked --extra cli --extra gui --extra capture --extra server --extra punctuation
+uv run --no-sync aura gui
 ```
 
 The package exposes three entry points:
 
-- `aura`
-- `project-aura`
+- `aura`: interactive terminal; `aura gui`: desktop
+- `project-aura`: desktop
 - `aura-evidence`
 
 ### Complete development environment
@@ -350,7 +345,7 @@ installations and user model files are left under their owner's control.
 ### Speaker diarization
 
 ```bash
-python -m pip install -e ".[diarization]"
+uv sync --locked --extra cli --extra gui --extra capture --extra server --extra punctuation --extra diarization
 export HUGGINGFACE_TOKEN=hf_your_token_here
 ```
 
@@ -376,8 +371,8 @@ local secret environment.
 | Live maximum segment | `12.0 seconds` |
 | Live energy gate | `1000.0 RMS` |
 | Recording delivery format | `M4A / AAC-LC 96k` |
-| Meeting distance mode | `off` |
-| Denoise preset | `off` |
+| Meeting distance mode | `normal` through the Light profile |
+| Denoise preset | `light` |
 | Speaker diarization | Operator-activated; imported media; `2-6` speakers |
 | Traditional Chinese punctuation | Active |
 | Splitter target | `40 minutes` |
@@ -472,7 +467,9 @@ Historical reports remain dated evidence of the former implementation.
 
 ### Denoise and meeting-distance modes
 
-The desktop UI offers four meeting-distance policies:
+The shared audio profiles combine denoise and meeting-distance settings. Light
+is the requested default, with Off retained for direct input. The underlying
+meeting-distance policies are:
 
 - `off`: direct capture and preparation;
 - `normal`: lightweight meeting-room preparation;
@@ -486,7 +483,8 @@ adaptive FFT and hop sizes. Silent buffers remain intact. DeepFilterNet3 and
 ClearVoice stay in separate environments so the primary NumPy 2 application
 contract remains stable.
 
-Promotion of a new default begins with a fixed, reference-backed far-field
+Light is a user-selected operating default. Promotion of a different backend
+begins with a fixed, acoustically reviewed far-field
 corpus and measured transcript quality. See
 [`docs/denoise_upgrade_plan.md`](docs/denoise_upgrade_plan.md).
 
@@ -521,53 +519,23 @@ MP3 exports reuse the source bitrate when the media metadata provides it.
 
 ### Output location policy
 
-Settings provides three output policies:
-
-- **Same folder as source/recording** keeps artifacts beside the selected
-  source or recording package.
-- **Project outputs/transcripts folder** stores artifacts under
-  `outputs/transcripts/`.
-- **Custom folder** sends session artifacts to an operator-selected location.
+The shared service stores sessions under `AURA_DATA_DIR` (default
+`~/.local/share/project-aura`). Export copies artifacts to a selected local
+destination, including downloads from an SSH host. Each session UUID owns its
+journal, text revisions, and artifact locators.
 
 ### Canonical session package
 
-A completed workflow can contain a canonical session directory:
+`session.json` preserves the meeting identity and source audio locators.
+`live.txt`, `transcript.txt`, and explicit `refined.txt` preserve live, edited,
+and refined output. `prepared_transcript.json` and `segments.json` retain the
+local evidence-search contract. Raw PCM journals preserve selected source tracks;
+WAV is the source artifact and M4A is the default delivery format.
 
-```text
-{base}_session/
-├── session.json
-├── .capture/
-│   ├── mixed.pcm
-│   ├── system.pcm
-│   └── microphone.pcm
-├── {recording}.wav
-├── {recording}_system.wav
-├── {recording}_microphone.wav
-├── prepared_transcript.json
-└── segments.json
-```
-
-*Figure 5. The session package preserves source audio and machine transcript segments under one meeting identity.*
-
-Operator-facing transcript and telemetry artifacts remain beside the session
-directory under the selected output policy:
-
-```text
-{base}_raw.txt
-{base}_corrected.txt
-{base}_final.txt
-{base}_correction_log.json
-{base}_processing_metrics.json
-{base}_event_log.json
-{base}_runtime.log
-{base}_live.txt       # recording snapshot before refinement
-{base}_refined.txt    # refinement when concurrent edits exist
-```
-
-*Figure 6. Transcript and telemetry files preserve live, edited, and separately refined outputs for inspection.*
-
-The exact set reflects the selected capture sources and activated processing
-features. `session.json` records the authoritative artifact locators.
+The [shared-session data layout](docs/shared-sessions-2026-09-08.md#data-and-recovery)
+documents service state, uploads, private connection credentials, capture recovery
+spools, and unsent editor drafts. Historical session packages remain readable by
+the evidence tools.
 
 ### Evidence search commands
 
@@ -585,6 +553,12 @@ connections.
 ## Validation and Evidence
 
 ### Current evidence summary
+
+The [2026-09-08 shared-service packet](artifacts/shared-session-availability-2026-09-08/)
+records two successful public-audio CUDA availability checks, with shared
+controls and WAV/M4A export. Quality and latency are `not_evaluated`; the paired
+denoise/VAD study awaits acoustic reference review. See the
+[implementation and validation scope](docs/shared-sessions-2026-09-08.md).
 
 | Evidence layer | Result |
 | --- | --- |
@@ -788,7 +762,7 @@ The complete release contract is documented in
 - Run `nvidia-smi`.
 - Run `python scripts/runtime_report.py`.
 - Confirm CUDA, cuBLAS, cuDNN, `ctranslate2`, and `faster-whisper` readiness.
-- Refresh the environment with `uv sync` after dependency updates.
+- Refresh the desktop environment with `make setup-app` after dependency updates.
 
 ### Audio source discovery
 
