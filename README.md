@@ -75,8 +75,8 @@ regression checks, platform packaging, and dated runtime evidence.
 | Release State | Versioned shared-service source; physical-device, SSH and quality acceptance follow the documented gates |
 | Primary Platform | Ubuntu 22.04 / 24.04 desktop |
 | Python Runtime | Python 3.10+ |
-| ASR Model | `SoybeanMilk/faster-whisper-Breeze-ASR-25` |
-| ASR Runtime | NVIDIA RTX/CUDA with `int8` compute |
+| ASR Model | Breeze by default; optional English `nvidia/parakeet-tdt-0.6b-v2` |
+| ASR Runtime | NVIDIA RTX/CUDA: Breeze `int8`; optional Linux Parakeet FP32 |
 | Transcript Editor | Plain text with persistent local hotword hints |
 | Desktop UI | PyQt6 |
 | Project Lead | Jason Chia-Sheng Lin, National Yang Ming Chiao Tung University |
@@ -86,7 +86,8 @@ regression checks, platform packaging, and dated runtime evidence.
 
 | Release | Contribution |
 | --- | --- |
-| `v1.17.0` candidate | Searchable session history, workspace resume, capture unpause, and client/service diagnostics |
+| `v1.18.0` candidate | Optional Parakeet, model lifecycle controls, contextual Tab completion, gap recovery, and user FAQ |
+| `v1.17.0` source checkpoint | Searchable session history, workspace resume, capture unpause, and client/service diagnostics |
 | `v1.16.0` source checkpoint | Shared GUI/CLI/SSH sessions, explicit refinement, Light profile, uv setup, and synchronized interface versions |
 | `v1.15.0` source checkpoint | Durable sessions, crash recovery, plain text editing, and local evidence search |
 | `v1.14.0` | Operator-focused workspace, content-free local audit events, runtime diagnostics, integrity checks, and synchronized version automation |
@@ -99,27 +100,30 @@ canonical design or evidence source.
 
 ## Latest Update — v1.18.0 (2026-09-09)
 
-AURA v1.17.0 adds searchable session history and diagnostics to the shared
-desktop and terminal service. Reopen a workspace with `aura resume --all`,
-`aura resume --last`, or `aura resume SESSION_ID`.
-The GUI banner, window title, footer, CLI startup banner and `aura --version`
-read the same runtime metadata; the package and lockfile carry that version.
+AURA v1.18.0 adds optional English Parakeet v2, explicit model loading and
+unloading, contextual Tab completion, and recovery of saved transcription gaps.
+The package, lockfile, GUI and CLI share the synchronized runtime version.
 
-- GUI and CLI start recording directly. CLI `resume` reopens a workspace;
-  `unpause` restarts paused capture. `inspect` shows saved failures and artifacts,
-  and `doctor` identifies the running service version and diagnostic locations.
-- The terminal adds an original pixel owl, a scrolling transcript, live audio and
-  queue graphs, and progress indicators based on available work totals.
-- SSH supports service-host capture and forwarding audio from the connecting computer.
-- Light denoise is the requested default; Off and far-speaker remain selectable.
-- Explicit refinement exports a separate result while preserving editor text.
-- uv manages setup, test and build environments through the checked-in lockfile.
-- Public-audio availability receipts establish the exercised CUDA path; physical
-  devices, second-host SSH and reviewed preprocessing quality retain separate gates.
+- `/model` shows actual load state; model selection preloads explicitly while
+  new sessions retain their own model settings.
+- Tab completes commands, model names, options and local paths; Enter executes.
+- Live Parakeet uses capture sample coordinates. Recoverable output errors leave
+  visible gaps while capture continues; fatal failures preserve the first cause.
+- `/recover` retries saved gaps once per request, preserves manual edits, and
+  exports recovered machine text separately.
+- The recovery checkpoint passed 321 regression tests and a synthetic Linux PTY
+  check. Two real recovery jobs preserved 54 earlier segments and produced 56
+  total segments with no remaining queued or failed jobs. This is functional
+  evidence; accuracy, latency and framework comparisons remain unevaluated.
+- The [FAQ](#faq) covers CLI naming, startup, models, recovery, remote microphones,
+  Tailscale and transport limitations. Cross-computer live acceptance remains a
+  separate gate.
 
-[Setup, SSH, architecture and validation](docs/shared-sessions-2026-09-08.md)
-provide the operator route. The [September 7 checkpoint](docs/transcription-front-end-2026-09-07.md)
-preserves the earlier transcription work and decisions.
+[Operator guide](docs/shared-sessions-2026-09-08.md),
+[inference decisions](docs/asr-inference-decision-2026-09-09.md), and
+[recovery evidence](artifacts/asr-recovery-2026-09-09/README.md) preserve the detailed
+contracts. This source version is prepared for release; the published-tag marker
+changes only when the corresponding tag is published.
 
 ## Core Capabilities
 
@@ -846,7 +850,9 @@ The complete release contract is documented in
 - Close other GPU-intensive applications before long recordings.
 - Use Runtime Diagnostics to review device state and model readiness.
 - The shared service closes its inference subprocess when idle and before
-  switching models, releasing that process's CUDA allocations.
+  switching models, releasing that process's CUDA allocations. Explicitly
+  preloaded models stay resident until `/model unload`, a different-model job,
+  or service shutdown.
 
 ### CUDA activation
 
@@ -891,10 +897,133 @@ Keep the runtime log for the exact dependency or model-access error.
 - Review processing metrics for normalization stages, elapsed time, and export
   paths.
 
+### FAQ
+
+#### How do I start the CLI, and what does `uv run --no-sync aura` mean?
+
+Run this command from the repository directory:
+
+```bash
+uv run --no-sync aura
+```
+
+`uv` manages the Python project environment; `run` executes its `aura` entrypoint.
+`--no-sync` uses installed dependencies without synchronizing them first. It does
+not freeze source code. Reopen the client after source updates; install newly
+required dependencies deliberately. Use `/doctor` to check client/service versions,
+and restart an older backend only after active work finishes.
+
+#### How do I name a session and complete commands?
+
+```text
+/record --title "English meeting" --model parakeet-tdt-0.6b-v2
+/transcribe recording.wav --title "Interview"
+```
+
+`--title` names a new session; quote names containing spaces. The default is
+`Meeting`. Existing-session renaming is not currently exposed by the CLI.
+Press Tab after `/mo`, `/model para`, or `/record --mo` to complete the command,
+model or option. Press Tab again to cycle matches; Enter executes.
+
+#### Why is ASR unloaded, and how do I switch models?
+
+Entering the CLI does not allocate GPU memory. Recording and transcription load
+the selected model automatically. Use these commands for explicit control:
+
+```text
+/model
+/model parakeet-tdt-0.6b-v2
+/model breeze
+/model load
+/model unload
+```
+
+A successful selection becomes the shared default for new sessions. Existing
+sessions retain their model snapshot. Explicit preloads remain resident across
+idle periods and CLI disconnects; unload explicitly when finished. Parakeet v2
+is English-only and requires the optional Linux CUDA runtime and downloaded
+checkpoint described in [the setup instructions](#optional-english-asr-parakeet-v2).
+
+#### Why can a 0.6B model use several GB of GPU memory?
+
+0.6B means approximately 600 million parameters. FP32 weights alone are roughly
+2.4 GB in decimal units; buffers, activations, CUDA workspaces and allocator
+reservations add to that. AURA currently uses FP32 for Parakeet. FP16/BF16 and
+ONNX alternatives are candidates, not verified improvements for this application.
+See [memory accounting and precision decisions](docs/asr-inference-decision-2026-09-09.md#memory-and-precision-interpretation).
+
+#### What should I do after a transcription gap or failed session?
+
+Use `/inspect` to read the original cause and saved artifacts. After stopping,
+`/recover` retries failed and queued recording chunks once; `/resume` only reopens
+a workspace. The GUI provides a recovery button. Human edits remain unchanged;
+export recovered machine text separately:
+
+```text
+/recover
+/export SESSION_ID --format recovered --output recovered.txt
+/export SESSION_ID --format wav --output recording.wav
+```
+
+Known output errors allow recording to continue with a visible gap count. Runtime,
+storage and unknown failures stop work. See [recovery behavior and limitations](docs/shared-sessions-2026-09-08.md#recover-transcription-gaps).
+
+#### Can another computer send its microphone audio to this GPU backend?
+
+Yes. Install the CLI and capture extras on the recording computer:
+
+```bash
+uv sync --locked --extra cli --extra capture
+uv run --no-sync aura --ssh USER@GPU_HOST
+```
+
+Then enter:
+
+```text
+/record --title "Remote meeting" --source microphone --capture-location client --model parakeet-tdt-0.6b-v2
+```
+
+`client` selects the recording computer's microphone. The default `server` selects
+backend devices. The client needs Python, uv, SSH, audio-device dependencies and
+local storage, but no GUI, CUDA or ASR weights. The GPU host needs the full backend.
+Use SSH key authentication; `ssh -o BatchMode=yes USER@GPU_HOST 'command -v aura'`
+must succeed. Audio is saved locally and forwarded to the backend; the CLI receives
+updated text. Follow the [remote setup guide](docs/shared-sessions-2026-09-08.md#remote-operation).
+
+#### Is free Tailscale enough, and is live audio UDP or TCP?
+
+Tailscale Personal supports a personal two-computer setup; check the
+[current plan and eligibility](https://tailscale.com/pricing). Use ordinary
+OpenSSH over the Tailscale address. AURA sends WebSocket audio through an SSH TCP
+tunnel. A direct Tailscale connection normally carries that traffic over WireGuard
+UDP; DERP relay uses a different outer transport. AURA itself remains TCP-based.
+See [Tailscale connection types](https://tailscale.com/docs/reference/connection-types).
+
+Each uncompressed 16 kHz, 16-bit mono track carries about 256 kbps before protocol
+overhead. However, the current sender waits for a reply after every 30-ms frame.
+A sustained network round trip plus server handling time above that frame duration
+can accumulate upload lag even when bandwidth is sufficient. A paid plan does not
+remove this application-level limitation. Check `tailscale ping GPU_HOST` and
+`tailscale status`; direct connectivity is preferable to relay for performance.
+See [Tailscale troubleshooting](https://tailscale.com/docs/reference/troubleshooting/poor-performance-tailnet).
+
+Audio is forwarded continuously, while ASR text is produced in VAD-delimited
+chunks rather than token-by-token. Bounded pipelining/batched acknowledgements,
+WAN reconnect behavior and two-host sustained capture require their own validation;
+they are not delivered by this version bump.
+
+#### Should I install AURA with npm or pnpm?
+
+This repository is a Python/uv application, with `pyproject.toml` and `uv.lock`.
+It has no Node package installation to migrate. A similarly named Node/Electron
+project needs its own repository-specific instructions.
+
 ## Documentation Map
 
 | Document | Purpose |
 | --- | --- |
+| [`docs/shared-sessions-2026-09-08.md`](docs/shared-sessions-2026-09-08.md) | Shared service, remote capture, CLI operations, and gap recovery |
+| [`docs/asr-inference-decision-2026-09-09.md`](docs/asr-inference-decision-2026-09-09.md) | Model/precision decisions, memory interpretation, and optimization gates |
 | [`docs/architecture_decisions.md`](docs/architecture_decisions.md) | Module ownership, GPU execution, session identity, evidence, output, and platform decisions |
 | [`docs/aura-llm-agent-product-strategy.md`](docs/aura-llm-agent-product-strategy.md) | Historical product strategy; summary implementation retired September 7 |
 | [`docs/audit-event-system-design.md`](docs/audit-event-system-design.md) | Audit schema, privacy, integrity, retention, analysis, and operator controls |
