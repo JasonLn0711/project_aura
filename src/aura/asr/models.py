@@ -51,6 +51,10 @@ def download_model(key):
         raise RuntimeError(INSTALL_GUIDANCE) from exc
 
 
+class ASROutputError(RuntimeError):
+    """A model output cannot be used; durable audio remains available for retry."""
+
+
 class ParakeetModel:
     """Adapt NeMo timestamps to AURA's existing segment contract."""
 
@@ -74,6 +78,17 @@ class ParakeetModel:
         self.model.change_subsampling_conv_chunking_factor(1)
 
     def transcribe(self, audio, **kwargs):
+        output, duration = self._infer(audio, True, **kwargs)
+        return parakeet_segments(output, duration), SimpleNamespace(language="en")
+
+    def transcribe_chunk(self, audio, **kwargs):
+        output, _ = self._infer(audio, False, **kwargs)
+        text = output if isinstance(output, str) else getattr(output, "text", None)
+        if not isinstance(text, str):
+            raise ASROutputError("Parakeet returned a non-text hypothesis")
+        return text
+
+    def _infer(self, audio, timestamps, **kwargs):
         import numpy as np
         import soundfile as sf
         import torch
@@ -87,27 +102,37 @@ class ParakeetModel:
         if audio.ndim != 1 or not np.isfinite(audio).all():
             raise ValueError("Parakeet input must be finite mono audio")
         if not len(audio):
-            return [], SimpleNamespace(language="en")
+            return SimpleNamespace(text="", timestamp={}), 0
+        # NeMo 3.0 folds timestamps=False into None; change the retained decoder
+        # setting explicitly when alternating file and live inference.
+        if self.model.cfg.decoding.get("compute_timestamps") is not timestamps:
+            from omegaconf import open_dict
+            with open_dict(self.model.cfg.decoding):
+                self.model.cfg.decoding.compute_timestamps = timestamps
+            self.model.change_decoding_strategy(self.model.cfg.decoding, verbose=False)
         with torch.inference_mode():
             outputs = self.model.transcribe([audio], batch_size=1, num_workers=0,
-                                           timestamps=True, return_hypotheses=True, verbose=False)
-        if len(outputs) != 1:
-            raise RuntimeError("Parakeet returned an unexpected hypothesis count")
-        return parakeet_segments(outputs[0], len(audio) / 16000), SimpleNamespace(language="en")
+                                           timestamps=timestamps, return_hypotheses=True, verbose=False)
+        if not isinstance(outputs, (list, tuple)) or len(outputs) != 1:
+            raise ASROutputError("Parakeet returned an unexpected hypothesis count")
+        return outputs[0], len(audio) / 16000
 
 
 def parakeet_segments(hypothesis, duration):
     from aura.diarization.speaker_assignment import TranscriptSegment
     stamps = (getattr(hypothesis, "timestamp", None) or {}).get("segment", [])
     if str(getattr(hypothesis, "text", "")).strip() and not stamps:
-        raise RuntimeError("Parakeet returned text without segment timestamps")
+        raise ASROutputError("Parakeet returned text without segment timestamps")
     segments = []
     for stamp in stamps:
-        start, end = float(stamp["start"]), float(stamp["end"])
+        try:
+            start, end = float(stamp["start"]), float(stamp["end"])
+        except (KeyError, TypeError, ValueError) as exc:
+            raise ASROutputError("Parakeet returned malformed segment timestamps") from exc
         if not (math.isfinite(start) and math.isfinite(end) and 0 <= start <= end <= duration + .1):
-            raise RuntimeError("Parakeet returned invalid segment timestamps")
+            raise ASROutputError(f"Parakeet returned invalid segment timestamps: start={start}, end={end}, duration={duration}")
         if segments and start < segments[-1].start:
-            raise RuntimeError("Parakeet returned unordered segment timestamps")
+            raise ASROutputError("Parakeet returned unordered segment timestamps")
         segments.append(TranscriptSegment(min(start, duration), min(end, duration), str(stamp["segment"])))
     return segments
 

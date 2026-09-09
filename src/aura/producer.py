@@ -81,12 +81,22 @@ def capture(session_id, ssh=None):
             if shared["error"]:
                 raise shared["error"]
             while sent < shared["frames"]:
+                if shared["state"] in ("failed", "ready", "recoverable"):
+                    break
                 parts = []
                 for track in shared["tracks"]:
                     with (directory / ".capture" / f"{track}.pcm").open("rb") as f:
                         f.seek(sent * CHUNK_SIZE * 2)
                         parts.append(f.read(CHUNK_SIZE * 2))
-                response = client.send_audio(session_id, sequence, b"".join(parts))
+                try:
+                    response = client.send_audio(session_id, sequence, b"".join(parts))
+                except RuntimeError:
+                    current = control.request("get", {"session_id": session_id})
+                    if current["state"] not in ("failed", "ready", "recoverable"):
+                        raise
+                    shared["state"] = current["state"]
+                    source_stop.set()
+                    break
                 sequence = response["input_sequence"]
                 sent += 1
             state = shared["state"]

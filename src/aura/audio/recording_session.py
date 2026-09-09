@@ -115,7 +115,7 @@ def discover_recoverable_sessions(root: str | Path) -> list[Path]:
     return candidates
 
 
-def recover_recording_session(manifest_path: str | Path) -> dict[str, Path]:
+def recover_recording_session(manifest_path: str | Path, *, keep_pcm: bool = False) -> dict[str, Path]:
     manifest_path = Path(manifest_path)
     manifest = _load_manifest(manifest_path)
     original_status = manifest["status"]
@@ -130,6 +130,7 @@ def recover_recording_session(manifest_path: str | Path) -> dict[str, Path]:
         recovered_tracks = audio_tracks
     else:
         recovered_tracks = session.finalize(
+            keep_pcm=keep_pcm,
             capture_error=(
                 InterruptedError(
                     f"Recovered audio from interrupted {original_status} session"
@@ -296,6 +297,7 @@ class RecordingSession:
         self,
         *,
         trim_trailing_frames: int = 0,
+        keep_pcm: bool = False,
         frame_samples: int = 0,
         capture_error: Exception | None = None,
     ) -> dict[str, Path]:
@@ -368,6 +370,9 @@ class RecordingSession:
         except Exception as exc:
             self._record_failure(exc)
             raise
+
+        if keep_pcm:
+            return audio_tracks
 
         for relative_path in tuple(self.manifest["pcm_journals"].values()):
             try:

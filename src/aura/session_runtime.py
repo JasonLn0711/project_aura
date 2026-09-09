@@ -49,14 +49,25 @@ def execute(kind, payload):
         result = transcribe_file(_model, payload["path"], settings, "session")
         return {"text": "\n".join(result.lines), "segments": [asdict(s) for s in result.segments], "runtime": runtime}
     start, end = payload["start"], payload["end"]
-    with open(payload["path"], "rb") as f:
-        f.seek(start * 2)
-        raw = f.read((end - start) * 2)
+    if Path(payload["path"]).suffix.lower() == ".wav":
+        import wave
+        with wave.open(payload["path"], "rb") as f:
+            if (f.getnchannels(), f.getsampwidth(), f.getframerate()) != (1, 2, SAMPLE_RATE):
+                raise ValueError("Recovery audio must be mono 16-bit PCM at 16 kHz")
+            f.setpos(start)
+            raw = f.readframes(end - start)
+    else:
+        with open(payload["path"], "rb") as f:
+            f.seek(start * 2)
+            raw = f.read((end - start) * 2)
     if len(raw) != (end - start) * 2:
         raise RuntimeError("The durable audio interval is incomplete")
     samples = np.frombuffer(raw, dtype="<i2").astype(np.float32) / 32768
     samples = reduce_noise_safely(samples, SAMPLE_RATE, options["denoise"])
     samples = apply_live_segment_agc(samples, meeting_distance_policy_for(options["distance"]))
+    if key == PARAKEET:
+        text = _model.transcribe_chunk(samples, language=options["language"])
+        return {"text": text, "start_sample": start, "end_sample": end, "runtime": runtime}
     segments, info = _model.transcribe(samples, **build_transcribe_kwargs(
         beam_size=options["beam_size"], language=options["language"],
         initial_prompt=options["prompt"], hotwords=options["hotwords"], condition_on_previous_text=False))

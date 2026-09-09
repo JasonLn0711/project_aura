@@ -221,7 +221,7 @@ class SessionCore:
         if command == "capabilities":
             import shutil
             from aura.asr.models import capabilities
-            return dict(model_control=True, asr_models=capabilities(), protocol=1, service_version=__version__,
+            return dict(model_control=True, recover=True, asr_models=capabilities(), protocol=1, service_version=__version__,
                         diagnostics={"data_dir": str(self.root), "service_log": str(self.root / "service.log"),
                                      "capture_log": str(self.root / "capture.log")}, ffmpeg=bool(shutil.which("ffmpeg")), profiles=list(PROFILES), capture_format="s16le/16000/mono", single_owner=True,
                         deepfilternet=bool(shutil.which("deep-filter")), clearvoice=bool(os.environ.get("AURA_CLEARVOICE_PYTHON")))
@@ -276,7 +276,12 @@ class SessionCore:
         s = self._get(args["session_id"])
         if command == "capture.failed":
             self._flush(s)
-            s.update(state="failed", error=str(args.get("error", "Capture failed"))[:2000], producer_connected=False)
+            message = str(args.get("error", "Capture failed"))[:2000]
+            if s.get("error"):
+                s["capture_error"] = message
+            else:
+                s["error"] = message
+            s.update(state="failed", producer_connected=False)
             self._save(s)
             return s
         if command == "producer.open":
@@ -333,6 +338,35 @@ class SessionCore:
                 raise ValueError("Invalid transcript text")
             self._write_text(s, "transcript.txt", text)
             s.update(transcript=text, revision=s["revision"] + 1, edited=True)
+        elif command == "recover":
+            self._available()
+            if s["state"] not in ("ready", "recoverable", "failed") or s.get("source_path"):
+                raise ValueError("Recover requires a stopped, saved recording")
+            rows = self.db.execute("SELECT * FROM jobs WHERE session=? AND kind='chunk' AND state IN ('failed','queued') ORDER BY id", (s["id"],)).fetchall()
+            if not rows and s["state"] == "ready":
+                return s
+            from aura.audio.recording_session import recover_recording_session
+            if s["id"] in self.recordings:
+                paths = self.recordings.pop(s["id"]).finalize(keep_pcm=True)
+            else:
+                paths = recover_recording_session(self.directory(s["id"]) / "session.json", keep_pcm=True)
+            s["artifacts"]["wav"] = str(paths["mixed"])
+            previous_error = s.get("error")
+            if not s.get("asr_issues"):
+                for event in self.db.execute("SELECT data FROM events WHERE session=? ORDER BY seq", (s["id"],)):
+                    snapshot = json.loads(event[0]).get("session", {})
+                    if snapshot.get("state") == "failed" and snapshot.get("error"):
+                        previous_error = snapshot["error"]
+                        break
+            for row in rows:
+                payload = json.loads(row["payload"])
+                if not Path(payload["path"]).exists():
+                    payload["path"] = str(paths["mixed"])
+                    self.db.execute("UPDATE jobs SET payload=? WHERE id=?", (json.dumps(payload), row["id"]))
+                if row["state"] == "failed" and not any(i["job_id"] == row["id"] for i in s.get("asr_issues", [])):
+                    self._issue(s, row, payload, previous_error or "Previously failed chunk")
+                self.db.execute("UPDATE jobs SET state='queued' WHERE id=?", (row["id"],))
+            s.update(state="draining", recovery_active=True)
         elif command == "refine":
             self._available()
             if s["state"] not in ("ready", "recoverable", "failed"):
@@ -350,7 +384,12 @@ class SessionCore:
             if fmt == "txt":
                 text = s["transcript"]
                 return {"name": f'{s["id"]}.txt', "text": text + ("\n" if text and not text.endswith("\n") else "")}
-            if fmt == "refined":
+            if fmt in ("refined", "recovered"):
+                if fmt == "recovered":
+                    path = s["artifacts"].get("recovered.txt")
+                    if not path:
+                        raise ValueError("Run recovery before exporting recovered text")
+                    return {"path": path}
                 path = s["artifacts"].get("refined.txt")
                 if not path:
                     raise ValueError("Run refinement before exporting refined text")
@@ -364,6 +403,15 @@ class SessionCore:
             raise ValueError(f"Unknown command: {command}")
         self._save(s)
         return s
+
+    def _issue(self, s, row, payload, error):
+        issues = s.setdefault("asr_issues", [])
+        issue = next((i for i in issues if i["job_id"] == row["id"]), None)
+        if issue is None:
+            issue = dict(job_id=row["id"], start_sample=payload["start"],
+                         end_sample=payload["end"], error=str(error)[:2000])
+            issues.append(issue)
+        issue.update(status="pending", last_error=str(error)[:2000])
 
     def _write_text(self, s, name, text):
         path = self.directory(s["id"]) / name
@@ -562,7 +610,7 @@ class SessionCore:
                     if self.pool and not self.keep_model and not any(s["state"] in ACTIVE for s in self.sessions.values()):
                         self.pool.shutdown()
                         self.pool = None
-                        self.model_state = dict(state="unloaded", asr_model=None, error=None)
+                        self.model_state = dict(state="unloaded", asr_model=None, error=self.model_state.get("error"))
                     self.changed.wait(0.2)
                     continue
                 if row["kind"] != "export" and (self.pool is None or self.pool_model != json.loads(row["payload"])["options"].get("asr_model", "breeze")):
@@ -588,14 +636,25 @@ class SessionCore:
                             from aura.asr.file_pipeline import format_timestamp
                             from dataclasses import asdict
                             from aura.review import ReviewSegment
-                            s.setdefault("segments", []).append(asdict(ReviewSegment(
+                            segment = asdict(ReviewSegment(
                                 f'live-{result["start_sample"]}', round(result["start_sample"] / 16),
-                                round(result["end_sample"] / 16), text)))
-                            s["live_text"] += f'[{format_timestamp(result["start_sample"] / 16000)}] {text}\n'
+                                round(result["end_sample"] / 16), text))
+                            segments = s.setdefault("segments", [])
+                            if s.get("recovery_active"):
+                                segments[:] = [x for x in segments if x["segment_id"] != segment["segment_id"]]
+                                segments.append(segment)
+                                segments.sort(key=lambda x: x["start_ms"])
+                                s["live_text"] = "".join(f'[{format_timestamp(x["start_ms"] / 1000)}] {x["text"]}\n' for x in segments)
+                            else:
+                                segments.append(segment)
+                                s["live_text"] += f'[{format_timestamp(result["start_sample"] / 16000)}] {text}\n'
                             if not s["edited"]:
                                 s["transcript"] = s["live_text"]
                                 s["revision"] += 1
                             self._write_text(s, "live.txt", s["live_text"])
+                        for issue in s.get("asr_issues", []):
+                            if issue["job_id"] == row["id"]:
+                                issue["status"] = "resolved"
                     elif row["kind"] == "export":
                         s["artifacts"][s["options"]["audio_format"]] = result["path"]
                         s["state"] = "ready"
@@ -621,7 +680,17 @@ class SessionCore:
             except Exception as exc:
                 with self.changed:
                     s = self.sessions[row["session"]]
-                    s.update(state="failed", error=str(exc))
+                    from aura.asr.models import ASROutputError
+                    payload = json.loads(row["payload"])
+                    if row["kind"] == "chunk":
+                        self._issue(s, row, payload, exc)
+                    if row["kind"] == "chunk" and isinstance(exc, ASROutputError):
+                        self.db.execute("UPDATE jobs SET state='failed' WHERE id=?", (row["id"],))
+                        if s["state"] == "pausing" and s.get("capture_paused_ack"):
+                            s["state"] = "paused"
+                        self._save(s)
+                        continue
+                    s.update(state="failed", error=s.get("error") or str(exc))
                     if row["kind"] != "export":
                         self.keep_model = False
                         self.model_state = dict(state="error", asr_model=json.loads(row["payload"])["options"].get("asr_model", "breeze"), error=str(exc))
@@ -632,12 +701,18 @@ class SessionCore:
         try:
             rec = self.recordings.pop(s["id"], None)
             if rec:
-                paths = rec.finalize()
+                paths = rec.finalize(keep_pcm=any(i["status"] == "pending" for i in s.get("asr_issues", [])))
                 s["artifacts"].update({"wav": str(paths["mixed"])})
             self._write_text(s, "live.txt", s["live_text"])
             self._write_text(s, "transcript.txt", s["transcript"])
             self._write_search_artifacts(s)
             s["state"] = "ready"
+            if s.pop("recovery_active", False):
+                self._write_text(s, "recovered.txt", s["live_text"])
+                if not any(i["status"] == "pending" for i in s.get("asr_issues", [])):
+                    if s.get("error"):
+                        s["recovered_error"] = s.pop("error")
+                    s["error"] = None
             if rec and s["options"]["audio_format"] != "wav":
                 s["state"] = "exporting"
                 self._job(s, "export", path=s["artifacts"]["wav"])
