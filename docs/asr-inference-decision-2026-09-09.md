@@ -131,3 +131,18 @@ builds, performance or model ranking, production-default changes, native streami
 physical-device/second-host acceptance and unrelated AURA sibling migrations.
 This closeout adds no scheduled experiment or learning block. Actual work time
 remains unreported; Planning preserves existing weekly capacity commitments.
+
+## Follow-up: short-tail failure and recovery
+
+The operator subsequently reported `Session is not accepting audio` after roughly
+9.5 minutes and authorized a fix, continued recording through recoverable chunk
+errors, and recovery of that recording. Event history identified an earlier
+`Parakeet returned invalid segment timestamps` on a 120-ms interval. This is a
+functional failure, not evidence for a memory/precision change.
+
+The implemented correction uses capture-timed live text, preserves original
+errors, records retryable gaps, and adds explicit saved-recording recovery. It
+also addresses the PCM cleanup/queued-job dependency found during recovery.
+[The incident receipt](../artifacts/asr-recovery-2026-09-09/README.md) preserves
+both the failed first attempt and the successful two-job recovery. Framework,
+precision and quality/performance comparisons remain deferred.

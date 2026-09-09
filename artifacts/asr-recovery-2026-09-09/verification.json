@@ -1,0 +1,25 @@
+{
+  "validation_mode": "availability_validation",
+  "status": "LIVE_MINIMUM_COMPLETED",
+  "runtime_validity": "valid_target_runtime",
+  "functional_result": "available_and_working",
+  "real_inference_jobs": 2,
+  "original_segments_preserved": 54,
+  "final_segments": 56,
+  "queued": 0,
+  "failed": 0,
+  "recorded_wav_exports": 1,
+  "ground_truth_read": false,
+  "accuracy": "not_evaluated",
+  "latency": "not_evaluated",
+  "other_sessions_and_preferences": "unchanged",
+  "pcm_sha256_check": "passed",
+  "raw_receipts": "owner-local",
+  "receipt_hashes": {
+    "before.json": "82d0f8191f61affca6094313a1f0944de037d8cd27a91d9fe296460cad0b0098",
+    "attempt-01-failed.json": "9a8ffdaf54c516707e6ed88d05e86a3c3e7c3644e350bf838f833807677fc9a7",
+    "attempt-02-request.json": "e6341db1db536745160cef4316c9170871e3e89bdc3de4bb7b66fe62250b1f13",
+    "after.json": "ac076649d72d26e7231c8034769ff36423ada2f5f2bd2528d49b52a696e51dd9",
+    "audio-hashes.json": "96098da3705ac27a76857f39542544f9d08fad5bfae9ea6c21d17083c515726b"
+  }
+}

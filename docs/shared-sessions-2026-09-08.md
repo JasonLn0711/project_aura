@@ -377,3 +377,39 @@ and the PTY check sends actual Tab keys. Reopen the CLI after updating the clien
 questions, `uv run --no-sync aura` explanation, memory accounting, framework
 options and deferred precision gate. The [public validation summary](../artifacts/asr-parakeet-availability/README.md)
 separates 317 software tests from the two earlier real availability attempts.
+
+## Recover transcription gaps
+
+A recoverable ASR output error leaves a sample-indexed entry in `asr_issues` and
+allows capture and later chunks to continue. The CLI and GUI display the pending
+gap count. CUDA/worker, storage, corrupt-input and unknown failures still stop
+work and preserve the original cause; secondary capture errors stay separate.
+
+After stopping, run:
+
+```text
+/inspect
+/recover
+/export SESSION_ID --format recovered --output recovered.txt
+/export SESSION_ID --format wav --output recording.wav
+```
+
+The shell equivalent is `uv run --no-sync aura recover SESSION_ID`. Recovery accepts
+full or unique-prefix IDs; `/recover` defaults to the attached session. The GUI
+provides “補轉錄缺段” and a Recovered text export choice. Old services receive a
+restart message through the additive `recover` capability. Restart only after
+active work ends; reopen clients to load updated controls.
+
+Recovery attempts each failed/queued chunk once in source order, keeps successful
+chunks, and records unresolved gaps for another explicit request. Repeating a
+completed recovery does no inference. Human edits remain unchanged; recovered
+machine text is saved separately. Failed/queued chunks retain PCM through
+finalization; older finalized recordings can supply exact intervals from WAV.
+Pending issues remain visible after audio export. No session-table migration or
+automatic model fallback is introduced.
+
+Live Parakeet chunks use capture sample coordinates and text-only decoding;
+file/refinement paths keep NeMo segment timestamps. This removes unused timestamp
+work from live chunks without inventing model timestamps or dropping short speech.
+The [recovery receipt](../artifacts/asr-recovery-2026-09-09/README.md) records the
+actual incident, first recovery failure, subsequent repair and successful recovery.

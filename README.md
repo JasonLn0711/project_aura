@@ -503,6 +503,11 @@ The [ASR inference decision](docs/asr-inference-decision-2026-09-09.md) explains
 FP32 memory use, PyTorch/ONNX alternatives, CLI startup, and the next optimization
 gate. Framework and precision comparisons remain deferred.
 
+For saved transcription gaps, use `/inspect` and `/recover` after stopping.
+Recovery preserves human edits and exports machine text separately. See the
+[recovery guide](docs/shared-sessions-2026-09-08.md#recover-transcription-gaps) and
+[verified incident receipt](artifacts/asr-recovery-2026-09-09/README.md).
+
 ### Live capture and audio preservation
 
 - Capture source choices include system audio, microphone, and a mixed stream.
