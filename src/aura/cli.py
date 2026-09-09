@@ -226,13 +226,13 @@ def interactive(client, ssh=None, initial=None):
     import queue
     import shutil
     from prompt_toolkit import PromptSession
-    from prompt_toolkit.completion import WordCompleter
+    from aura.completion import WorkspaceCompleter
     from prompt_toolkit.patch_stdout import patch_stdout
     from prompt_toolkit.styles import Style
     from aura.terminal import TerminalStatus, safe_text
     commands = ["/model", "/record", "/schedule", "/sessions", "/attach", "/pause", "/resume", "/unpause", "/inspect", "/doctor", "/stop", "/refine", "/export", "/transcribe", "/status", "/graphs", "/detach", "/help", "/quit"]
     view = TerminalStatus()
-    prompt = PromptSession(completer=WordCompleter(commands), complete_while_typing=False,
+    prompt = PromptSession(completer=WorkspaceCompleter(parser(), commands), complete_while_typing=False,
         bottom_toolbar=lambda: view.toolbar(shutil.get_terminal_size().columns), refresh_interval=.25,
         style=Style.from_dict({'accent': '#48c7b8', 'owl': '#e4b56b', 'muted': '#888888', 'error': '#ef7777'}))
     selected = {"id": None, "text": "", "state": "", "error": ""}
@@ -321,6 +321,7 @@ def interactive(client, ssh=None, initial=None):
                         break
                     if command == 'help':
                         print(' '.join(commands))
+                        print('Tab completes commands, options, model names and local paths; press Tab again to cycle choices.')
                         print('/model shows ASR status · /model breeze or /model parakeet-tdt-0.6b-v2 selects and preloads')
                         print('/model load preloads the default · /model unload releases GPU memory · finish active work before switching')
                         print('/record --model MODEL and /transcribe FILE --model MODEL override one new session')

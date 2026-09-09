@@ -43,6 +43,18 @@ def main():
     os.write(master,b'/inspect\n');read(.4)
     os.write(master,b'/resume --all\n');read(.4)
     os.write(master,b'Synthetic');read(.2);os.write(master,b'\x1b[B');read(.2);os.write(master,b'\r');read(.4)
+    os.write(master,b'/help\n');read(.4)
+    previous=client.request('model.status')
+    os.write(master,b'/mo\t');read(.3)
+    os.write(master,b' para\t');read(.3)
+    assert client.request('model.status') == previous, 'Tab must not execute the command'
+    os.write(master,b'\n');read(1.1)
+    assert client.request('model.status')['default']=='parakeet-tdt-0.6b-v2'
+    os.write(master,b'/model\n');read(.4)
+    os.write(master,b'/model un\t');read(.3)
+    os.write(master,b'\n');read(1.1)
+    assert client.request('model.status')['state']=='unloaded'
+    os.write(master,b'/model\n');read(.4)
     os.write(master,b'/quit\n');read(2);Path('/tmp/aura-terminal-pty.txt').write_text(data.decode('utf-8',errors='replace'));proc.wait(timeout=8);read(.1)
     text=data.decode('utf-8',errors='replace')
     assert f'AURA v{__version__}' in text and '測試逐字稿' in text,text[-2000:]
@@ -50,9 +62,10 @@ def main():
     assert 'Synthetic capture device unavailable' in text and 'Find session>' in text
     assert 'Service version:' in text and 'matched' in text
     assert text.count('測試逐字稿') >= 2, text[-3000:]
+    assert 'parakeet-tdt-0.6b-v2' in text and 'ASR:' in text and 'unloaded' in text and 'selects and preloads' in text
     assert proc.returncode==0
     Path('/tmp/aura-terminal-pty.txt').write_text(text)
-    print('PTY passed: searchable resume picker, arrows, cancellation, saved transcript, visible failure, partial command input and clean exit; synthetic device/ASR.')
+    print('PTY passed: searchable resume picker, arrows, cancellation, saved transcript, visible failure, partial command input, Tab completion without execution, model switching/unload and clean exit; synthetic device/ASR.')
   finally:
    if proc and proc.poll() is None:proc.terminate();proc.wait()
    for fd in (master,slave):
