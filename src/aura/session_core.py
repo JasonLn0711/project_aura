@@ -28,14 +28,25 @@ def default_root():
     return Path(os.environ.get("AURA_DATA_DIR", Path.home() / ".local/share/project-aura")).expanduser()
 
 
-def options_for(values=None):
+def options_for(values=None, preferences=None):
     from aura.config import DEFAULT_LIVE_PROMPT
-    result = dict(profile="light", language="zh", beam_size=5, prompt=DEFAULT_LIVE_PROMPT,
+    from aura.asr.models import MODEL_KEYS, PARAKEET, PARAKEET_DEFAULTS
+    result = dict(asr_model="breeze", profile="light", language="zh", beam_size=5, prompt=DEFAULT_LIVE_PROMPT,
                   hotwords="", punctuation=True, target_dbfs=-20.0, diarization=False,
                   min_speakers=2, max_speakers=6, audio_format="m4a")
     values = values or {}
     if not isinstance(values, dict) or set(values) - result.keys():
         raise ValueError("Unknown transcription options")
+    preferences = preferences or {}
+    selected = values.get("asr_model", preferences.get("asr_model", "breeze"))
+    if selected not in MODEL_KEYS:
+        raise ValueError("Unknown ASR model")
+    result.update(preferences)
+    if selected == PARAKEET:
+        result.update(PARAKEET_DEFAULTS)
+        for key, expected in PARAKEET_DEFAULTS.items():
+            if key in values and values[key] != expected:
+                raise ValueError(f"Parakeet requires {key}={expected!r}; use Breeze for Whisper controls or Chinese.")
     result.update(values)
     if result["profile"] not in PROFILES:
         raise ValueError("Unknown audio profile")
@@ -83,6 +94,10 @@ class SessionCore:
         self.detectors = {}
         self.producers = set()
         self.pool = None
+        self.pool_model = None
+        self.model_control = None
+        self.keep_model = False
+        self.model_state = dict(state="unloaded", asr_model=None, error=None)
         self.execute_override = executor
         self.last_event_revision = {}
         self.shutdown = False
@@ -116,7 +131,12 @@ class SessionCore:
             raise ValueError("Unknown session")
         return self.sessions[sid]
 
+    def _model_available(self):
+        if self.model_state["state"] in ("loading", "unloading"):
+            raise ValueError("ASR model is loading or unloading; wait for /model status before starting work.")
+
     def _available(self):
+        self._model_available()
         if any(s["state"] in ACTIVE for s in self.sessions.values()):
             raise ValueError("A recording or transcription job is active; attach or finish it first")
 
@@ -127,7 +147,7 @@ class SessionCore:
         title = args.get("title") or "Meeting"
         if not isinstance(title, str) or len(title) > 200:
             raise ValueError("Title must contain at most 200 characters")
-        session = dict(id=sid, title=title, state=state, created_at=now(), options=options_for({**self._preferences(), **args.get("options", {})}),
+        session = dict(id=sid, title=title, state=state, created_at=now(), options=options_for(args.get("options", {}), self._preferences()),
                        transcript="", live_text="", revision=0, edited=False, samples=0, input_sequence=0,
                        pauses=[], artifacts={}, segments=[], error=None, source=args.get("source", "system_microphone"),
                        capture_location=args.get("capture_location", "server"), producer_connected=False)
@@ -153,7 +173,7 @@ class SessionCore:
             raise ValueError("Command arguments must be an object")
         with self.lock:
             signature = json.dumps([command, args], sort_keys=True)
-            cache_command = request_id and command not in ("get", "sessions", "capabilities", "export", "preferences.get")
+            cache_command = request_id and command not in ("get", "sessions", "capabilities", "export", "preferences.get", "model.status")
             if cache_command:
                 previous = self.db.execute("SELECT command,result FROM commands WHERE id=?", (request_id,)).fetchone()
                 if previous:
@@ -161,7 +181,7 @@ class SessionCore:
                         raise ValueError("Request ID already used for a different command")
                     return json.loads(previous[1])
             result = self._request(command, args)
-            if command not in ("get", "sessions", "capabilities", "preferences.get"):
+            if command not in ("get", "sessions", "capabilities", "preferences.get", "model.status"):
                 self.audit.record("session.command", category="session", details={"command": command})
             # Snapshot before returning: callers never share mutable session state.
             result = json.loads(json.dumps(result))
@@ -174,17 +194,34 @@ class SessionCore:
         return {r[0]: json.loads(r[1]) for r in self.db.execute("SELECT key,value FROM preferences")}
 
     def _request(self, command, args):
+        if command == "model.status":
+            return dict(self.model_state, default=self._preferences().get("asr_model", "breeze"),
+                        kept_loaded=self.keep_model)
+        if command in ("model.load", "model.unload"):
+            from aura.asr.models import MODEL_KEYS
+            if set(args) - {"asr_model"}:
+                raise ValueError("Unknown model options")
+            self._available()
+            key = args.get("asr_model", self._preferences().get("asr_model", "breeze"))
+            if key not in MODEL_KEYS:
+                raise ValueError("Unknown ASR model")
+            self.model_state = dict(state="loading" if command == "model.load" else "unloading",
+                                    asr_model=key if command == "model.load" else self.model_state["asr_model"], error=None)
+            self.model_control = (command, key)
+            self.changed.notify_all()
+            return self._request("model.status", {})
         if command == "preferences.get":
             return self._preferences()
         if command == "preferences.set":
             values = {**self._preferences(), **args}
-            options_for(values)
+            options_for(args, self._preferences())
             self.db.executemany("INSERT OR REPLACE INTO preferences VALUES (?,?)", [(k, json.dumps(v)) for k, v in args.items()])
             self.db.commit()
             return values
         if command == "capabilities":
             import shutil
-            return dict(protocol=1, service_version=__version__,
+            from aura.asr.models import capabilities
+            return dict(model_control=True, asr_models=capabilities(), protocol=1, service_version=__version__,
                         diagnostics={"data_dir": str(self.root), "service_log": str(self.root / "service.log"),
                                      "capture_log": str(self.root / "capture.log")}, ffmpeg=bool(shutil.which("ffmpeg")), profiles=list(PROFILES), capture_format="s16le/16000/mono", single_owner=True,
                         deepfilternet=bool(shutil.which("deep-filter")), clearvoice=bool(os.environ.get("AURA_CLEARVOICE_PYTHON")))
@@ -205,7 +242,7 @@ class SessionCore:
                 raise ValueError("Unknown capture source")
             if args.get("capture_location", "server") not in ("server", "client"):
                 raise ValueError("Unknown capture location")
-            opts = options_for({**self._preferences(), **args.get("options", {})})
+            opts = options_for(args.get("options", {}), self._preferences())
             if opts["profile"] == "rescue-offline":
                 raise ValueError("Rescue offline is available for imported audio")
             s = self._new(args, "starting")
@@ -218,13 +255,14 @@ class SessionCore:
             end = datetime.datetime.fromisoformat(args["stop_at"])
             if start.tzinfo is None or end.tzinfo is None or start <= datetime.datetime.now(datetime.timezone.utc) or end <= start:
                 raise ValueError("Use a future timezone-aware start and a later stop")
-            if options_for({**self._preferences(), **args.get("options", {})})["profile"] == "rescue-offline":
+            if options_for(args.get("options", {}), self._preferences())["profile"] == "rescue-offline":
                 raise ValueError("Offline rescue is an import-only profile")
             s = self._new(args, "scheduled")
             s.update(start_at=start.astimezone(datetime.timezone.utc).isoformat(), stop_at=end.astimezone(datetime.timezone.utc).isoformat())
             self._save(s)
             return s
         if command == "transcribe":
+            self._model_available()
             if any(s["state"] in ACTIVE - {"importing", "refining", "exporting"} for s in self.sessions.values()):
                 raise ValueError("Finish the active recording before importing media")
             path = Path(args["path"]).resolve()
@@ -352,7 +390,8 @@ class SessionCore:
         write_json_file(directory / "segments.json", {"segments": s.get("segments", []),
             "audio_path": s.get("source_path") or s["artifacts"].get("wav")})
         manifest.update(title=s["title"], prepared_transcript="prepared_transcript.json",
-                        transcript_sha256=prepared.content_sha256, audio_profile=s["options"]["profile"])
+                        transcript_sha256=prepared.content_sha256, audio_profile=s["options"]["profile"],
+                        asr_model=s["options"].get("asr_model", "breeze"), runtime=s.get("runtime"))
         write_session_manifest(manifest_path, manifest)
 
     def ingest(self, sid, sequence, pcm, tracks):
@@ -448,16 +487,61 @@ class SessionCore:
     def _execute(self, kind, payload):
         if self.execute_override:
             return self.execute_override(kind, payload)
+        model_key = payload.get("options", {}).get("asr_model", "breeze")
+        if kind != "export" and self.pool is not None and self.pool_model != model_key:
+            self.keep_model = False
+            self.pool.shutdown()
+            self.pool = None
+        if kind != "export":
+            self.pool_model = model_key
         if self.pool is None:
             self.pool = concurrent.futures.ProcessPoolExecutor(max_workers=1, mp_context=multiprocessing.get_context("spawn"))
         from aura.session_runtime import execute
         return self.pool.submit(execute, kind, payload).result()
+
+    def _control_model(self, command, key):
+        try:
+            if command == "model.load":
+                result = self._execute("load", {"options": options_for({"asr_model": key})})
+                with self.changed:
+                    self.keep_model = True
+                    self.model_state = dict(state="loaded", asr_model=key, runtime=result, error=None)
+                    self.db.execute("INSERT OR REPLACE INTO preferences VALUES (?,?)", ("asr_model", json.dumps(key)))
+                    self.db.commit()
+            else:
+                if self.pool:
+                    self.pool.shutdown()
+                with self.changed:
+                    self.pool = None
+                    self.keep_model = False
+                    self.model_state = dict(state="unloaded", asr_model=None, error=None)
+        except Exception as exc:
+            if self.pool:
+                self.pool.shutdown()
+            with self.changed:
+                self.pool = None
+                self.keep_model = False
+                self.model_state = dict(state="error", asr_model=key, error=str(exc))
+        finally:
+            with self.changed:
+                self.changed.notify_all()
 
     def _work(self):
         while True:
             with self.changed:
                 if self.shutdown:
                     break
+                control = self.model_control
+                self.model_control = None
+            if control:
+                self._control_model(*control)
+                continue
+            with self.changed:
+                if self.shutdown:
+                    break
+                # A control request may arrive between the two lock acquisitions.
+                if self.model_control:
+                    continue
                 for s in self.sessions.values():
                     if s["state"] == "scheduled" and s["start_at"] <= now():
                         try:
@@ -475,17 +559,25 @@ class SessionCore:
                     for s in self.sessions.values():
                         if s["state"] == "draining":
                             self._finalize(s)
-                    if self.pool and not any(s["state"] in ACTIVE for s in self.sessions.values()):
+                    if self.pool and not self.keep_model and not any(s["state"] in ACTIVE for s in self.sessions.values()):
                         self.pool.shutdown()
                         self.pool = None
+                        self.model_state = dict(state="unloaded", asr_model=None, error=None)
                     self.changed.wait(0.2)
                     continue
+                if row["kind"] != "export" and (self.pool is None or self.pool_model != json.loads(row["payload"])["options"].get("asr_model", "breeze")):
+                    self.model_state = dict(state="loading", asr_model=json.loads(row["payload"])["options"].get("asr_model", "breeze"), error=None)
                 self.db.execute("UPDATE jobs SET state='running' WHERE id=?", (row["id"],))
                 self.db.commit()
             try:
                 result = self._execute(row["kind"], json.loads(row["payload"]))
                 with self.changed:
                     s = self.sessions[row["session"]]
+                    if row["kind"] != "export":
+                        self.model_state = dict(state="loaded", asr_model=json.loads(row["payload"])["options"].get("asr_model", "breeze"),
+                                                runtime=result.get("runtime", result if row["kind"] == "load" else {}), error=None)
+                    if "runtime" in result:
+                        s["runtime"] = result["runtime"]
                     if row["kind"] == "load":
                         s["runtime"] = result
                         if s["state"] == "starting":
@@ -530,6 +622,9 @@ class SessionCore:
                 with self.changed:
                     s = self.sessions[row["session"]]
                     s.update(state="failed", error=str(exc))
+                    if row["kind"] != "export":
+                        self.keep_model = False
+                        self.model_state = dict(state="error", asr_model=json.loads(row["payload"])["options"].get("asr_model", "breeze"), error=str(exc))
                     self.db.execute("UPDATE jobs SET state='failed' WHERE id=?", (row["id"],))
                     self._save(s)
 

@@ -36,6 +36,7 @@ def graph(values, width=24):
 
 class TerminalStatus:
     def __init__(self):
+        self.model_status = ""
         self.session = None
         self.connected = True
         self.error = ''
@@ -71,7 +72,7 @@ class TerminalStatus:
             return [('class:accent', 'Transfer ' + (bar(done, total) if total else f'{done:,} bytes transferred'))]
         s = self.session
         if not s:
-            return [('class:muted', '(o.o) Ready · /record · /sessions · /help')]
+            return [('class:muted', '(o.o) Ready · /model · /record · /sessions · /help')] + ([("class:muted", self.model_status)] if self.model_status else [])
         state = s['state']
         face = {'paused': '(-.-)', 'ready': '(^.^)', 'failed': '(!.!)', 'recoverable': '(!.!)'}.get(state, '(o.o)')
         active = state in ('starting', 'draining', 'importing', 'refining', 'exporting')
@@ -80,6 +81,8 @@ class TerminalStatus:
         work = s.get('work')
         queued = f'{work["queued"]} pending · {work["running"]} processing' if work else 'queue unavailable'
         lines = [('class:owl', f'{face} {state} {pulse} Audio {seconds//60:02d}:{seconds%60:02d} · {queued}')]
+        if self.model_status:
+            lines.append(('class:muted', self.model_status))
         if state == 'draining' and work:
             total = sum(work.values())
             if total:

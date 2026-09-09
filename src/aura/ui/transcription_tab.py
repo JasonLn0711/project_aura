@@ -166,6 +166,11 @@ class TranscriptionTab(QWidget):
                              ("遠距說話者：中度降噪與音量支援", "far-speaker"), ("離線救援（匯入專用）", "rescue-offline")):
             self.profile.addItem(label, value)
         form.addRow("音訊設定", self.profile)
+        self.asr_model = QComboBox()
+        self.asr_model.addItem("Breeze（預設，中文／英文）", "breeze")
+        self.asr_model.addItem("Parakeet v2（英文，Linux GPU 服務）", "parakeet-tdt-0.6b-v2")
+        self.asr_model.setAccessibleName("ASR 模型")
+        form.addRow("ASR 模型", self.asr_model)
         self.language = QComboBox()
         for label, value in (("中文", "zh"), ("英文", "en"), ("自動偵測", None)):
             self.language.addItem(label, value)
@@ -185,6 +190,8 @@ class TranscriptionTab(QWidget):
         self.punctuation = QCheckBox("還原中文標點")
         self.punctuation.setChecked(True)
         form.addRow(self.punctuation)
+        self.breeze_language_index = self.language.currentIndex()
+        self.asr_model.currentIndexChanged.connect(self.update_model_controls)
         self.diarization = QCheckBox("匯入／精修時區分說話者")
         form.addRow(self.diarization)
         preferences = QPushButton("儲存為 GUI／CLI 共用預設")
@@ -224,10 +231,25 @@ class TranscriptionTab(QWidget):
         except queue.Full:
             self.show_error("操作佇列已滿，請等待目前操作完成。")
 
+    def update_model_controls(self):
+        parakeet = self.asr_model.currentData() == "parakeet-tdt-0.6b-v2"
+        if parakeet:
+            if self.language.isEnabled():
+                self.breeze_language_index = self.language.currentIndex()
+            self.language.setCurrentIndex(self.language.findData("en"))
+        else:
+            self.language.setCurrentIndex(self.breeze_language_index)
+        for widget in (self.language, self.hotwords, self.prompt_input, self.beam, self.punctuation):
+            widget.setEnabled(not parakeet)
+            widget.setToolTip("Parakeet 使用英文及模型內建標點；提示詞與中文標點設定供 Breeze 使用。" if parakeet else "")
+
     def options(self):
         words = "\n".join(dict.fromkeys(w.strip() for w in self.hotwords.toPlainText().splitlines() if w.strip()))
         self.saved_settings.setValue("hotwords", words)
-        return dict(profile=self.profile.currentData(), language=self.language.currentData(),
+        if self.asr_model.currentData() == "parakeet-tdt-0.6b-v2":
+            return dict(asr_model=self.asr_model.currentData(), profile=self.profile.currentData(),
+                        diarization=self.diarization.isChecked())
+        return dict(asr_model="breeze", profile=self.profile.currentData(), language=self.language.currentData(),
                     beam_size=self.beam.value(), prompt=self.prompt_input.text(), hotwords=" ".join(words.splitlines()),
                     punctuation=self.punctuation.isChecked(), diarization=self.diarization.isChecked())
 
@@ -296,7 +318,7 @@ class TranscriptionTab(QWidget):
 
     def render(self, s):
         state = s["state"]
-        self.session_status.setText(f'{s["title"]} · {s["id"]}\n{state} · {s["capture_location"]} / {s["source"]} · {s["options"]["profile"]}')
+        self.session_status.setText(f'{s["title"]} · {s["id"]}\n{state} · {s["capture_location"]} / {s["source"]} · {s["options"]["profile"]} · {s["options"].get("asr_model", "breeze")}')
         self.btn_pause.setText("繼續" if state == "paused" else "暫停")
         self.btn_pause.setEnabled(state in ("recording", "paused"))
         self.btn_stop.setEnabled(state in ("starting", "recording", "pausing", "paused", "scheduled"))
@@ -323,6 +345,9 @@ class TranscriptionTab(QWidget):
             for widget, key in ((self.punctuation, "punctuation"), (self.diarization, "diarization")):
                 if key in result:
                     widget.setChecked(result[key])
+            self.breeze_language_index = self.language.currentIndex()
+            self.asr_model.setCurrentIndex(self.asr_model.findData(result.get("asr_model", "breeze")))
+            self.update_model_controls()
         elif command == "capabilities":
             self.runtime_log.appendPlainText(json.dumps(result, ensure_ascii=False, indent=2))
         elif command == "sessions":

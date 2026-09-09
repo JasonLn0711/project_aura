@@ -268,13 +268,14 @@ def normalize_media_to_wav(
     output_path: str | Path,
     target_dbfs: float,
     progress_callback: ProgressCallback | None = None,
+    speech_format: bool = False,
 ) -> Path:
     return normalize_media_with_ffmpeg(
         input_path=input_path,
         output_path=output_path,
         target_dbfs=target_dbfs,
         output_format="wav",
-        extra_output_args=["-c:a", "pcm_s16le"],
+        extra_output_args=["-c:a", "pcm_s16le", *(["-ar", "16000", "-ac", "1"] if speech_format else [])],
         progress_callback=progress_callback,
     )
 

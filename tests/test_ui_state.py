@@ -19,6 +19,8 @@ class UiStateTests(unittest.TestCase):
         cls.app = QApplication.instance() or QApplication([])
 
     def setUp(self):
+        self.settings_patch = patch("aura.ui.transcription_tab.QSettings")
+        self.settings_patch.start().return_value.value.return_value = ""
         self.patch = patch('aura.ui.transcription_tab.ServiceWorker')
         self.worker = self.patch.start().return_value
         self.tab = TranscriptionTab(audit=MagicMock())
@@ -28,6 +30,23 @@ class UiStateTests(unittest.TestCase):
         self.tab.stop_threads()
         self.tab.deleteLater()
         self.patch.stop()
+        self.settings_patch.stop()
+
+    def test_parakeet_controls_preserve_breeze_vocabulary(self):
+        self.tab.hotwords.setPlainText("AURA")
+        self.tab.prompt_input.setText("中文提示")
+        self.tab.asr_model.setCurrentIndex(1)
+        self.assertEqual(self.tab.language.currentData(), "en")
+        self.assertFalse(self.tab.hotwords.isEnabled())
+        self.assertNotIn("hotwords", self.tab.options())
+        self.assertEqual(self.tab.options()["asr_model"], "parakeet-tdt-0.6b-v2")
+        self.tab.receive("preferences.get", {"asr_model": "parakeet-tdt-0.6b-v2", "language": "zh"}, {})
+        self.assertEqual(self.tab.language.currentData(), "en")
+        self.tab.asr_model.setCurrentIndex(0)
+        self.assertTrue(self.tab.hotwords.isEnabled())
+        self.assertEqual(self.tab.language.currentData(), "zh")
+        self.assertEqual(self.tab.options()["hotwords"], "AURA")
+        self.assertEqual(self.tab.options()["prompt"], "中文提示")
 
     def test_shared_workspace_records_directly(self):
         from aura.metadata import __version__

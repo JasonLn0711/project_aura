@@ -66,6 +66,7 @@ class FileTranscriptionSettings:
     diarization: DiarizationSettings = field(default_factory=DiarizationSettings)
     hotwords: str = ""
     chinese_punctuation_enabled: bool = DEFAULT_SETTINGS.chinese_punctuation_enabled
+    asr_model: str = "breeze"
 
     def __post_init__(self):
         meeting_distance_policy_for(self.meeting_distance_mode)
@@ -243,6 +244,7 @@ def prepare_import_audio(
                     temp_path,
                     settings.target_dbfs,
                     progress_callback=status_callback,
+                    **({"speech_format": True} if settings.asr_model == "parakeet-tdt-0.6b-v2" else {}),
                 )
                 cancellation.raise_if_cancelled()
                 return result
@@ -263,6 +265,8 @@ def prepare_import_audio(
             status_callback(f"🔉 Normalizing volume for {file_name}...")
         cancellation.raise_if_cancelled()
         normalized = audio.apply_gain(settings.target_dbfs - audio.dBFS)
+        if settings.asr_model == "parakeet-tdt-0.6b-v2":
+            normalized = normalized.set_frame_rate(16000).set_channels(1).set_sample_width(2)
         with temp_path.open("wb") as target:
             normalized.export(target, format="wav")
         cancellation.raise_if_cancelled()

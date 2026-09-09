@@ -29,6 +29,11 @@ def parser():
     subs.add_parser("sessions")
     subs.add_parser("capabilities")
     subs.add_parser("doctor")
+    models = subs.add_parser("models", help="Manage server-local ASR weights")
+    downloads = models.add_subparsers(dest="model_command", required=True)
+    from aura.asr.models import PARAKEET, MODEL_KEYS
+    downloads.add_parser("download").add_argument("model", choices=(PARAKEET,))
+    subs.add_parser("model", help="Show, preload, switch or unload ASR").add_argument("selection", nargs="?", default="status", choices=(*MODEL_KEYS, "status", "load", "unload"))
     resume = subs.add_parser("resume", help="Reopen a saved workspace; audio capture stays unchanged",
                              description="Reopen saved transcripts and controls. Use unpause to restart paused audio capture.")
     resume.add_argument("session_id", nargs="?")
@@ -50,6 +55,7 @@ def parser():
             sub.add_argument("--stop-at", required=True, help="ISO 8601 with timezone")
         sub.add_argument("--title", default="Meeting")
         sub.add_argument("--profile", choices=("off", "light", "medium", "far-speaker", "rescue-offline"), default=None)
+        sub.add_argument("--model", choices=MODEL_KEYS, default=None)
         sub.add_argument("--language", choices=("zh", "en", "auto"), default=None)
         sub.add_argument("--hotwords-file", type=Path)
         sub.add_argument("--detach", action="store_true")
@@ -122,7 +128,7 @@ def diagnostics(client, host=None):
     return dict(client_version=__version__, service_version=service_version or "unknown",
                 connection="connected", host=host or client.ssh or "local service",
                 version_status="unknown" if not service_version else "matched" if service_version == __version__ else "mismatch",
-                capabilities={k: capabilities[k] for k in ("protocol", "ffmpeg", "profiles", "capture_format", "single_owner", "deepfilternet", "clearvoice") if k in capabilities},
+                capabilities={k: capabilities[k] for k in ("model_control", "asr_models", "protocol", "ffmpeg", "profiles", "capture_format", "single_owner", "deepfilternet", "clearvoice") if k in capabilities},
                 diagnostics=capabilities.get("diagnostics", {}),
                 guidance="Finish active recordings and jobs before restarting an older service. Device capture requires its own check.")
 
@@ -139,8 +145,29 @@ def resume_selection(client, args, *, terminal):
     return client.resolve_session(sid) if sid else None
 
 
+def model_status_text(result):
+    state = result["state"]
+    text = f'ASR: {result.get("asr_model") or result["default"]} · {state} · default: {result["default"]}'
+    if state == "unloaded":
+        text += " · loads on /record or /transcribe; /model load preloads"
+    if result.get("error"):
+        text += " · " + str(result["error"])
+    return safe_text(text)
+
+
 def execute(client, args, *, on_progress=None):
     command = args.command
+    if command == "model":
+        if not client.request("capabilities").get("model_control"):
+            raise RuntimeError("This service does not have /model controls. Finish active work, then restart the service and CLI.")
+        action = args.selection
+        result = client.request("model." + (action if action in ("status", "unload") else "load"),
+                                {} if action in ("status", "load", "unload") else {"asr_model": action})
+        if args.json:
+            show(result, True)
+        else:
+            print(model_status_text(result), flush=True)
+        return result
     if command == "sessions":
         show(client.session_summaries(), args.json)
         return 0
@@ -171,6 +198,8 @@ def execute(client, args, *, on_progress=None):
         values["session_id"] = args.session_id
     if command in ("record", "transcribe", "schedule"):
         options = {}
+        if args.model is not None:
+            options["asr_model"] = args.model
         if args.profile is not None:
             options["profile"] = args.profile
         if args.language is not None:
@@ -201,7 +230,7 @@ def interactive(client, ssh=None, initial=None):
     from prompt_toolkit.patch_stdout import patch_stdout
     from prompt_toolkit.styles import Style
     from aura.terminal import TerminalStatus, safe_text
-    commands = ["/record", "/schedule", "/sessions", "/attach", "/pause", "/resume", "/unpause", "/inspect", "/doctor", "/stop", "/refine", "/export", "/transcribe", "/status", "/graphs", "/detach", "/help", "/quit"]
+    commands = ["/model", "/record", "/schedule", "/sessions", "/attach", "/pause", "/resume", "/unpause", "/inspect", "/doctor", "/stop", "/refine", "/export", "/transcribe", "/status", "/graphs", "/detach", "/help", "/quit"]
     view = TerminalStatus()
     prompt = PromptSession(completer=WordCompleter(commands), complete_while_typing=False,
         bottom_toolbar=lambda: view.toolbar(shutil.get_terminal_size().columns), refresh_interval=.25,
@@ -218,12 +247,22 @@ def interactive(client, ssh=None, initial=None):
         select(initial['id'])
         view.update(initial)
     def follow():
+        last_model = None
+        last_model_poll = 0.0
         with AuraClient(connection=client.connection) as watcher:
             while not done.wait(.25):
                 sid = selected['id']
-                if not sid:
-                    continue
                 try:
+                    if report["capabilities"].get("model_control") and time.monotonic() - last_model_poll >= 1:
+                        last_model_poll = time.monotonic()
+                        state = watcher.request("model.status")
+                        model_line = model_status_text(state)
+                        view.model_status = model_line
+                        if model_line != last_model:
+                            print(model_line)
+                            last_model = model_line
+                    if not sid:
+                        continue
                     s = watcher.request("get", {"session_id": sid})
                     if selected['id'] != sid:
                         continue
@@ -261,8 +300,10 @@ def interactive(client, ssh=None, initial=None):
     report = diagnostics(client)
     print("  /\\_/\\    " + CLI_BANNER)
     print(" ( o.o )   Connected: " + safe_text(ssh or 'local service'))
-    print("  > ^ <    /help · /record · /resume --all")
+    print("  > ^ <    /help · /model · /record · /resume --all")
     print(safe_text(f'Service version: {report["service_version"]} · {report["version_status"]}'))
+    if not report['capabilities'].get('model_control'):
+        print('ASR controls are unavailable in this running service. Finish active work, then restart the service and CLI.')
     if report['version_status'] != 'matched':
         print(report['guidance'])
     with patch_stdout():
@@ -280,6 +321,9 @@ def interactive(client, ssh=None, initial=None):
                         break
                     if command == 'help':
                         print(' '.join(commands))
+                        print('/model shows ASR status · /model breeze or /model parakeet-tdt-0.6b-v2 selects and preloads')
+                        print('/model load preloads the default · /model unload releases GPU memory · finish active work before switching')
+                        print('/record --model MODEL and /transcribe FILE --model MODEL override one new session')
                         print('/resume [ID|--last|--all] reopens history · /unpause [ID] restarts paused capture')
                         print('/record --source microphone · /inspect [ID] · /doctor · /stop · /export ID --output meeting.txt')
                         continue
@@ -316,7 +360,7 @@ def interactive(client, ssh=None, initial=None):
                     if command in ('record', 'transcribe'):
                         words.append('--detach')
                     args = parser().parse_args(words)
-                    if args.command not in ('record', 'transcribe', 'schedule', 'sessions', 'pause', 'unpause', 'inspect', 'doctor', 'stop', 'refine', 'export', 'capabilities'):
+                    if args.command not in ('model', 'record', 'transcribe', 'schedule', 'sessions', 'pause', 'unpause', 'inspect', 'doctor', 'stop', 'refine', 'export', 'capabilities'):
                         raise ValueError('Use /help for workspace commands')
                     args.ssh = ssh
                     pending.put_nowait(args)
@@ -347,6 +391,12 @@ def main(argv=None):
             return 0
         if args.command == "connection-info":
             print(json.dumps(local_connection()))
+            return 0
+        if args.command == "models":
+            if args.ssh:
+                raise ValueError("Run model downloads locally on the inference server.")
+            from aura.asr.models import download_model
+            show({"model": args.model, "checkpoint": download_model(args.model)}, args.json)
             return 0
         if args.command == "gui":
             from aura.app import main as gui
