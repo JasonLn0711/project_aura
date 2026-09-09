@@ -69,9 +69,9 @@ regression checks, platform packaging, and dated runtime evidence.
 | Field | Value |
 | --- | --- |
 | Project Name | Project AURA / Ultimate Audio Assistant |
-| Refactor Version | `1.17.0` |
+| Refactor Version | `1.18.0` |
 | Latest Published Tag | `v1.14.0` |
-| Next Release Candidate | `v1.17.0` |
+| Next Release Candidate | `v1.18.0` |
 | Release State | Versioned shared-service source; physical-device, SSH and quality acceptance follow the documented gates |
 | Primary Platform | Ubuntu 22.04 / 24.04 desktop |
 | Python Runtime | Python 3.10+ |
@@ -97,7 +97,7 @@ GitHub Releases owns the durable release chronology. The sections below
 describe the current product contract and link each capability to its
 canonical design or evidence source.
 
-## Latest Update — v1.17.0 (2026-09-08)
+## Latest Update — v1.18.0 (2026-09-09)
 
 AURA v1.17.0 adds searchable session history and diagnostics to the shared
 desktop and terminal service. Reopen a workspace with `aura resume --all`,
