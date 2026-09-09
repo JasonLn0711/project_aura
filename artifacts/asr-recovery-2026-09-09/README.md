@@ -1,8 +1,11 @@
 # Parakeet short-tail recovery — 2026-09-09
 
-Validation mode: `availability_validation`  
-Status: `LIVE_MINIMUM_COMPLETED`  
-Runtime validity: `valid_target_runtime`  
+Validation mode: `availability_validation`
+
+Status: `LIVE_MINIMUM_COMPLETED`
+
+Runtime validity: `valid_target_runtime`
+
 Functional result: `available_and_working`
 
 The operator authorized recovery of an existing failed recording and continuation
