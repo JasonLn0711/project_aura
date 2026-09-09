@@ -29,7 +29,7 @@ uv run --no-sync aura export SESSION_ID --format txt --output meeting.txt
 uv run --no-sync aura transcribe meeting.wav --profile light
 ```
 
-Use `/help`, `/record`, `/sessions`, `/resume`, `/attach ID`, `/pause`, `/unpause`, `/stop`,
+Use `/help`, `/model`, `/record`, `/sessions`, `/resume`, `/attach ID`, `/pause`, `/unpause`, `/stop`,
 `/inspect`, `/doctor`, `/refine`, `/export`, `/transcribe`, `/schedule`, `/detach`, and `/quit` in the
 interactive terminal. Arguments follow the corresponding command's `--help`.
 The interface provides command completion and a transcript that updates above
@@ -316,3 +316,64 @@ The earlier public-audio receipts retain their original live inference counts.
 Hosted [Linux CI](https://github.com/JasonLn0711/project_aura/actions/runs/34222936459)
 and [Windows CI](https://github.com/JasonLn0711/project_aura/actions/runs/34222936393)
 passed for source `412bbc8`, including the Linux terminal interaction check.
+
+
+## Optional Parakeet v2 integration (unreleased)
+
+The session `options.asr_model` field accepts `breeze` (the default) and
+`parakeet-tdt-0.6b-v2`. Legacy sessions and queued jobs without the field resolve
+to Breeze. Preferences affect new sessions; recording, queued chunks, and
+refinement retain the session snapshot. No database migration is required.
+
+The existing single-worker process pool owns both runtimes. It closes the old
+worker before a different ASR model starts, and retains the existing idle cleanup.
+The service and GUI import only model metadata; NeMo and CUDA objects remain in
+the inference process. `capabilities.asr_models` is additive to protocol version 1
+and reports static capabilities, optional dependency presence, and local cache
+presence. Its `runtime_probe` is `not_performed`; actual runtime receipts belong
+to the sessions that exercised inference.
+
+CLI record, transcribe, and schedule commands accept `--model`. The server-local
+`models download parakeet-tdt-0.6b-v2` command retrieves a pinned official checkpoint;
+normal inference loads it offline. English-only settings are resolved centrally,
+with inherited Breeze prompts/hotwords excluded from the effective Parakeet
+snapshot and explicit incompatible options rejected. GUI controls preserve
+Breeze values while disabled for Parakeet.
+
+Imported speech scratch audio is decoded to 16 kHz mono PCM through either the
+FFmpeg or Python preparation path. NeMo segment timestamps enter the existing
+review artifact contract with `asr_logprob=null`. Live review segments retain
+AURA's durable capture-interval coordinates. Runtime receipts identify the
+checkpoint revision, NeMo/PyTorch versions, precision, and attention configuration.
+
+See the [availability packet](../artifacts/asr-parakeet-availability/README.md#initial-availability)
+for the exercised paths and remaining validation boundaries.
+
+
+### Interactive model lifecycle controls
+
+`aura model` and `/model` show `model.status`. A model name or `load` submits
+`model.load`; `unload` submits `model.unload`. The existing inference worker
+handles controls asynchronously while status queries remain available. Controls
+are rejected during active work or another load/unload. `model_control=true`
+advertises support; old services receive explicit restart guidance in the CLI.
+
+A successful explicit load persists the shared model default and retains its
+worker until explicit unload, a different-model job, or service shutdown.
+Failed loading releases the worker and preserves the prior default. Ordinary
+recording/import loads retain the existing idle release policy. Session model
+snapshots and stored transcripts are unchanged by model selection. Entering the
+CLI does not allocate GPU memory; the banner, toolbar, and `/model` show that state.
+
+
+### Tab completion and inference decisions
+
+The workspace uses `WorkspaceCompleter` with the existing argparse definitions
+and prompt_toolkit Tab behavior. Commands, model choices, options and local paths
+complete in context; Enter executes. Tests apply completions to real input buffers
+and the PTY check sends actual Tab keys. Reopen the CLI after updating the client.
+
+[ASR inference decision](asr-inference-decision-2026-09-09.md) preserves the source
+questions, `uv run --no-sync aura` explanation, memory accounting, framework
+options and deferred precision gate. The [public validation summary](../artifacts/asr-parakeet-availability/README.md)
+separates 317 software tests from the two earlier real availability attempts.

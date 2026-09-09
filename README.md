@@ -129,7 +129,7 @@ preserves the earlier transcription work and decisions.
 | Durable capture | Writes append-only PCM journals and atomic session state for recovery and final audio reconstruction |
 | Scheduled recording | Persists a timezone-aware start and stop time for service-host capture |
 | Media import | Processes common FFmpeg audio and video containers through the shared serial queue |
-| GPU-only ASR | Runs Breeze ASR 25 through `faster-whisper` on the activated RTX/CUDA runtime |
+| GPU-only ASR | Runs Breeze ASR 25 by default; optional Parakeet v2 adds English ASR on a Linux CUDA server |
 | Traditional Chinese punctuation | Restores punctuation during ASR, with protected terms and a visible rule fallback |
 | Hotwords | Saves a local editable vocabulary list and imports UTF-8 text; combined prompt and hotwords are validated before ASR |
 | Transcript editor | Supports ordinary text editing and export with concurrent-edit protection during refinement |
@@ -419,6 +419,89 @@ The file-transcription prompt guides the recognizer toward a professional
 Traditional Chinese meeting record with full-width punctuation that follows
 the speaker's tone. The Settings panel provides an editable prompt for each
 workflow.
+
+### Optional English ASR: Parakeet v2
+
+**Local addition (unreleased):** select `parakeet-tdt-0.6b-v2` for English
+file imports, live VAD segments, and explicit recording refinement. Breeze
+remains the default for Chinese and mixed-language work. Windows clients can
+connect to the Linux inference server through the existing SSH workflow.
+
+Install the optional runtime on a Linux Python 3.12 server, then download the
+pinned checkpoint explicitly:
+
+```bash
+uv sync --locked --extra cli --extra server --extra parakeet --inexact
+uv run --no-sync aura models download parakeet-tdt-0.6b-v2
+uv run --no-sync aura transcribe english.wav --model parakeet-tdt-0.6b-v2
+uv run --no-sync aura record --model parakeet-tdt-0.6b-v2 --source microphone
+```
+
+After updating, finish active work and restart the service so it loads the new
+code. In the GUI, choose **Parakeet v2** in the ASR model selector.
+The shared-defaults button applies the selection to future GUI and CLI sessions.
+Existing sessions retain their own model, including during refinement; legacy
+sessions use Breeze. `aura doctor` reports the available model capabilities,
+optional dependencies, and cached checkpoint without loading weights onto CUDA.
+
+In the interactive `aura>` workspace, use:
+
+```text
+/model                              # Show selected model and actual load state
+/model parakeet-tdt-0.6b-v2          # Select English Parakeet and preload it
+/model breeze                       # Select Breeze and preload it
+/model load                         # Preload the saved default
+/model unload                       # Release the ASR worker and GPU memory
+```
+
+Press **Tab** to complete commands, options, model names, and local file paths:
+`/mo` completes to `/model`, `/model para` completes the Parakeet model name,
+and `/record --mo` completes to `/record --model`. When several choices match,
+Tab fills their shared prefix; press Tab again to cycle the choices. Press
+**Enter** to execute the completed command. Reopen the CLI after updating to
+use the new completion behavior.
+
+Model commands are listed in `/help` and completion. Startup reports the ASR load
+state; entering the CLI alone leaves inference unloaded. `/record` and `/transcribe`
+load their selected model automatically. Explicit preloading runs in the background
+and reports `loading`, `loaded`, or an error. A successful selection becomes the
+shared default for new sessions; existing sessions keep their own model. Finish
+active work before switching or unloading. A failed load keeps the previous default.
+For shell scripts, use `aura model ...` and poll `aura --json model status` until
+`state` is `loaded` or `error` before continuing.
+
+Explicitly preloaded models stay resident across idle periods and CLI disconnects
+until `/model unload`, a different-model job, or service shutdown. This lets an
+operator choose when to hold GPU resources. The [CLI model-control receipt](artifacts/asr-parakeet-availability/README.md#cli-model-controls)
+records actual preload, reuse through transcription, and worker exit after unload.
+
+Parakeet supplies English punctuation and segment timestamps. Its selection
+sets English and disables Whisper prompts, hotwords, beam-size controls, and
+Chinese punctuation restoration. Breeze vocabulary and prompt preferences are
+retained. Explicit incompatible options receive an error. Speech-input scratch
+files use 16 kHz mono PCM; source recordings and delivery audio keep their existing
+formats. NeMo scores are not reported as Whisper log probabilities.
+
+One subprocess owns ASR. Jobs for the same model reuse it while the worker is
+active; switching models closes the old subprocess before loading the next.
+Idle workspaces release automatically loaded workers; explicit preloads remain
+until released as described above. Parakeet uses NeMo 3.0.0, CUDA FP32,
+batch size 1, local attention `[128, 128]`, and automatic subsampling chunking.
+Live output uses AURA's existing VAD segments; native streaming, hotword boosting,
+quantization, and Windows-native NeMo remain separate work packages.
+
+The [public-audio availability packet](artifacts/asr-parakeet-availability/README.md#initial-availability)
+records three real CUDA inferences across import, live segmentation, and
+refinement, with persisted transcripts and exports. This is functional
+availability evidence; accuracy, latency, throughput, long-recording acceptance,
+physical microphone acceptance, and cross-model ranking remain unevaluated.
+The [NVIDIA checkpoint](https://huggingface.co/nvidia/parakeet-tdt-0.6b-v2),
+revision `ae9ad07059c7c739ffaf932226a8fe64ae2620b0`, is attributed to NVIDIA
+under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).
+
+The [ASR inference decision](docs/asr-inference-decision-2026-09-09.md) explains
+FP32 memory use, PyTorch/ONNX alternatives, CLI startup, and the next optimization
+gate. Framework and precision comparisons remain deferred.
 
 ### Live capture and audio preservation
 
@@ -754,11 +837,11 @@ The complete release contract is documented in
 
 ### GPU memory pressure
 
-- Keep ASR compute type at `int8`.
+- Breeze uses `int8`; the optional Parakeet runtime uses FP32.
 - Close other GPU-intensive applications before long recordings.
 - Use Runtime Diagnostics to review device state and model readiness.
-- AURA releases model references and clears available CUDA cache during
-  lifecycle cleanup.
+- The shared service closes its inference subprocess when idle and before
+  switching models, releasing that process's CUDA allocations.
 
 ### CUDA activation
 
