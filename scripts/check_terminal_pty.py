@@ -41,6 +41,8 @@ def main():
     client.request('capture.failed',{'session_id':failed,'error':'Synthetic capture device unavailable'})
     os.write(master,f'/resume {failed[:8]}\n'.encode());read(.5)
     os.write(master,b'/inspect\n');read(.4)
+    os.write(master,b'/recov\t');read(.3)
+    os.write(master,f' {sid[:8]}\n'.encode());read(.4)
     os.write(master,b'/resume --all\n');read(.4)
     os.write(master,b'Synthetic');read(.2);os.write(master,b'\x1b[B');read(.2);os.write(master,b'\r');read(.4)
     os.write(master,b'/help\n');read(.4)

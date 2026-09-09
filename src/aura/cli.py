@@ -39,7 +39,7 @@ def parser():
     resume.add_argument("session_id", nargs="?")
     resume.add_argument("--all", action="store_true", help="Show all sessions on the selected service")
     resume.add_argument("--last", action="store_true", help="Reopen the most recently updated session")
-    for command in ("attach", "inspect", "pause", "unpause", "stop", "refine", "capture"):
+    for command in ("attach", "inspect", "pause", "unpause", "stop", "refine", "recover", "capture"):
         sub = subs.add_parser(command)
         sub.add_argument("session_id")
     for command in ("record", "transcribe", "schedule"):
@@ -61,7 +61,7 @@ def parser():
         sub.add_argument("--detach", action="store_true")
     export = subs.add_parser("export")
     export.add_argument("session_id")
-    export.add_argument("--format", choices=("txt", "refined", "json", "wav", "m4a", "mp3"), default="txt")
+    export.add_argument("--format", choices=("txt", "refined", "recovered", "json", "wav", "m4a", "mp3"), default="txt")
     export.add_argument("--output", type=Path)
     return p
 
@@ -118,7 +118,7 @@ def inspect_session(session, machine=False):
         show(session, True)
     else:
         fields = ("id", "title", "state", "created_at", "updated_at", "source", "capture_location",
-                  "error", "work", "artifacts")
+                  "error", "capture_error", "asr_issues", "work", "artifacts")
         print(safe_text(json.dumps({k: session[k] for k in fields if k in session}, ensure_ascii=False, indent=2)))
 
 
@@ -128,7 +128,7 @@ def diagnostics(client, host=None):
     return dict(client_version=__version__, service_version=service_version or "unknown",
                 connection="connected", host=host or client.ssh or "local service",
                 version_status="unknown" if not service_version else "matched" if service_version == __version__ else "mismatch",
-                capabilities={k: capabilities[k] for k in ("model_control", "asr_models", "protocol", "ffmpeg", "profiles", "capture_format", "single_owner", "deepfilternet", "clearvoice") if k in capabilities},
+                capabilities={k: capabilities[k] for k in ("model_control", "recover", "asr_models", "protocol", "ffmpeg", "profiles", "capture_format", "single_owner", "deepfilternet", "clearvoice") if k in capabilities},
                 diagnostics=capabilities.get("diagnostics", {}),
                 guidance="Finish active recordings and jobs before restarting an older service. Device capture requires its own check.")
 
@@ -168,6 +168,8 @@ def execute(client, args, *, on_progress=None):
         else:
             print(model_status_text(result), flush=True)
         return result
+    if command == "recover" and not client.request("capabilities").get("recover"):
+        raise RuntimeError("This service has no recovery controls; finish active work, then restart the service and CLI.")
     if command == "sessions":
         show(client.session_summaries(), args.json)
         return 0
@@ -178,7 +180,7 @@ def execute(client, args, *, on_progress=None):
         else:
             print(safe_text(json.dumps(result, ensure_ascii=False, indent=2)))
         return 0
-    if command in ("inspect", "unpause", "attach"):
+    if command in ("inspect", "unpause", "attach", "recover"):
         session = client.resolve_session(args.session_id)
         args.session_id = session["id"]
         if command == "inspect":
@@ -230,7 +232,7 @@ def interactive(client, ssh=None, initial=None):
     from prompt_toolkit.patch_stdout import patch_stdout
     from prompt_toolkit.styles import Style
     from aura.terminal import TerminalStatus, safe_text
-    commands = ["/model", "/record", "/schedule", "/sessions", "/attach", "/pause", "/resume", "/unpause", "/inspect", "/doctor", "/stop", "/refine", "/export", "/transcribe", "/status", "/graphs", "/detach", "/help", "/quit"]
+    commands = ["/recover", "/model", "/record", "/schedule", "/sessions", "/attach", "/pause", "/resume", "/unpause", "/inspect", "/doctor", "/stop", "/refine", "/export", "/transcribe", "/status", "/graphs", "/detach", "/help", "/quit"]
     view = TerminalStatus()
     prompt = PromptSession(completer=WorkspaceCompleter(parser(), commands), complete_while_typing=False,
         bottom_toolbar=lambda: view.toolbar(shutil.get_terminal_size().columns), refresh_interval=.25,
@@ -321,6 +323,7 @@ def interactive(client, ssh=None, initial=None):
                         break
                     if command == 'help':
                         print(' '.join(commands))
+                        print('/recover [ID] retries saved gaps once; /export ID --format recovered exports recovered text')
                         print('Tab completes commands, options, model names and local paths; press Tab again to cycle choices.')
                         print('/model shows ASR status · /model breeze or /model parakeet-tdt-0.6b-v2 selects and preloads')
                         print('/model load preloads the default · /model unload releases GPU memory · finish active work before switching')
@@ -354,14 +357,14 @@ def interactive(client, ssh=None, initial=None):
                         view.update(s)
                         continue
                     words[0] = command
-                    if command in ('pause', 'unpause', 'inspect', 'stop', 'refine', 'export') and len(words) == 1:
+                    if command in ('pause', 'unpause', 'inspect', 'stop', 'refine', 'recover', 'export') and len(words) == 1:
                         if not selected['id']:
                             raise ValueError('Attach a session first')
                         words.append(selected['id'])
                     if command in ('record', 'transcribe'):
                         words.append('--detach')
                     args = parser().parse_args(words)
-                    if args.command not in ('model', 'record', 'transcribe', 'schedule', 'sessions', 'pause', 'unpause', 'inspect', 'doctor', 'stop', 'refine', 'export', 'capabilities'):
+                    if args.command not in ('model', 'record', 'transcribe', 'schedule', 'sessions', 'pause', 'unpause', 'inspect', 'doctor', 'stop', 'refine', 'recover', 'export', 'capabilities'):
                         raise ValueError('Use /help for workspace commands')
                     args.ssh = ssh
                     pending.put_nowait(args)

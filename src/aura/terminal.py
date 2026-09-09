@@ -87,6 +87,9 @@ class TerminalStatus:
             total = sum(work.values())
             if total:
                 lines.append(('class:accent', 'Transcription queue ' + bar(work['done'], total)))
+        gaps = sum(i["status"] == "pending" for i in s.get("asr_issues", []))
+        if gaps:
+            lines.append(('class:error', f'{gaps} transcription gaps · audio preserved · /inspect · /recover after stop'))
         if s.get('error'):
             lines.append(('class:error', safe_text(s['error'])))
         if self.graphs and width >= 60:
@@ -94,7 +97,7 @@ class TerminalStatus:
             lines.append(('class:accent', 'Audio ' + graph(self.audio, 20) + '  Queue ' + graph([v / ceiling for v in self.queue], 20) + f' (0–{ceiling})'))
         lines.append(('class:muted', '/unpause · /stop · /inspect · /detach' if state == 'paused' else
                       '/pause · /stop · /inspect · /detach' if state == 'recording' else
-                      '/inspect · /export · /resume · /detach' if state in ('ready', 'failed', 'recoverable') else
+                      '/inspect · /export · /recover · /resume · /detach' if state in ('ready', 'failed', 'recoverable') else
                       '/inspect · /detach · /graphs off'))
         return lines
 

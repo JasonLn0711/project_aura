@@ -69,6 +69,8 @@ class ServiceWorker(QThread):
                         elif command == "download":
                             result = str(client.download(args["session_id"], args["format"], args["destination"]))
                         else:
+                            if command == "recover" and not client.request("capabilities").get("recover"):
+                                raise RuntimeError("服務尚未支援補轉錄；完成活動工作後請重啟服務與應用程式。")
                             result = client.request(command, args)
                         self.result.emit(command, result, args)
                     except Exception as exc:
@@ -136,11 +138,13 @@ class TranscriptionTab(QWidget):
         self.btn_import.clicked.connect(self.import_file)
         self.btn_refine = QPushButton("重新精修")
         self.btn_refine.clicked.connect(lambda: self.command("refine"))
+        self.btn_recover = QPushButton("補轉錄缺段")
+        self.btn_recover.clicked.connect(lambda: self.command("recover"))
         self.btn_save = QPushButton("儲存編輯")
         self.btn_save.clicked.connect(self.save_editor_transcript)
         self.btn_export = QPushButton("匯出")
         self.btn_export.clicked.connect(self.export)
-        for button in (self.btn_record, self.btn_pause, self.btn_stop, self.btn_import, self.btn_refine, self.btn_save, self.btn_export):
+        for button in (self.btn_record, self.btn_pause, self.btn_stop, self.btn_import, self.btn_refine, self.btn_recover, self.btn_save, self.btn_export):
             actions.addWidget(button)
         main.addLayout(actions)
         self.session_status = QLabel("選取工作階段，或開始新錄音。暫停會同時停止收音與新的辨識工作。")
@@ -267,6 +271,9 @@ class TranscriptionTab(QWidget):
             stop_at=self.schedule_end.dateTime().toPyDateTime().astimezone().isoformat()))
 
     def command(self, command):
+        if command == "recover" and self.editor_edited:
+            self.show_error("請先儲存逐字稿編輯，再補轉錄缺段。")
+            return
         if self.current:
             self.submit(command, {"session_id": self.current["id"]})
 
@@ -293,9 +300,9 @@ class TranscriptionTab(QWidget):
     def export(self):
         if not self.current:
             return
-        path, selected = QFileDialog.getSaveFileName(self, "匯出", "transcript.txt", "Text (*.txt);;Refined text (*.txt);;JSON (*.json);;WAV (*.wav);;M4A (*.m4a)")
+        path, selected = QFileDialog.getSaveFileName(self, "匯出", "transcript.txt", "Text (*.txt);;Refined text (*.txt);;Recovered text (*.txt);;JSON (*.json);;WAV (*.wav);;M4A (*.m4a)")
         if path:
-            self.submit("download", dict(session_id=self.current["id"], format="refined" if selected.startswith("Refined") else (Path(path).suffix.lstrip(".") or "txt"), destination=path))
+            self.submit("download", dict(session_id=self.current["id"], format="refined" if selected.startswith("Refined") else "recovered" if selected.startswith("Recovered") else (Path(path).suffix.lstrip(".") or "txt"), destination=path))
 
     def on_transcript_changed(self):
         if not self.updating_transcript:
@@ -322,11 +329,15 @@ class TranscriptionTab(QWidget):
         self.btn_pause.setText("繼續" if state == "paused" else "暫停")
         self.btn_pause.setEnabled(state in ("recording", "paused"))
         self.btn_stop.setEnabled(state in ("starting", "recording", "pausing", "paused", "scheduled"))
+        self.btn_recover.setEnabled(state in ("ready", "recoverable", "failed"))
         self.btn_refine.setEnabled(state in ("ready", "recoverable", "failed"))
         if not self.editor_edited and self.text_area.toPlainText() != s["transcript"]:
             self.updating_transcript = True
             self.text_area.setPlainText(s["transcript"])
             self.updating_transcript = False
+        gaps = sum(i["status"] == "pending" for i in s.get("asr_issues", []))
+        if gaps:
+            self.status_label.setText(f"{gaps} 段待補轉錄；音訊持續保存，停止後可補轉錄缺段。")
         if s.get("error"):
             self.status_label.setText(s["error"])
 
