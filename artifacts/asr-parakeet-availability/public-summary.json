@@ -1,0 +1,32 @@
+{
+  "date": "2026-09-09",
+  "custody": "Raw receipts, audio, transcripts and service state remain owner-local. Hashes identify the reviewed local receipts; they do not make raw evidence publicly available.",
+  "attempts": [
+    {
+      "attempt": "2026-09-09-attempt-01",
+      "receipt_sha256": "32ccaede212fe5457b65cc695fb750b0392c67490ef09c0b05f440ebc7fc213c",
+      "validation_mode": "availability_validation",
+      "status": "LIVE_MINIMUM_COMPLETED",
+      "runtime_validity": "valid_target_runtime",
+      "functional_result": "available_and_working",
+      "accuracy": "not_evaluated",
+      "latency": "not_evaluated",
+      "ground_truth_read": false,
+      "real_inference_jobs": 3,
+      "recorded_wav_exports": 1
+    },
+    {
+      "attempt": "2026-09-09-cli-controls",
+      "receipt_sha256": "3c57bf4ca5d1458712a07714539acbd40da193587d6f490dec4632e6e5c56df4",
+      "validation_mode": "availability_validation",
+      "status": "LIVE_MINIMUM_COMPLETED",
+      "runtime_validity": "valid_target_runtime",
+      "functional_result": "available_and_working",
+      "accuracy": "not_evaluated",
+      "latency": "not_evaluated",
+      "ground_truth_read": false,
+      "real_inference_jobs": 3,
+      "recorded_wav_exports": 1
+    }
+  ]
+}

@@ -43,3 +43,9 @@ local_outputs/dpdfnet-eval-env/
 .env
 .env.*
 *.log
+
+# Availability services contain local connection credentials and SQLite state.
+artifacts/asr-parakeet-availability/*/service/
+
+# Owner-local ASR receipts and derived voice/session material; publish aggregates only.
+artifacts/asr-parakeet-availability/2026-*/
