@@ -16,6 +16,8 @@ punctuation coverage, and operator control.
   contiguous. Source sample positions provide timestamps even across long gaps.
   Capture journals continue to own original audio. Enhancement and gain run in
   the ASR worker. Processing and queue age appear in the runtime log.
+  New shared-service recordings now use [adaptive live segmentation](shared-sessions-2026-09-08.md#adaptive-live-segmentation);
+  the fixed 12-second behavior remains available for compatibility.
 - **Punctuation:** the existing zh-wiki BERT model is repaired rather than
   replaced without evidence. Partial punctuation no longer bypasses inference.
   Token windows overlap by 64 tokens, and offset predictions select the window
@@ -28,7 +30,12 @@ punctuation coverage, and operator control.
 - **Hotwords:** one-per-line local Qt settings, UTF-8/BOM import, duplicate
   removal, and shared faster-whisper hints for live, file and final ASR. The
   combined prompt and hotwords must fit 200 tokenizer tokens; overflow is
-  rejected visibly, with no silent truncation. A recording freezes its hints.
+  rejected visibly, with no silent truncation. New recording, scheduling, and
+  import requests use the locally cached Breeze tokenizer to check this budget
+  before creating a session or changing the loaded model. If the tokenizer is
+  not cached, worker validation remains in place. Keep a full vocabulary file
+  and pass a shorter, prioritized copy through `--hotwords-file` when needed;
+  the prompt also consumes this budget. A recording freezes its hints.
 - **Export:** displayed words and whitespace are retained, with a final newline
   when needed. Automatic fuzzy glossary replacement is disabled. The explicit
   research helper and historical artifact readers remain available.

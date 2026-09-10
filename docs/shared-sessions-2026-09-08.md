@@ -49,6 +49,48 @@ system. Install uv before setup. Startup uses `--no-sync` so the chosen profile
 stays intact; update dependencies deliberately through `uv sync --locked` with
 the same extras. Stop active sessions and the service before changing its environment.
 
+## Adaptive live segmentation
+
+New recordings use adaptive endpointing and display completed recognition
+results. With the default 20-second maximum, the first 10 seconds require an
+800 ms pause. Between 10 and 20 seconds, the required pause decreases linearly
+to 400 ms. Continuous speech reaches a forced boundary at 20 seconds, rounded
+up to the next 30 ms audio frame. This boundary retains the unfinished-phrase
+marker for punctuation. Audio capture and source timestamps remain continuous.
+Silence alone does not create periodic recognition jobs; pause and stop flush
+the remaining speech interval.
+
+```bash
+# Adaptive defaults, also accepted by /record in the interactive workspace.
+uv run --no-sync aura record --segmentation adaptive --max-segment-seconds 20 --silence-ms 800
+# Restore the previous fixed endpointing behavior.
+uv run --no-sync aura record --segmentation fixed --max-segment-seconds 12 --silence-ms 800
+```
+
+Both `record` and `schedule` accept these flags. The shared SDK option names
+are `live_segmentation`, `live_max_segment_len_sec`, and `live_silence_ms`.
+Maximum segment length accepts finite values from 2 to 30 seconds; silence
+accepts integer values from 200 to 2000 ms. Adaptive mode starts reducing the
+silence threshold halfway through the configured maximum and reaches half
+the configured silence at the maximum. Fixed mode keeps the silence threshold
+constant. Service preferences supply omitted values, and each new session
+freezes its effective options. GUI recordings use the same service defaults.
+Imported-file transcription does not use this live segmentation policy.
+
+Existing sessions without these options retain fixed 12-second / 800 ms
+behavior. `/inspect` shows effective stored options and `last_split` with the
+reason, source sample range, and terminal marker. Reasons are `silence`,
+`max_duration`, `pause`, `stop`, or `flush` for other lifecycle flushes. Each
+persisted chunk job also retains its split reason.
+
+Finish active work before restarting the service to activate updated code.
+The initial adaptive settings are engineering defaults, not measured quality
+or latency improvements. Recognition and queue time add to the segment wait;
+the maximum is not a display deadline. Real classroom-audio acceptance remains
+a separate validation step. The design follows the gradually reduced silence
+threshold principle documented in [Microsoft's time segmentation
+strategy](https://learn.microsoft.com/en-us/cpp/cognitive-services/speech/microsoft-cognitiveservices-speech-namespace).
+
 ## Resume history and diagnose sessions
 
 ```bash

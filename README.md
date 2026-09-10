@@ -123,6 +123,12 @@ graph controls. The [CLI presentation packet](artifacts/cli-garden-preview/READM
 connects the user-provided screenshots, synthetic previews and terminal checks.
 Runtime/package metadata remains at 1.18.0.
 
+The September 10 recording update checks cached Breeze prompt/hotword budgets
+before creating sessions and adds configurable adaptive live segmentation.
+Completed recognition results remain the displayed output; old sessions retain
+fixed endpointing. The [recording validation receipt](artifacts/cli-recording-2026-09-10/README.md)
+separates software checks from pending classroom-audio acceptance.
+
 - `/model` shows actual load state; model selection preloads explicitly while
   new sessions retain their own model settings.
 - Tab completes commands, model names, options and local paths; Enter executes.
@@ -300,6 +306,10 @@ the repository diagnostic scripts.
 
 For slash commands, server installation, SSH forwarding, recovery, and the
 validation scope, see [Shared sessions](docs/shared-sessions-2026-09-08.md).
+New recordings use [adaptive live segmentation](docs/shared-sessions-2026-09-08.md#adaptive-live-segmentation):
+an 800 ms endpoint pause gradually decreases after 10 seconds, with a 20-second
+audio-segment cap. CLI options support tuning and the previous fixed 12-second
+behavior. Queue and recognition time are additional to the segment wait.
 
 ### Track Splitter
 
@@ -582,6 +592,11 @@ Hotwords are recognizer hints, shared by live, file, and final transcription.
 The recording keeps the vocabulary snapshot used when it started. Automatic fuzzy
 replacement on save is disabled. The standalone glossary research helper remains
 available only through explicit opt-in.
+The combined prompt and vocabulary must fit 200 tokenizer tokens. With a cached
+Breeze tokenizer, new recording, scheduling and import requests reject overflow
+before creating a session or changing the loaded model. Worker validation remains
+in place when the tokenizer is absent. Keep a full vocabulary file and supply a
+prioritized shorter copy using `--hotwords-file`; terms are never silently truncated.
 
 ### Speaker diarization
 
