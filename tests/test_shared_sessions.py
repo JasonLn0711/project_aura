@@ -112,6 +112,30 @@ class SharedSessionTests(unittest.TestCase):
         wait_state(self.core, s["id"], "recording")
         return s["id"]
 
+    def test_record_stop_deadline_validation_persistence_and_auto_stop(self):
+        import datetime
+        for value in ("bad", "2020-01-01T00:00:00+08:00", "2099-01-01T00:00:00", 123):
+            with self.subTest(value=value), self.assertRaisesRegex(ValueError, "future ISO 8601"):
+                self.core.request("record", {"stop_at": value})
+        self.assertEqual(self.core.request("sessions"), [])
+        end = datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=8))) + datetime.timedelta(days=1)
+        s = self.core.request("record", dict(capture_location="client", stop_at=end.isoformat()))
+        sid = s["id"]
+        expected = end.astimezone(datetime.timezone.utc).isoformat()
+        self.assertEqual(s["stop_at"], expected)
+        saved = json.loads(self.core.db.execute("SELECT data FROM sessions WHERE id=?", (sid,)).fetchone()[0])
+        self.assertEqual(saved["stop_at"], expected)
+        wait_state(self.core, sid, "recording")
+        self.core.request("producer.open", {"session_id": sid})
+        with self.assertRaisesRegex(ValueError, f"/attach {sid}.*?/stop {sid}"):
+            self.core.request("model.load", {"asr_model": "breeze"})
+        with patch("aura.session_core.now", return_value=expected):
+            with self.core.changed:
+                self.core.changed.notify_all()
+            wait_state(self.core, sid, "stopping")
+            self.core.request("producer.stopped", {"session_id": sid})
+            wait_state(self.core, sid, "ready")
+
     def test_live_segmentation_options_schedule_and_legacy_sessions(self):
         import datetime
         from aura.session_core import options_for

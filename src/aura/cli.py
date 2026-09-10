@@ -28,6 +28,9 @@ def parser():
     server.add_argument("--port", type=int, default=0)
     subs.add_parser("connection-info").add_argument("--json", action="store_true")
     subs.add_parser("sessions", help="List saved sessions")
+    delete = subs.add_parser("delete", help="Preview session deletion; confirmation required")
+    delete.add_argument("session_id")
+    delete.add_argument("--confirm", metavar="SESSION_ID", help="Permanently delete the previewed session; repeat its full UUID")
     subs.add_parser("capabilities")
     subs.add_parser("doctor", help="Inspect service and runtime diagnostics")
     models = subs.add_parser("models", help="Manage server-local ASR weights")
@@ -64,7 +67,8 @@ def parser():
                              help="Endpoint silence: 200–2000 ms (service default: 800)")
         if command == "schedule":
             sub.add_argument("--start-at", required=True, help="ISO 8601 with timezone")
-            sub.add_argument("--stop-at", required=True, help="ISO 8601 with timezone")
+        if command in ("record", "schedule"):
+            sub.add_argument("--stop-at", required=command == "schedule", help="Stop capture at an ISO 8601 time with timezone")
         sub.add_argument("--title", default="Meeting")
         sub.add_argument("--profile", choices=("off", "light", "medium", "far-speaker", "rescue-offline"), default=None)
         sub.add_argument("--model", choices=MODEL_KEYS, default=None)
@@ -180,6 +184,16 @@ def model_status_text(result, *, compact=False):
 
 
 def execute(client, args, *, on_progress=None):
+    if args.command == "delete":
+        if not client.request("capabilities").get("session_delete"):
+            raise RuntimeError("This service has no session deletion; finish active work, then restart the service and CLI.")
+        session = client.resolve_session(args.session_id)
+        values = dict(session_id=session["id"])
+        if args.confirm:
+            values["confirm"] = args.confirm
+        result = client.request("delete" if args.confirm else "delete.preview", values)
+        show(result, args.json)
+        return result
     command = args.command
     if command == "model":
         if not client.request("capabilities").get("model_control"):
@@ -222,6 +236,10 @@ def execute(client, args, *, on_progress=None):
         show({"export": str(path)}, args.json)
         return 0
     values = {}
+    if command == "record" and args.stop_at:
+        if not client.request("capabilities").get("record_stop_at"):
+            raise RuntimeError("This service does not support record --stop-at; finish active work, then restart the service and CLI.")
+        values["stop_at"] = args.stop_at
     if hasattr(args, "session_id"):
         values["session_id"] = args.session_id
     if command in ("record", "transcribe", "schedule"):
@@ -270,7 +288,7 @@ def interactive(client, ssh=None, initial=None, palette='slate'):
         for stream in (sys.stdout, sys.stderr):
             if hasattr(stream, 'reconfigure'):
                 stream.reconfigure(errors='backslashreplace')
-    commands = ["/recover", "/model", "/record", "/schedule", "/sessions", "/attach", "/pause", "/resume", "/unpause", "/inspect", "/doctor", "/stop", "/refine", "/export", "/transcribe", "/status", "/graphs", "/animations", "/detach", "/help", "/quit"]
+    commands = ["/delete", "/recover", "/model", "/record", "/schedule", "/sessions", "/attach", "/pause", "/resume", "/unpause", "/inspect", "/doctor", "/stop", "/refine", "/export", "/transcribe", "/status", "/graphs", "/animations", "/detach", "/help", "/quit"]
     view = TerminalStatus()
     prompt = PromptSession(completer=WorkspaceCompleter(parser(), commands), complete_while_typing=False,
         bottom_toolbar=lambda: view.toolbar(*shutil.get_terminal_size()), refresh_interval=.25,
@@ -323,6 +341,11 @@ def interactive(client, ssh=None, initial=None, palette='slate'):
                         print(safe_text(text[len(selected['text']):] if text.startswith(selected['text']) else text))
                         selected['text'] = text
                 except Exception as exc:
+                    if str(exc) == "Unknown session":
+                        if selected['id'] == sid:
+                            select(None)
+                            print('Session no longer exists; detached.')
+                        continue
                     view.connected = False
                     view.error = str(exc)
                     print(safe_text(f'AURA: Disconnected · {exc}'))
@@ -338,6 +361,8 @@ def interactive(client, ssh=None, initial=None, palette='slate'):
                     result = execute(operator, args, on_progress=view.progress)
                     if isinstance(result, dict) and 'id' in result:
                         select(result['id'])
+                    if isinstance(result, dict) and result.get('deleted') == selected['id']:
+                        select(None)
                 except Exception as exc:
                     print(safe_text(f'AURA: {exc}'))
                 finally:
@@ -371,7 +396,7 @@ def interactive(client, ssh=None, initial=None, palette='slate'):
                         break
                     if command == 'help':
                         print('Record    /record · /transcribe · /schedule · /pause · /unpause · /stop')
-                        print('Sessions  /resume · /sessions · /attach · /inspect · /status · /detach')
+                        print('Sessions  /resume · /sessions · /attach · /inspect · /delete · /status · /detach')
                         print('ASR       /model · /doctor · /recover')
                         print('Export    /export · /refine')
                         print('Workspace /graphs on|off · /animations on|off · /help · /quit')
@@ -417,7 +442,7 @@ def interactive(client, ssh=None, initial=None, palette='slate'):
                     if command in ('record', 'transcribe'):
                         words.append('--detach')
                     args = parser().parse_args(words)
-                    if args.command not in ('model', 'record', 'transcribe', 'schedule', 'sessions', 'pause', 'unpause', 'inspect', 'doctor', 'stop', 'refine', 'recover', 'export', 'capabilities'):
+                    if args.command not in ('delete', 'model', 'record', 'transcribe', 'schedule', 'sessions', 'pause', 'unpause', 'inspect', 'doctor', 'stop', 'refine', 'recover', 'export', 'capabilities'):
                         raise ValueError('Use /help for workspace commands')
                     args.ssh = ssh
                     pending.put_nowait(args)

@@ -146,8 +146,11 @@ class SessionCore:
 
     def _available(self):
         self._model_available()
-        if any(s["state"] in ACTIVE for s in self.sessions.values()):
-            raise ValueError("A recording or transcription job is active; attach or finish it first")
+        active = next((s for s in self.sessions.values() if s["state"] in ACTIVE), None)
+        if active:
+            raise ValueError(f"A recording or transcription job is active ({active['state']}); "
+                             f"/attach {active['id']} to inspect or /stop {active['id']} to finish it. "
+                             "/quit only detaches; recording continues.")
 
     def _new(self, args, state):
         from aura.asr.hotwords import validate_cached_context
@@ -173,6 +176,44 @@ class SessionCore:
             raise ValueError("Invalid session ID")
         return self.root / "sessions" / sid
 
+    def _delete_session(self, args, *, preview):
+        import shutil
+        s = self._get(args["session_id"])
+        sid = s["id"]
+        if s["state"] not in ("ready", "failed", "recoverable", "cancelled", "deleting") or s.get("producer_connected") or sid in self.producers:
+            raise ValueError(f"Session is {s['state']}; /stop {sid} and wait for capture and processing to finish before deleting")
+        if self.db.execute("SELECT 1 FROM jobs WHERE session=? AND state='running'", (sid,)).fetchone():
+            raise ValueError("A session job is still running; wait before deleting")
+        directory = self.directory(sid)
+        if directory.is_symlink() or directory.parent.resolve() != self.root / "sessions":
+            raise ValueError("Refusing to delete a session directory redirected by a symlink")
+        if preview:
+            return dict(session_id=sid, title=s["title"], state=s["state"], directory=str(directory),
+                        removes="Session directory (audio, transcripts, artifacts), session history, jobs and cached responses",
+                        retains="Source media and uploads outside this directory, external exports, backups and operation audit logs",
+                        confirm=f"/delete {sid} --confirm {sid}")
+        if args.get("confirm") != sid:
+            raise ValueError(f"Preview /delete {sid}, then repeat with --confirm {sid}")
+        # Persist intent before file removal so failures remain visible and retryable after restart.
+        s["state"] = "deleting"
+        self._save(s)
+        rec = self.recordings.get(sid)
+        if rec:
+            rec._close()
+            self.recordings.pop(sid)
+        if directory.exists():
+            shutil.rmtree(directory)
+        with self.db:
+            for table in ("events", "jobs"):
+                self.db.execute(f"DELETE FROM {table} WHERE session=?", (sid,))
+            self.db.execute("DELETE FROM commands WHERE instr(command, ?) > 0 OR instr(result, ?) > 0", (sid, sid))
+            self.db.execute("DELETE FROM sessions WHERE id=?", (sid,))
+        self.sessions.pop(sid)
+        self.detectors.pop(sid, None)
+        self.last_event_revision.pop(sid, None)
+        self.changed.notify_all()
+        return dict(deleted=sid)
+
     def _job(self, s, kind, **payload):
         payload.update(options=s["options"], directory=str(self.directory(s["id"])))
         self.db.execute("INSERT INTO jobs(session,kind,payload) VALUES (?,?,?)", (s["id"], kind, json.dumps(payload)))
@@ -185,7 +226,7 @@ class SessionCore:
             raise ValueError("Command arguments must be an object")
         with self.lock:
             signature = json.dumps([command, args], sort_keys=True)
-            cache_command = request_id and command not in ("get", "sessions", "capabilities", "export", "preferences.get", "model.status")
+            cache_command = request_id and command not in ("get", "sessions", "capabilities", "export", "preferences.get", "model.status", "delete.preview", "delete")
             if cache_command:
                 previous = self.db.execute("SELECT command,result FROM commands WHERE id=?", (request_id,)).fetchone()
                 if previous:
@@ -233,7 +274,7 @@ class SessionCore:
         if command == "capabilities":
             import shutil
             from aura.asr.models import capabilities
-            return dict(model_control=True, recover=True, asr_models=capabilities(), protocol=1, service_version=__version__,
+            return dict(model_control=True, record_stop_at=True, session_delete=True, recover=True, asr_models=capabilities(), protocol=1, service_version=__version__,
                         diagnostics={"data_dir": str(self.root), "service_log": str(self.root / "service.log"),
                                      "capture_log": str(self.root / "capture.log")}, ffmpeg=bool(shutil.which("ffmpeg")), profiles=list(PROFILES), capture_format="s16le/16000/mono", single_owner=True,
                         deepfilternet=bool(shutil.which("deep-filter")), clearvoice=bool(os.environ.get("AURA_CLEARVOICE_PYTHON")))
@@ -248,6 +289,8 @@ class SessionCore:
             counts = dict(self.db.execute("SELECT state,count(*) FROM jobs WHERE session=? AND kind='chunk' GROUP BY state", (s["id"],)).fetchall())
             s["work"] = {k: counts.get(k, 0) for k in ("queued", "running", "done", "failed")}
             return s
+        if command in ("delete.preview", "delete"):
+            return self._delete_session(args, preview=command == "delete.preview")
         if command == "record":
             self._available()
             if args.get("source", "system_microphone") not in ("microphone", "system", "system_microphone"):
@@ -257,7 +300,19 @@ class SessionCore:
             opts = options_for(args.get("options", {}), self._preferences())
             if opts["profile"] == "rescue-offline":
                 raise ValueError("Rescue offline is available for imported audio")
+            stop_at = args.get("stop_at")
+            if stop_at is not None:
+                try:
+                    end = datetime.datetime.fromisoformat(stop_at)
+                except (TypeError, ValueError) as exc:
+                    raise ValueError("stop_at must be a future ISO 8601 time with timezone") from exc
+                if end.tzinfo is None or end <= datetime.datetime.now(datetime.timezone.utc):
+                    raise ValueError("stop_at must be a future ISO 8601 time with timezone")
+                stop_at = end.astimezone(datetime.timezone.utc).isoformat()
             s = self._new(args, "starting")
+            if stop_at is not None:
+                s["stop_at"] = stop_at
+                self._save(s)
             self._job(s, "load", **{k: opts[k] for k in ("prompt", "hotwords")})
             return s
         if command == "schedule":
@@ -286,6 +341,8 @@ class SessionCore:
             self._save(s)
             return s
         s = self._get(args["session_id"])
+        if s["state"] == "deleting":
+            raise ValueError("Session deletion is incomplete; retry /delete with confirmation")
         if command == "capture.failed":
             self._flush(s)
             message = str(args.get("error", "Capture failed"))[:2000]
@@ -622,7 +679,7 @@ class SessionCore:
                     if s["state"] in ("recording", "paused") and s.get("stop_at", "9999") <= now():
                         self._request("stop", {"session_id": s["id"]})
                 row = next((r for r in self.db.execute("SELECT * FROM jobs WHERE state='queued' ORDER BY id")
-                    if self.sessions[r["session"]]["state"] not in ("paused", "pausing", "recoverable", "failed")), None)
+                    if self.sessions[r["session"]]["state"] not in ("paused", "pausing", "recoverable", "failed", "deleting")), None)
                 if not row:
                     for s in self.sessions.values():
                         if s["state"] == "draining":

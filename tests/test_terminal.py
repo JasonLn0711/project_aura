@@ -34,6 +34,21 @@ class TerminalTests(unittest.TestCase):
         self.assertTrue(parser().parse_args(['record','--consent']).consent)
         self.assertNotIn('--consent',parser().format_help())
 
+    def test_record_stop_at_forwarding_and_old_service_guard(self):
+        from aura.cli import execute
+        client = MagicMock()
+        args = parser().parse_args(["record", "--stop-at", "2099-01-01T19:00:00+08:00", "--detach"])
+        client.request.return_value = {}
+        with self.assertRaisesRegex(RuntimeError, "restart the service"):
+            execute(client, args)
+        client.request.assert_called_once_with("capabilities")
+        client.reset_mock()
+        client.request.return_value = {"record_stop_at": True}
+        with patch("aura.cli.show"):
+            execute(client, args)
+        self.assertEqual(client.request.call_args.args[0], "record")
+        self.assertEqual(client.request.call_args.args[1]["stop_at"], args.stop_at)
+
     def test_segmentation_flags_reach_shared_service(self):
         from aura.cli import execute
         for command, extra in (("record", []), ("schedule", ["--start-at", "2027-01-01T09:00:00+08:00",
