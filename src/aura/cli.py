@@ -35,14 +35,14 @@ def parser():
     delete = subs.add_parser("delete", help="Preview session deletion; confirmation required")
     delete.add_argument("session_id")
     delete.add_argument("--confirm", metavar="SESSION_ID", help="Permanently delete the previewed session; repeat its full UUID")
-    subs.add_parser("capabilities")
+    subs.add_parser("capabilities", help="Show supported service features")
     subs.add_parser("doctor", help="Inspect service and runtime diagnostics")
     models = subs.add_parser("models", help="Manage server-local ASR weights")
     downloads = models.add_subparsers(dest="model_command", required=True)
     from aura.asr.models import PARAKEET, MODEL_KEYS
     downloads.add_parser("download").add_argument("model", choices=(PARAKEET,))
     subs.add_parser("model", help="Show, preload, switch or unload ASR").add_argument("selection", nargs="?", default="status", choices=(*MODEL_KEYS, "status", "load", "unload"))
-    resume = subs.add_parser("resume", help="Reopen a saved workspace; audio capture stays unchanged",
+    resume = subs.add_parser("resume", help="Browse saved sessions without changing recording",
                              description="Reopen saved transcripts and controls. Use unpause to restart paused audio capture.")
     resume.add_argument("session_id", nargs="?")
     resume.add_argument("--all", action="store_true", help="Show all sessions on the selected service")
@@ -330,9 +330,13 @@ def interactive(client, ssh=None, initial=None, palette='slate'):
         for stream in (sys.stdout, sys.stderr):
             if hasattr(stream, 'reconfigure'):
                 stream.reconfigure(errors='backslashreplace')
-    commands = ["/files", "/delete", "/recover", "/model", "/record", "/schedule", "/sessions", "/attach", "/pause", "/resume", "/unpause", "/inspect", "/doctor", "/stop", "/refine", "/export", "/transcribe", "/status", "/graphs", "/animations", "/detach", "/help", "/quit"]
+    commands = ["/record", "/transcribe", "/schedule", "/pause", "/unpause", "/stop",
+                "/resume", "/sessions", "/attach", "/inspect", "/delete", "/status", "/detach",
+                "/model", "/doctor", "/capabilities", "/recover", "/files", "/export", "/refine",
+                "/graphs", "/animations", "/help", "/quit"]
+    completer = WorkspaceCompleter(parser(), commands)
     view = TerminalStatus()
-    prompt = PromptSession(completer=WorkspaceCompleter(parser(), commands), complete_while_typing=False,
+    prompt = PromptSession(completer=completer, complete_while_typing=False,
         bottom_toolbar=lambda: view.toolbar(*shutil.get_terminal_size()), refresh_interval=.25,
         style=terminal_style(palette), color_depth=terminal_color_depth())
     selected = {"id": None, "text": "", "state": "", "error": ""}
@@ -437,19 +441,11 @@ def interactive(client, ssh=None, initial=None, palette='slate'):
                     if command in ('quit', 'exit'):
                         break
                     if command == 'help':
-                        print('Record    /record · /transcribe · /schedule · /pause · /unpause · /stop')
-                        print('Sessions  /resume · /sessions · /attach · /inspect · /delete · /status · /detach')
-                        print('ASR       /model · /doctor · /recover')
-                        print('Export    /files · /export · /refine')
-                        print('Workspace /graphs on|off · /animations on|off · /help · /quit')
-                        print('/recover [ID] retries saved gaps once; /export ID --format recovered exports recovered text')
-                        print('Tab completes commands, options, model names and local paths; press Tab again to cycle choices.')
-                        print('/model shows ASR status · /model breeze or /model parakeet-tdt-0.6b-v2 selects and preloads')
-                        print('/model load preloads the default · /model unload releases GPU memory · finish active work before switching')
-                        print('/record --model MODEL and /transcribe FILE --model MODEL override one new session')
-                        print('/resume [ID|--last|--all] reopens history · /unpause [ID] restarts paused capture')
-                        print('/record --source microphone · /inspect [ID] · /doctor · /stop · /export ID --output meeting.txt')
-                        print('/files [ID|--last] locates outputs · /files --open opens the local folder')
+                        for name in commands:
+                            usage = name + (' on|off' if name in ('/graphs', '/animations') else '')
+                            print(f'{usage:20} {completer.descriptions[name.lstrip("/")]}')
+                        print('\nAdd --help to a recording or session command for options.')
+                        print('Tab completes commands, options, model names and local paths.')
                         continue
                     if command in ('graphs', 'animations'):
                         if len(words) != 2 or words[1] not in ('on', 'off'):

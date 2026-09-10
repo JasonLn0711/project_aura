@@ -10,6 +10,26 @@ from aura.terminal import (TerminalStatus, graph, bar, safe_text, welcome, picke
 
 
 class TerminalTests(unittest.TestCase):
+    def test_help_lists_each_workspace_command_with_english_description(self):
+        from aura.cli import interactive
+        client = MagicMock(ssh=None)
+        client.request.return_value = {}
+        with patch('aura.cli.AuraClient'), patch('prompt_toolkit.PromptSession') as prompts, \
+                patch('prompt_toolkit.patch_stdout.patch_stdout', side_effect=contextlib.nullcontext), \
+                patch('prompt_toolkit.print_formatted_text'), patch('aura.cli.execute') as execute, \
+                contextlib.redirect_stdout(io.StringIO()) as out:
+            prompts.return_value.prompt.side_effect = ['/help', '/quit']
+            self.assertEqual(interactive(client), 0)
+        rows = [line for line in out.getvalue().splitlines() if line.startswith('/')]
+        completer = prompts.call_args.kwargs['completer']
+        self.assertEqual([row.split()[0] for row in rows], completer.commands)
+        for row in rows:
+            self.assertEqual(row.count('/'), 1)
+            self.assertRegex(row[21:], r'^[A-Z][A-Za-z ,;]+$')
+        self.assertIn('/graphs on|off', out.getvalue())
+        self.assertIn('/animations on|off', out.getvalue())
+        execute.assert_not_called()
+
     def test_actual_metrics_bounded_graphs_and_narrow_layout(self):
         view = TerminalStatus()
         for i in range(100):
