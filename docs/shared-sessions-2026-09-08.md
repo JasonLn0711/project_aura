@@ -29,9 +29,11 @@ uv run --no-sync aura export SESSION_ID --format txt --output meeting.txt
 uv run --no-sync aura transcribe meeting.wav --profile light
 ```
 
-Use `/help`, `/model`, `/record`, `/sessions`, `/resume`, `/attach ID`, `/pause`, `/unpause`, `/stop`,
-`/inspect`, `/doctor`, `/refine`, `/export`, `/transcribe`, `/schedule`, `/detach`, and `/quit` in the
-interactive terminal. Arguments follow the corresponding command's `--help`.
+Use `/help` in the interactive terminal to see one command per line with a
+short English description. The list shares descriptions with Tab completion,
+including session controls, output files, model controls and service features.
+Add `--help` to a recording or session command for its arguments, for example
+`/record --help`. Display toggles show their `on|off` values directly in the list.
 The interface provides command completion and a transcript that updates above
 the prompt. `/status` prints the current state; `/graphs on|off` controls the
 compact audio and pending-work history. `/animations on|off` enables or freezes
@@ -43,11 +45,67 @@ product work package.
 the service host. The service must remain running. One active recording owns
 the inference slot; imported media queues serially.
 
+To start immediately and stop at a specified time, use
+`/record --source system --model breeze --stop-at "2026-10-01T19:00:00+08:00"`.
+Choose a future ISO 8601 timestamp including the timezone; `+08:00` is Taiwan
+time. The deadline is saved with the session and uses the same stop handling
+as scheduled recordings. Recognition/finalization can continue after capture
+stops. Deadline checks run between inference jobs, so this is not a hard
+real-time cutoff. An older service is rejected before starting a timed recording;
+finish active work and restart the service to activate this capability.
+
+`/quit` and terminal closure detach without stopping recording. If `/model`
+reports active work, use `/sessions` and `/attach SESSION_ID` to inspect it,
+then `/stop SESSION_ID` when you intend to end capture. Wait for finalization
+before switching models. Preserve the full hotword file and use a prioritized
+copy if the combined prompt and vocabulary exceeds the 200-token budget.
+
 uv manages Python dependencies and the environment. FFmpeg, PortAudio system
 libraries, NVIDIA drivers, and OpenSSH are installed through the operating
 system. Install uv before setup. Startup uses `--no-sync` so the chosen profile
 stays intact; update dependencies deliberately through `uv sync --locked` with
 the same extras. Stop active sessions and the service before changing its environment.
+
+## Delete saved sessions
+
+Preview the target and deletion boundary first:
+
+```text
+/delete SESSION_ID
+```
+
+The preview shows the title, state, server-side session directory, removed and
+retained data, and an exact confirmation command. To permanently delete it,
+repeat the full UUID as confirmation:
+
+```text
+/delete SESSION_ID --confirm SESSION_ID
+```
+
+From a shell, use `uv run --no-sync aura delete SESSION_ID` with the same
+confirmation flag. A unique prefix can select the preview target; confirmation
+must always match the full UUID. `--json` supports scripts. The shared service
+exposes `delete.preview` with `session_id`, and `delete` with `session_id` plus
+`confirm` containing that same full UUID. Older services fail visibly before
+deletion; finish active work before restarting the service to activate support.
+
+Deletion removes the owned session directory, including audio, transcripts and
+artifacts, along with session history, jobs and cached responses referencing
+that session. External source media, shared uploads, separately exported files,
+backups and operation audit logs remain. This is logical deletion, not secure
+erasure of SQLite free pages or storage backups.
+
+Only `ready`, `failed`, `recoverable` and `cancelled` sessions are deletable.
+Active or paused work, connected capture producers and running jobs block
+deletion. Stop a scheduled session to cancel it first. Stop recording and wait
+for processing before deletion; the service rechecks these conditions at
+confirmation time. A failed filesystem operation leaves a visible `deleting`
+session with its queued work disabled. Retry the same confirmed command after
+resolving the filesystem error, including after a service restart. Some files
+may already have been removed; deletion cannot be undone.
+
+The CLI detaches when its selected session is deleted. No actual saved session
+is deleted merely by installing this feature or requesting a preview.
 
 ## Adaptive live segmentation
 
@@ -143,6 +201,54 @@ output, so scripts receive data without an interactive picker. Diagnostics
 report connection and dependency metadata; physical device capture and model
 inference have their own validation paths. The lab PC's reported zero-audio
 failure can be inspected by its saved ID before selecting a device-specific fix.
+
+## Find and open output files
+
+In the interactive workspace, `/files` lists the selected session's output
+paths. `/files --open` opens its local folder in the system file manager.
+Without a selection, `/files` uses the most recently updated session;
+`/files --last` always uses that session. To search by meeting title, run
+`/resume`, select a result, then run `/files`.
+
+```text
+/files
+/files --open
+/files --last
+/files SESSION_ID
+/export SESSION_ID --format txt --output "./meeting.txt"
+```
+
+The same commands work from a shell:
+
+```bash
+uv run --no-sync aura files --last
+uv run --no-sync aura files SESSION_ID --open
+uv run --no-sync aura --json files --last
+uv run --no-sync aura export SESSION_ID --format txt --output "./meeting.txt"
+```
+
+`files` accepts a full UUID or a unique UUID prefix. An explicit ID and `--last`
+are mutually exclusive. It displays the service's registered artifact paths,
+with `transcript.txt` first, and derives the session folder from the service's
+reported data root. The usual location is
+`~/.local/share/project-aura/sessions/SESSION_ID/`; `AURA_DATA_DIR` can change it.
+An older service that does not report its data root still supplies registered
+artifact paths, while the folder is marked unavailable.
+
+During recording, `live.txt` contains completed live transcription chunks.
+Stop/finalization writes `transcript.txt`; editor saves can also create it.
+`refined.txt`, `recovered.txt`, and audio formats appear when those outputs have
+been produced. `files` reads existing metadata and leaves capture running.
+`export --format txt` saves the current text snapshot, even during recording,
+and prints the absolute destination path. Export refuses to overwrite an
+existing destination; choose a new filename for another snapshot.
+
+With `--ssh HOST`, paths belong to the remote service. Use
+`uv run --no-sync aura --ssh HOST export SESSION_ID --format txt --output "./meeting.txt"`
+to download text to this computer. `files --open` supports local folders only.
+A headless terminal can use the printed paths or export without a file manager.
+These commands reuse the existing session and capability APIs, so updating the
+CLI is sufficient; an active service can keep running.
 
 ## Remote operation
 

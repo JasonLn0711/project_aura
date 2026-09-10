@@ -129,6 +129,11 @@ Completed recognition results remain the displayed output; old sessions retain
 fixed endpointing. The [recording validation receipt](artifacts/cli-recording-2026-09-10/README.md)
 separates software checks from pending classroom-audio acceptance.
 
+The subsequent [CLI operations checkpoint](artifacts/cli-recording-2026-09-10/README.md#cli-operations-closeout)
+adds timed recording stops, confirmed inactive-session deletion, output-file
+locators and one-command-per-line English help. File discovery reuses existing
+service APIs; timed stops and deletion check service support before proceeding.
+
 - `/model` shows actual load state; model selection preloads explicitly while
   new sessions retain their own model settings.
 - Tab completes commands, model names, options and local paths; Enter executes.
@@ -464,6 +469,8 @@ uv run --no-sync aura --palette sage
 ```
 
 The opening command list includes `/record`, `/resume`, `/model`, and `/help`.
+`/help` displays one command per line with a short English description, shared
+with Tab completion. Use `/record --help` for recording options.
 Startup and the live status bar show a short summary such as `ASR: Parakeet v2 · unloaded`; `/model` shows
 language support, model controls and any load error:
 
@@ -678,6 +685,22 @@ The shared service stores sessions under `AURA_DATA_DIR` (default
 destination, including downloads from an SSH host. Each session UUID owns its
 journal, text revisions, and artifact locators.
 
+Use `/files` in the CLI workspace to list the selected session's output paths,
+or `/files --open` to open its local folder. Without a selection, `/files`
+locates the most recently updated session. Search meeting titles with `/resume`,
+then use `/files` on the selected result.
+
+```bash
+uv run --no-sync aura files --last
+uv run --no-sync aura files SESSION_ID --open
+uv run --no-sync aura export SESSION_ID --format txt --output "./meeting.txt"
+```
+
+`live.txt` holds completed live chunks; stop/finalization writes
+`transcript.txt`. Export saves the current text snapshot to the chosen local
+file and reports its absolute path. For JSON output, UUID prefixes, and remote
+files, see [find and open output files](docs/shared-sessions-2026-09-08.md#find-and-open-output-files).
+
 ### Canonical session package
 
 `session.json` preserves the meeting identity and source audio locators.
@@ -716,7 +739,7 @@ denoise/VAD study awaits acoustic reference review. See the
 
 | Evidence layer | Result |
 | --- | --- |
-| Regression suite | September 10 CLI checkpoint: 327 passing tests; see the [validation record](artifacts/cli-garden-preview/README.md#validation) |
+| Regression suite | September 10 CLI operations checkpoint: 345 passing tests; see the [validation record](artifacts/cli-recording-2026-09-10/README.md#cli-operations-closeout) |
 | Terminal interaction | Synthetic Linux PTY checks passed for slate and sage; includes resize, completion, session navigation, model controls, and detach/exit |
 | Product screenshots | User-provided v1.18.0 welcome and recording views; [source records](artifacts/cli-garden-preview/README.md#user-provided-screenshots) preserve image provenance |
 | AURA ASR live minimum | 10 real CUDA/int8 transcriptions over five public Common Voice 24 zh-TW clips |
