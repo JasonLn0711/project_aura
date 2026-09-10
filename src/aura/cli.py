@@ -2,7 +2,7 @@
 import argparse
 import json
 import os
-from pathlib import Path
+from pathlib import Path, PurePosixPath, PureWindowsPath
 import shlex
 import subprocess
 import sys
@@ -28,6 +28,10 @@ def parser():
     server.add_argument("--port", type=int, default=0)
     subs.add_parser("connection-info").add_argument("--json", action="store_true")
     subs.add_parser("sessions", help="List saved sessions")
+    files = subs.add_parser("files", help="Locate transcript and audio files")
+    files.add_argument("session_id", nargs="?", help="Full UUID or unique UUID prefix")
+    files.add_argument("--last", action="store_true", help="Locate the most recently updated session")
+    files.add_argument("--open", action="store_true", help="Open the local session folder")
     delete = subs.add_parser("delete", help="Preview session deletion; confirmation required")
     delete.add_argument("session_id")
     delete.add_argument("--confirm", metavar="SESSION_ID", help="Permanently delete the previewed session; repeat its full UUID")
@@ -138,6 +142,42 @@ def inspect_session(session, machine=False):
         print(safe_text(json.dumps({k: session[k] for k in fields if k in session}, ensure_ascii=False, indent=2)))
 
 
+def session_files(client, args):
+    session = client.resolve_session(args.session_id, last=args.last or not args.session_id)
+    root = client.request("capabilities").get("diagnostics", {}).get("data_dir")
+    # The service can run on a different OS from this client.
+    path_type = PureWindowsPath if root and "\\" in root else PurePosixPath
+    directory = str(path_type(root) / "sessions" / session["id"]) if root else None
+    host = args.ssh or client.ssh
+    artifacts = session.get("artifacts", {})
+    result = dict(session_id=session["id"], title=session["title"], state=session["state"],
+                  location=host or "local service", directory=directory, artifacts=artifacts)
+    if args.json:
+        show(result, True)
+    else:
+        print(safe_text(f'{session["title"]} · {session["state"]} · {session["id"]}'))
+        print(safe_text(f'Folder ({host or "local service"}): {directory or "unavailable from this service"}'))
+        for name, path in sorted(artifacts.items(), key=lambda item: (item[0] != "transcript.txt", item[0])):
+            print(safe_text(f'{name}: {path}'))
+        if not artifacts:
+            print('No output files registered yet. Live text appears as transcription completes.')
+        print(safe_text(f'Export from the CLI workspace: /export {session["id"]} --format txt --output "./transcript.txt"'))
+    if args.open:
+        if host:
+            raise ValueError("The folder is on the SSH host. Use export to download files to this computer.")
+        if not directory or not Path(directory).is_dir():
+            raise ValueError("The session folder is unavailable locally; use export to save available text.")
+        if sys.platform == "win32":
+            os.startfile(directory)
+        else:
+            try:
+                subprocess.run(["open" if sys.platform == "darwin" else "xdg-open", directory],
+                               check=True, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, timeout=10)
+            except (OSError, subprocess.SubprocessError) as exc:
+                raise RuntimeError("Could not open a file manager. Use the displayed path or export command.") from exc
+    return 0
+
+
 def diagnostics(client, host=None):
     capabilities = client.request("capabilities")
     service_version = capabilities.get("service_version")
@@ -184,6 +224,8 @@ def model_status_text(result, *, compact=False):
 
 
 def execute(client, args, *, on_progress=None):
+    if args.command == "files":
+        return session_files(client, args)
     if args.command == "delete":
         if not client.request("capabilities").get("session_delete"):
             raise RuntimeError("This service has no session deletion; finish active work, then restart the service and CLI.")
@@ -233,7 +275,7 @@ def execute(client, args, *, on_progress=None):
     if command == "export":
         path = args.output or Path(f"{args.session_id}.{args.format}")
         client.download(args.session_id, args.format, path, on_progress=on_progress)
-        show({"export": str(path)}, args.json)
+        show({"export": str(path.resolve())}, args.json)
         return 0
     values = {}
     if command == "record" and args.stop_at:
@@ -288,7 +330,7 @@ def interactive(client, ssh=None, initial=None, palette='slate'):
         for stream in (sys.stdout, sys.stderr):
             if hasattr(stream, 'reconfigure'):
                 stream.reconfigure(errors='backslashreplace')
-    commands = ["/delete", "/recover", "/model", "/record", "/schedule", "/sessions", "/attach", "/pause", "/resume", "/unpause", "/inspect", "/doctor", "/stop", "/refine", "/export", "/transcribe", "/status", "/graphs", "/animations", "/detach", "/help", "/quit"]
+    commands = ["/files", "/delete", "/recover", "/model", "/record", "/schedule", "/sessions", "/attach", "/pause", "/resume", "/unpause", "/inspect", "/doctor", "/stop", "/refine", "/export", "/transcribe", "/status", "/graphs", "/animations", "/detach", "/help", "/quit"]
     view = TerminalStatus()
     prompt = PromptSession(completer=WorkspaceCompleter(parser(), commands), complete_while_typing=False,
         bottom_toolbar=lambda: view.toolbar(*shutil.get_terminal_size()), refresh_interval=.25,
@@ -398,7 +440,7 @@ def interactive(client, ssh=None, initial=None, palette='slate'):
                         print('Record    /record · /transcribe · /schedule · /pause · /unpause · /stop')
                         print('Sessions  /resume · /sessions · /attach · /inspect · /delete · /status · /detach')
                         print('ASR       /model · /doctor · /recover')
-                        print('Export    /export · /refine')
+                        print('Export    /files · /export · /refine')
                         print('Workspace /graphs on|off · /animations on|off · /help · /quit')
                         print('/recover [ID] retries saved gaps once; /export ID --format recovered exports recovered text')
                         print('Tab completes commands, options, model names and local paths; press Tab again to cycle choices.')
@@ -407,6 +449,7 @@ def interactive(client, ssh=None, initial=None, palette='slate'):
                         print('/record --model MODEL and /transcribe FILE --model MODEL override one new session')
                         print('/resume [ID|--last|--all] reopens history · /unpause [ID] restarts paused capture')
                         print('/record --source microphone · /inspect [ID] · /doctor · /stop · /export ID --output meeting.txt')
+                        print('/files [ID|--last] locates outputs · /files --open opens the local folder')
                         continue
                     if command in ('graphs', 'animations'):
                         if len(words) != 2 or words[1] not in ('on', 'off'):
@@ -442,8 +485,10 @@ def interactive(client, ssh=None, initial=None, palette='slate'):
                     if command in ('record', 'transcribe'):
                         words.append('--detach')
                     args = parser().parse_args(words)
-                    if args.command not in ('delete', 'model', 'record', 'transcribe', 'schedule', 'sessions', 'pause', 'unpause', 'inspect', 'doctor', 'stop', 'refine', 'recover', 'export', 'capabilities'):
+                    if args.command not in ('files', 'delete', 'model', 'record', 'transcribe', 'schedule', 'sessions', 'pause', 'unpause', 'inspect', 'doctor', 'stop', 'refine', 'recover', 'export', 'capabilities'):
                         raise ValueError('Use /help for workspace commands')
+                    if args.command == 'files' and not args.session_id and not args.last:
+                        args.session_id = selected['id']
                     args.ssh = ssh
                     pending.put_nowait(args)
                 except KeyboardInterrupt:
