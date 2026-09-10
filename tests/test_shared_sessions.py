@@ -5,7 +5,7 @@ from pathlib import Path
 import tempfile
 import time
 import unittest
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 from aura.session_core import SessionCore
 from aura.sdk import AuraClient
@@ -53,6 +53,42 @@ class SharedSessionTests(unittest.TestCase):
     def tearDown(self):
         self.core.close()
         self.tmp.cleanup()
+
+    def test_oversized_context_preserves_loaded_model_without_creating_sessions(self):
+        import datetime
+        from types import SimpleNamespace
+        from huggingface_hub.errors import LocalEntryNotFoundError
+        from aura.asr.hotwords import validate_cached_context
+        from aura.config import MODEL_ID
+
+        self.core.pool = Mock()
+        self.core.keep_model = True
+        self.core.model_state = dict(state="loaded", asr_model="breeze", error=None)
+        before = self.core.request("model.status")
+        start = datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(days=1)
+        media = self.root / "input.wav"
+        media.touch()
+        tokenizer = SimpleNamespace(encode=lambda text: SimpleNamespace(ids=list(text)))
+        with patch("huggingface_hub.hf_hub_download", return_value="cached-tokenizer") as cached, \
+                patch("tokenizers.Tokenizer.from_file", return_value=tokenizer):
+            validate_cached_context(dict(prompt="", hotwords="a" * 199))  # Exactly 200 tokens.
+            for command, args in (
+                ("record", {}),
+                ("schedule", dict(start_at=start.isoformat(), stop_at=(start + datetime.timedelta(hours=1)).isoformat())),
+                ("transcribe", dict(path=str(media))),
+            ):
+                with self.subTest(command=command), self.assertRaisesRegex(ValueError, "201 tokens"):
+                    self.core.request(command, dict(args, options=dict(asr_model="breeze", prompt="", hotwords="a" * 200)))
+            cached.assert_called_with(MODEL_ID, "tokenizer.json", local_files_only=True)
+            cached.reset_mock()
+            validate_cached_context(dict(asr_model="parakeet-tdt-0.6b-v2"))
+            cached.assert_not_called()
+            cached.side_effect = LocalEntryNotFoundError("not cached")
+            validate_cached_context(dict(hotwords="a" * 200))
+        self.assertEqual(self.core.request("sessions"), [])
+        self.assertEqual(self.core.request("model.status"), before)
+        self.assertEqual(self.core.db.execute("SELECT count(*) FROM jobs").fetchone()[0], 0)
+        self.core.pool.shutdown.assert_not_called()
 
     def test_shared_preferences_validate_and_survive_restart(self):
         self.core.request("preferences.set", {"profile": "off", "hotwords": "AURA"})

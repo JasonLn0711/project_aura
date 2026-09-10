@@ -141,13 +141,16 @@ class SessionCore:
             raise ValueError("A recording or transcription job is active; attach or finish it first")
 
     def _new(self, args, state):
+        from aura.asr.hotwords import validate_cached_context
+        options = options_for(args.get("options", {}), self._preferences())
+        validate_cached_context(options)
         if args.get("source", "system_microphone") not in ("microphone", "system", "system_microphone"):
             raise ValueError("Unknown capture source")
         sid = str(uuid.uuid4())
         title = args.get("title") or "Meeting"
         if not isinstance(title, str) or len(title) > 200:
             raise ValueError("Title must contain at most 200 characters")
-        session = dict(id=sid, title=title, state=state, created_at=now(), options=options_for(args.get("options", {}), self._preferences()),
+        session = dict(id=sid, title=title, state=state, created_at=now(), options=options,
                        transcript="", live_text="", revision=0, edited=False, samples=0, input_sequence=0,
                        pauses=[], artifacts={}, segments=[], error=None, source=args.get("source", "system_microphone"),
                        capture_location=args.get("capture_location", "server"), producer_connected=False)
