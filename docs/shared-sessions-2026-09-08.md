@@ -1,4 +1,4 @@
-# Shared GUI, terminal, and SSH sessions — v1.17.0
+# Shared GUI, terminal, and SSH sessions
 
 AURA now runs one session service per operating-system account. The desktop and
 terminal use `aura.sdk.AuraClient` for the same sessions, settings, revision
@@ -34,7 +34,8 @@ Use `/help`, `/model`, `/record`, `/sessions`, `/resume`, `/attach ID`, `/pause`
 interactive terminal. Arguments follow the corresponding command's `--help`.
 The interface provides command completion and a transcript that updates above
 the prompt. `/status` prints the current state; `/graphs on|off` controls the
-compact audio and pending-work history. It owns transcription operations; an LLM agent is a separate
+compact audio and pending-work history. `/animations on|off` enables or freezes
+the owl for the current CLI process; live status continues to update. It owns transcription operations; an LLM agent is a separate
 product work package.
 
 `aura schedule --start-at 2026-10-01T09:00:00+08:00 --stop-at
@@ -281,24 +282,66 @@ its account directory and ACLs. Native Windows validation runs in hosted CI.
 
 ## Direct recording and terminal presentation
 
+The [CLI welcome](../README.md#cli-welcome) and [recording view](../README.md#cli-recording)
+show the v1.18.0 interface supplied by the user. The
+[screenshot source records](../artifacts/cli-garden-preview/README.md#user-provided-screenshots)
+connect those images to the palette previews and synthetic terminal validation.
+
 Record and Schedule use the selected source immediately. The GUI checkbox and
 service confirmation gate have been removed. Old `--consent` flags and SDK
 fields remain accepted as ignored compatibility inputs. Device availability,
 source validation and explicit Stop retain their operating roles. Finish active
 recordings before restarting an older service process to load updated code.
 
-The scrolling terminal uses the existing prompt toolkit, AURA teal accents and
-an original pixel owl. The prompt remains usable while commands and transcript
+The scrolling terminal uses the existing prompt toolkit with a layered gray
+`slate` palette, muted blue owl and taupe flowers. `aura --palette sage` selects
+warm gray and sage accents for both the workspace and resume picker. The palette
+applies to that CLI process. Text uses the terminal's default foreground and
+background; the toolbar explicitly disables inherited reverse video. Completion
+menus use a neutral background with a darker, bold selection.
+
+A sound garden with microphone flowers, fireflies and an extended wave-shaped
+lawn appears once in the startup scrollback on terminals at least
+80 columns wide and 30 rows tall. The lawn is decorative. Smaller terminals
+show a compact welcome; the live workspace keeps the owl beside session state.
+The owl blinks while idle, flaps while recording, rests while paused and briefly
+raises its wings when ready. Failures, pending gaps and disconnects take priority
+over celebration. `/animations off` freezes the character and activity spinner;
+`/graphs off` independently hides the measured history. Neither setting persists
+across CLI processes.
+
+The opening shortcuts list `/record`, `/resume`, `/model` and `/help`. Startup
+and the live toolbar show only a friendly model name and load state, such as
+`ASR: Parakeet v2 · unloaded`. `/model` provides model choices, language support,
+preload/unload commands, and automatic-loading guidance when unloaded. It also
+shows the current and default model separately when they differ. Load errors
+remain visible in scrollback and `/model`; JSON retains canonical model IDs.
+Querying model status leaves loading under the existing explicit controls.
+
+The prompt remains usable while commands and transcript
 updates arrive. Audio level and pending-work graphs use actual session values,
 with client history bounded to 60 observations and refresh capped at four times
 per second. Captured-audio duration comes from source samples. Uploads show byte
 progress; downloads report transferred bytes; stopped-recording queues show
 completed versus total chunk jobs. Open-ended recording and unknown-duration
 jobs display state/activity rather than a percentage. Disconnects stop graph
-updates, narrow terminals collapse the display, and JSON stays decoration-free.
+updates. Below 60 columns or 20 rows, status collapses to compact text with
+warnings first. The session picker displays up to eight rows and reduces its
+page size in short terminals. Tab shows command descriptions; Enter executes.
+`NO_COLOR` disables color, and terminals without Unicode use ASCII decorations
+with escaped unsupported text. Redirected bare invocation prints help without
+starting the service; JSON stays decoration-free.
+
+The [CLI preview packet](../artifacts/cli-garden-preview/README.md) contains
+rendered synthetic welcome, recording, paused, ready, disconnected and picker
+states for both palettes on light and dark backgrounds, plus animations. The
+renderer merges framework defaults and application styles, including toolbar
+ancestors and reverse video. These are UI review artifacts; the synthetic PTY
+check separately exercises actual terminal input and redraw.
 
 `uv run --no-sync python scripts/check_terminal_pty.py` exercises owl/version,
-transcript arrival during partially typed input, graph toggling and clean exit
+transcript arrival during partially typed input, resize, animation and graph
+toggles, and recording preservation across detach and exit
 with synthetic audio/ASR. Linux CI runs it separately from the regression suite.
 The command-line version remains available without starting the service.
 

@@ -1,0 +1,105 @@
+Synthetic UI states; no capture or inference.
+
+Welcome
+AURA v1.18.0 · shared transcription workspace
+
+     ·        ░░░░                          ▄██
+         ░░░░░░░░░░                        ▐██
+                                   ·        ▀▀
+
+     ▄     ▄               ·            ▄▄
+    ███▄▄▄███                          ████
+    █ o v o █  )))           ▄          ▀█▀
+    ▀███████▀               ▀█▀       ▄ │
+      ▀   ▀                  │        ▀█│
+▁▁▂▁▁▁▂▁▁▁▂▃▅▃▂▁▁▂▁▁▁▂▁▁▂▁▁▁▂▁▁▁▂▁▁▁▂▁▁▂▃▅▃▂▁▂▁
+
+/record   Start recording
+/resume   Reopen a session
+/model    Choose an ASR model
+/help     Explore commands
+
+Connected: local service
+Service version: 1.18.0 · matched
+ASR: Parakeet v2 · unloaded
+───────────────────────────────────────────────────────────────────────────────
+❯
+───────────────────────────────────────────────────────────────────────────────
+   ▄     ▄    Ready · /model · /record · /sessions · /help
+  ███▄▄▄███   ASR: Parakeet v2 · unloaded
+  █ o v o █
+  ▀███████▀
+    ▀   ▀
+
+Recording
+AURA v1.18.0 · shared transcription workspace
+
+Design review · preview-001
+
+Let us confirm the scope for this release.
+
+───────────────────────────────────────────────────────────────────────────────
+❯
+───────────────────────────────────────────────────────────────────────────────
+   ▄     ▄    recording · Audio 02:14
+  ███▄▄▄███   2 pending · 1 processing
+  █ o v o █   ASR: Parakeet v2 · loaded
+  ▀███████▀   Audio ▂▂▅▄▂▃▇▂  Queue █▁▁▅█▅▅ (0–2)
+    ▀   ▀     /pause · /stop · /inspect · /detach
+
+Paused
+AURA v1.18.0 · shared transcription workspace
+
+Design review · preview-001
+
+Let us confirm the scope for this release.
+
+───────────────────────────────────────────────────────────────────────────────
+❯
+───────────────────────────────────────────────────────────────────────────────
+   ▄     ▄    paused · Audio 02:14
+  ███▄▄▄███   2 pending · 1 processing
+  █ - v - █   ASR: Parakeet v2 · loaded
+  ▀███████▀   Audio ▂▂▅▄▂▃▇▂  Queue █▁▁▅█▅▅ (0–2)
+    ▀   ▀     /unpause · /stop · /inspect · /detach
+
+Ready
+AURA v1.18.0 · shared transcription workspace
+
+Design review · preview-001
+
+Let us confirm the scope for this release.
+
+───────────────────────────────────────────────────────────────────────────────
+❯
+───────────────────────────────────────────────────────────────────────────────
+▀▄ ▄     ▄ ▄▀ ready · Audio 02:14
+  ███▄▄▄███   0 pending · 0 processing
+  █ ^ v ^ █   ASR: Parakeet v2 · loaded
+  ▀███████▀   Audio ▂▂▅▄▂▃▇▂  Queue ▁▁▁▅█▅▅ (0–2)
+    ▀   ▀     /inspect · /export · /recover · /resume · /detach
+
+Disconnected
+AURA v1.18.0 · shared transcription workspace
+
+Design review · preview-001
+
+Let us confirm the scope for this release.
+
+───────────────────────────────────────────────────────────────────────────────
+❯
+───────────────────────────────────────────────────────────────────────────────
+   ▄     ▄    Disconnected · Connection lost; session state unknown
+  ███▄▄▄███
+  █ ! v ! █
+  ▀███████▀
+    ▀   ▀
+
+Sessions
+Reopen a session
+
+Find session>
+↑/↓ select · Enter reopen · Esc cancel · search title or ID
+> a81f23c0  ready  Design review  2026-09-10
+  b92f34d1  paused  Research notes  2026-09-09
+2 matching sessions

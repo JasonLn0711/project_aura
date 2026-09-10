@@ -97,7 +97,8 @@ def main():
     frames = [panel(*snapshots(12 + i / 4)[1]) for i in range(8)]
     frames[0].save(args.output / 'recording.gif', save_all=True, append_images=frames[1:], duration=250, loop=0)
     (args.output / 'preview.txt').write_text('Synthetic UI states; no capture or inference.\n\n' + '\n\n'.join(
-        title + '\n' + ''.join(text for _, text in fragments) for title, fragments in screens) + '\n', encoding='utf-8')
+        title + '\n' + '\n'.join(line.rstrip() for line in ''.join(text for _, text in fragments).splitlines())
+        for title, fragments in screens) + '\n', encoding='utf-8')
     print(args.output)
 
 

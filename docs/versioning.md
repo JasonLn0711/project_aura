@@ -40,7 +40,7 @@ Then update the required version files with the repository helper and commit:
 
 ```bash
 make bump-version VERSION=X.Y.Z RELEASE_DATE=YYYY-MM-DD PYTHON=/path/to/python
-git add pyproject.toml src/aura/metadata.py README.md
+git add pyproject.toml src/aura/metadata.py uv.lock README.md
 git commit -m "bump version to vX.Y.Z"
 ```
 

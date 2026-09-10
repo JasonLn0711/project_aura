@@ -1,15 +1,4 @@
-# Project AURA: Local Desktop Audio Assistant
-
-<p>
-  <img alt="Maintained repository status" src="https://img.shields.io/badge/Status-Maintained-brightgreen?logo=github">
-  <img alt="Continuous integration status" src="https://github.com/JasonLn0711/project_aura/actions/workflows/ci.yml/badge.svg">
-  <img alt="Python 3.10 or newer" src="https://img.shields.io/badge/Python-3.10%2B-blue?logo=python">
-  <img alt="faster-whisper ASR engine" src="https://img.shields.io/badge/ASR-faster--whisper-orange">
-  <img alt="PyQt6 desktop interface" src="https://img.shields.io/badge/UI-PyQt6-9cf">
-  <img alt="MIT license" src="https://img.shields.io/badge/License-MIT-yellow.svg">
-</p>
-
-*Repository indicators summarize maintenance, CI, runtime, ASR, UI, and license status.*
+# Project AURA: Local Desktop and CLI Audio Assistant
 
 <!--
 README FORMAT CONTRACT
@@ -45,23 +34,47 @@ rows and the Latest Update heading because scripts/bump_version.py updates
 them during release preparation.
 -->
 
-Project AURA is a local desktop audio assistant for professional meetings,
-lectures, and transcription workflows. It brings durable recording,
-RTX/CUDA speech recognition, Traditional Chinese punctuation, a plain text
-editor, and local export into one recoverable workflow.
+Project AURA brings desktop and command-line recording, RTX/CUDA speech
+recognition, transcript editing, and local export to one shared session service.
+Use it for meetings, lectures, and imported media, with Breeze as the default
+model and optional Parakeet v2 for English transcription.
 
-![Project AURA transcription workspace with CUDA status, waveform, Traditional Chinese transcript, and review controls](./img/transcription-workspace-v1.14.0.png)
+Fig. 1 shows the command-line entry point; Fig. 2 shows the recording workspace.
+See [installation](#installation), [CLI operation](#interactive-cli-workspace),
+and the [desktop workflow](#desktop-workflow) to start using the same service.
 
-*Figure 1. Historical v1.14.0 workspace layout shows capture, waveform, and output placement; the current transcript area is a plain text editor.*
+<a id="cli-welcome"></a>
+
+![AURA v1.18.0 CLI welcome with sound garden, command shortcuts and loaded Parakeet status](img/cli-welcome-v1.18.0.png)
+
+*Fig. 1. AURA v1.18.0 command-line workspace with a grayscale sound garden, startup shortcuts, and automatic speech recognition (ASR) model status.*
+
+<a id="cli-recording"></a>
+
+![AURA v1.18.0 CLI recording with timestamped English transcript and audio and queue indicators](img/cli-recording-v1.18.0.png)
+
+*Fig. 2. AURA v1.18.0 recording view with timestamped transcript updates, captured-audio duration, audio-level and queue indicators, and recording controls.*
+
+<p>
+  <img alt="Maintained repository status" src="https://img.shields.io/badge/Status-Maintained-brightgreen?logo=github">
+  <img alt="Continuous integration status" src="https://github.com/JasonLn0711/project_aura/actions/workflows/ci.yml/badge.svg">
+  <img alt="Python 3.10 or newer" src="https://img.shields.io/badge/Python-3.10%2B-blue?logo=python">
+  <img alt="Breeze and optional Parakeet ASR" src="https://img.shields.io/badge/ASR-Breeze%20%2B%20Parakeet-orange">
+  <img alt="PyQt6 desktop interface" src="https://img.shields.io/badge/UI-PyQt6-9cf">
+  <img alt="MIT license" src="https://img.shields.io/badge/License-MIT-yellow.svg">
+</p>
+
+*Repository indicators summarize maintenance, CI, runtime, ASR, UI, and license status.*
 
 ## Product Purpose
 
 AURA turns live audio and imported media into an editable transcript backed by
-preserved audio. The current flow is capture → Breeze ASR on RTX/CUDA →
-Mandarin punctuation → plain text editing → local export. Stopping a recording
+preserved audio. GUI, CLI, and SSH clients share recording and transcription
+state through the same SDK. Breeze supports Chinese and mixed-language work
+with Mandarin punctuation; optional Parakeet v2 handles English. Stopping a recording
 saves the live text and audio; full-recording refinement runs on explicit request.
 
-The repository owns the desktop application, reusable audio and ASR services,
+The repository owns the desktop and CLI applications, reusable audio and ASR services,
 regression checks, platform packaging, and dated runtime evidence.
 
 ## Project Status
@@ -86,7 +99,7 @@ regression checks, platform packaging, and dated runtime evidence.
 
 | Release | Contribution |
 | --- | --- |
-| `v1.18.0` candidate | Optional Parakeet, model lifecycle controls, contextual Tab completion, gap recovery, and user FAQ |
+| `v1.18.0` candidate | Optional Parakeet, model lifecycle controls, contextual Tab completion, gap recovery, and configurable CLI presentation |
 | `v1.17.0` source checkpoint | Searchable session history, workspace resume, capture unpause, and client/service diagnostics |
 | `v1.16.0` source checkpoint | Shared GUI/CLI/SSH sessions, explicit refinement, Light profile, uv setup, and synchronized interface versions |
 | `v1.15.0` source checkpoint | Durable sessions, crash recovery, plain text editing, and local evidence search |
@@ -103,6 +116,12 @@ canonical design or evidence source.
 AURA v1.18.0 adds optional English Parakeet v2, explicit model loading and
 unloading, contextual Tab completion, and recovery of saved transcription gaps.
 The package, lockfile, GUI and CLI share the synchronized runtime version.
+
+The September 10 CLI presentation update adds layered slate/sage palettes,
+compact ASR status, an extended sound garden, and independent animation and
+graph controls. The [CLI presentation packet](artifacts/cli-garden-preview/README.md)
+connects the user-provided screenshots, synthetic previews and terminal checks.
+Runtime/package metadata remains at 1.18.0.
 
 - `/model` shows actual load state; model selection preloads explicitly while
   new sessions retain their own model settings.
@@ -129,6 +148,7 @@ changes only when the corresponding tag is published.
 
 | Capability | Current operating scope |
 | --- | --- |
+| Interactive CLI | Shares GUI sessions with searchable history, contextual Tab completion, slate/sage palettes, and live audio/queue indicators |
 | Live recording | Captures system audio, microphone audio, or a balanced mixed stream through PulseAudio/PipeWire sources |
 | Durable capture | Writes append-only PCM journals and atomic session state for recovery and final audio reconstruction |
 | Scheduled recording | Persists a timezone-aware start and stop time for service-host capture |
@@ -178,7 +198,7 @@ project_aura/
 └── img/                            # semantic product screenshots
 ```
 
-*Figure 4. Module ownership keeps audio, ASR, UI, and evidence services independently testable.*
+*Fig. 3. Module ownership keeps audio, ASR, UI, and evidence services independently testable.*
 
 ### Module ownership
 
@@ -252,6 +272,10 @@ evidence establish the value.
 
 ### Transcription workspace
 
+![Project AURA transcription workspace with CUDA status, waveform, Traditional Chinese transcript, and review controls](./img/transcription-workspace-v1.14.0.png)
+
+*Fig. 4. Historical v1.14.0 workspace layout shows capture, waveform, and output placement; the current transcript area is a plain text editor.*
+
 1. Run `aura gui` or `project-aura`. The shared service starts locally.
 2. Select a session or choose microphone, system audio, or both for a new recording.
 3. Open advanced settings for the audio profile, language, hotwords, scheduling,
@@ -266,7 +290,7 @@ evidence establish the value.
 
 ![AURA shared workspace displaying a public transcript from the session service](img/shared-workspace-v1.16.0.png)
 
-*Figure 2. The v1.16.0 desktop banner identifies the source version while displaying a persisted public-audio session through the shared SDK.*
+*Fig. 5. AURA v1.16.0 desktop banner identifies the source version while displaying a persisted public-audio session through the shared SDK.*
 
 Advanced settings exposes a service capability check and shared defaults. The
 connection field accepts an SSH host alias; the capture-location selector
@@ -281,7 +305,7 @@ validation scope, see [Shared sessions](docs/shared-sessions-2026-09-08.md).
 
 ![Project AURA Track Splitter with source, output, target duration, tolerance, progress, and processing details](./img/track-splitter-v1.14.0.png)
 
-*Figure 3. Track Splitter presents the complete source-to-output sequence and keeps duration targets, tolerance, progress, and processing details visible during long media jobs.*
+*Fig. 6. Track Splitter presents the complete source-to-output sequence and keeps duration targets, tolerance, progress, and processing details visible during long media jobs.*
 
 The Track Splitter workflow:
 
@@ -412,6 +436,56 @@ export AURA_RUNTIME_DIR=/path/to/runtime
 
 ## Feature Behavior
 
+### Interactive CLI workspace
+
+The interactive `aura` workspace opens with a sound garden and keeps a small
+animated owl beside session status. The default `slate` palette uses layered
+grays with muted blue and taupe; `aura --palette sage` selects warm gray and sage.
+Text and toolbar backgrounds follow the terminal theme. `/animations off`
+freezes motion while live status continues; `/graphs off` hides audio and queue
+history. Smaller terminals use a compact layout. See the
+[light and dark previews and terminal validation](artifacts/cli-garden-preview/README.md).
+
+Start the default palette or select sage for this CLI process:
+
+```bash
+uv run --no-sync aura
+uv run --no-sync aura --palette sage
+```
+
+The opening command list includes `/record`, `/resume`, `/model`, and `/help`.
+Startup and the live status bar show a short summary such as `ASR: Parakeet v2 · unloaded`; `/model` shows
+language support, model controls and any load error:
+
+```text
+/model                              # Show selected model and actual load state
+/model parakeet-tdt-0.6b-v2          # Select English Parakeet and preload it
+/model breeze                       # Select Breeze and preload it
+/model load                         # Preload the saved default
+/model unload                       # Release the ASR worker and GPU memory
+```
+
+Press **Tab** to complete commands, options, model names, and local file paths:
+`/mo` completes to `/model`, `/model para` completes the Parakeet model name,
+and `/record --mo` completes to `/record --model`. When several choices match,
+Tab fills their shared prefix; press Tab again to cycle the choices. Press
+**Enter** to execute the completed command. Reopen the CLI after updating to
+use the new completion behavior.
+
+Model commands are listed in `/help` and completion. Startup reports the ASR load
+state; opening the CLI preserves the service's existing model state. `/record` and `/transcribe`
+load their selected model automatically. Explicit preloading runs in the background
+and reports `loading`, `loaded`, or an error. A successful selection becomes the
+shared default for new sessions; existing sessions keep their own model. Finish
+active work before switching or unloading. A failed load keeps the previous default.
+For shell scripts, use `aura model ...` and poll `aura --json model status` until
+`state` is `loaded` or `error` before continuing.
+
+Explicitly preloaded models stay resident across idle periods and CLI disconnects
+until `/model unload`, a different-model job, or service shutdown. This lets an
+operator choose when to hold GPU resources. The [CLI model-control receipt](artifacts/asr-parakeet-availability/README.md#cli-model-controls)
+records actual preload, reuse through transcription, and worker exit after unload.
+
 ### GPU-only ASR
 
 AURA ASR runs on the CUDA execution contract. The settings layer, model loader,
@@ -447,37 +521,6 @@ The shared-defaults button applies the selection to future GUI and CLI sessions.
 Existing sessions retain their own model, including during refinement; legacy
 sessions use Breeze. `aura doctor` reports the available model capabilities,
 optional dependencies, and cached checkpoint without loading weights onto CUDA.
-
-In the interactive `aura>` workspace, use:
-
-```text
-/model                              # Show selected model and actual load state
-/model parakeet-tdt-0.6b-v2          # Select English Parakeet and preload it
-/model breeze                       # Select Breeze and preload it
-/model load                         # Preload the saved default
-/model unload                       # Release the ASR worker and GPU memory
-```
-
-Press **Tab** to complete commands, options, model names, and local file paths:
-`/mo` completes to `/model`, `/model para` completes the Parakeet model name,
-and `/record --mo` completes to `/record --model`. When several choices match,
-Tab fills their shared prefix; press Tab again to cycle the choices. Press
-**Enter** to execute the completed command. Reopen the CLI after updating to
-use the new completion behavior.
-
-Model commands are listed in `/help` and completion. Startup reports the ASR load
-state; entering the CLI alone leaves inference unloaded. `/record` and `/transcribe`
-load their selected model automatically. Explicit preloading runs in the background
-and reports `loading`, `loaded`, or an error. A successful selection becomes the
-shared default for new sessions; existing sessions keep their own model. Finish
-active work before switching or unloading. A failed load keeps the previous default.
-For shell scripts, use `aura model ...` and poll `aura --json model status` until
-`state` is `loaded` or `error` before continuing.
-
-Explicitly preloaded models stay resident across idle periods and CLI disconnects
-until `/model unload`, a different-model job, or service shutdown. This lets an
-operator choose when to hold GPU resources. The [CLI model-control receipt](artifacts/asr-parakeet-availability/README.md#cli-model-controls)
-records actual preload, reuse through transcription, and worker exit after unload.
 
 Parakeet supplies English punctuation and segment timestamps. Its selection
 sets English and disables Whisper prompts, hotwords, beam-size controls, and
@@ -657,7 +700,9 @@ denoise/VAD study awaits acoustic reference review. See the
 
 | Evidence layer | Result |
 | --- | --- |
-| Regression suite | See the current September 7 validation receipt linked below |
+| Regression suite | September 10 CLI checkpoint: 327 passing tests; see the [validation record](artifacts/cli-garden-preview/README.md#validation) |
+| Terminal interaction | Synthetic Linux PTY checks passed for slate and sage; includes resize, completion, session navigation, model controls, and detach/exit |
+| Product screenshots | User-provided v1.18.0 welcome and recording views; [source records](artifacts/cli-garden-preview/README.md#user-provided-screenshots) preserve image provenance |
 | AURA ASR live minimum | 10 real CUDA/int8 transcriptions over five public Common Voice 24 zh-TW clips |
 | Paired ASR runtime | AURA Breeze ASR 25 and Meetily Breeze ASR 26 each classify as `valid_target_runtime` |
 | Historical LLM packet | Retained evidence for the retired implementation |
@@ -913,6 +958,11 @@ not freeze source code. Reopen the client after source updates; install newly
 required dependencies deliberately. Use `/doctor` to check client/service versions,
 and restart an older backend only after active work finishes.
 
+The welcome screen lists `/record`, `/resume`, `/model`, and `/help`. Use
+`uv run --no-sync aura --palette sage` for warm gray accents; slate is the default.
+`/animations off` freezes the owl, while `/graphs off` hides measured history.
+See the [CLI workspace guide](#interactive-cli-workspace) and [Fig. 1](#cli-welcome).
+
 #### How do I name a session and complete commands?
 
 ```text
@@ -1023,6 +1073,7 @@ project needs its own repository-specific instructions.
 | Document | Purpose |
 | --- | --- |
 | [`docs/shared-sessions-2026-09-08.md`](docs/shared-sessions-2026-09-08.md) | Shared service, remote capture, CLI operations, and gap recovery |
+| [CLI screenshots, previews and validation](artifacts/cli-garden-preview/README.md) | Original screenshot provenance, slate/sage previews, animation and synthetic terminal checks |
 | [`docs/asr-inference-decision-2026-09-09.md`](docs/asr-inference-decision-2026-09-09.md) | Model/precision decisions, memory interpretation, and optimization gates |
 | [`docs/architecture_decisions.md`](docs/architecture_decisions.md) | Module ownership, GPU execution, session identity, evidence, output, and platform decisions |
 | [`docs/aura-llm-agent-product-strategy.md`](docs/aura-llm-agent-product-strategy.md) | Historical product strategy; summary implementation retired September 7 |
