@@ -28,7 +28,10 @@ class RecoveryTests(unittest.TestCase):
             compute_timestamps = True
             def get(self, name):
                 return getattr(self, name)
-        self.enterContext(patch.dict('sys.modules', {'omegaconf': SimpleNamespace(open_dict=lambda _: nullcontext())}))
+        self.enterContext(patch.dict('sys.modules', {
+            'omegaconf': SimpleNamespace(open_dict=lambda _: nullcontext()),
+            'soundfile': None,  # Array input must not require the optional file decoder.
+        }))
         class Model:
             cfg = SimpleNamespace(decoding=Decoding())
             modes = []

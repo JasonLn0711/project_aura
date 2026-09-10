@@ -470,7 +470,8 @@ Press **Tab** to complete commands, options, model names, and local file paths:
 and `/record --mo` completes to `/record --model`. When several choices match,
 Tab fills their shared prefix; press Tab again to cycle the choices. Press
 **Enter** to execute the completed command. Reopen the CLI after updating to
-use the new completion behavior.
+use the new completion behavior. On Windows, use forward slashes in paths
+(`C:/Audio/meeting.wav`) and quote paths containing spaces.
 
 Model commands are listed in `/help` and completion. Startup reports the ASR load
 state; opening the CLI preserves the service's existing model state. `/record` and `/transcribe`

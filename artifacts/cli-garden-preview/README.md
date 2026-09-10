@@ -92,3 +92,12 @@ Tab without execution, picker navigation/cancellation, restored transcripts,
 visible errors, model controls, and recording preservation across detach/exit.
 This establishes terminal interaction behavior; real-device and ASR-quality
 acceptance remain separate validation layers.
+
+The first publication checks reproduced existing CI portability failures:
+[Linux](https://github.com/JasonLn0711/project_aura/actions/runs/34431093294)
+and [Windows](https://github.com/JasonLn0711/project_aura/actions/runs/34431093254).
+Array-based Parakeet inference now imports the optional `soundfile` decoder only
+for file input; its existing decoding-mode test explicitly runs without that
+module. Completion fixtures use forward-slash paths consistently with the CLI's
+shell-style quoting, including on Windows. Hosted checks run on the publishing
+commit; physical Windows RTX validation retains its separate activation gate.

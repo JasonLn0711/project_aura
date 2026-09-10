@@ -90,11 +90,11 @@ class ParakeetModel:
 
     def _infer(self, audio, timestamps, **kwargs):
         import numpy as np
-        import soundfile as sf
         import torch
         if kwargs.get("language", "en") != "en" or kwargs.get("initial_prompt") or kwargs.get("hotwords"):
             raise ValueError("Parakeet supports English without Whisper prompts or hotwords.")
         if isinstance(audio, (str, Path)):
+            import soundfile as sf
             audio, rate = sf.read(audio, dtype="float32")
             if rate != 16000:
                 raise ValueError("Parakeet input must be 16 kHz mono audio")

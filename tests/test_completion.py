@@ -55,31 +55,33 @@ class CompletionTests(unittest.TestCase):
 
     def test_paths_with_spaces_quotes_and_directories(self):
         with tempfile.TemporaryDirectory() as tmp:
+            tmp = Path(tmp).as_posix()  # CLI paths use shell-style quoting on every platform.
             path = Path(tmp) / "meeting notes.wav"
             path.touch()
             for opening in ("", "'", '"'):
                 source = f"/transcribe {opening}{tmp}/meeting"
                 result = self.complete(source)
                 self.assertEqual(len(result), 1)
-                self.assertEqual(shlex.split(result[0]), ["/transcribe", str(path)])
+                self.assertEqual(shlex.split(result[0]), ["/transcribe", path.as_posix()])
             file = Path(tmp) / "Bob's notes.wav"
             file.touch()
             result = self.complete(f"/transcribe '{tmp}/Bob")
-            self.assertEqual(shlex.split(result[0]), ["/transcribe", str(file)])
+            self.assertEqual(shlex.split(result[0]), ["/transcribe", file.as_posix()])
             folder = Path(tmp) / "audio folder"
             folder.mkdir()
             result = self.complete(f"/transcribe {tmp}/audio")
-            self.assertEqual(shlex.split(result[0]), ["/transcribe", str(folder) + "/"])
+            self.assertEqual(shlex.split(result[0]), ["/transcribe", folder.as_posix() + "/"])
             result = self.complete(f"/record --hotwords-file {tmp}/meeting")
-            self.assertEqual(shlex.split(result[0])[-1], str(path))
+            self.assertEqual(shlex.split(result[0])[-1], path.as_posix())
 
     def test_quoted_path_preserves_existing_closing_quote_and_options(self):
         with tempfile.TemporaryDirectory() as tmp:
+            tmp = Path(tmp).as_posix()  # CLI paths use shell-style quoting on every platform.
             path = Path(tmp) / "meeting notes.wav"
             path.touch()
             prefix = f'/transcribe "{tmp}/meeting'
             result = self.complete(prefix + '" --language en', len(prefix))
-            self.assertEqual(shlex.split(result[0]), ["/transcribe", str(path), "--language", "en"])
+            self.assertEqual(shlex.split(result[0]), ["/transcribe", path.as_posix(), "--language", "en"])
 
 
 if __name__ == "__main__":
