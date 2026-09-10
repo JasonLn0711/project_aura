@@ -11,6 +11,44 @@ from aura.audio.fastenhancer import enhance
 
 
 class LiveTranscriptionContractTests(unittest.TestCase):
+    def test_adaptive_endpoints_and_continuous_audio(self):
+        frame = np.ones(480, np.int16)
+        # Short speech retains 800 ms; a longer phrase can end on a shorter pause.
+        for strategy, speech_frames, silence_frames in (("adaptive", 100, 27),
+                                                       ("adaptive", 500, 20),
+                                                       ("fixed", 500, 27)):
+            with self.subTest(strategy=strategy, speech_frames=speech_frames):
+                intervals = SpeechIntervals(480, max_seconds=20, segmentation=strategy)
+                for _ in range(speech_frames):
+                    self.assertIsNone(intervals.push(frame, True))
+                for _ in range(silence_frames - 1):
+                    self.assertIsNone(intervals.push(frame, False))
+                chunk = intervals.push(frame, False)
+                self.assertIsNotNone(chunk)
+                self.assertTrue(chunk.terminal)
+                self.assertEqual(chunk.split_reason, "silence")
+                for _ in range(800):
+                    self.assertIsNone(intervals.push(frame, False))
+                self.assertIsNone(intervals.finish())
+
+        intervals = SpeechIntervals(480, max_seconds=20, segmentation="adaptive")
+        chunks = []
+        frames = [np.full(480, i, np.int16) for i in range(1400)]
+        for frame in frames:
+            chunk = intervals.push(frame, True)
+            if chunk is not None:
+                self.assertFalse(chunk.terminal)
+                self.assertEqual(chunk.split_reason, "max_duration")
+                self.assertEqual(len(chunk.samples), 667 * 480)  # 20 s rounded to a frame.
+                chunks.append(chunk)
+        chunks.append(intervals.finish("stop"))
+        self.assertEqual(chunks[-1].split_reason, "stop")
+        self.assertTrue(chunks[-1].terminal)
+        for left, right in zip(chunks, chunks[1:]):
+            self.assertEqual(left.end_sample, right.start_sample)
+        np.testing.assert_array_equal(np.concatenate([c.samples for c in chunks]),
+                                      np.concatenate(frames).astype(np.float32) / 32768)
+
     def test_intervals_preserve_pauses_and_source_time_across_forced_splits(self):
         intervals = SpeechIntervals(480, max_seconds=0.12, pre_roll_ms=60, silence_ms=90)
         chunks = []

@@ -34,6 +34,18 @@ class TerminalTests(unittest.TestCase):
         self.assertTrue(parser().parse_args(['record','--consent']).consent)
         self.assertNotIn('--consent',parser().format_help())
 
+    def test_segmentation_flags_reach_shared_service(self):
+        from aura.cli import execute
+        for command, extra in (("record", []), ("schedule", ["--start-at", "2027-01-01T09:00:00+08:00",
+                                                            "--stop-at", "2027-01-01T10:00:00+08:00"])):
+            client = MagicMock()
+            args = parser().parse_args([command, *extra, "--segmentation", "fixed",
+                                       "--max-segment-seconds", "12", "--silence-ms", "800", "--detach"])
+            with patch("aura.cli.show"):
+                execute(client, args)
+            self.assertEqual(client.request.call_args.args[1]["options"],
+                dict(live_segmentation="fixed", live_max_segment_len_sec=12, live_silence_ms=800))
+
     def test_json_mode_has_no_terminal_decoration(self):
         out=io.StringIO()
         with patch('aura.cli.AuraClient') as factory, contextlib.redirect_stdout(out):

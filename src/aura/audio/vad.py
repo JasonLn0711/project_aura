@@ -17,6 +17,7 @@ class AudioChunk:
     end_sample: int
     terminal: bool = True
     queued_at: float = 0.0
+    split_reason: str = "silence"
 
     def __post_init__(self):
         if self.samples.ndim != 1 or self.start_sample < 0 or self.end_sample - self.start_sample != len(self.samples):
@@ -63,9 +64,13 @@ class SileroStreamVAD:
 
 class SpeechIntervals:
     def __init__(self, frame_samples: int, max_seconds: float = 12.0,
-                 pre_roll_ms: int = 320, silence_ms: int = 800):
-        if frame_samples <= 0 or max_seconds <= 0 or pre_roll_ms < 0 or silence_ms <= 0:
+                 pre_roll_ms: int = 320, silence_ms: int = 800,
+                 segmentation: str = "fixed"):
+        if frame_samples <= 0 or not math.isfinite(max_seconds) or max_seconds <= 0 or pre_roll_ms < 0 or silence_ms <= 0:
             raise ValueError("Invalid speech interval settings")
+        if segmentation not in ("fixed", "adaptive"):
+            raise ValueError("Unknown segmentation strategy")
+        self.segmentation = segmentation
         self.pre_roll = deque(maxlen=math.ceil(pre_roll_ms * SAMPLE_RATE / 1000 / frame_samples))
         self.max_samples = int(max_seconds * SAMPLE_RATE)
         self.silence_limit = math.ceil(silence_ms * SAMPLE_RATE / 1000)
@@ -94,16 +99,21 @@ class SpeechIntervals:
         self.frames.append(frame)
         self.position += len(frame)
         self.silence_samples = 0 if speech else self.silence_samples + len(frame)
-        terminal = self.silence_samples >= self.silence_limit
-        if terminal or self.position - self.start >= self.max_samples:
-            return self._flush(terminal)
+        elapsed = self.position - self.start
+        silence_limit = self.silence_limit
+        if self.segmentation == "adaptive":
+            progress = min(1.0, max(0.0, 2 * elapsed / self.max_samples - 1))
+            silence_limit = math.ceil(silence_limit * (1 - progress / 2))
+        terminal = self.silence_samples >= silence_limit
+        if terminal or elapsed >= self.max_samples:
+            return self._flush(terminal, "silence" if terminal else "max_duration")
         return None
 
-    def _flush(self, terminal: bool) -> AudioChunk | None:
+    def _flush(self, terminal: bool, reason: str) -> AudioChunk | None:
         if not self.frames:
             return None
         samples = np.concatenate(self.frames).astype(np.float32) / 32768.0
-        chunk = AudioChunk(samples, self.start, self.position, terminal, time.monotonic())
+        chunk = AudioChunk(samples, self.start, self.position, terminal, time.monotonic(), reason)
         self.frames = []
         self.start = self.position
         self.continuing = not terminal
@@ -111,8 +121,8 @@ class SpeechIntervals:
             self.silence_samples = 0
         return chunk
 
-    def finish(self) -> AudioChunk | None:
-        return self._flush(True)
+    def finish(self, reason: str = "flush") -> AudioChunk | None:
+        return self._flush(True, reason)
 
 
 def should_treat_frame_as_speech(

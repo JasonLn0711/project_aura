@@ -2,6 +2,7 @@
 import concurrent.futures
 import datetime
 import json
+import math
 import multiprocessing
 import os
 from pathlib import Path
@@ -33,7 +34,8 @@ def options_for(values=None, preferences=None):
     from aura.asr.models import MODEL_KEYS, PARAKEET, PARAKEET_DEFAULTS
     result = dict(asr_model="breeze", profile="light", language="zh", beam_size=5, prompt=DEFAULT_LIVE_PROMPT,
                   hotwords="", punctuation=True, target_dbfs=-20.0, diarization=False,
-                  min_speakers=2, max_speakers=6, audio_format="m4a")
+                  min_speakers=2, max_speakers=6, audio_format="m4a",
+                  live_segmentation="adaptive", live_max_segment_len_sec=20.0, live_silence_ms=800)
     values = values or {}
     if not isinstance(values, dict) or set(values) - result.keys():
         raise ValueError("Unknown transcription options")
@@ -50,6 +52,13 @@ def options_for(values=None, preferences=None):
     result.update(values)
     if result["profile"] not in PROFILES:
         raise ValueError("Unknown audio profile")
+    if result["live_segmentation"] not in ("adaptive", "fixed"):
+        raise ValueError("live_segmentation must be adaptive or fixed")
+    maximum = result["live_max_segment_len_sec"]
+    if type(maximum) not in (float, int) or not math.isfinite(maximum) or not 2 <= maximum <= 30:
+        raise ValueError("live_max_segment_len_sec must be between 2 and 30 seconds")
+    if type(result["live_silence_ms"]) is not int or not 200 <= result["live_silence_ms"] <= 2000:
+        raise ValueError("live_silence_ms must be between 200 and 2000 milliseconds")
     if type(result["beam_size"]) is not int or not 1 <= result["beam_size"] <= 10:
         raise ValueError("beam_size must be between 1 and 10")
     if result["language"] not in (None, "zh", "en"):
@@ -298,10 +307,12 @@ class SessionCore:
             if s["state"] == "recording":
                 s["state"] = "pausing" if s["producer_connected"] else "paused"
                 s["pauses"].append(dict(started_at=now(), sample=s["samples"]))
+                if s["state"] == "paused":
+                    self._flush(s, "pause")
         elif command == "producer.paused":
             if s["state"] != "pausing":
                 raise ValueError("Session is not pausing")
-            self._flush(s)
+            self._flush(s, "pause")
             s["capture_paused_ack"] = True
             running = self.db.execute("SELECT count(*) FROM jobs WHERE session=? AND state='running'", (s["id"],)).fetchone()[0]
             if not running:
@@ -325,11 +336,11 @@ class SessionCore:
                 raise ValueError("Stop requires an active recording")
             s["state"] = "stopping" if s["producer_connected"] else "draining"
             if s["state"] == "draining":
-                self._flush(s)
+                self._flush(s, "stop")
         elif command == "producer.stopped":
             if s["state"] != "stopping":
                 raise ValueError("Capture stop acknowledgement requires a stopping session")
-            self._flush(s)
+            self._flush(s, "stop")
             s["state"] = "draining"
             s["producer_connected"] = False
             self.producers.discard(s["id"])
@@ -476,7 +487,10 @@ class SessionCore:
                     vad = webrtcvad.Vad(3)
                     s["vad_backend"] = "webrtc-fallback"
                     s["warning"] = str(exc)
-                intervals = SpeechIntervals(CHUNK_SIZE)
+                intervals = SpeechIntervals(CHUNK_SIZE,
+                    max_seconds=s["options"].get("live_max_segment_len_sec", 12.0),
+                    silence_ms=s["options"].get("live_silence_ms", 800),
+                    segmentation=s["options"].get("live_segmentation", "fixed"))
                 intervals.position = s["samples"]
                 self.detectors[sid] = (vad, intervals, {"misses": 0})
             vad, intervals, stats = self.detectors[sid]
@@ -509,13 +523,16 @@ class SessionCore:
 
     def _enqueue_chunk(self, s, chunk):
         self.recordings[s["id"]].checkpoint()
+        s["last_split"] = dict(reason=chunk.split_reason, start_sample=chunk.start_sample,
+                               end_sample=chunk.end_sample, terminal=chunk.terminal)
         self._job(s, "chunk", path=str(self.directory(s["id"]) / ".capture/mixed.pcm"),
-                  start=chunk.start_sample, end=chunk.end_sample, terminal=chunk.terminal)
+                  start=chunk.start_sample, end=chunk.end_sample, terminal=chunk.terminal,
+                  split_reason=chunk.split_reason)
 
-    def _flush(self, s):
+    def _flush(self, s, reason="flush"):
         detector = self.detectors.pop(s["id"], None)
         if detector:
-            chunk = detector[1].finish()
+            chunk = detector[1].finish(reason)
             if chunk:
                 self._enqueue_chunk(s, chunk)
 

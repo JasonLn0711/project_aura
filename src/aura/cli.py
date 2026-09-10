@@ -56,6 +56,12 @@ def parser():
             sub.add_argument("--source", choices=("microphone", "system", "system_microphone"), default="system_microphone")
             sub.add_argument("--capture-location", choices=("server", "client"), default="server")
             sub.add_argument("--consent", action="store_true", help=argparse.SUPPRESS)
+            sub.add_argument("--segmentation", choices=("adaptive", "fixed"), default=None,
+                             help="Speech segmentation strategy (service default: adaptive)")
+            sub.add_argument("--max-segment-seconds", type=float, default=None,
+                             help="Maximum audio segment: 2–30 seconds (service default: 20)")
+            sub.add_argument("--silence-ms", type=int, default=None,
+                             help="Endpoint silence: 200–2000 ms (service default: 800)")
         if command == "schedule":
             sub.add_argument("--start-at", required=True, help="ISO 8601 with timezone")
             sub.add_argument("--stop-at", required=True, help="ISO 8601 with timezone")
@@ -124,7 +130,7 @@ def inspect_session(session, machine=False):
         show(session, True)
     else:
         fields = ("id", "title", "state", "created_at", "updated_at", "source", "capture_location",
-                  "error", "capture_error", "asr_issues", "work", "artifacts")
+                  "error", "capture_error", "asr_issues", "work", "artifacts", "options", "last_split")
         print(safe_text(json.dumps({k: session[k] for k in fields if k in session}, ensure_ascii=False, indent=2)))
 
 
@@ -230,6 +236,12 @@ def execute(client, args, *, on_progress=None):
             options["hotwords"] = " ".join(dict.fromkeys(args.hotwords_file.read_text(encoding="utf-8-sig").splitlines()))
         values.update(title=args.title, options=options)
         if command in ("record", "schedule"):
+            for argument, option in (("segmentation", "live_segmentation"),
+                                     ("max_segment_seconds", "live_max_segment_len_sec"),
+                                     ("silence_ms", "live_silence_ms")):
+                value = getattr(args, argument)
+                if value is not None:
+                    options[option] = value
             values.update(source=args.source, capture_location=args.capture_location)
         else:
             values["path"] = client.upload(args.path, on_progress=on_progress)

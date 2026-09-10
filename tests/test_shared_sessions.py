@@ -112,6 +112,60 @@ class SharedSessionTests(unittest.TestCase):
         wait_state(self.core, s["id"], "recording")
         return s["id"]
 
+    def test_live_segmentation_options_schedule_and_legacy_sessions(self):
+        import datetime
+        from aura.session_core import options_for
+        defaults = options_for()
+        self.assertEqual((defaults["live_segmentation"], defaults["live_max_segment_len_sec"],
+                          defaults["live_silence_ms"]), ("adaptive", 20, 800))
+        for key, values in (("live_max_segment_len_sec", [True, "20", float("nan"), float("inf"), 1, 31]),
+                            ("live_silence_ms", [True, 800.0, 199, 2001]),
+                            ("live_segmentation", [None, "semantic"])):
+            for value in values:
+                with self.subTest(key=key, value=value), self.assertRaises(ValueError):
+                    self.core.request("record", {"options": {key: value}})
+        start = datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(days=1)
+        selected = dict(live_segmentation="fixed", live_max_segment_len_sec=12, live_silence_ms=800)
+        scheduled = self.core.request("schedule", dict(start_at=start.isoformat(),
+            stop_at=(start + datetime.timedelta(hours=1)).isoformat(), options=selected))
+        self.core.request("preferences.set", dict(live_max_segment_len_sec=30, live_silence_ms=2000))
+        self.core.close()
+        self.core = SessionCore(self.root, executor=fake_inference)
+        saved = self.core.request("get", {"session_id": scheduled["id"]})
+        self.assertEqual({key: saved["options"][key] for key in selected}, selected)
+
+        sid = self.record()
+        # Simulate a pre-upgrade session without the new option fields.
+        for key in selected:
+            self.core.sessions[sid]["options"].pop(key)
+        with patch("aura.audio.vad.SileroStreamVAD", return_value=Speech()):
+            self.core.ingest(sid, 0, bytes(960), ["mixed"])
+        interval = self.core.detectors[sid][1]
+        self.assertEqual((interval.segmentation, interval.max_samples, interval.silence_limit),
+                         ("fixed", 12 * 16000, 12800))
+
+    def test_adaptive_session_flushes_pause_and_stop_tails(self):
+        sid = self.record()
+        self.core.request("producer.open", {"session_id": sid})
+        with patch("aura.audio.vad.SileroStreamVAD", return_value=Speech()):
+            self.core.ingest(sid, 0, bytes(960), ["mixed"])
+            self.assertEqual(self.core.detectors[sid][1].segmentation, "adaptive")
+            self.core.request("pause", {"session_id": sid})
+            s = self.core.request("producer.paused", {"session_id": sid})
+            self.assertEqual(s["last_split"], dict(reason="pause", start_sample=0,
+                                                 end_sample=480, terminal=True))
+            wait_state(self.core, sid, "paused")
+            self.core.request("resume", {"session_id": sid})
+            self.core.ingest(sid, 1, bytes(960), ["mixed"])
+            self.core.request("stop", {"session_id": sid})
+            s = self.core.request("producer.stopped", {"session_id": sid})
+            self.assertEqual(s["last_split"], dict(reason="stop", start_sample=480,
+                                                 end_sample=960, terminal=True))
+        wait_state(self.core, sid, "ready")
+        payloads = [json.loads(r[0]) for r in self.core.db.execute(
+            "SELECT payload FROM jobs WHERE session=? AND kind='chunk' ORDER BY id", (sid,))]
+        self.assertEqual([p["split_reason"] for p in payloads], ["pause", "stop"])
+
     def test_cross_client_pause_resume_stop_preserves_samples_and_edits(self):
         sid = self.record()
         self.core.request("producer.open", {"session_id": sid})
