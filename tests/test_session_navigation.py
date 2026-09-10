@@ -93,8 +93,13 @@ class SessionNavigationTests(unittest.TestCase):
     def test_terminal_resume_passes_saved_snapshot(self):
         row = self.saved('failed')
         with patch('aura.cli.AuraClient', return_value=self.client), patch('aura.cli.sys.stdin.isatty', return_value=True), patch('aura.cli.sys.stdout.isatty', return_value=True), patch('aura.cli.interactive', return_value=0) as workspace:
-            self.assertEqual(main(['resume', '--last']), 0)
+            self.assertEqual(main(['--palette', 'sage', 'resume', '--last']), 0)
         self.assertEqual(workspace.call_args.kwargs['initial']['error'], row['error'])
+        self.assertEqual(workspace.call_args.kwargs['palette'], 'sage')
+        with patch('aura.cli.AuraClient', return_value=self.client), patch('aura.cli.sys.stdin.isatty', return_value=True), \
+                patch('aura.cli.sys.stdout.isatty', return_value=True), patch('aura.terminal.pick_session', return_value=None) as picker:
+            self.assertEqual(main(['--palette', 'sage', 'resume']), 0)
+        self.assertEqual(picker.call_args.kwargs['palette'], 'sage')
 
     def test_diagnostics_current_old_mismatched_and_error_presentation(self):
         result = diagnostics(self.client)

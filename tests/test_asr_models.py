@@ -1,3 +1,6 @@
+import contextlib
+import io
+import json
 import tempfile
 import unittest
 from pathlib import Path
@@ -119,6 +122,28 @@ class AsrModelsTests(unittest.TestCase):
         with patch("aura.cli.show"):
             execute(client, args)
         self.assertEqual(client.request.call_args.args[1]["options"], {"asr_model": PARAKEET})
+
+    def test_model_summary_details_and_json_keep_their_contracts(self):
+        from aura.cli import parser, execute, model_status_text
+        for state in ('unloaded', 'loading', 'loaded', 'unloading', 'error'):
+            result = dict(state=state, default=PARAKEET, error='模型載入失敗')
+            self.assertEqual(model_status_text(result, compact=True), f'ASR: Parakeet v2 · {state}')
+            details = model_status_text(result)
+            self.assertIn('模型載入失敗', details)
+            self.assertIn('/model ' + PARAKEET, details)
+            self.assertIn('/model load', details)
+            self.assertNotIn('Default for new sessions:', details)
+        details = model_status_text(dict(state='loaded', asr_model='breeze', default=PARAKEET))
+        self.assertIn('Current: breeze', details)
+        self.assertIn('Default for new sessions: ' + PARAKEET, details)
+        self.assertIn('future-model', model_status_text(dict(state='loaded', default='future-model'), compact=True))
+        result = dict(state='unloaded', asr_model=None, default=PARAKEET, error=None)
+        client = MagicMock()
+        client.request.side_effect = [{'model_control': True}, result]
+        with contextlib.redirect_stdout(io.StringIO()) as output:
+            execute(client, parser().parse_args(['--json', 'model']))
+        self.assertEqual(json.loads(output.getvalue()), result)
+        self.assertEqual([call.args[0] for call in client.request.call_args_list], ['capabilities', 'model.status'])
 
     def test_worker_reuses_model_and_exits_before_switch(self):
         core = object.__new__(SessionCore)

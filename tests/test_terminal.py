@@ -1,10 +1,12 @@
 import contextlib
 import io
 import json
+import os
 import unittest
 from unittest.mock import patch, MagicMock
 from aura.cli import parser, main
-from aura.terminal import TerminalStatus, graph, bar, safe_text
+from aura.terminal import (TerminalStatus, graph, bar, safe_text, welcome, picker_rows,
+                           unicode_terminal, terminal_color_depth, terminal_style, garden_rows, GARDEN)
 
 
 class TerminalTests(unittest.TestCase):
@@ -15,7 +17,7 @@ class TerminalTests(unittest.TestCase):
                              work={'queued':2,'running':1,'done':3,'failed':0}))
         self.assertEqual(len(view.audio),60)
         self.assertEqual(len(view.queue),60)
-        self.assertIn('2 pending',view.lines()[0][1])
+        self.assertIn('2 pending', ' '.join(t for _, t in view.lines()))
         self.assertNotIn('%',' '.join(t for _,t in view.lines()))
         view.session['state']='draining'
         self.assertIn('50%', ' '.join(t for _,t in view.lines()))
@@ -44,3 +46,102 @@ class TerminalTests(unittest.TestCase):
         with patch('aura.cli.sys.stdin.isatty',return_value=False), patch('aura.cli.AuraClient') as factory, contextlib.redirect_stdout(io.StringIO()):
             self.assertEqual(main([]),2)
             factory.assert_not_called()
+
+    def test_stdout_redirect_does_not_open_interactive_workspace(self):
+        with patch('aura.cli.sys.stdin.isatty', return_value=True), patch('aura.cli.sys.stdout.isatty', return_value=False), \
+                patch('aura.cli.AuraClient') as factory, contextlib.redirect_stdout(io.StringIO()):
+            self.assertEqual(main([]), 2)
+            factory.assert_not_called()
+
+    def test_garden_layout_encoding_and_color_fallback(self):
+        report = {'service_version': '1.18.0', 'version_status': 'matched'}
+        with patch('aura.terminal.unicode_terminal', return_value=True):
+            wide = ''.join(t for _, t in welcome('AURA test', 'local', report, size=(80, 30)))
+            small = ''.join(t for _, t in welcome('AURA test', 'local', report, size=(79, 30)))
+            self.assertEqual(wide.count('AURA test'), 1)
+            self.assertIn(')))', wide)
+            self.assertIn('/model    Choose an ASR model', wide)
+            self.assertIn('▁▁▂▁▁▁▂▁▁▁▂▃▅▃▂▁▁▂▁▁▁▂▁▁▂▁▁▁▂▁▁▁▂▁▁▁▂▁▁▂▃▅▃▂▁▂▁', wide)
+            self.assertNotIn(')))', small)
+            self.assertIn('o v o', small)
+        with patch.dict(os.environ, {'TERM': 'dumb', 'NO_COLOR': '1'}):
+            self.assertFalse(unicode_terminal())
+            text = ''.join(t for _, t in welcome('AURA test', 'local', report, size=(80, 30)))
+            self.assertTrue(text.isascii())
+            self.assertEqual(terminal_color_depth().value, 'DEPTH_1_BIT')
+        with patch('aura.terminal.sys.stdout') as stream:
+            stream.encoding = 'ascii'
+            self.assertFalse(unicode_terminal())
+
+    def test_palettes_override_framework_reverse_and_preserve_art(self):
+        from prompt_toolkit.styles import default_ui_style, merge_styles
+        self.assertEqual('\n'.join(''.join(t for _, t in row) for row in garden_rows()), GARDEN)
+        colors = []
+        for palette in ('slate', 'sage'):
+            style = merge_styles([default_ui_style(), terminal_style(palette)])
+            colors.append(style.get_attrs_for_style_str('class:owl').color)
+            for token in ('class:muted', 'class:owl', 'class:shadow', 'class:heading', 'class:error', ''):
+                attrs = style.get_attrs_for_style_str('class:bottom-toolbar class:bottom-toolbar.text ' + token)
+                self.assertFalse(attrs.reverse)
+                self.assertIn(attrs.bgcolor, ('', 'default'))
+            self.assertEqual(style.get_attrs_for_style_str('class:muted').color, 'default')
+            self.assertTrue(style.get_attrs_for_style_str('class:error').bold)
+            self.assertFalse(style.get_attrs_for_style_str('class:completion-menu.completion.current').reverse)
+            self.assertFalse(style.get_attrs_for_style_str('class:completion-menu.meta.completion.current').reverse)
+            art_colors = {style.get_attrs_for_style_str(token).color for row in garden_rows() for token, text in row if text.strip()}
+            self.assertGreaterEqual(len(art_colors), 5)
+        self.assertNotEqual(*colors)
+        self.assertEqual(parser().parse_args([]).palette, 'slate')
+        with patch('aura.cli.AuraClient') as client, contextlib.redirect_stderr(io.StringIO()):
+            with self.assertRaises(SystemExit) as error:
+                main(['--palette', 'unknown'])
+            self.assertEqual(error.exception.code, 2)
+            client.assert_not_called()
+
+    def test_animation_states_freeze_and_warning_priority(self):
+        view = TerminalStatus()
+        session = dict(id='a', state='recording', samples=16000, work={'queued': 2, 'running': 1, 'done': 0})
+        def render(at):
+            with patch('aura.terminal.time.monotonic', return_value=at):
+                return ''.join(t for _, t in view.toolbar(100, 30))
+        with patch('aura.terminal.unicode_terminal', return_value=True), patch.dict(os.environ, {'TERM': 'xterm'}):
+            view.update(session)
+            self.assertNotEqual(render(1), render(1.5))
+            view.animations = False
+            self.assertEqual(render(1), render(1.5))
+            view.animations = True
+            with patch('aura.terminal.time.monotonic', return_value=10):
+                view.update({**session, 'state': 'ready'})
+            self.assertNotEqual(render(10.5), render(12))
+            self.assertIn('^ v ^', render(12))
+            view.update({**session, 'state': 'paused'})
+            self.assertIn('- v -', render(12))
+            self.assertEqual(render(12), render(12.5))
+            view.update({**session, 'state': 'ready', 'asr_issues': [{'status': 'pending'}]})
+            view.progress(1, 2)
+            self.assertIn('! v !', render(12))
+            self.assertIn('transcription gaps', render(12))
+            self.assertNotIn('^ v ^', render(12))
+            self.assertNotIn('(^.^)', ''.join(t for _, t in view.toolbar(40, 12)))
+            view.connected = False
+            view.error = 'Connection lost'
+            text = render(12)
+            self.assertIn('Disconnected', text)
+            self.assertNotIn('Audio', text)
+            self.assertEqual(text, render(12.5))
+
+    def test_cell_width_short_picker_and_untrusted_titles(self):
+        from prompt_toolkit.utils import get_cwidth
+        view = TerminalStatus()
+        view.update(dict(id='a', state='failed', samples=0, error='裝置無法使用'))
+        rows = [dict(id=str(i), state='ready', title='中文\x1b[31m meeting') for i in range(12)]
+        with patch('aura.terminal.unicode_terminal', return_value=True):
+            for width, height in ((100, 30), (80, 24), (60, 20), (40, 12), (30, 8)):
+                for fragments in (view.toolbar(width, height), picker_rows(rows, '', 0, width, height)):
+                    text = ''.join(t for _, t in fragments)
+                    self.assertNotIn('\x1b', text)
+                    self.assertTrue(all(get_cwidth(line) < width for line in text.splitlines()), text)
+            short = ''.join(t for _, t in picker_rows(rows, '', 5, 80, 10))
+            self.assertEqual(len(short.splitlines()), 5)
+            self.assertIn('> 5', short)
+            self.assertIn('0 matching', ''.join(t for _, t in picker_rows(rows, 'missing', 0, 80, 10)))

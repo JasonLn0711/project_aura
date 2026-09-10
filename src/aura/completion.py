@@ -10,7 +10,12 @@ from prompt_toolkit.document import Document
 class WorkspaceCompleter(Completer):
     def __init__(self, parser, commands):
         self.commands = commands
-        self.parsers = next(a.choices for a in parser._actions if isinstance(a, argparse._SubParsersAction))
+        subparsers = next(a for a in parser._actions if isinstance(a, argparse._SubParsersAction))
+        self.parsers = subparsers.choices
+        self.descriptions = {a.dest: a.help for a in subparsers._choices_actions}
+        self.descriptions.update(graphs='Show or hide audio and queue graphs', animations='Enable or freeze owl animation',
+                                 status='Show current session status', detach='Leave the workspace selection',
+                                 help='Explore commands', quit='Exit CLI; recording continues')
         self.paths = PathCompleter(expanduser=True)
 
     def get_completions(self, document, complete_event):
@@ -32,7 +37,7 @@ class WorkspaceCompleter(Completer):
         action = None
         if not words:
             choices = self.commands if not current or current.startswith("/") else [c.lstrip("/") for c in self.commands]
-        elif words[0].lstrip("/") == "graphs":
+        elif words[0].lstrip("/") in ("graphs", "animations"):
             choices = ["on", "off"] if len(words) == 1 else []
         else:
             parser = self.parsers.get(words[0].lstrip("/"))
@@ -86,4 +91,5 @@ class WorkspaceCompleter(Completer):
             replacement = choice[len(prefix):len(choice) - len(tail) if tail else None]
             if quote and not document.text_after_cursor.startswith(quote):
                 replacement += quote
-            yield Completion(replacement, display=choice)
+            yield Completion(replacement, display=choice,
+                             display_meta=self.descriptions.get(choice.lstrip('/'), '') if not words else '')

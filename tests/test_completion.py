@@ -35,6 +35,7 @@ class CompletionTests(unittest.TestCase):
             "/record --source mic": "/record --source microphone",
             "/record --language e": "/record --language en",
             "/graphs of": "/graphs off",
+            "/animations of": "/animations off",
         }
         for source, expected in cases.items():
             with self.subTest(source=source):
@@ -45,6 +46,10 @@ class CompletionTests(unittest.TestCase):
         self.assertNotIn("/record --consent", self.complete("/record --"))
 
     def test_existing_suffix_and_following_arguments_are_preserved(self):
+        # The production workspace includes /pause; its description comes from argparse.
+        completer = WorkspaceCompleter(parser(), ['/pause'])
+        choice = list(completer.get_completions(Document('/pa'), CompleteEvent(completion_requested=True)))
+        self.assertEqual(choice[0].display_meta_text, 'Pause recording')
         self.assertEqual(self.complete("/model", 3), ["/model"])
         self.assertEqual(self.complete("/rec --language en", 4), ["/record --language en"])
 
