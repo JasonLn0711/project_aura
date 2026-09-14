@@ -43,7 +43,9 @@ diarization = [
   "torchcodec>=0.11,<0.12",
 ]
 punctuation = [
-  "torch>=2.0",
+  "torch>=2.11,<2.12",
+  # Keep Transformers' optional vision imports ABI-compatible with the ASR stack.
+  "torchvision>=0.26,<0.27",
   "transformers>=4.55",
 ]
 benchmark = [
@@ -63,6 +65,9 @@ asr_postprocess = ["domain_glossary.yaml"]
 
 [tool.uv.sources]
 torch = [
+  { index = "pytorch-cu128", marker = "sys_platform == 'linux' or sys_platform == 'win32'" },
+]
+torchvision = [
   { index = "pytorch-cu128", marker = "sys_platform == 'linux' or sys_platform == 'win32'" },
 ]
 torchaudio = [
