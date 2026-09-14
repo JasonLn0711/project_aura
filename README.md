@@ -604,6 +604,8 @@ Breeze tokenizer, new recording, scheduling and import requests reject overflow
 before creating a session or changing the loaded model. Worker validation remains
 in place when the tokenizer is absent. Keep a full vocabulary file and supply a
 prioritized shorter copy using `--hotwords-file`; terms are never silently truncated.
+See the [local vocabulary workflow](docs/labsync-hotwords.md) for candidate
+selection, exact token budgets, and saved-preference behavior.
 
 ### Speaker diarization
 
@@ -963,7 +965,10 @@ pactl list short sources
 
 If punctuation falls back to rules, install the `punctuation` extra and reload
 the ASR model. Reload clears the cached punctuation load failure and retries.
-Keep the runtime log for the exact dependency or model-access error.
+Finish and drain active recordings before reloading the worker.
+Keep the runtime log for the exact dependency or model-access error. The
+[punctuation runtime guide](docs/punctuation-runtime.md) provides the compatible
+Torch/torchvision pair and a real cached-model check that fails on rule fallback.
 
 ### Speaker diarization activation
 
