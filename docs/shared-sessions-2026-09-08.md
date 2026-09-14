@@ -68,9 +68,11 @@ the same extras. Stop active sessions and the service before changing its enviro
 
 ## Delete saved sessions
 
-Preview the target and deletion boundary first:
+Inside the interactive `aura` prompt, use slash commands directly; do not
+prepend `uv run --no-sync aura`. List sessions, then preview the target:
 
 ```text
+/sessions
 /delete SESSION_ID
 ```
 
@@ -79,8 +81,12 @@ retained data, and an exact confirmation command. To permanently delete it,
 repeat the full UUID as confirmation:
 
 ```text
-/delete SESSION_ID --confirm SESSION_ID
+/delete SESSION_ID --confirm FULL_SESSION_UUID
 ```
+
+`SESSION_ID` selects the target; replace `FULL_SESSION_UUID` with the complete
+UUID shown by the preview. `/delete` requires an explicit target even when a
+session is attached. `/delete --help` displays the command options.
 
 From a shell, use `uv run --no-sync aura delete SESSION_ID` with the same
 confirmation flag. A unique prefix can select the preview target; confirmation
@@ -106,6 +112,10 @@ may already have been removed; deletion cannot be undone.
 
 The CLI detaches when its selected session is deleted. No actual saved session
 is deleted merely by installing this feature or requesting a preview.
+
+The [September 14 Planning note](https://github.com/JasonLn0711/planning-everything-track/blob/main/weeks/2026-W38/days/2026-09-14.md#aura-interactive-session-deletion--first-principle)
+records the operator clarification and its evidence boundary: documenting or
+testing the workflow does not authorize deletion of a real saved session.
 
 ## Adaptive live segmentation
 
