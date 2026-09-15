@@ -1,0 +1,14 @@
+{
+  "date": "2026-09-15",
+  "file": "hotwords-computer_vision_anomaly_detection-260915.txt",
+  "sha256": "241aec413dd12080df11d1ddeb711be43b8622e15f1a01bd713cebe500c3a80b",
+  "model_id": "SoybeanMilk/faster-whisper-Breeze-ASR-25",
+  "tokenizer_sha256": "ad9d585ff6f7948ae7687f0fbcccf52c9e0ab8105729e542e47a11e2e5f05071",
+  "faster_whisper_version": "1.2.1",
+  "terms": 27,
+  "hotword_tokens": 223,
+  "get_prompt_untruncated": true,
+  "aura_preflight": "Prompt and hotwords use 227 tokens; shorten the list to 200 tokens or fewer. Terms were not truncated.",
+  "audio_inference_run": false,
+  "human_accuracy_acceptance": "pending"
+}
