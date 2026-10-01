@@ -56,6 +56,12 @@ def execute(kind, payload):
                 raise ValueError("Recovery audio must be mono 16-bit PCM at 16 kHz")
             f.setpos(start)
             raw = f.readframes(end - start)
+    elif Path(payload["path"]).suffix.lower() == ".m4a":
+        import subprocess
+        raw = subprocess.run(["ffmpeg", "-nostdin", "-v", "error", "-i", payload["path"],
+            "-af", f"atrim=start_sample={start}:end_sample={end},asetpts=PTS-STARTPTS",
+            "-ar", str(SAMPLE_RATE), "-ac", "1", "-f", "s16le", "-"],
+            capture_output=True, check=True).stdout
     else:
         with open(payload["path"], "rb") as f:
             f.seek(start * 2)

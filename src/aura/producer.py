@@ -140,6 +140,15 @@ def capture(session_id, ssh=None):
         try:
             if recorder:
                 recorder.finalize()
+                try:
+                    current = control.request("get", {"session_id": session_id})
+                except Exception:
+                    current = {}  # Disconnection preserves the finalized recovery inputs.
+                if current.get("state") == "ready" and "m4a" in current.get("artifacts", {}):
+                    from aura.audio.retention import retain_mixed_m4a
+                    # Remote client sources remain local until their retained export is available here.
+                    if Path(current["artifacts"]["m4a"]).is_file():
+                        retain_mixed_m4a(default_root(), current)
         finally:
             control.close()
             client.close()

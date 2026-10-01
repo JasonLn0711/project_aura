@@ -98,6 +98,9 @@ class SessionCore:
             CREATE TABLE IF NOT EXISTS preferences(key TEXT PRIMARY KEY, value TEXT NOT NULL);
             CREATE TABLE IF NOT EXISTS commands(id TEXT PRIMARY KEY, command TEXT NOT NULL, result TEXT NOT NULL);
         """)
+        if "progress" not in {r[1] for r in self.db.execute("PRAGMA table_info(events)")}:
+            self.db.execute("ALTER TABLE events ADD COLUMN progress INTEGER NOT NULL DEFAULT 0")
+        self.db.execute("CREATE INDEX IF NOT EXISTS events_session_progress ON events(session,progress,seq)")
         self.sessions = {r["id"]: json.loads(r["data"]) for r in self.db.execute("SELECT * FROM sessions")}
         self.recordings = {}
         self.detectors = {}
@@ -120,17 +123,27 @@ class SessionCore:
         self.worker = threading.Thread(target=self._work, name="aura-inference", daemon=True)
         self.worker.start()
 
-    def _save(self, session, event="session.updated"):
+    def _save(self, session, event="session.updated", *, progress=False):
         session["updated_at"] = now()
         data = json.dumps(session, ensure_ascii=False)
         self.db.execute("INSERT OR REPLACE INTO sessions VALUES (?,?)", (session["id"], data))
         snapshot = dict(session)
+        if progress:
+            for key in ("transcript", "live_text", "segments", "asr_issues"):
+                snapshot.pop(key, None)
         # Progress events carry small deltas; transcripts travel only when their revision changes.
         if self.last_event_revision.get(session["id"]) == session["revision"]:
             snapshot.pop("transcript", None)
             snapshot.pop("live_text", None)
-        self.last_event_revision[session["id"]] = session["revision"]
-        self.db.execute("INSERT INTO events(session,data) VALUES (?,?)", (session["id"], json.dumps({"type": event, "session": snapshot})))
+        if not progress:
+            self.last_event_revision[session["id"]] = session["revision"]
+        self.db.execute("INSERT INTO events(session,data,progress) VALUES (?,?,?)",
+            (session["id"], json.dumps({"type": event, "session": snapshot}), int(progress)))
+        self.db.execute("DELETE FROM events WHERE session=? AND progress=1 AND seq NOT IN "
+            "(SELECT seq FROM events WHERE session=? AND progress=1 ORDER BY seq DESC LIMIT 100)",
+            (session["id"], session["id"]))
+        if session["state"] not in ACTIVE and session["state"] != "scheduled":
+            self.db.execute("DELETE FROM events WHERE session=? AND progress=1", (session["id"],))
         self.db.commit()
         with self.changed:
             self.changed.notify_all()
@@ -411,6 +424,8 @@ class SessionCore:
             s.update(transcript=text, revision=s["revision"] + 1, edited=True)
         elif command == "recover":
             self._available()
+            if s.get("audio_removed"):
+                raise ValueError("Audio was discarded by its owner; recovery is unavailable")
             if s["state"] not in ("ready", "recoverable", "failed") or s.get("source_path"):
                 raise ValueError("Recover requires a stopped, saved recording")
             rows = self.db.execute("SELECT * FROM jobs WHERE session=? AND kind='chunk' AND state IN ('failed','queued') ORDER BY id", (s["id"],)).fetchall()
@@ -419,9 +434,12 @@ class SessionCore:
             from aura.audio.recording_session import recover_recording_session
             if s["id"] in self.recordings:
                 paths = self.recordings.pop(s["id"]).finalize(keep_pcm=True)
+            elif s["artifacts"].get("m4a"):
+                paths = {"mixed": Path(s["artifacts"]["m4a"])}
             else:
                 paths = recover_recording_session(self.directory(s["id"]) / "session.json", keep_pcm=True)
-            s["artifacts"]["wav"] = str(paths["mixed"])
+            if Path(paths["mixed"]).suffix == ".wav":
+                s["artifacts"]["wav"] = str(paths["mixed"])
             previous_error = s.get("error")
             if not s.get("asr_issues"):
                 for event in self.db.execute("SELECT data FROM events WHERE session=? ORDER BY seq", (s["id"],)):
@@ -440,9 +458,11 @@ class SessionCore:
             s.update(state="draining", recovery_active=True)
         elif command == "refine":
             self._available()
+            if s.get("audio_removed"):
+                raise ValueError("Audio was discarded by its owner; refinement is unavailable")
             if s["state"] not in ("ready", "recoverable", "failed"):
                 raise ValueError("Refine requires a saved recording")
-            path = s["artifacts"].get("wav") or s.get("source_path")
+            path = s["artifacts"].get("m4a") or s["artifacts"].get("wav") or s.get("source_path")
             if not path:
                 from aura.audio.recording_session import recover_recording_session
                 paths = recover_recording_session(self.directory(s["id"]) / "session.json")
@@ -467,6 +487,19 @@ class SessionCore:
                 return {"path": path}
             if fmt == "json":
                 return {"name": f'{s["id"]}.json', "text": json.dumps(s, ensure_ascii=False, indent=2)}
+            if fmt == "wav" and fmt not in s["artifacts"] and s["artifacts"].get("m4a"):
+                import tempfile
+                import subprocess
+                fd, name = tempfile.mkstemp(suffix=".wav", prefix="aura-export-", dir=self.directory(s["id"]))
+                os.close(fd)
+                try:
+                    subprocess.run(["ffmpeg", "-nostdin", "-v", "error", "-y", "-i",
+                        s["artifacts"]["m4a"], "-c:a", "pcm_s16le", name], check=True,
+                        stdout=subprocess.DEVNULL, stderr=subprocess.PIPE)
+                except BaseException:
+                    Path(name).unlink(missing_ok=True)
+                    raise
+                return {"path": name, "temporary": True}
             if fmt not in ("wav", "m4a", "mp3") or fmt not in s["artifacts"]:
                 raise ValueError("Requested audio artifact is not available")
             return {"path": s["artifacts"][fmt]}
@@ -507,7 +540,7 @@ class SessionCore:
         prepared = prepare_transcript(s["transcript"], enable_punctuation=False, enable_glossary_correction=False)
         write_json_file(directory / "prepared_transcript.json", asdict(prepared))
         write_json_file(directory / "segments.json", {"segments": s.get("segments", []),
-            "audio_path": s.get("source_path") or s["artifacts"].get("wav")})
+            "audio_path": s.get("source_path") or s["artifacts"].get("m4a") or s["artifacts"].get("wav")})
         manifest.update(title=s["title"], prepared_transcript="prepared_transcript.json",
                         transcript_sha256=prepared.content_sha256, audio_profile=s["options"]["profile"],
                         asr_model=s["options"].get("asr_model", "breeze"), runtime=s.get("runtime"))
@@ -575,7 +608,7 @@ class SessionCore:
                 self._enqueue_chunk(s, chunk)
             # PCM is journaled continuously; snapshots are checkpointed once per second.
             if s["input_sequence"] % 34 == 0:
-                self._save(s)
+                self._save(s, progress=True)
             return {"state": s["state"], "input_sequence": s["input_sequence"]}
 
     def _enqueue_chunk(self, s, chunk):
@@ -734,6 +767,9 @@ class SessionCore:
                                 issue["status"] = "resolved"
                     elif row["kind"] == "export":
                         s["artifacts"][s["options"]["audio_format"]] = result["path"]
+                        if s["options"]["audio_format"] == "m4a":
+                            from aura.audio.retention import retain_mixed_m4a
+                            retain_mixed_m4a(self.root, s, persist=self._save)
                         s["state"] = "ready"
                     else:
                         purpose = json.loads(row["payload"])["purpose"]
@@ -790,7 +826,10 @@ class SessionCore:
                     if s.get("error"):
                         s["recovered_error"] = s.pop("error")
                     s["error"] = None
-            if rec and s["options"]["audio_format"] != "wav":
+            if s["artifacts"].get("m4a") and not any(i["status"] == "pending" for i in s.get("asr_issues", [])):
+                from aura.audio.retention import retain_mixed_m4a
+                retain_mixed_m4a(self.root, s, persist=self._save)
+            elif s["artifacts"].get("wav") and s["options"]["audio_format"] != "wav":
                 s["state"] = "exporting"
                 self._job(s, "export", path=s["artifacts"]["wav"])
         except Exception as exc:
