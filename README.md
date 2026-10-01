@@ -245,8 +245,10 @@ the same identity.
 
 The capture loop appends PCM frames to `.capture/` journals for the mixed
 stream and each active source. Final WAV files are reconstructed from these
-journals. Delivery formats such as M4A and MP3 are produced from the preserved
-audio source, while the mixed WAV anchors the final full-recording transcription.
+journals. Default recording exports retain only the mixed M4A after its duration,
+track layout, and complete decode have been validated. WAV, PCM, and separate
+source tracks are released after durable references are updated. Unresolved ASR
+failures preserve recovery inputs. Explicit WAV-format recordings remain supported.
 
 ### Transcript states and revisions
 
@@ -708,8 +710,10 @@ files, see [find and open output files](docs/shared-sessions-2026-09-08.md#find-
 `session.json` preserves the meeting identity and source audio locators.
 `live.txt`, `transcript.txt`, and explicit `refined.txt` preserve live, edited,
 and refined output. `prepared_transcript.json` and `segments.json` retain the
-local evidence-search contract. Raw PCM journals preserve selected source tracks;
-WAV is the source artifact and M4A is the default delivery format.
+local evidence-search contract. Mixed M4A is the default retained audio. Recovery
+and refinement can read it directly. Progress snapshots omit cumulative transcript
+segments, retain at most 100 active updates, and are cleared when a session finishes;
+transcript revisions, state transitions, and failure evidence remain durable.
 
 The [shared-session data layout](docs/shared-sessions-2026-09-08.md#data-and-recovery)
 documents service state, uploads, private connection credentials, capture recovery

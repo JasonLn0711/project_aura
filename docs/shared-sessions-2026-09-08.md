@@ -347,7 +347,7 @@ sessions/UUID/
   live.txt / transcript.txt / refined.txt
   prepared_transcript.json / segments.json
   refined_segments.json
-  UUID.wav / UUID.m4a            # source and delivery audio
+  UUID.m4a                      # retained mixed audio after validation
 capture_sources/UUID/            # local source recovery spool
 uploads/                        # explicitly uploaded media
 audit/                          # content-free command audit
@@ -614,3 +614,25 @@ file/refinement paths keep NeMo segment timestamps. This removes unused timestam
 work from live chunks without inventing model timestamps or dropping short speech.
 The [recovery receipt](../artifacts/asr-recovery-2026-09-09/README.md) records the
 actual incident, first recovery failure, subsequent repair and successful recovery.
+
+## Recording retention — October 1, 2026
+
+Default M4A recordings retain one validated mixed AAC file. Successful finalization
+updates durable artifact and evidence-search references before releasing WAV, PCM,
+and separate source tracks. Unresolved ASR failures retain their recovery inputs.
+Recovery and refinement read retained M4A directly. Explicit WAV downloads decode
+a temporary copy, which the service removes after the download finishes or fails.
+Direct export callers receive `temporary: true` and own removal of that copy.
+
+The event store retains transcript revisions, state transitions, and failure/recovery
+evidence. Capture progress omits accumulated transcript segments and retains at
+most 100 active updates; completed sessions release those progress rows. Historical
+event references describe their original artifact state. Current session metadata
+provides the retained locator. Owner-discarded audio is marked `audio_removed`,
+which disables recovery and refinement while preserving existing text.
+
+The [October 1 storage receipt](https://github.com/JasonLn0711/planning-everything-track/blob/main/data/projects/2026-04-ubuntu-storage-governance/2026-10-01-ssd-retention/README.md)
+records aggregate host cleanup and preservation checks. Private recordings,
+transcripts, deletion manifests, and database maintenance logs remain on the host.
+That receipt separates source publication, normal next-start activation, and a
+future short-recording playback/download acceptance check.
