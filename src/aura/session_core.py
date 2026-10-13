@@ -100,6 +100,9 @@ class SessionCore:
             CREATE TABLE IF NOT EXISTS preferences(key TEXT PRIMARY KEY, value TEXT NOT NULL);
             CREATE TABLE IF NOT EXISTS commands(id TEXT PRIMARY KEY, command TEXT NOT NULL, result TEXT NOT NULL);
         """)
+        if "progress" not in {r[1] for r in self.db.execute("PRAGMA table_info(events)")}:
+            self.db.execute("ALTER TABLE events ADD COLUMN progress INTEGER NOT NULL DEFAULT 0")
+        self.db.execute("CREATE INDEX IF NOT EXISTS events_session_progress ON events(session,progress,seq)")
         self.sessions = {r["id"]: json.loads(r["data"]) for r in self.db.execute("SELECT * FROM sessions")}
         self.recordings = {}
         self.detectors = {}
@@ -123,17 +126,27 @@ class SessionCore:
         self.worker = threading.Thread(target=self._work, name="aura-inference", daemon=True)
         self.worker.start()
 
-    def _save(self, session, event="session.updated"):
+    def _save(self, session, event="session.updated", *, progress=False):
         session["updated_at"] = now()
         data = json.dumps(session, ensure_ascii=False)
         self.db.execute("INSERT OR REPLACE INTO sessions VALUES (?,?)", (session["id"], data))
         snapshot = dict(session)
+        if progress:
+            for key in ("transcript", "live_text", "segments", "asr_issues"):
+                snapshot.pop(key, None)
         # Progress events carry small deltas; transcripts travel only when their revision changes.
         if self.last_event_revision.get(session["id"]) == session["revision"]:
             snapshot.pop("transcript", None)
             snapshot.pop("live_text", None)
-        self.last_event_revision[session["id"]] = session["revision"]
-        self.db.execute("INSERT INTO events(session,data) VALUES (?,?)", (session["id"], json.dumps({"type": event, "session": snapshot})))
+        if not progress:
+            self.last_event_revision[session["id"]] = session["revision"]
+        self.db.execute("INSERT INTO events(session,data,progress) VALUES (?,?,?)",
+            (session["id"], json.dumps({"type": event, "session": snapshot}), int(progress)))
+        self.db.execute("DELETE FROM events WHERE session=? AND progress=1 AND seq NOT IN "
+            "(SELECT seq FROM events WHERE session=? AND progress=1 ORDER BY seq DESC LIMIT 100)",
+            (session["id"], session["id"]))
+        if session["state"] not in ACTIVE and session["state"] != "scheduled":
+            self.db.execute("DELETE FROM events WHERE session=? AND progress=1", (session["id"],))
         self.db.commit()
         with self.changed:
             self.changed.notify_all()
@@ -420,6 +433,8 @@ class SessionCore:
             s.update(transcript=text, revision=s["revision"] + 1, edited=True)
         elif command == "recover":
             self._available()
+            if s.get("audio_removed"):
+                raise ValueError("Audio was discarded by its owner; recovery is unavailable")
             if s["state"] not in ("ready", "recoverable", "failed") or s.get("source_path"):
                 raise ValueError("Recover requires a stopped, saved recording")
             rows = self.db.execute("SELECT * FROM jobs WHERE session=? AND kind='chunk' AND state IN ('failed','queued') ORDER BY id", (s["id"],)).fetchall()
@@ -428,6 +443,10 @@ class SessionCore:
             from aura.audio.recording_session import recover_recording_session
             if s["id"] in self.recordings:
                 paths = self.recordings.pop(s["id"]).finalize(keep_pcm=True)
+            elif s["artifacts"].get("wav") and Path(s["artifacts"]["wav"]).is_file():
+                paths = {"mixed": Path(s["artifacts"]["wav"])}
+            elif s["artifacts"].get("m4a"):
+                paths = {"mixed": Path(s["artifacts"]["m4a"])}
             else:
                 paths = recover_recording_session(self.directory(s["id"]) / "session.json", keep_pcm=True)
             s["artifacts"][paths["mixed"].suffix.lstrip(".")] = str(paths["mixed"])
@@ -449,6 +468,8 @@ class SessionCore:
             s.update(state="draining", recovery_active=True)
         elif command == "refine":
             self._available()
+            if s.get("audio_removed"):
+                raise ValueError("Audio was discarded by its owner; refinement is unavailable")
             if s["state"] not in ("ready", "recoverable", "failed"):
                 raise ValueError("Refine requires a saved recording")
             path = s["artifacts"].get("m4a") or s["artifacts"].get("wav") or s.get("source_path")
@@ -586,7 +607,7 @@ class SessionCore:
                 self._enqueue_chunk(s, chunk)
             # PCM is journaled continuously; snapshots are checkpointed once per second.
             if s["input_sequence"] % 34 == 0:
-                self._save(s)
+                self._save(s, progress=True)
             return {"state": s["state"], "input_sequence": s["input_sequence"]}
 
     def _enqueue_chunk(self, s, chunk):

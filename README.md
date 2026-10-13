@@ -149,6 +149,8 @@ service APIs; timed stops and deletion check service support before proceeding.
   Tailscale and transport limitations. Cross-computer live acceptance remains a
   separate gate.
 
+The [M4A retention receipt](docs/audio-retention-2026-10-13.md) records cleanup evidence and the next service activation gate.
+
 [Operator guide](docs/shared-sessions-2026-09-08.md),
 [inference decisions](docs/asr-inference-decision-2026-09-09.md), and
 [recovery evidence](artifacts/asr-recovery-2026-09-09/README.md) preserve the detailed
@@ -245,8 +247,11 @@ the same identity.
 
 The capture loop appends PCM frames to `.capture/` journals for the mixed
 stream and each active source. Final WAV files are reconstructed from these
-journals. Delivery formats such as M4A and MP3 are produced from the preserved
-audio source, while the mixed WAV anchors the final full-recording transcription.
+journals. Default recording exports retain only the mixed M4A after its duration,
+track layout, and complete decode have been validated. WAV, PCM, and separate
+source tracks are released after durable references are updated. Unresolved ASR
+failures preserve recovery inputs. Recording output uses M4A; independent capture
+recovery spools and imported sources retain their existing custody.
 
 ### Transcript states and revisions
 
@@ -606,6 +611,8 @@ Breeze tokenizer, new recording, scheduling and import requests reject overflow
 before creating a session or changing the loaded model. Worker validation remains
 in place when the tokenizer is absent. Keep a full vocabulary file and supply a
 prioritized shorter copy using `--hotwords-file`; terms are never silently truncated.
+See the [local vocabulary workflow](docs/labsync-hotwords.md) for candidate
+selection, exact token budgets, and saved-preference behavior.
 
 ### Speaker diarization
 
@@ -714,6 +721,10 @@ the session retains only mixed M4A audio; refinement reads that M4A directly.
 Import sources and independent capture recovery spools keep their existing custody.
 See [mixed-M4A retention and existing recordings](docs/shared-sessions-2026-09-08.md#mixed-m4a-retention-and-existing-recordings)
 for the preview and cleanup commands.
+
+Progress snapshots omit cumulative transcript segments, retain at most 100 active
+updates, and are cleared when a session finishes. Transcript revisions, state
+transitions, and failure evidence remain durable.
 
 The [shared-session data layout](docs/shared-sessions-2026-09-08.md#data-and-recovery)
 documents service state, uploads, private connection credentials, capture recovery
@@ -970,7 +981,10 @@ pactl list short sources
 
 If punctuation falls back to rules, install the `punctuation` extra and reload
 the ASR model. Reload clears the cached punctuation load failure and retries.
-Keep the runtime log for the exact dependency or model-access error.
+Finish and drain active recordings before reloading the worker.
+Keep the runtime log for the exact dependency or model-access error. The
+[punctuation runtime guide](docs/punctuation-runtime.md) provides the compatible
+Torch/torchvision pair and a real cached-model check that fails on rule fallback.
 
 ### Speaker diarization activation
 

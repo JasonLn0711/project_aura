@@ -121,9 +121,13 @@ def serve(root=None, port=0, core=None):
                             if "text" in result:
                                 ws.send(result["text"].encode("utf-8"))
                             else:
-                                with open(result["path"], "rb") as f:
-                                    while block := f.read(1024 * 1024):
-                                        ws.send(block)
+                                try:
+                                    with open(result["path"], "rb") as f:
+                                        while block := f.read(1024 * 1024):
+                                            ws.send(block)
+                                finally:
+                                    if result.get("temporary"):
+                                        Path(result["path"]).unlink(missing_ok=True)
                             result = {"complete": True}
                         elif command == "audio.open":
                             tracks = args["tracks"]

@@ -68,9 +68,11 @@ the same extras. Stop active sessions and the service before changing its enviro
 
 ## Delete saved sessions
 
-Preview the target and deletion boundary first:
+Inside the interactive `aura` prompt, use slash commands directly; do not
+prepend `uv run --no-sync aura`. List sessions, then preview the target:
 
 ```text
+/sessions
 /delete SESSION_ID
 ```
 
@@ -79,8 +81,12 @@ retained data, and an exact confirmation command. To permanently delete it,
 repeat the full UUID as confirmation:
 
 ```text
-/delete SESSION_ID --confirm SESSION_ID
+/delete SESSION_ID --confirm FULL_SESSION_UUID
 ```
+
+`SESSION_ID` selects the target; replace `FULL_SESSION_UUID` with the complete
+UUID shown by the preview. `/delete` requires an explicit target even when a
+session is attached. `/delete --help` displays the command options.
 
 From a shell, use `uv run --no-sync aura delete SESSION_ID` with the same
 confirmation flag. A unique prefix can select the preview target; confirmation
@@ -106,6 +112,10 @@ may already have been removed; deletion cannot be undone.
 
 The CLI detaches when its selected session is deleted. No actual saved session
 is deleted merely by installing this feature or requesting a preview.
+
+The [September 14 Planning note](https://github.com/JasonLn0711/planning-everything-track/blob/main/weeks/2026-W38/days/2026-09-14.md#aura-interactive-session-deletion--first-principle)
+records the operator clarification and its evidence boundary: documenting or
+testing the workflow does not authorize deletion of a real saved session.
 
 ## Adaptive live segmentation
 
@@ -355,14 +365,15 @@ preserves ongoing sessions.
 ### Mixed-M4A retention and existing recordings
 
 Completed recording sessions retain one mixed M4A/AAC-LC 96k file. The exporter
-checks AAC metadata, verifies duration against the mixed source (within 250 ms
+checks AAC metadata, verifies duration against the mixed source (within 100 ms
 for container/codec padding), and decodes the complete output before removing
 registered WAV/MP3 tracks and completed PCM journals. Legacy `audio_format`
 values `wav` and `mp3` select M4A. GUI and CLI audio export offer M4A.
 
 Capture, encoding failures, and pending transcription gaps preserve working
 audio. Successful gap recovery runs the same retention step. Refinement reads
-the retained M4A; gap recovery uses the original WAV/PCM while gaps remain.
+the retained M4A; gap recovery prefers original WAV/PCM while gaps remain and
+can decode M4A intervals for older retained-only sessions.
 Manifests, segment audio locators, and service artifacts point to the retained
 file. Evidence playback resolves the current manifest even for an older text
 index. Cleanup records pending deletions before removing files, so a failed
@@ -642,3 +653,29 @@ file/refinement paths keep NeMo segment timestamps. This removes unused timestam
 work from live chunks without inventing model timestamps or dropping short speech.
 The [recovery receipt](../artifacts/asr-recovery-2026-09-09/README.md) records the
 actual incident, first recovery failure, subsequent repair and successful recovery.
+
+## Recording retention — October 1, 2026
+
+Default M4A recordings retain one validated mixed AAC file. Successful finalization
+updates durable artifact and evidence-search references before releasing WAV, PCM,
+and separate source tracks. Unresolved ASR failures retain their recovery inputs.
+Recovery and refinement support retained M4A. The October 1 implementation also
+offered temporary WAV downloads; the [October 13 retention decision](#mixed-m4a-retention-and-existing-recordings)
+now selects M4A-only recording exports and preserves independent capture spools.
+
+The event store retains transcript revisions, state transitions, and failure/recovery
+evidence. Capture progress omits accumulated transcript segments and retains at
+most 100 active updates; completed sessions release those progress rows. Historical
+event references describe their original artifact state. Current session metadata
+provides the retained locator. Owner-discarded audio is marked `audio_removed`,
+which disables recovery and refinement while preserving existing text.
+
+The [October 1 storage receipt](https://github.com/JasonLn0711/planning-everything-track/blob/main/data/projects/2026-04-ubuntu-storage-governance/2026-10-01-ssd-retention/README.md)
+records aggregate host cleanup and preservation checks. Private recordings,
+transcripts, deletion manifests, and database maintenance logs remain on the host.
+That receipt separates source publication, normal next-start activation, and a
+future short-recording playback/download acceptance check.
+
+The [October 13 decision and cleanup receipt](audio-retention-2026-10-13.md) records
+the adopted scope, aggregate reclaimed space, integration choices and deferred
+activation gate.

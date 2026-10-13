@@ -6,7 +6,7 @@ from pathlib import Path
 import subprocess
 import uuid
 
-from aura.audio.normalization import probe_duration_seconds, require_ffmpeg, require_ffprobe
+from aura.audio.normalization import require_ffmpeg, require_ffprobe
 from aura.audio.recording_session import _fsync_directory, write_session_manifest
 
 
@@ -77,26 +77,36 @@ def recording_audio_plan(manifest_path: str | Path) -> dict:
                 removable_bytes=sum(p.stat().st_size for p in paths if p.is_file()))
 
 
-def validate_m4a(path: str | Path, source: str | Path | None = None) -> None:
+def validate_m4a(path: str | Path, reference: str | Path | None = None) -> dict:
     path = Path(path)
+    if path.is_symlink() or path.suffix.lower() != ".m4a" or not path.is_file():
+        raise ValueError("A regular retained M4A file is required")
     ffprobe = require_ffprobe()
     if not ffprobe:
         raise RuntimeError("ffprobe is required before recording audio can be removed")
-    probe = subprocess.run([ffprobe, "-v", "error", "-select_streams", "a:0",
-                            "-show_entries", "stream=codec_name:format=duration", "-of", "json", str(path)],
-                           capture_output=True, text=True, check=True)
-    info = json.loads(probe.stdout)
+    def probe(audio):
+        result = subprocess.run([ffprobe, "-v", "error", "-show_entries",
+                                 "stream=codec_type,codec_name,sample_rate,channels:format=duration",
+                                 "-of", "json", str(audio)], capture_output=True, text=True, check=True)
+        return json.loads(result.stdout)
+    info = probe(path)
+    streams = [s for s in info.get("streams", []) if s.get("codec_type") == "audio"]
     duration = float(info.get("format", {}).get("duration", 0))
-    if not math.isfinite(duration) or duration <= 0 or not info.get("streams") or info["streams"][0].get("codec_name") != "aac":
+    if not math.isfinite(duration) or duration <= 0 or len(streams) != 1 or streams[0].get("codec_name") != "aac":
         raise ValueError(f"Not a nonempty AAC recording: {path}")
-    if source is not None and Path(source) != path:
-        source_duration = probe_duration_seconds(source)
-        if source_duration is None or abs(source_duration - duration) > 0.25:
+    if reference is not None and Path(reference) != path:
+        original = probe(reference)
+        source_duration = float(original.get("format", {}).get("duration", 0))
+        if not math.isfinite(source_duration) or source_duration <= 0 or abs(source_duration - duration) > 0.1:
             raise ValueError(f"M4A duration does not match the mixed source: {path}")
+        original_audio = [s for s in original.get("streams", []) if s.get("codec_type") == "audio"]
+        if len(original_audio) != 1 or any(streams[0].get(k) != original_audio[0].get(k) for k in ("sample_rate", "channels")):
+            raise ValueError(f"M4A track layout does not match the mixed source: {path}")
     # Decode every packet; a readable header alone does not establish a valid export.
     subprocess.run([require_ffmpeg(), "-nostdin", "-v", "error", "-xerror", "-threads", "1",
                     "-i", str(path), "-map", "0:a:0", "-f", "null", "-"],
                    stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, check=True)
+    return info
 
 
 def prepare_recording_m4a(manifest_path: str | Path, target_dbfs: float = -20.0) -> Path:

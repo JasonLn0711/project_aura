@@ -11,7 +11,7 @@ import uuid
 
 from aura.audio.cleanup import cleanup_manifest, cleanup_service_sessions, main, service_lock
 from aura.audio.recording_session import RecordingSession, write_session_manifest
-from aura.audio.retention import complete_recording_m4a, prepare_recording_m4a, recording_audio_plan
+from aura.audio.retention import complete_recording_m4a, prepare_recording_m4a, recording_audio_plan, validate_m4a
 
 
 def recording(directory, *, seconds=0.2):
@@ -49,6 +49,18 @@ class AudioRetentionTests(unittest.TestCase):
             repeated = cleanup_manifest(manifest, apply=True)
             self.assertEqual(repeated['status'], 'cleaned')
             self.assertEqual(repeated['released_bytes'], 0)
+
+    def test_m4a_layout_mismatch_preserves_sources(self):
+        with tempfile.TemporaryDirectory() as root:
+            manifest = recording(root)
+            output = prepare_recording_m4a(manifest)
+            stereo = Path(root) / 'stereo.wav'
+            subprocess.run(['ffmpeg', '-nostdin', '-v', 'error', '-i',
+                            str(Path(root) / 'meeting.wav'), '-ac', '2', str(stereo)],
+                           check=True)
+            with self.assertRaisesRegex(ValueError, 'track layout'):
+                validate_m4a(output, stereo)
+            self.assertTrue((Path(root) / 'meeting.wav').exists())
 
     def test_export_failure_keeps_all_sources_and_removes_temporary_output(self):
         with tempfile.TemporaryDirectory() as root:

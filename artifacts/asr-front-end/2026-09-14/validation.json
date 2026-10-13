@@ -1,0 +1,45 @@
+{
+  "date": "2026-09-14",
+  "scope": "local runtime and regression checks; no acoustic quality acceptance",
+  "punctuation": {
+    "model": "p208p2002/zh-wiki-punctuation-restore",
+    "device": "cpu",
+    "before": "rule_fallback: torchvision::nms missing",
+    "torch_unchanged": "2.11.0+cu128",
+    "torchvision_before": "0.27.0",
+    "torchvision_after": "0.26.0+cu128",
+    "real_inference_cases_passed": 4
+  },
+  "validation": {
+    "unittest_passed": 345,
+    "pip_check": "PASS",
+    "uv_lock_check": "PASS",
+    "torchvision_native_nms": "PASS",
+    "silero_onnx_silence": "PASS",
+    "light_denoise_finite_shape": "PASS",
+    "hotwords_validation": "PASS",
+    "upstream_hotwords_no_truncation": "PASS"
+  },
+  "vocabulary": {
+    "candidate_entries": 347,
+    "name_title_entries": 78,
+    "aura_selected_entries": 61,
+    "aura_selected_name_entries": 7,
+    "aura_validator_hotwords_tokens": 188,
+    "aura_validator_prompt_tokens": 12,
+    "actual_hotwords_tokens": 184,
+    "actual_prompt_tokens": 8,
+    "direct_selected_entries": 81,
+    "direct_hotwords_tokens": 223,
+    "training_frequency": "UNKNOWN",
+    "acoustic_review": "NOT_PERFORMED",
+    "saved_preferences_readback": "PASS"
+  },
+  "runtime_boundary": {
+    "existing_breeze_worker": "loaded; recording observed; not restarted",
+    "fresh_punctuation_process": "PASS",
+    "parakeet_nemo": "not installed; live inference not tested",
+    "human_acceptance": "pending"
+  },
+  "next_gate": "Finish and drain recording, reload worker, confirm model-backed punctuation and review original audio."
+}

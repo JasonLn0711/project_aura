@@ -56,12 +56,18 @@ def execute(kind, payload):
                 raise ValueError("Recovery audio must be mono 16-bit PCM at 16 kHz")
             f.setpos(start)
             raw = f.readframes(end - start)
+    elif Path(payload["path"]).suffix.lower() == ".m4a":
+        import subprocess
+        raw = subprocess.run(["ffmpeg", "-nostdin", "-v", "error", "-i", payload["path"],
+            "-af", f"atrim=start_sample={start}:end_sample={end},asetpts=PTS-STARTPTS",
+            "-ar", str(SAMPLE_RATE), "-ac", "1", "-f", "s16le", "-"],
+            capture_output=True, check=True).stdout
     elif Path(payload["path"]).suffix.lower() == ".pcm":
         with open(payload["path"], "rb") as f:
             f.seek(start * 2)
             raw = f.read((end - start) * 2)
     else:
-        raise ValueError("Gap recovery requires retained WAV or PCM audio; use refine for M4A")
+        raise ValueError("Gap recovery requires retained WAV, PCM, or M4A audio")
     if len(raw) != (end - start) * 2:
         raise RuntimeError("The durable audio interval is incomplete")
     samples = np.frombuffer(raw, dtype="<i2").astype(np.float32) / 32768
