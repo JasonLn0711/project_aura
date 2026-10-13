@@ -1,0 +1,38 @@
+{
+  "date": "2026-10-13",
+  "owner": "Project AURA",
+  "legacy_cleanup": {
+    "cleaned_recording_packages": 27,
+    "deleted_wav_files": 80,
+    "released_bytes": 5383793920,
+    "recordings_skipped_missing_source": 1,
+    "import_manifests_excluded": 1,
+    "validation_duration_tolerance_seconds": 0.25
+  },
+  "initial_validation": {
+    "regression_tests_passed": 359,
+    "versioning_tests_passed": 9,
+    "readme_relative_links_and_images_checked": 55
+  },
+  "integration_validation": {
+    "status": "passed",
+    "regression_tests_passed": 361,
+    "versioning_tests_passed": 9,
+    "readme_relative_links_and_images_checked": 58,
+    "compile": "passed",
+    "git_diff_check": "passed",
+    "duration_tolerance_seconds": 0.1,
+    "sample_rate_and_channels_checked": true
+  },
+  "service_activation": "deferred_until_current_recording_and_active_jobs_finish",
+  "service_cleanup": "not_applied_service_lock_held",
+  "physical_device_acceptance": "pending",
+  "excluded": [
+    "imports",
+    "splitter outputs",
+    "independent capture spools",
+    "independent backups",
+    "unfinished or recoverable work"
+  ],
+  "source_decision": "../../docs/audio-retention-2026-10-13.md"
+}
