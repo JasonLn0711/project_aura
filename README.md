@@ -295,7 +295,7 @@ evidence establish the value.
 5. Edit and save transcript text. Pause holds capture and queued recognition;
    the current inference completes safely.
 6. Stop to save accepted audio and text. Select Refine for an explicit second pass.
-7. Export text, JSON, or WAV. Attach from `aura` to control the same session.
+7. Export text, JSON, or M4A audio. Attach from `aura` to control the same session.
 
 ### Settings and Runtime Diagnostics
 
@@ -583,8 +583,10 @@ Recovery preserves human edits and exports machine text separately. See the
   Denoising and segment gain run in the ASR worker so capture can keep journaling.
 - The inactivity safeguard closes a live recording after 20 continuous minutes
   of speech inactivity and trims the trailing inactive frames.
-- Recorded delivery audio uses M4A/AAC by default, with MP3 as an available
-  compatibility format.
+- Completed recordings retain one mixed M4A/AAC file. Export validation checks
+  duration and decodes the complete file before removing session WAV/MP3 tracks
+  and completed PCM journals. Pending transcription gaps retain their recovery
+  audio until recovery succeeds.
 
 ### Traditional Chinese punctuation and hotwords
 
@@ -706,8 +708,12 @@ files, see [find and open output files](docs/shared-sessions-2026-09-08.md#find-
 `session.json` preserves the meeting identity and source audio locators.
 `live.txt`, `transcript.txt`, and explicit `refined.txt` preserve live, edited,
 and refined output. `prepared_transcript.json` and `segments.json` retain the
-local evidence-search contract. Raw PCM journals preserve selected source tracks;
-WAV is the source artifact and M4A is the default delivery format.
+local evidence-search contract. Raw PCM journals and WAV tracks preserve audio
+during capture, processing, and gap recovery. After successful export and recovery,
+the session retains only mixed M4A audio; refinement reads that M4A directly.
+Import sources and independent capture recovery spools keep their existing custody.
+See [mixed-M4A retention and existing recordings](docs/shared-sessions-2026-09-08.md#mixed-m4a-retention-and-existing-recordings)
+for the preview and cleanup commands.
 
 The [shared-session data layout](docs/shared-sessions-2026-09-08.md#data-and-recovery)
 documents service state, uploads, private connection credentials, capture recovery
@@ -840,7 +846,8 @@ The regression suite covers:
 - CUDA activation, model loading, runtime diagnostics, and report formatting;
 - live capture source discovery, RMS mixing, VAD, inactivity safeguards, and
   telemetry;
-- M4A and MP3 export, normalization, limiter behavior, and FFmpeg progress;
+- mixed-M4A retention, legacy codec helpers, normalization, limiter behavior,
+  FFmpeg progress, and retryable audio cleanup;
 - punctuation, glossary correction, correction logs, and artifact naming;
 - speaker diarization timestamps and speaker-count policy;
 - plain text editing, hotwords, concurrent-edit protection, and summary-free packaging;
@@ -1051,7 +1058,7 @@ export recovered machine text separately:
 ```text
 /recover
 /export SESSION_ID --format recovered --output recovered.txt
-/export SESSION_ID --format wav --output recording.wav
+/export SESSION_ID --format m4a --output recording.m4a
 ```
 
 Known output errors allow recording to continue with a visible gap count. Runtime,

@@ -333,11 +333,11 @@ connection.json                  # private local token and process locator
 service.log / capture.log
 sessions/UUID/
   session.json
-  .capture/*.pcm
+  .capture/*.pcm                 # working audio; retained while recovery is pending
   live.txt / transcript.txt / refined.txt
   prepared_transcript.json / segments.json
   refined_segments.json
-  UUID.wav / UUID.m4a            # source and delivery audio
+  UUID.m4a                      # retained mixed audio after successful completion
 capture_sources/UUID/            # local source recovery spool
 uploads/                        # explicitly uploaded media
 audit/                          # content-free command audit
@@ -348,9 +348,46 @@ The manifest and API artifact locators are authoritative. Export copies an
 artifact to a chosen destination with overwrite protection. Service restart
 marks interrupted work recoverable. Select it and request explicit refinement
 from preserved audio. An unsent desktop draft remains in `drafts/UUID.txt` for
-manual recovery. Keep source journals until exported audio and text have been
-reviewed. Stopping the service is an operator action; closing the desktop
+manual recovery. Session source journals remain available until export validation
+and pending transcription recovery complete. Stopping the service is an operator action; closing the desktop
 preserves ongoing sessions.
+
+### Mixed-M4A retention and existing recordings
+
+Completed recording sessions retain one mixed M4A/AAC-LC 96k file. The exporter
+checks AAC metadata, verifies duration against the mixed source (within 250 ms
+for container/codec padding), and decodes the complete output before removing
+registered WAV/MP3 tracks and completed PCM journals. Legacy `audio_format`
+values `wav` and `mp3` select M4A. GUI and CLI audio export offer M4A.
+
+Capture, encoding failures, and pending transcription gaps preserve working
+audio. Successful gap recovery runs the same retention step. Refinement reads
+the retained M4A; gap recovery uses the original WAV/PCM while gaps remain.
+Manifests, segment audio locators, and service artifacts point to the retained
+file. Evidence playback resolves the current manifest even for an older text
+index. Cleanup records pending deletions before removing files, so a failed
+deletion can be retried without losing the M4A or transcript.
+
+Preview existing recordings from the repository root:
+
+```bash
+PYTHONPATH=src uv run --no-sync python scripts/cleanup_recording_audio.py \
+  --legacy-root . --data-root "$HOME/.local/share/project-aura"
+```
+
+Repeat with `--apply` to validate or create M4A files and remove redundant audio.
+The service data directory must be offline: the tool takes the same exclusive
+lock as the service and refuses to edit a live owner's database. Let active work
+finish before stopping/restarting the service. Legacy folders can be processed
+separately with `--legacy-root . --apply` while the service remains active.
+
+The legacy scan selects `NAME/NAME_session/session.json` packages. Imported
+sources, independent backups (including `capture_sources`), transcripts, and
+audio splitter output retain their existing behavior. Active, unfinished, or
+recoverable service sessions are skipped. Missing/mismatched source locators,
+invalid M4A files, and redirected paths are reported for review; the tool does
+not guess replacement sources or scan arbitrary WAV/MP3 files for deletion.
+JSON lines report retained/deleted files, skipped sessions, and released bytes.
 
 ## Audio profiles and evidence
 
@@ -582,7 +619,7 @@ After stopping, run:
 /inspect
 /recover
 /export SESSION_ID --format recovered --output recovered.txt
-/export SESSION_ID --format wav --output recording.wav
+/export SESSION_ID --format m4a --output recording.m4a
 ```
 
 The shell equivalent is `uv run --no-sync aura recover SESSION_ID`. Recovery accepts
@@ -596,7 +633,8 @@ chunks, and records unresolved gaps for another explicit request. Repeating a
 completed recovery does no inference. Human edits remain unchanged; recovered
 machine text is saved separately. Failed/queued chunks retain PCM through
 finalization; older finalized recordings can supply exact intervals from WAV.
-Pending issues remain visible after audio export. No session-table migration or
+Pending issues remain visible after audio export, and their WAV/PCM is removed
+only after recovery succeeds and M4A validation completes. No session-table migration or
 automatic model fallback is introduced.
 
 Live Parakeet chunks use capture sample coordinates and text-only decoding;
