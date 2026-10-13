@@ -38,8 +38,8 @@ The [aggregate receipt](../artifacts/audio-retention-2026-10-13/summary.json)
 records 27 cleaned legacy recording packages, 80 deleted WAV files and
 5,383,793,920 bytes released (5.38 GB decimal). One recording with an unavailable
 registered mixed source was skipped; an import manifest was excluded. Independent
-splitter M4As remain retained. No service database cleanup was applied: the running
-service held its lock. Private filenames, session identifiers, transcripts and raw
+splitter M4As remain retained. The initial service cleanup attempt was deferred because the running
+service held its lock; the later activation below records the completed switch. Private filenames, session identifiers, transcripts and raw
 cleanup logs remain in ignored local `outputs/audio-retention-2026-10-13/`.
 
 The initial implementation passed 359 regression tests and 9 focused versioning
@@ -57,12 +57,26 @@ Remote vocabulary, punctuation and CLI documentation changes remain in history.
 
 ## Activation and connections
 
-After the current recording and other active jobs finish, stop the service normally,
-run the guide's offline preview and apply commands from the published source, then
-restart the service and reopen clients. Check a short recording, M4A playback/export,
-current audio locators and absence of eligible WAV/MP3 duplicates. A missing-source
-legacy package requires locator inspection before any deletion. This is the next
-operational gate; deployment and that acceptance check remain pending.
+The protected recording subsequently reached `ready`, and the service had no active
+session or queued/running database jobs. The primary AURA checkout was fast-forwarded
+to published `f269ec4`; a named scoped stash preserves the pre-integration implementation.
+Unrelated files remained in place. The idle service received normal SIGTERM, offline
+preview/apply completed, and the service restarted from the published primary source.
+No recording was interrupted and no dependency synchronization was performed.
+
+Service cleanup processed 20 sessions, deleted 48 working audio files and released
+4,217,938,752 bytes. Together with legacy cleanup, the total is 9,601,732,672 bytes
+(9.60 GB decimal). Thirteen service sessions were skipped: six were imported,
+unfinished or recoverable; seven lacked the registered mixed source. Existing
+artifacts remain preserved for locator review. All 20 cleaned manifests point to
+retained M4A, their journals/pending cleanup lists are empty and deleted paths are absent.
+
+Authenticated readback after restart returned 28 ready, four failed and one
+recoverable session; the protected recording remained ready. All 27 ready-session
+M4A artifact paths existed. This confirms service activation and artifact persistence.
+Reopen existing clients to load the current controls. A new short physical recording,
+playback/export acceptance and review of skipped source locators remain the next
+operator checks; no new recording or ASR accuracy experiment was performed.
 
 Jason supplied the retention and continuity decisions. Codex implemented, verified,
 cleaned eligible legacy packages and prepared the publication. Human time was not

@@ -24,8 +24,18 @@
     "duration_tolerance_seconds": 0.1,
     "sample_rate_and_channels_checked": true
   },
-  "service_activation": "deferred_until_current_recording_and_active_jobs_finish",
-  "service_cleanup": "not_applied_service_lock_held",
+  "service_activation": "completed_after_preserved_recording_reached_ready_and_no_active_jobs_remained",
+  "service_cleanup": {
+    "cleaned_sessions": 20,
+    "deleted_files": 48,
+    "released_bytes": 4217938752,
+    "skipped_sessions": 13,
+    "skipped_outside_scope_or_unfinished": 6,
+    "skipped_missing_registered_source": 7,
+    "incomplete": 0,
+    "blocked": 0,
+    "cleaned_manifests_and_deleted_paths_verified": 20
+  },
   "physical_device_acceptance": "pending",
   "excluded": [
     "imports",
@@ -34,5 +44,17 @@
     "independent backups",
     "unfinished or recoverable work"
   ],
-  "source_decision": "../../docs/audio-retention-2026-10-13.md"
+  "source_decision": "../../docs/audio-retention-2026-10-13.md",
+  "total_released_bytes": 9601732672,
+  "runtime_validation": {
+    "authenticated_session_readback": "passed",
+    "ready_m4a_artifact_paths_verified": 27,
+    "preserved_recording_state": "ready",
+    "session_state_counts": {
+      "ready": 28,
+      "failed": 4,
+      "recoverable": 1
+    },
+    "new_physical_recording_playback_acceptance": "pending"
+  }
 }
