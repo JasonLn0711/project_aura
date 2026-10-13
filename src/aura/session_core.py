@@ -71,6 +71,8 @@ def options_for(values=None, preferences=None):
         raise ValueError("target_dbfs must be between -60 and -1")
     if result["audio_format"] not in ("m4a", "wav", "mp3"):
         raise ValueError("Unsupported audio export format")
+    # Accept legacy clients/preferences while enforcing the current delivery contract.
+    result["audio_format"] = "m4a"
     for key in ("prompt", "hotwords"):
         if not isinstance(result[key], str) or len(result[key]) > 8192:
             raise ValueError(f"Invalid {key}")
@@ -111,6 +113,7 @@ class SessionCore:
         self.last_event_revision = {}
         self.shutdown = False
         for s in self.sessions.values():
+            s["options"]["audio_format"] = "m4a"
             if s["state"] in ACTIVE:
                 s["state"] = "recoverable"
                 s["error"] = "Service restarted; preserved audio is ready for recovery"
@@ -244,7 +247,10 @@ class SessionCore:
             return result
 
     def _preferences(self):
-        return {r[0]: json.loads(r[1]) for r in self.db.execute("SELECT key,value FROM preferences")}
+        values = {r[0]: json.loads(r[1]) for r in self.db.execute("SELECT key,value FROM preferences")}
+        if "audio_format" in values:
+            values["audio_format"] = "m4a"
+        return values
 
     def _request(self, command, args):
         if command == "model.status":
@@ -268,6 +274,9 @@ class SessionCore:
         if command == "preferences.set":
             values = {**self._preferences(), **args}
             options_for(args, self._preferences())
+            if "audio_format" in args:
+                args = {**args, "audio_format": "m4a"}
+                values["audio_format"] = "m4a"
             self.db.executemany("INSERT OR REPLACE INTO preferences VALUES (?,?)", [(k, json.dumps(v)) for k, v in args.items()])
             self.db.commit()
             return values
@@ -421,7 +430,7 @@ class SessionCore:
                 paths = self.recordings.pop(s["id"]).finalize(keep_pcm=True)
             else:
                 paths = recover_recording_session(self.directory(s["id"]) / "session.json", keep_pcm=True)
-            s["artifacts"]["wav"] = str(paths["mixed"])
+            s["artifacts"][paths["mixed"].suffix.lstrip(".")] = str(paths["mixed"])
             previous_error = s.get("error")
             if not s.get("asr_issues"):
                 for event in self.db.execute("SELECT data FROM events WHERE session=? ORDER BY seq", (s["id"],)):
@@ -442,12 +451,12 @@ class SessionCore:
             self._available()
             if s["state"] not in ("ready", "recoverable", "failed"):
                 raise ValueError("Refine requires a saved recording")
-            path = s["artifacts"].get("wav") or s.get("source_path")
+            path = s["artifacts"].get("m4a") or s["artifacts"].get("wav") or s.get("source_path")
             if not path:
                 from aura.audio.recording_session import recover_recording_session
                 paths = recover_recording_session(self.directory(s["id"]) / "session.json")
                 path = str(paths["mixed"])
-                s["artifacts"]["wav"] = path
+                s["artifacts"][paths["mixed"].suffix.lstrip(".")] = path
             s["state"] = "refining"
             self._job(s, "file", path=path, purpose="refine")
         elif command == "export":
@@ -467,7 +476,9 @@ class SessionCore:
                 return {"path": path}
             if fmt == "json":
                 return {"name": f'{s["id"]}.json', "text": json.dumps(s, ensure_ascii=False, indent=2)}
-            if fmt not in ("wav", "m4a", "mp3") or fmt not in s["artifacts"]:
+            if fmt in ("wav", "mp3"):
+                raise ValueError("Recording audio export uses M4A; select format=m4a")
+            if fmt != "m4a" or fmt not in s["artifacts"]:
                 raise ValueError("Requested audio artifact is not available")
             return {"path": s["artifacts"][fmt]}
         else:
@@ -507,7 +518,7 @@ class SessionCore:
         prepared = prepare_transcript(s["transcript"], enable_punctuation=False, enable_glossary_correction=False)
         write_json_file(directory / "prepared_transcript.json", asdict(prepared))
         write_json_file(directory / "segments.json", {"segments": s.get("segments", []),
-            "audio_path": s.get("source_path") or s["artifacts"].get("wav")})
+            "audio_path": s.get("source_path") or s["artifacts"].get("m4a") or s["artifacts"].get("wav")})
         manifest.update(title=s["title"], prepared_transcript="prepared_transcript.json",
                         transcript_sha256=prepared.content_sha256, audio_profile=s["options"]["profile"],
                         asr_model=s["options"].get("asr_model", "breeze"), runtime=s.get("runtime"))
@@ -733,7 +744,16 @@ class SessionCore:
                             if issue["job_id"] == row["id"]:
                                 issue["status"] = "resolved"
                     elif row["kind"] == "export":
-                        s["artifacts"][s["options"]["audio_format"]] = result["path"]
+                        s["artifacts"]["m4a"] = result["path"]
+                        if not any(i["status"] == "pending" for i in s.get("asr_issues", [])):
+                            from aura.audio.retention import complete_recording_m4a
+                            def persist_audio(output):
+                                s["artifacts"].pop("wav", None)
+                                s["artifacts"].pop("mp3", None)
+                                s["artifacts"]["m4a"] = str(output)
+                                self._save(s)
+                            complete_recording_m4a(self.directory(s["id"]) / "session.json",
+                                                   result["path"], persist=persist_audio)
                         s["state"] = "ready"
                     else:
                         purpose = json.loads(row["payload"])["purpose"]
@@ -750,6 +770,11 @@ class SessionCore:
                             write_json_file(self.directory(s["id"]) / "refined_segments.json", result.get("segments", []))
                         self._write_search_artifacts(s)
                         s["state"] = "ready"
+                        if purpose == "refine" and not s.get("source_path"):
+                            audio = s["artifacts"].get("wav") or s["artifacts"].get("m4a")
+                            if audio:
+                                s["state"] = "exporting"
+                                self._job(s, "export", path=audio)
                     self.db.execute("UPDATE jobs SET state='done' WHERE id=?", (row["id"],))
                     if s["state"] == "pausing" and s.get("capture_paused_ack"):
                         s["state"] = "paused"
@@ -790,9 +815,10 @@ class SessionCore:
                     if s.get("error"):
                         s["recovered_error"] = s.pop("error")
                     s["error"] = None
-            if rec and s["options"]["audio_format"] != "wav":
+            # Recovery also reaches this path after the original recorder is gone.
+            if s["artifacts"].get("wav") or s["artifacts"].get("m4a"):
                 s["state"] = "exporting"
-                self._job(s, "export", path=s["artifacts"]["wav"])
+                self._job(s, "export", path=s["artifacts"].get("wav") or s["artifacts"]["m4a"])
         except Exception as exc:
             s.update(state="failed", error=str(exc))
         self._save(s)

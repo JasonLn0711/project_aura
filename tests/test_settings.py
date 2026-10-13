@@ -49,7 +49,7 @@ class SettingsTests(unittest.TestCase):
         self.assertEqual(settings.compute_type, "int8")
         self.assertIsNone(settings.language)
         self.assertEqual(settings.target_dbfs, -18.0)
-        self.assertEqual(settings.recording_audio_format, "mp3")
+        self.assertEqual(settings.recording_audio_format, "m4a")
 
     def test_custom_settings_reject_cpu_asr(self):
         with self.assertRaisesRegex(ValueError, "requires device='cuda'"):

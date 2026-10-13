@@ -557,12 +557,17 @@ class EvidenceSearch:
         if start < 0 or end <= start:
             raise ValueError("audio span must satisfy 0 <= start_ms < end_ms")
         row = self._connection.execute(
-            "SELECT audio_tracks_json FROM meetings WHERE meeting_id = ?",
+            "SELECT audio_tracks_json, session_path FROM meetings WHERE meeting_id = ?",
             (meeting_id,),
         ).fetchone()
         if row is None:
             raise KeyError(f"meeting not found: {meeting_id}")
         tracks = json.loads(row["audio_tracks_json"])
+        # Audio retention can change after indexing without changing transcript evidence.
+        manifest_path = Path(row["session_path"])
+        if manifest_path.is_file():
+            session = json.loads(manifest_path.read_text(encoding="utf-8"))
+            tracks = _audio_tracks(session, manifest_path.parent)
         if track not in tracks:
             raise KeyError(f"audio track not found: {track}")
         path = Path(tracks[track])

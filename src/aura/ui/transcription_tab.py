@@ -300,7 +300,7 @@ class TranscriptionTab(QWidget):
     def export(self):
         if not self.current:
             return
-        path, selected = QFileDialog.getSaveFileName(self, "匯出", "transcript.txt", "Text (*.txt);;Refined text (*.txt);;Recovered text (*.txt);;JSON (*.json);;WAV (*.wav);;M4A (*.m4a)")
+        path, selected = QFileDialog.getSaveFileName(self, "匯出", "transcript.txt", "Text (*.txt);;Refined text (*.txt);;Recovered text (*.txt);;JSON (*.json);;M4A (*.m4a)")
         if path:
             self.submit("download", dict(session_id=self.current["id"], format="refined" if selected.startswith("Refined") else "recovered" if selected.startswith("Recovered") else (Path(path).suffix.lstrip(".") or "txt"), destination=path))
 

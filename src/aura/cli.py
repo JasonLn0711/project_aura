@@ -81,7 +81,7 @@ def parser():
         sub.add_argument("--detach", action="store_true")
     export = subs.add_parser("export", help="Export session text or audio")
     export.add_argument("session_id")
-    export.add_argument("--format", choices=("txt", "refined", "recovered", "json", "wav", "m4a", "mp3"), default="txt")
+    export.add_argument("--format", choices=("txt", "refined", "recovered", "json", "m4a"), default="txt")
     export.add_argument("--output", type=Path)
     return p
 

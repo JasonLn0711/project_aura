@@ -8,9 +8,9 @@ _model = None
 def execute(kind, payload):
     global _model
     if kind == "export":
-        from aura.audio.export import normalize_wav_to_recording_audio
+        from aura.audio.retention import prepare_recording_m4a
         options = payload["options"]
-        path = normalize_wav_to_recording_audio(payload["path"], options["target_dbfs"], options["audio_format"], remove_source=False)
+        path = prepare_recording_m4a(Path(payload["directory"]) / "session.json", options["target_dbfs"])
         return {"path": str(path)}
     from aura.config import SAMPLE_RATE
     from aura.asr.file_pipeline import FileTranscriptionSettings, transcribe_file, build_transcribe_kwargs
@@ -56,10 +56,12 @@ def execute(kind, payload):
                 raise ValueError("Recovery audio must be mono 16-bit PCM at 16 kHz")
             f.setpos(start)
             raw = f.readframes(end - start)
-    else:
+    elif Path(payload["path"]).suffix.lower() == ".pcm":
         with open(payload["path"], "rb") as f:
             f.seek(start * 2)
             raw = f.read((end - start) * 2)
+    else:
+        raise ValueError("Gap recovery requires retained WAV or PCM audio; use refine for M4A")
     if len(raw) != (end - start) * 2:
         raise RuntimeError("The durable audio interval is incomplete")
     samples = np.frombuffer(raw, dtype="<i2").astype(np.float32) / 32768

@@ -17,7 +17,8 @@ def fake_inference(kind, payload):
     if kind == "chunk":
         return dict(text="測試逐字稿", start_sample=payload["start"], end_sample=payload["end"])
     if kind == "export":
-        return {"path": payload["path"]}
+        from aura.session_runtime import execute
+        return execute(kind, payload)
     return {"text": "精修版本", "segments": []}
 
 
@@ -98,6 +99,11 @@ class SharedSessionTests(unittest.TestCase):
         self.core = SessionCore(self.root, executor=fake_inference)
         sid = self.record()
         self.assertEqual(self.core.request("get", {"session_id": sid})["options"]["profile"], "off")
+
+    def test_legacy_audio_preferences_select_m4a(self):
+        for fmt in ("wav", "mp3"):
+            self.assertEqual(self.core.request("preferences.set", {"audio_format": fmt})["audio_format"], "m4a")
+            self.assertEqual(self.core.request("preferences.get")["audio_format"], "m4a")
 
     def test_schedule_without_confirmation_and_legacy_false_field(self):
         import datetime
@@ -209,15 +215,59 @@ class SharedSessionTests(unittest.TestCase):
         s = wait_state(self.core, sid, "ready")
         self.assertEqual(s["samples"], 2400)
         self.assertEqual(s["transcript"], "使用者的文字\n  保留空白")
-        import wave
-        with wave.open(s["artifacts"]["wav"]) as f:
-            self.assertEqual(f.getnframes(), 2400)
+        from aura.audio.normalization import probe_duration_seconds
+        self.assertAlmostEqual(probe_duration_seconds(s["artifacts"]["m4a"]), 2400 / 16000, delta=0.1)
+        self.assertNotIn("wav", s["artifacts"])
+        self.assertFalse(list(self.core.directory(sid).glob("*.wav")))
         self.assertNotIn("refined.txt", s["artifacts"])
         self.core.request("refine", {"session_id": sid})
         s = wait_state(self.core, sid, "ready")
         self.assertEqual(s["transcript"], "使用者的文字\n  保留空白")
         self.assertEqual(Path(s["artifacts"]["refined.txt"]).read_text(encoding="utf-8"), "精修版本\n")
         self.assertEqual(self.core.request("export", {"session_id": sid, "format": "refined"})["path"], s["artifacts"]["refined.txt"])
+        payload = json.loads(self.core.db.execute("SELECT payload FROM jobs WHERE session=? AND kind='file'", (sid,)).fetchone()[0])
+        self.assertEqual(payload["path"], s["artifacts"]["m4a"])
+
+    def test_multitrack_recording_keeps_only_mixed_m4a_and_updates_locators(self):
+        sid = self.record()
+        with patch("aura.audio.vad.SileroStreamVAD", return_value=Speech()):
+            for seq in range(4):
+                self.core.ingest(sid, seq, bytes(960 * 3), ["mixed", "microphone", "system"])
+        self.core.request("stop", {"session_id": sid})
+        s = wait_state(self.core, sid, "ready")
+        directory = self.core.directory(sid)
+        self.assertEqual(s["options"]["audio_format"], "m4a")
+        self.assertEqual([p.name for p in directory.glob("*.m4a")], [f"{sid}.m4a"])
+        self.assertFalse(list(directory.rglob("*.wav")))
+        self.assertFalse(list(directory.rglob("*.pcm")))
+        manifest = json.loads((directory / "session.json").read_text())
+        self.assertEqual(manifest["audio_tracks"], {"mixed": f"{sid}.m4a"})
+        self.assertEqual(json.loads((directory / "segments.json").read_text())["audio_path"], s["artifacts"]["m4a"])
+        for fmt in ("wav", "mp3"):
+            with self.assertRaisesRegex(ValueError, "M4A"):
+                self.core.request("export", {"session_id": sid, "format": fmt})
+
+    def test_failed_export_preserves_wav_and_recovery_retries_retention(self):
+        attempts = 0
+        def execute(kind, payload):
+            nonlocal attempts
+            if kind == "export":
+                attempts += 1
+                if attempts == 1:
+                    raise RuntimeError("Encoder unavailable")
+            return fake_inference(kind, payload)
+        self.core.execute_override = execute
+        sid = self.record()
+        with patch("aura.audio.vad.SileroStreamVAD", return_value=Speech()):
+            self.core.ingest(sid, 0, bytes(960), ["mixed"])
+        self.core.request("stop", {"session_id": sid})
+        failed = wait_state(self.core, sid, "failed")
+        self.assertTrue(Path(failed["artifacts"]["wav"]).is_file())
+        self.core.request("recover", {"session_id": sid})
+        saved = wait_state(self.core, sid, "ready")
+        self.assertTrue(Path(saved["artifacts"]["m4a"]).is_file())
+        self.assertFalse(list(self.core.directory(sid).glob("*.wav")))
+        self.assertEqual(attempts, 2)
 
     def test_request_replay_cannot_duplicate_recording_or_change_payload(self):
         a = self.core.request("record", {"consent": True}, request_id="same")
@@ -258,7 +308,9 @@ class SharedSessionTests(unittest.TestCase):
         s = self.core.request("get", {"session_id": sid})
         self.assertEqual(s["state"], "recoverable")
         self.core.request("refine", {"session_id": sid})
-        wait_state(self.core, sid, "ready")
+        saved = wait_state(self.core, sid, "ready")
+        self.assertTrue(Path(saved["artifacts"]["m4a"]).is_file())
+        self.assertFalse(list(self.core.directory(sid).rglob("*.wav")))
 
 
 class TransportTests(unittest.TestCase):

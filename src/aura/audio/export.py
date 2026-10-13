@@ -72,10 +72,13 @@ def normalize_wav_to_recording_audio(
     audio_format: str = "m4a",
     *,
     remove_source: bool = True,
+    output_path: str | Path | None = None,
 ) -> Path:
     wav_path = Path(wav_path)
     spec = recording_audio_format_spec(audio_format)
-    output_path = audio_path_for_wav(wav_path, spec.key)
+    output_path = Path(output_path) if output_path is not None else audio_path_for_wav(wav_path, spec.key)
+    if output_path.resolve() == wav_path.resolve():
+        raise ValueError("Audio export must not overwrite its source")
     try:
         logger.info("Recording normalization CPU budget: %s", normalization_cpu_status())
         normalize_media_with_ffmpeg(
@@ -95,7 +98,7 @@ def normalize_wav_to_recording_audio(
     normalized = None
     try:
         with wav_path.open("rb") as source:
-            audio = AudioSegment.from_wav(source)
+            audio = AudioSegment.from_file(source, format=wav_path.suffix.lstrip("."))
         normalized = audio.apply_gain(target_dbfs - audio.dBFS)
         with output_path.open("wb") as target:
             normalized.export(target, format=spec.pydub_format, parameters=spec.pydub_parameters)

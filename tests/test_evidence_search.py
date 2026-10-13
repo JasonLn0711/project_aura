@@ -189,6 +189,26 @@ class EvidenceSearchTests(unittest.TestCase):
             },
         )
 
+    def test_existing_index_uses_updated_m4a_manifest_without_rebuilding_text(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            session_dir = write_session(root)
+            index = root / "evidence.sqlite3"
+            rebuild_evidence_index(root, index)
+            before = index.read_bytes()
+            manifest = session_dir / "session.json"
+            session = json.loads(manifest.read_text())
+            session["audio_tracks"] = {"mixed": "audio/mixed.m4a"}
+            manifest.write_text(json.dumps(session))
+            (session_dir / "audio/mixed.wav").unlink()
+            (session_dir / "audio/mixed.m4a").touch()
+            with EvidenceSearch(index) as evidence:
+                span = evidence.open_audio_span("meeting-001", 0, 1000)
+                self.assertTrue(span["exists"])
+                self.assertTrue(span["path"].endswith("mixed.m4a"))
+                self.assertTrue(evidence.search_meetings("本機部署"))
+            self.assertEqual(index.read_bytes(), before)
+
     def test_imported_source_audio_is_available_as_the_default_track(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)

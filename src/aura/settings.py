@@ -42,6 +42,8 @@ class AppSettings:
     splitter_tolerance_minutes: int = 5
 
     def __post_init__(self) -> None:
+        if self.recording_audio_format in ("wav", "mp3"):
+            object.__setattr__(self, "recording_audio_format", "m4a")
         if self.device != "cuda":
             raise ValueError(
                 "AURA ASR requires device='cuda'; CPU inference is outside the supported runtime."
