@@ -39,3 +39,8 @@
 - Run `git diff --check`, the focused versioning tests, README link and image
   checks, and the full regression suite after a material README revision.
 - Preserve unrelated working-tree changes and generated local data.
+- Apply the full README checks above to material README changes. An instruction-only
+  edit uses instruction/link checks and `git diff --check`; it does not authorize
+  ASR runs, new benchmarks, release bumps, commits, or publication.
+- Global skills support this contract. If a personal skill is unavailable, retain
+  these repository requirements and report the unavailable skill separately.
