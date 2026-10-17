@@ -1,0 +1,8 @@
+{
+  "source_summary_sha256": "a01e49cbac068998c69f7584fa3925ad9c58c4eedf56b172c012e05fca000777",
+  "summary_projection": "audio.telemetry_receipt omitted; local_evidence, record_seal and publication_scope added; all measured values retained",
+  "figures": {
+    "full-run-telemetry.svg": "0b49a6e43a68b21be7a6e5a17d8b7312285d406cca1ff62edebfca4877db9ea8",
+    "full-run-telemetry.png": "631ce31a04c7ffedd76ab93227c0d51e7b8e1d44365b02a6d69d50429be0a02e"
+  }
+}

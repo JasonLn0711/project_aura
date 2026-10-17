@@ -1,0 +1,755 @@
+{
+  "study": "STUDY-YILAN-001",
+  "run_id": "RUN-20261017-YILAN-FULL-REUSE-01",
+  "execution_status": "LIVE_FULL_COMPLETED",
+  "runtime_validity": "valid_target_runtime",
+  "audio": {
+    "execution_status": "LIVE_FULL_COMPLETED",
+    "runtime_validity": "valid_target_runtime",
+    "full_length_samples": 226546688,
+    "duration_seconds": 4719.722666666667,
+    "output": "/home/jnclaw/Downloads/261017_1330_Claude_tw-meetup-yilan/261017_1330_Claude_tw-meetup-yilan_合併_RE-USE.m4a",
+    "sha256": "ef24edf8b076059a423302f02387052fa3c194de3a7a9515b95f765999dc3caa",
+    "bytes": 92459263,
+    "full_decode": "pass",
+    "source_unchanged": true,
+    "finite_pcm": "pass",
+    "gain_db": -0.030000000000000027,
+    "encoded_loudness": {
+      "input_i": "-31.04",
+      "input_tp": "-1.50",
+      "input_lra": "10.50",
+      "input_thresh": "-41.74",
+      "output_i": "-18.84",
+      "output_tp": "-1.00",
+      "output_lra": "8.00",
+      "output_thresh": "-29.49",
+      "normalization_type": "dynamic",
+      "target_offset": "-1.16"
+    },
+    "probe": {
+      "programs": [],
+      "streams": [
+        {
+          "codec_name": "aac",
+          "sample_rate": "48000",
+          "channels": 1
+        }
+      ],
+      "format": {
+        "duration": "4719.722000",
+        "size": "92459263"
+      }
+    },
+    "human_acceptance": "prior pilot selected RE-USE; full-length listening pending",
+    "ASR": "not_evaluated"
+  },
+  "user_reported_ui": {
+    "verbatim": "Worked for 42m 42s • 23:35",
+    "seconds": 2562,
+    "source": "user-supplied UI text; not independent host timing or human labor time"
+  },
+  "observed_log_span_seconds": 2493.897008,
+  "ui_minus_log_span_seconds": 68.10299200000009,
+  "worker_seconds": 2266.713121623,
+  "worker_rtf": 0.48026404975694903,
+  "worker_speed_x_realtime": 2.082187914140311,
+  "ui_wall_rtf": 0.5428285051777054,
+  "event_intervals": [
+    {
+      "from_event": 0,
+      "to_event": 1,
+      "from_utc": "2026-10-17T14:53:27.453541+00:00",
+      "to_utc": "2026-10-17T14:53:49.399500+00:00",
+      "seconds": 21.945959,
+      "definition": "event-to-next-event interval; includes intervening orchestration; not exact isolated command latency"
+    },
+    {
+      "from_event": 1,
+      "to_event": 2,
+      "from_utc": "2026-10-17T14:53:49.399500+00:00",
+      "to_utc": "2026-10-17T15:31:46.149443+00:00",
+      "seconds": 2276.749943,
+      "definition": "event-to-next-event interval; includes intervening orchestration; not exact isolated command latency"
+    },
+    {
+      "from_event": 2,
+      "to_event": 3,
+      "from_utc": "2026-10-17T15:31:46.149443+00:00",
+      "to_utc": "2026-10-17T15:31:46.529343+00:00",
+      "seconds": 0.3799,
+      "definition": "event-to-next-event interval; includes intervening orchestration; not exact isolated command latency"
+    },
+    {
+      "from_event": 3,
+      "to_event": 4,
+      "from_utc": "2026-10-17T15:31:46.529343+00:00",
+      "to_utc": "2026-10-17T15:32:21.289922+00:00",
+      "seconds": 34.760579,
+      "definition": "event-to-next-event interval; includes intervening orchestration; not exact isolated command latency"
+    },
+    {
+      "from_event": 4,
+      "to_event": 5,
+      "from_utc": "2026-10-17T15:32:21.289922+00:00",
+      "to_utc": "2026-10-17T15:34:23.229749+00:00",
+      "seconds": 121.939827,
+      "definition": "event-to-next-event interval; includes intervening orchestration; not exact isolated command latency"
+    },
+    {
+      "from_event": 5,
+      "to_event": 6,
+      "from_utc": "2026-10-17T15:34:23.229749+00:00",
+      "to_utc": "2026-10-17T15:34:57.795156+00:00",
+      "seconds": 34.565407,
+      "definition": "event-to-next-event interval; includes intervening orchestration; not exact isolated command latency"
+    },
+    {
+      "from_event": 6,
+      "to_event": 7,
+      "from_utc": "2026-10-17T15:34:57.795156+00:00",
+      "to_utc": "2026-10-17T15:34:57.825856+00:00",
+      "seconds": 0.0307,
+      "definition": "event-to-next-event interval; includes intervening orchestration; not exact isolated command latency"
+    },
+    {
+      "from_event": 7,
+      "to_event": 8,
+      "from_utc": "2026-10-17T15:34:57.825856+00:00",
+      "to_utc": "2026-10-17T15:35:01.350549+00:00",
+      "seconds": 3.524693,
+      "definition": "event-to-next-event interval; includes intervening orchestration; not exact isolated command latency"
+    }
+  ],
+  "sampling": {
+    "all_rows": 9108,
+    "worker_rows": 9066,
+    "background_and_boundary_rows": 42,
+    "samples": 9066,
+    "expected_samples": 9066,
+    "coverage": 1,
+    "max_gap_s": 0.273604095,
+    "valid": true,
+    "unavailable_fields_counts": {}
+  },
+  "statistics_semantics": "Unweighted sample statistics over worker interval. Device readings include desktop activity. CPU time and IO counters are cumulative, not rates. Missing metrics excluded with n retained. Sampled maxima are not guaranteed instantaneous peaks.",
+  "statistics": {
+    "elapsed_s": {
+      "n": 9066,
+      "min": 0.248573121,
+      "max": 2266.498508963,
+      "mean": 1133.3759907342996,
+      "median": 1133.3750073255,
+      "stdev": 654.3182656858953,
+      "first": 0.248573121,
+      "last": 2266.498508963
+    },
+    "gpu.energy_mj": {
+      "n": 9066,
+      "min": 196465016,
+      "max": 422288357,
+      "mean": 309323290.7527024,
+      "median": 309293959.0,
+      "stdev": 65238483.351026654,
+      "first": 196465016,
+      "last": 422288357
+    },
+    "gpu.memory_activity_pct": {
+      "n": 9066,
+      "min": 0,
+      "max": 93,
+      "mean": 76.10908890359585,
+      "median": 73.0,
+      "stdev": 6.771677097196647,
+      "first": 1,
+      "last": 0
+    },
+    "gpu.memory_clock_mhz": {
+      "n": 9066,
+      "min": 405,
+      "max": 8001,
+      "mean": 5999.284579748511,
+      "median": 6001.0,
+      "stdev": 158.49015057909605,
+      "first": 405,
+      "last": 7001
+    },
+    "gpu.memory_total_bytes": {
+      "n": 9066,
+      "min": 17171480576,
+      "max": 17171480576,
+      "mean": 17171480576,
+      "median": 17171480576.0,
+      "stdev": 0.0,
+      "first": 17171480576,
+      "last": 17171480576
+    },
+    "gpu.memory_used_bytes": {
+      "n": 9066,
+      "min": 519569408,
+      "max": 10220863488,
+      "mean": 10209362389.869843,
+      "median": 10220863488.0,
+      "stdev": 330184782.6989005,
+      "first": 519569408,
+      "last": 10220863488
+    },
+    "gpu.power_mw": {
+      "n": 9066,
+      "min": 10395,
+      "max": 80922,
+      "mean": 79647.41087579969,
+      "median": 79862.0,
+      "stdev": 2579.9141787290173,
+      "first": 17359,
+      "last": 36682
+    },
+    "gpu.pstate": {
+      "n": 9066,
+      "min": 2,
+      "max": 8,
+      "mean": 3.9993381866313698,
+      "median": 4.0,
+      "stdev": 0.0927582063484677,
+      "first": 8,
+      "last": 3
+    },
+    "gpu.sm_clock_mhz": {
+      "n": 9066,
+      "min": 315,
+      "max": 2370,
+      "mean": 1087.9616148246193,
+      "median": 1020.0,
+      "stdev": 169.0317909379962,
+      "first": 315,
+      "last": 2370
+    },
+    "gpu.temperature_c": {
+      "n": 9066,
+      "min": 42,
+      "max": 57,
+      "mean": 55.232296492389146,
+      "median": 55.0,
+      "stdev": 0.8333098160554111,
+      "first": 42,
+      "last": 53
+    },
+    "gpu.throttle_reasons_bitmask": {
+      "n": 9066,
+      "min": 1,
+      "max": 36,
+      "mean": 4.040039708802118,
+      "median": 4.0,
+      "stdev": 1.16657179385396,
+      "first": 1,
+      "last": 36
+    },
+    "gpu.utilization_pct": {
+      "n": 9066,
+      "min": 5,
+      "max": 100,
+      "mean": 99.82506066622545,
+      "median": 100.0,
+      "stdev": 3.6263810343284644,
+      "first": 22,
+      "last": 5
+    },
+    "host.cpu_pct": {
+      "n": 9066,
+      "min": 3.5,
+      "max": 18.1,
+      "mean": 4.52113390690492,
+      "median": 4.4,
+      "stdev": 0.8114888459475579,
+      "first": 4.6,
+      "last": 4.1
+    },
+    "host.load_average.0": {
+      "n": 9066,
+      "min": 1.98583984375,
+      "max": 3.18505859375,
+      "mean": 2.385607756659497,
+      "median": 2.3505859375,
+      "stdev": 0.22819293721519213,
+      "first": 2.43115234375,
+      "last": 2.076171875
+    },
+    "host.load_average.1": {
+      "n": 9066,
+      "min": 1.966796875,
+      "max": 2.55810546875,
+      "mean": 2.3381780678668926,
+      "median": 2.32666015625,
+      "stdev": 0.10342604487236176,
+      "first": 1.966796875,
+      "last": 2.220703125
+    },
+    "host.load_average.2": {
+      "n": 9066,
+      "min": 1.85986328125,
+      "max": 2.3427734375,
+      "mean": 2.1951629887767483,
+      "median": 2.18603515625,
+      "stdev": 0.11353459142886221,
+      "first": 1.85986328125,
+      "last": 2.2587890625
+    },
+    "host.memory.active": {
+      "n": 9066,
+      "min": 18751586304,
+      "max": 21014740992,
+      "mean": 19872177045.60159,
+      "median": 19859490816.0,
+      "stdev": 111940032.91886225,
+      "first": 18751586304,
+      "last": 19905957888
+    },
+    "host.memory.available": {
+      "n": 9066,
+      "min": 47068266496,
+      "max": 49463373824,
+      "mean": 48283087461.08978,
+      "median": 48304220160.0,
+      "stdev": 137158875.87874776,
+      "first": 49463373824,
+      "last": 48238424064
+    },
+    "host.memory.buffers": {
+      "n": 9066,
+      "min": 1206755328,
+      "max": 1217777664,
+      "mean": 1212516248.5382748,
+      "median": 1212608512.0,
+      "stdev": 3121523.044200213,
+      "first": 1206755328,
+      "last": 1217777664
+    },
+    "host.memory.cached": {
+      "n": 9066,
+      "min": 27837194240,
+      "max": 28791443456,
+      "mean": 27861015568.94242,
+      "median": 27859279872.0,
+      "stdev": 24619649.179557543,
+      "first": 27838013440,
+      "last": 28791443456
+    },
+    "host.memory.free": {
+      "n": 9066,
+      "min": 19415597056,
+      "max": 22503157760,
+      "mean": 21286424489.2548,
+      "median": 21312915456.0,
+      "stdev": 133205068.29540157,
+      "first": 22503157760,
+      "last": 20276674560
+    },
+    "host.memory.inactive": {
+      "n": 9066,
+      "min": 21389635584,
+      "max": 22366240768,
+      "mean": 21424940289.29892,
+      "median": 21430800384.0,
+      "stdev": 25368390.1372505,
+      "first": 21389635584,
+      "last": 22366240768
+    },
+    "host.memory.percent": {
+      "n": 9066,
+      "min": 26.2,
+      "max": 29.8,
+      "mean": 27.95204059121994,
+      "median": 27.9,
+      "stdev": 0.2063437519460521,
+      "first": 26.2,
+      "last": 28.0
+    },
+    "host.memory.shared": {
+      "n": 9066,
+      "min": 1567903744,
+      "max": 1901989888,
+      "mean": 1590135396.1861901,
+      "median": 1587083264.0,
+      "stdev": 20591290.1622174,
+      "first": 1583452160,
+      "last": 1581367296
+    },
+    "host.memory.slab": {
+      "n": 9066,
+      "min": 1946095616,
+      "max": 1974272000,
+      "mean": 1948355052.9115376,
+      "median": 1948504064.0,
+      "stdev": 582738.4125491956,
+      "first": 1946095616,
+      "last": 1974272000
+    },
+    "host.memory.total": {
+      "n": 9066,
+      "min": 67015995392,
+      "max": 67015995392,
+      "mean": 67015995392,
+      "median": 67015995392.0,
+      "stdev": 0.0,
+      "first": 67015995392,
+      "last": 67015995392
+    },
+    "host.memory.used": {
+      "n": 9066,
+      "min": 17552621568,
+      "max": 19947728896,
+      "mean": 18732907930.910213,
+      "median": 18711775232.0,
+      "stdev": 137158875.87874776,
+      "first": 17552621568,
+      "last": 18777571328
+    },
+    "host.swap.free": {
+      "n": 9066,
+      "min": 8589930496,
+      "max": 8589930496,
+      "mean": 8589930496,
+      "median": 8589930496.0,
+      "stdev": 0.0,
+      "first": 8589930496,
+      "last": 8589930496
+    },
+    "host.swap.percent": {
+      "n": 9066,
+      "min": 0.0,
+      "max": 0.0,
+      "mean": 0.0,
+      "median": 0.0,
+      "stdev": 0.0,
+      "first": 0.0,
+      "last": 0.0
+    },
+    "host.swap.sin": {
+      "n": 9066,
+      "min": 0,
+      "max": 0,
+      "mean": 0,
+      "median": 0.0,
+      "stdev": 0.0,
+      "first": 0,
+      "last": 0
+    },
+    "host.swap.sout": {
+      "n": 9066,
+      "min": 0,
+      "max": 0,
+      "mean": 0,
+      "median": 0.0,
+      "stdev": 0.0,
+      "first": 0,
+      "last": 0
+    },
+    "host.swap.total": {
+      "n": 9066,
+      "min": 8589930496,
+      "max": 8589930496,
+      "mean": 8589930496,
+      "median": 8589930496.0,
+      "stdev": 0.0,
+      "first": 8589930496,
+      "last": 8589930496
+    },
+    "host.swap.used": {
+      "n": 9066,
+      "min": 0,
+      "max": 0,
+      "mean": 0,
+      "median": 0.0,
+      "stdev": 0.0,
+      "first": 0,
+      "last": 0
+    },
+    "monotonic_ns": {
+      "n": 9066,
+      "min": 11119650860773,
+      "max": 13385900796615,
+      "mean": 12252778278386.299,
+      "median": 12252777294977.5,
+      "stdev": 654318265685.8953,
+      "first": 11119650860773,
+      "last": 13385900796615
+    },
+    "process.context_switches.involuntary": {
+      "n": 9066,
+      "min": 37,
+      "max": 22471,
+      "mean": 11455.45113611295,
+      "median": 11491.0,
+      "stdev": 6443.034459757708,
+      "first": 37,
+      "last": 22471
+    },
+    "process.context_switches.voluntary": {
+      "n": 9066,
+      "min": 33,
+      "max": 66,
+      "mean": 62.58338848444738,
+      "median": 62.0,
+      "stdev": 0.9113767856505949,
+      "first": 33,
+      "last": 66
+    },
+    "process.cpu_times.children_system": {
+      "n": 9066,
+      "min": 0.0,
+      "max": 0.0,
+      "mean": 0.0,
+      "median": 0.0,
+      "stdev": 0.0,
+      "first": 0.0,
+      "last": 0.0
+    },
+    "process.cpu_times.children_user": {
+      "n": 9066,
+      "min": 0.0,
+      "max": 0.0,
+      "mean": 0.0,
+      "median": 0.0,
+      "stdev": 0.0,
+      "first": 0.0,
+      "last": 0.0
+    },
+    "process.cpu_times.iowait": {
+      "n": 9066,
+      "min": 0.0,
+      "max": 0.0,
+      "mean": 0.0,
+      "median": 0.0,
+      "stdev": 0.0,
+      "first": 0.0,
+      "last": 0.0
+    },
+    "process.cpu_times.system": {
+      "n": 9066,
+      "min": 0.03,
+      "max": 694.65,
+      "mean": 347.5177829252151,
+      "median": 347.73,
+      "stdev": 200.66106416958925,
+      "first": 0.03,
+      "last": 694.65
+    },
+    "process.cpu_times.user": {
+      "n": 9066,
+      "min": 0.21,
+      "max": 1689.28,
+      "mean": 845.0685958526362,
+      "median": 844.83,
+      "stdev": 487.30735966095057,
+      "first": 0.21,
+      "last": 1689.28
+    },
+    "process.gpu_memory_bytes": {
+      "n": 9061,
+      "min": 10485760,
+      "max": 9693036544,
+      "mean": 9686882105.32524,
+      "median": 9693036544,
+      "stdev": 239254903.789041,
+      "first": 10485760,
+      "last": 9693036544
+    },
+    "process.io.read_bytes": {
+      "n": 9066,
+      "min": 0,
+      "max": 0,
+      "mean": 0,
+      "median": 0.0,
+      "stdev": 0.0,
+      "first": 0,
+      "last": 0
+    },
+    "process.io.read_chars": {
+      "n": 9066,
+      "min": 1567477,
+      "max": 952624263,
+      "mean": 951891554.4907346,
+      "median": 952624263.0,
+      "stdev": 25077214.10664476,
+      "first": 1567477,
+      "last": 952624263
+    },
+    "process.io.read_count": {
+      "n": 9066,
+      "min": 295,
+      "max": 34609,
+      "mean": 34585.10081623649,
+      "median": 34609.0,
+      "stdev": 823.9720749806556,
+      "first": 295,
+      "last": 34609
+    },
+    "process.io.write_bytes": {
+      "n": 9066,
+      "min": 0,
+      "max": 906498048,
+      "mean": 543374.2033973086,
+      "median": 159744.0,
+      "stdev": 16514428.647091804,
+      "first": 0,
+      "last": 906498048
+    },
+    "process.io.write_chars": {
+      "n": 9066,
+      "min": 0,
+      "max": 906190663,
+      "mean": 387521.75049636,
+      "median": 2039.0,
+      "stdev": 16510734.304291354,
+      "first": 0,
+      "last": 906190663
+    },
+    "process.io.write_count": {
+      "n": 9066,
+      "min": 0,
+      "max": 3634,
+      "mean": 99.94076770350762,
+      "median": 98.0,
+      "stdev": 78.10262471975172,
+      "first": 0,
+      "last": 3634
+    },
+    "process.memory.data": {
+      "n": 9066,
+      "min": 505532416,
+      "max": 3178971136,
+      "mean": 2272435546.7549086,
+      "median": 2272780288.0,
+      "stdev": 47902506.71753032,
+      "first": 505532416,
+      "last": 2250756096
+    },
+    "process.memory.dirty": {
+      "n": 9066,
+      "min": 0,
+      "max": 0,
+      "mean": 0,
+      "median": 0.0,
+      "stdev": 0.0,
+      "first": 0,
+      "last": 0
+    },
+    "process.memory.lib": {
+      "n": 9066,
+      "min": 0,
+      "max": 0,
+      "mean": 0,
+      "median": 0.0,
+      "stdev": 0.0,
+      "first": 0,
+      "last": 0
+    },
+    "process.memory.rss": {
+      "n": 9066,
+      "min": 333086720,
+      "max": 2898956288,
+      "mean": 1992168176.2435472,
+      "median": 1992622080.0,
+      "stdev": 47349567.54453578,
+      "first": 333086720,
+      "last": 2005721088
+    },
+    "process.memory.shared": {
+      "n": 9066,
+      "min": 199954432,
+      "max": 528318464,
+      "mean": 509739575.00639755,
+      "median": 509988864.0,
+      "stdev": 7174262.2720832,
+      "first": 199954432,
+      "last": 528318464
+    },
+    "process.memory.text": {
+      "n": 9066,
+      "min": 9879552,
+      "max": 9879552,
+      "mean": 9879552,
+      "median": 9879552.0,
+      "stdev": 0.0,
+      "first": 9879552,
+      "last": 9879552
+    },
+    "process.memory.vms": {
+      "n": 9066,
+      "min": 3309477888,
+      "max": 22160781312,
+      "mean": 21239226262.731083,
+      "median": 21254590464.0,
+      "stdev": 473798159.683567,
+      "first": 3309477888,
+      "last": 21232562176
+    },
+    "process.pid": {
+      "n": 9066,
+      "min": 105141,
+      "max": 105141,
+      "mean": 105141,
+      "median": 105141.0,
+      "stdev": 0.0,
+      "first": 105141,
+      "last": 105141
+    },
+    "process.threads": {
+      "n": 9066,
+      "min": 4,
+      "max": 16,
+      "mean": 15.99492609750717,
+      "median": 16.0,
+      "stdev": 0.22764450093728641,
+      "first": 4,
+      "last": 13
+    },
+    "query_duration_s": {
+      "n": 9066,
+      "min": 0.007139577,
+      "max": 0.032080813,
+      "mean": 0.01026512555989411,
+      "median": 0.0094266685,
+      "stdev": 0.002691779297583044,
+      "first": 0.007827154,
+      "last": 0.007721057
+    }
+  },
+  "energy": {
+    "sample_interval_seconds": 2266.249935842,
+    "nvml_counter_delta_j": 225823.341,
+    "sampled_power_trapezoid_j": 180514.19103391937,
+    "counter_to_power_ratio": 1.2510004875880747,
+    "scope": "same first-to-last sampled worker interval, GPU device only; sensors uncalibrated, not wall socket or per-process physical consumption"
+  },
+  "runtime_failures": [
+    {
+      "stage": "monitor import before model execution",
+      "error": "ModuleNotFoundError: No module named psutil",
+      "resolution": "orchestrator moved to existing eval-env; model worker retained original inference env",
+      "log": "attempt-01-missing-monitor-dependency.log"
+    }
+  ],
+  "not_measured": [
+    "pure model-only inference duration",
+    "separate load/save CUDA timings",
+    "PyTorch allocator peak",
+    "encoding/measurement CPU-GPU telemetry outside worker",
+    "human labor duration",
+    "full-length human listening acceptance",
+    "ASR",
+    "full-length DNSMOS"
+  ],
+  "source_hash_reverified": true,
+  "output_hash_reverified": true,
+  "local_evidence": "local_outputs/denoise_eval/claude-yilan-20261017-full-reuse/",
+  "record_seal": {
+    "files": 23,
+    "sha256sums_sha256": "6ac5335b76e3603009c5806a2d2e4d4724dbd68a18169c5def2e45893597ac53",
+    "created_utc": "2026-10-17T15:38:37.993052+00:00",
+    "original_evidence_modified": false,
+    "delivery_reverified": "ef24edf8b076059a423302f02387052fa3c194de3a7a9515b95f765999dc3caa",
+    "summarization_checks": "event accounting, monotonic sample ordering, sample count and source/output hash assertions passed"
+  },
+  "publication_scope": "Aggregate evidence only; full report, raw telemetry, audio, source quotations and runtime code remain in the local sealed record."
+}

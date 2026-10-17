@@ -2,6 +2,16 @@
 
 > Audio-processing update, 2026-10-17: the [RE-USE C4 architecture](architecture/reuse-c4.md) supersedes the selectable enhancement profiles and ClearVoice integration described below. Earlier dated decisions and evaluation evidence are preserved as history.
 
+## Separate listening experiment — 2026-10-17
+
+The [Yilan enhancement record](yilan-enhancement-2026-10-17.md) preserves a
+completed three-clip A/B/C experiment, the adopted RE-USE listening decision,
+and a sealed local archive. Subsequent user-authorized full-length RE-USE
+delivery is validated; full-length listening acceptance remains pending. It does not execute the ASR preprocessing-effect
+study below or change product defaults. Historical candidate priorities remain
+dated; this recording's human choice is B, with further C/D testing deferred.
+
+
 ## Operating update — 2026-09-08
 
 The requested product default is Light; Off remains selectable. The current
