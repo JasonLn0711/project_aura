@@ -5,6 +5,60 @@ The follow-up A/B/C experiment is `LIVE_FULL_COMPLETED` for three fixed clips.
 The [aggregate receipt](../artifacts/yilan-enhancement-2026-10-17/receipt.json)
 separates execution, runtime validity, validation and the human decision.
 
+## Full-length delivery — completed October 17 at 23:35 Taipei time
+
+The user subsequently activated full-recording RE-USE processing. One full-length
+worker completed as `LIVE_FULL_COMPLETED` / `valid_target_runtime`, delivering
+`261017_1330_Claude_tw-meetup-yilan_合併_RE-USE.m4a` in the original Downloads
+recording folder. The [full-length aggregate record](../artifacts/yilan-enhancement-2026-10-17/full-length/summary.json)
+retains timing definitions, resource statistics, event intervals, validation,
+limitations and the 23-file local evidence seal.
+
+| Measure | Recorded result | Scope |
+|---|---:|---|
+| Audio duration | 4719.722666667 s | 78 min 39.722667 s; 226,546,688 PCM samples |
+| File size | 92,459,263 bytes | 92.459263 MB; mono AAC, 48 kHz, 256 kbps encoder target |
+| User-supplied UI elapsed time | 2562 s / 42 min 42 s | Exact supplied text: `Worked for 42m 42s • 23:35`; not human labor time |
+| Observable log span | 2493.897008 s | First decode command event through validated delivery |
+| Worker elapsed time | 2266.713121623 s | Includes startup, model loading, inference and WAV writing; not pure model time |
+| Worker GPU samples | 9,066 | 100% coverage; maximum gap 0.273604095 s |
+| Mean sampled device GPU utilization | 99.825061% | Background desktop activity remains part of device metrics |
+| Sampled process VRAM maximum | 9,693,036,544 bytes | NVML process allocation; not PyTorch allocator peak |
+| Delivery loudness / true peak / LRA | −31.04 LUFS / −1.50 dBTP / 10.50 LU | Fixed −0.03 dB gain; dynamics preserved |
+
+The UI duration exceeds the observable log span by 68.102992 seconds; no
+unmeasured breakdown is assigned to that difference. Full decode, format,
+duration and finite-PCM checks passed; input and output hashes were reverified.
+Output SHA-256: `ef24edf8b076059a423302f02387052fa3c194de3a7a9515b95f765999dc3caa`.
+
+The first orchestration attempt lacked `psutil` and stopped before model
+execution. The existing evaluation environment then hosted monitoring while
+the model kept its original inference environment. The failure log is retained;
+there was one successful full-length model worker, using 1,887 overlapping
+five-second windows, 50% overlap, no BWE and no ClearVoice.
+
+![Full-length GPU telemetry](../artifacts/yilan-enhancement-2026-10-17/full-length/full-run-telemetry.png)
+*The full worker's sampled utilization, device memory and power remain aligned in time; the matching SVG is retained beside this PNG.*
+
+Over the same sampled interval, the NVML energy counter increased by
+225,823.341 J while sampled-power integration yielded 180,514.191 J, ratio
+1.251000. Both are uncalibrated device readings, not whole-machine or precise
+per-process energy. Monitoring covers the worker and preceding background;
+encoding and validation resource usage was not sampled. No full-length ASR,
+DNSMOS, pure-model timing or new human listening score was measured.
+
+The canonical local record is
+`local_outputs/denoise_eval/claude-yilan-20261017-full-reuse/full-run-report.md`.
+Its raw telemetry, flattened CSV, complete statistics, exact user-supplied text,
+commands, failure log, input/output WAVs and `SHA256SUMS` remain together.
+Downloads also contains `RE-USE_全長處理紀錄/` with the report and analysis copies.
+The earlier 530-file ZIP remains the immutable short-clip experiment snapshot;
+it does not contain this later full-length run. The next gate is Jason's
+full-length review of quiet words, endings and continuity. Product defaults,
+service configuration and further C/D comparisons remain unchanged.
+
+The sections below retain the preceding clip experiment's dated scope.
+
 ## FIRST PRINCIPLE and ownership
 
 Scarce resources are evidence fidelity, listening attention and GPU execution
@@ -129,8 +183,8 @@ These informed provenance, repeats, failed-attempt retention, metric semantics
 and separation of profiling from timing. This publication records the completed
 October 17 research; it does not claim a new literature search.
 
-Jason owns the next decision: explicitly activate full-recording RE-USE
-processing if wanted, then review continuity and speech preservation. Further
+The original full-recording activation gate was subsequently satisfied by the
+full-length delivery above. Jason now reviews continuity and speech preservation. Further
 C/D comparisons are deferred. A separate reviewed-ground-truth study is needed
 for ASR preprocessing claims; the [existing preprocessing gate](denoise_blocked_handoff.md)
 and [denoise plan](denoise_upgrade_plan.md) remain distinct.
