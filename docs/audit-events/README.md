@@ -6,4 +6,8 @@
 
 ## Human-readable closeout events
 
+- [2026-10-17: NVIDIA RE-USE redesign](2026-10-17-reuse-redesign/audit-event.md) — source decisions, C4 architecture, implementation, failed attempts and availability gates.
+
+- [2026-10-17: Live streaming reliability, DGX runtime, and Linux capture](2026-10-17-live-streaming-reliability/audit-event.md) — implementation, user-reported failures, private log inventory, corrected evidence, and actual Brave validation.
+
 - [2026-07-14：AURA × Meetily GPU-only ASR 與最小 live paired benchmark](2026-07-14-gpu-only-asr-live-benchmark/audit-event.md)

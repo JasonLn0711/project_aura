@@ -1,0 +1,583 @@
+{
+  "audit_id": "AUDIT-2026-10-17-LIVE-STREAMING-001",
+  "snapshot_at_utc": "2026-10-17T13:55:19.367639+00:00",
+  "archive": "/home/jnlngx10/.local/share/project-aura/audit-archives/2026-10-17-live-streaming-reliability",
+  "credential_exclusions": [
+    "connection.json",
+    "private initialization messages",
+    "environment variables",
+    "SSH credentials"
+  ],
+  "product_daily_audit_directory": {
+    "path": "/home/jnlngx10/.local/state/project_aura/audit",
+    "exists": false
+  },
+  "selected_database_row_counts": {
+    "sessions": 3,
+    "jobs": 13,
+    "events": 32,
+    "preferences": 3
+  },
+  "files": [
+    {
+      "kind": "command log snapshot",
+      "source": "/tmp/aura-base-install.log",
+      "preserved_path": "/home/jnlngx10/.local/share/project-aura/audit-archives/2026-10-17-live-streaming-reliability/command-logs/aura-base-install.log",
+      "bytes": 483,
+      "sha256": "40287f1ba4c69e5ae71d2494c7ceb2e6387ebe341f2b7c6223dd44c6a4940485"
+    },
+    {
+      "kind": "command log snapshot",
+      "source": "/tmp/aura-build.log",
+      "preserved_path": "/home/jnlngx10/.local/share/project-aura/audit-archives/2026-10-17-live-streaming-reliability/command-logs/aura-build.log",
+      "bytes": 26875,
+      "sha256": "5584186780540a6d31b57760ded149d7072e8426477e0d0ed9f1c038ebda6f9f"
+    },
+    {
+      "kind": "command log snapshot",
+      "source": "/tmp/aura-device-tests.log",
+      "preserved_path": "/home/jnlngx10/.local/share/project-aura/audit-archives/2026-10-17-live-streaming-reliability/command-logs/aura-device-tests.log",
+      "bytes": 1104,
+      "sha256": "00dae8491b377909564622cc5c2032595b8d37a8d8e48fd64c476d9824a72cd7"
+    },
+    {
+      "kind": "command log snapshot",
+      "source": "/tmp/aura-final-gpu.log",
+      "preserved_path": "/home/jnlngx10/.local/share/project-aura/audit-archives/2026-10-17-live-streaming-reliability/command-logs/aura-final-gpu.log",
+      "bytes": 5121,
+      "sha256": "50585175ac3224c597fe8e0481d383e7f08bc3b2529efaa2ff039ff32283ab4a"
+    },
+    {
+      "kind": "command log snapshot",
+      "source": "/tmp/aura-final-pty.log",
+      "preserved_path": "/home/jnlngx10/.local/share/project-aura/audit-archives/2026-10-17-live-streaming-reliability/command-logs/aura-final-pty.log",
+      "bytes": 285,
+      "sha256": "c73f850eccb191814b806f3e3bffe37dd15a10210777d07d00f2829456216b21"
+    },
+    {
+      "kind": "command log snapshot",
+      "source": "/tmp/aura-final-tests.log",
+      "preserved_path": "/home/jnlngx10/.local/share/project-aura/audit-archives/2026-10-17-live-streaming-reliability/command-logs/aura-final-tests.log",
+      "bytes": 1100,
+      "sha256": "3a821f607c081905a5ce57c934774f13472244e6606cf2060792a08feee03b40"
+    },
+    {
+      "kind": "command log snapshot",
+      "source": "/tmp/aura-final-transport.log",
+      "preserved_path": "/home/jnlngx10/.local/share/project-aura/audit-archives/2026-10-17-live-streaming-reliability/command-logs/aura-final-transport.log",
+      "bytes": 868,
+      "sha256": "26cd674f6fa9903e467c245d7f04fdb4e17653a0f2fc6e000acc7328d99864b3"
+    },
+    {
+      "kind": "command log snapshot",
+      "source": "/tmp/aura-guard-final.log",
+      "preserved_path": "/home/jnlngx10/.local/share/project-aura/audit-archives/2026-10-17-live-streaming-reliability/command-logs/aura-guard-final.log",
+      "bytes": 1109,
+      "sha256": "168b5337bcdc495848c8b0eb4b30a7e16e05b683934b25e079e9e5f3a93bd8be"
+    },
+    {
+      "kind": "command log snapshot",
+      "source": "/tmp/aura-guard-live.log",
+      "preserved_path": "/home/jnlngx10/.local/share/project-aura/audit-archives/2026-10-17-live-streaming-reliability/command-logs/aura-guard-live.log",
+      "bytes": 4271,
+      "sha256": "b07d59af5f319cfb8ff0a2b0f332f74d35245360feed77c7e7a04952095c14de"
+    },
+    {
+      "kind": "command log snapshot",
+      "source": "/tmp/aura-guard-regression.log",
+      "preserved_path": "/home/jnlngx10/.local/share/project-aura/audit-archives/2026-10-17-live-streaming-reliability/command-logs/aura-guard-regression.log",
+      "bytes": 1108,
+      "sha256": "c8e4fe717424d407b6205e70c752f2d03002d89be8426436f7d5ff61f1ab7b67"
+    },
+    {
+      "kind": "command log snapshot",
+      "source": "/tmp/aura-guard-tests.log",
+      "preserved_path": "/home/jnlngx10/.local/share/project-aura/audit-archives/2026-10-17-live-streaming-reliability/command-logs/aura-guard-tests.log",
+      "bytes": 492,
+      "sha256": "b99f7829e4bb2f751f4d8912ed5fc1b905f7ea9003b9d31056162d9e371b031c"
+    },
+    {
+      "kind": "command log snapshot",
+      "source": "/tmp/aura-recovery-final.log",
+      "preserved_path": "/home/jnlngx10/.local/share/project-aura/audit-archives/2026-10-17-live-streaming-reliability/command-logs/aura-recovery-final.log",
+      "bytes": 486,
+      "sha256": "113fe52e37acdede9c2a5d32000459fd4e533698f383602881a1c397610b970f"
+    },
+    {
+      "kind": "command log snapshot",
+      "source": "/tmp/aura-rust-check.log",
+      "preserved_path": "/home/jnlngx10/.local/share/project-aura/audit-archives/2026-10-17-live-streaming-reliability/command-logs/aura-rust-check.log",
+      "bytes": 1273,
+      "sha256": "53faaa5e86c4019e9a3814c41c4558bd366e5b2baa457d694d9f6f2a90a43ffe"
+    },
+    {
+      "kind": "command log snapshot",
+      "source": "/tmp/aura-signal-regression.log",
+      "preserved_path": "/home/jnlngx10/.local/share/project-aura/audit-archives/2026-10-17-live-streaming-reliability/command-logs/aura-signal-regression.log",
+      "bytes": 1107,
+      "sha256": "aa64f752e9b5c572aed2fac6beb19bf7d4741a7e07d73e678fa426ec53ecb9a9"
+    },
+    {
+      "kind": "command log snapshot",
+      "source": "/tmp/aura-signal-tests.log",
+      "preserved_path": "/home/jnlngx10/.local/share/project-aura/audit-archives/2026-10-17-live-streaming-reliability/command-logs/aura-signal-tests.log",
+      "bytes": 283,
+      "sha256": "ff6e7bdbb77ddb3f800229f1dc2afdc145e8ebff5374cf73cbbb2cc0f25056f7"
+    },
+    {
+      "kind": "command log snapshot",
+      "source": "/tmp/aura-stream-regression.log",
+      "preserved_path": "/home/jnlngx10/.local/share/project-aura/audit-archives/2026-10-17-live-streaming-reliability/command-logs/aura-stream-regression.log",
+      "bytes": 1097,
+      "sha256": "6ac7906a0e28a28f1535e59d40b69bd85a803094c45d72e5764a5b67c235d633"
+    },
+    {
+      "kind": "account runtime log snapshot",
+      "source": "/home/jnlngx10/.local/share/project-aura/service.log",
+      "preserved_path": "/home/jnlngx10/.local/share/project-aura/audit-archives/2026-10-17-live-streaming-reliability/runtime-logs/service.log",
+      "bytes": 3557,
+      "sha256": "32ebd1c33c28e087f68d021e4966470a1e00d2c948256f430c11b3b1902f2003"
+    },
+    {
+      "kind": "account runtime log snapshot",
+      "source": "/home/jnlngx10/.local/share/project-aura/capture.log",
+      "preserved_path": "/home/jnlngx10/.local/share/project-aura/audit-archives/2026-10-17-live-streaming-reliability/runtime-logs/capture.log",
+      "bytes": 50075,
+      "sha256": "f26e2c82c91b1c2c56550c2599fb97cd86a4f32b840fdbe4ba4120fcf72cc934"
+    },
+    {
+      "kind": "private diagnostic snapshot",
+      "source": "/home/jnlngx10/.local/share/project-aura/diagnostics/speech-guard-2026-10-17-r01/brave-live.json",
+      "preserved_path": "/home/jnlngx10/.local/share/project-aura/audit-archives/2026-10-17-live-streaming-reliability/diagnostics/brave-live.json",
+      "bytes": 1528,
+      "sha256": "958dd4c4919bd69d54e7beb6fb46a3d3eb658ad469f574bcaa3d3262b1e56593"
+    },
+    {
+      "kind": "private diagnostic snapshot",
+      "source": "/home/jnlngx10/.local/share/project-aura/diagnostics/speech-guard-2026-10-17-r01/capture-events.jsonl",
+      "preserved_path": "/home/jnlngx10/.local/share/project-aura/audit-archives/2026-10-17-live-streaming-reliability/diagnostics/capture-events.jsonl",
+      "bytes": 20422,
+      "sha256": "8015145cc239eab5438c35a3ac70d98ce4b226705e5baf0f0f550ce6390cb544"
+    },
+    {
+      "kind": "private diagnostic snapshot",
+      "source": "/home/jnlngx10/.local/share/project-aura/diagnostics/speech-guard-2026-10-17-r01/english-diagnostic.json",
+      "preserved_path": "/home/jnlngx10/.local/share/project-aura/audit-archives/2026-10-17-live-streaming-reliability/diagnostics/english-diagnostic.json",
+      "bytes": 433,
+      "sha256": "a1e1002909ded2bd9c9f9dd479ba6fc7f0c4260fdddd83822fb1076e9ea03e2a"
+    },
+    {
+      "kind": "private diagnostic snapshot",
+      "source": "/home/jnlngx10/.local/share/project-aura/diagnostics/speech-guard-2026-10-17-r01/errors.jsonl",
+      "preserved_path": "/home/jnlngx10/.local/share/project-aura/audit-archives/2026-10-17-live-streaming-reliability/diagnostics/errors.jsonl",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "kind": "private diagnostic snapshot",
+      "source": "/home/jnlngx10/.local/share/project-aura/diagnostics/speech-guard-2026-10-17-r01/events.jsonl",
+      "preserved_path": "/home/jnlngx10/.local/share/project-aura/audit-archives/2026-10-17-live-streaming-reliability/diagnostics/events.jsonl",
+      "bytes": 45117,
+      "sha256": "251082bd9015664f4c8e3a46ec76b740aab99d2a0f11105e32c452d997998451"
+    },
+    {
+      "kind": "private diagnostic snapshot",
+      "source": "/home/jnlngx10/.local/share/project-aura/diagnostics/speech-guard-2026-10-17-r01/language-diagnostic.json",
+      "preserved_path": "/home/jnlngx10/.local/share/project-aura/audit-archives/2026-10-17-live-streaming-reliability/diagnostics/language-diagnostic.json",
+      "bytes": 924,
+      "sha256": "2fa387d5c4aa9b44d9c12a5f6ff6141bb172f9f4a5219fa6a55c1a51e311e33c"
+    },
+    {
+      "kind": "private diagnostic snapshot",
+      "source": "/home/jnlngx10/.local/share/project-aura/diagnostics/speech-guard-2026-10-17-r01/receipt.json",
+      "preserved_path": "/home/jnlngx10/.local/share/project-aura/audit-archives/2026-10-17-live-streaming-reliability/diagnostics/receipt.json",
+      "bytes": 3996,
+      "sha256": "4e1f6fbccac82fd051998483466ec4a1935054e9107acb4772f41e624420fce2"
+    },
+    {
+      "kind": "private diagnostic snapshot",
+      "source": "/home/jnlngx10/.local/share/project-aura/diagnostics/speech-guard-2026-10-17-r01/requests.jsonl",
+      "preserved_path": "/home/jnlngx10/.local/share/project-aura/audit-archives/2026-10-17-live-streaming-reliability/diagnostics/requests.jsonl",
+      "bytes": 1895,
+      "sha256": "e8368fb71405c28dd80c8fb3ca91629b6eff24b3cec95cf9d7d0e30c73c97812"
+    },
+    {
+      "kind": "private diagnostic snapshot",
+      "source": "/home/jnlngx10/.local/share/project-aura/diagnostics/speech-guard-2026-10-17-r01/service.log",
+      "preserved_path": "/home/jnlngx10/.local/share/project-aura/audit-archives/2026-10-17-live-streaming-reliability/diagnostics/service.log",
+      "bytes": 619,
+      "sha256": "5d542834fc9c03cdcbd0eae411e067c46efe707154c6d8172d3a3ded03f5dc0d"
+    },
+    {
+      "kind": "private diagnostic snapshot",
+      "source": "/home/jnlngx10/.local/share/project-aura/diagnostics/speech-guard-2026-10-17-r01/session.json",
+      "preserved_path": "/home/jnlngx10/.local/share/project-aura/audit-archives/2026-10-17-live-streaming-reliability/diagnostics/session.json",
+      "bytes": 2940,
+      "sha256": "1bb28d72963c575c6c7714cfbe8653ee333b6abcc1821adaf884416b71797416"
+    },
+    {
+      "kind": "private diagnostic snapshot",
+      "source": "/home/jnlngx10/.local/share/project-aura/diagnostics/speech-guard-2026-10-17-r01/transcript.txt",
+      "preserved_path": "/home/jnlngx10/.local/share/project-aura/audit-archives/2026-10-17-live-streaming-reliability/diagnostics/transcript.txt",
+      "bytes": 18,
+      "sha256": "92de03eba8517b19d9e733c248ff92be3d04aa51e5886b32a340a5d17da290c7"
+    },
+    {
+      "kind": "selected session database snapshot",
+      "source": "/home/jnlngx10/.local/share/project-aura/audit-archives/2026-10-17-live-streaming-reliability/selected-session-events.json",
+      "preserved_path": "/home/jnlngx10/.local/share/project-aura/audit-archives/2026-10-17-live-streaming-reliability/selected-session-events.json",
+      "bytes": 100497,
+      "sha256": "2d79a8217e960e6bd8cde67149de3217351449b232a580dfded2a915e0ca85ab"
+    },
+    {
+      "kind": "owner-local session artifact; retained in place",
+      "source": "/home/jnlngx10/.local/share/project-aura/sessions/8be61abc-840e-4877-ace3-57fce22e312c/8be61abc-840e-4877-ace3-57fce22e312c.m4a",
+      "preserved_path": "/home/jnlngx10/.local/share/project-aura/sessions/8be61abc-840e-4877-ace3-57fce22e312c/8be61abc-840e-4877-ace3-57fce22e312c.m4a",
+      "bytes": 242962,
+      "sha256": "5f151131041471c912b3b667abf96c4dc1bf9b9f61aa561fabace60d83c27f53"
+    },
+    {
+      "kind": "owner-local session artifact; retained in place",
+      "source": "/home/jnlngx10/.local/share/project-aura/sessions/8be61abc-840e-4877-ace3-57fce22e312c/live.txt",
+      "preserved_path": "/home/jnlngx10/.local/share/project-aura/sessions/8be61abc-840e-4877-ace3-57fce22e312c/live.txt",
+      "bytes": 75,
+      "sha256": "75bdbd20d570168f8a73cb8b1429a54f620590be332963afd894741dacc942b4"
+    },
+    {
+      "kind": "owner-local session artifact; retained in place",
+      "source": "/home/jnlngx10/.local/share/project-aura/sessions/8be61abc-840e-4877-ace3-57fce22e312c/prepared_transcript.json",
+      "preserved_path": "/home/jnlngx10/.local/share/project-aura/sessions/8be61abc-840e-4877-ace3-57fce22e312c/prepared_transcript.json",
+      "bytes": 449,
+      "sha256": "6e9c3c1ff5fb98c6c5c506217213c78e05426951beb77abda06c8b7ba90e57b6"
+    },
+    {
+      "kind": "owner-local session artifact; retained in place",
+      "source": "/home/jnlngx10/.local/share/project-aura/sessions/8be61abc-840e-4877-ace3-57fce22e312c/recovered.txt",
+      "preserved_path": "/home/jnlngx10/.local/share/project-aura/sessions/8be61abc-840e-4877-ace3-57fce22e312c/recovered.txt",
+      "bytes": 75,
+      "sha256": "75bdbd20d570168f8a73cb8b1429a54f620590be332963afd894741dacc942b4"
+    },
+    {
+      "kind": "owner-local session artifact; retained in place",
+      "source": "/home/jnlngx10/.local/share/project-aura/sessions/8be61abc-840e-4877-ace3-57fce22e312c/recovery-input.wav",
+      "preserved_path": "/home/jnlngx10/.local/share/project-aura/sessions/8be61abc-840e-4877-ace3-57fce22e312c/recovery-input.wav",
+      "bytes": 1583182,
+      "sha256": "f3c3cd120f5bdce31d5dac3d7c90bbd8f2ed26972071e34e27d73e48bb94c165"
+    },
+    {
+      "kind": "owner-local session artifact; retained in place",
+      "source": "/home/jnlngx10/.local/share/project-aura/sessions/8be61abc-840e-4877-ace3-57fce22e312c/segments.json",
+      "preserved_path": "/home/jnlngx10/.local/share/project-aura/sessions/8be61abc-840e-4877-ace3-57fce22e312c/segments.json",
+      "bytes": 725,
+      "sha256": "f8e9864083e657beeafe5c7e11572c3b84dca3603648d51773a38aa1949fc2f3"
+    },
+    {
+      "kind": "owner-local session artifact; retained in place",
+      "source": "/home/jnlngx10/.local/share/project-aura/sessions/8be61abc-840e-4877-ace3-57fce22e312c/session.json",
+      "preserved_path": "/home/jnlngx10/.local/share/project-aura/sessions/8be61abc-840e-4877-ace3-57fce22e312c/session.json",
+      "bytes": 1039,
+      "sha256": "c88683f4442d3230839d07e4f08932b8ef9dd75965a22bc31c9306bbac1b7d7d"
+    },
+    {
+      "kind": "owner-local session artifact; retained in place",
+      "source": "/home/jnlngx10/.local/share/project-aura/sessions/8be61abc-840e-4877-ace3-57fce22e312c/transcript.txt",
+      "preserved_path": "/home/jnlngx10/.local/share/project-aura/sessions/8be61abc-840e-4877-ace3-57fce22e312c/transcript.txt",
+      "bytes": 75,
+      "sha256": "75bdbd20d570168f8a73cb8b1429a54f620590be332963afd894741dacc942b4"
+    },
+    {
+      "kind": "owner-local capture spool; retained in place",
+      "source": "/home/jnlngx10/.local/share/project-aura/capture_sources/8be61abc-840e-4877-ace3-57fce22e312c/native/capture.lock",
+      "preserved_path": "/home/jnlngx10/.local/share/project-aura/capture_sources/8be61abc-840e-4877-ace3-57fce22e312c/native/capture.lock",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "kind": "owner-local capture spool; retained in place",
+      "source": "/home/jnlngx10/.local/share/project-aura/capture_sources/8be61abc-840e-4877-ace3-57fce22e312c/native/frames.pcm",
+      "preserved_path": "/home/jnlngx10/.local/share/project-aura/capture_sources/8be61abc-840e-4877-ace3-57fce22e312c/native/frames.pcm",
+      "bytes": 1583040,
+      "sha256": "d194392017e9648372d3f126d19b0e30de2f199775c0df3ac48ff214f9956e38"
+    },
+    {
+      "kind": "owner-local capture spool; retained in place",
+      "source": "/home/jnlngx10/.local/share/project-aura/capture_sources/8be61abc-840e-4877-ace3-57fce22e312c/native/manifest.json",
+      "preserved_path": "/home/jnlngx10/.local/share/project-aura/capture_sources/8be61abc-840e-4877-ace3-57fce22e312c/native/manifest.json",
+      "bytes": 103,
+      "sha256": "7bbbcadb52a7c6e82392b56b2c3800a341e70541dd7b5fc4f3f228c6297ac0c5"
+    },
+    {
+      "kind": "owner-local session artifact; retained in place",
+      "source": "/home/jnlngx10/.local/share/project-aura/sessions/fb358355-5c8b-4da2-9e86-cc59308914ff/fb358355-5c8b-4da2-9e86-cc59308914ff.m4a",
+      "preserved_path": "/home/jnlngx10/.local/share/project-aura/sessions/fb358355-5c8b-4da2-9e86-cc59308914ff/fb358355-5c8b-4da2-9e86-cc59308914ff.m4a",
+      "bytes": 219281,
+      "sha256": "98fb0938759312807ed88817ea7c14153baa87f749587ca8f31103c672f26f53"
+    },
+    {
+      "kind": "owner-local session artifact; retained in place",
+      "source": "/home/jnlngx10/.local/share/project-aura/sessions/fb358355-5c8b-4da2-9e86-cc59308914ff/live.txt",
+      "preserved_path": "/home/jnlngx10/.local/share/project-aura/sessions/fb358355-5c8b-4da2-9e86-cc59308914ff/live.txt",
+      "bytes": 226,
+      "sha256": "f79c551230e0d2e676ddf96161a170b4f3befa2e36f0bcb0bb7bcfee5ce48097"
+    },
+    {
+      "kind": "owner-local session artifact; retained in place",
+      "source": "/home/jnlngx10/.local/share/project-aura/sessions/fb358355-5c8b-4da2-9e86-cc59308914ff/prepared_transcript.json",
+      "preserved_path": "/home/jnlngx10/.local/share/project-aura/sessions/fb358355-5c8b-4da2-9e86-cc59308914ff/prepared_transcript.json",
+      "bytes": 908,
+      "sha256": "17fd21cb9a751e399fbd0517459f844b8ffab29f878016dc77eda87d706c87f6"
+    },
+    {
+      "kind": "owner-local session artifact; retained in place",
+      "source": "/home/jnlngx10/.local/share/project-aura/sessions/fb358355-5c8b-4da2-9e86-cc59308914ff/segments.json",
+      "preserved_path": "/home/jnlngx10/.local/share/project-aura/sessions/fb358355-5c8b-4da2-9e86-cc59308914ff/segments.json",
+      "bytes": 1354,
+      "sha256": "3ebb2cd72c52b0d5a96d2129286e9c5b4b1f8c6bfd0e25dd08b85fd1d54a7bb5"
+    },
+    {
+      "kind": "owner-local session artifact; retained in place",
+      "source": "/home/jnlngx10/.local/share/project-aura/sessions/fb358355-5c8b-4da2-9e86-cc59308914ff/session.json",
+      "preserved_path": "/home/jnlngx10/.local/share/project-aura/sessions/fb358355-5c8b-4da2-9e86-cc59308914ff/session.json",
+      "bytes": 1062,
+      "sha256": "eded569624e049648a75d71710f2cac9bfe999448bf3aa8c09e5e036cb393863"
+    },
+    {
+      "kind": "owner-local session artifact; retained in place",
+      "source": "/home/jnlngx10/.local/share/project-aura/sessions/fb358355-5c8b-4da2-9e86-cc59308914ff/transcript.txt",
+      "preserved_path": "/home/jnlngx10/.local/share/project-aura/sessions/fb358355-5c8b-4da2-9e86-cc59308914ff/transcript.txt",
+      "bytes": 226,
+      "sha256": "f79c551230e0d2e676ddf96161a170b4f3befa2e36f0bcb0bb7bcfee5ce48097"
+    },
+    {
+      "kind": "owner-local capture spool; retained in place",
+      "source": "/home/jnlngx10/.local/share/project-aura/capture_sources/fb358355-5c8b-4da2-9e86-cc59308914ff/native/capture.lock",
+      "preserved_path": "/home/jnlngx10/.local/share/project-aura/capture_sources/fb358355-5c8b-4da2-9e86-cc59308914ff/native/capture.lock",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "kind": "owner-local capture spool; retained in place",
+      "source": "/home/jnlngx10/.local/share/project-aura/capture_sources/fb358355-5c8b-4da2-9e86-cc59308914ff/native/frames.pcm",
+      "preserved_path": "/home/jnlngx10/.local/share/project-aura/capture_sources/fb358355-5c8b-4da2-9e86-cc59308914ff/native/frames.pcm",
+      "bytes": 689280,
+      "sha256": "8f27e0275fd28e22f25ae34ae72d6d9051f8409121852fa336a53277928c235d"
+    },
+    {
+      "kind": "owner-local capture spool; retained in place",
+      "source": "/home/jnlngx10/.local/share/project-aura/capture_sources/fb358355-5c8b-4da2-9e86-cc59308914ff/native/manifest.json",
+      "preserved_path": "/home/jnlngx10/.local/share/project-aura/capture_sources/fb358355-5c8b-4da2-9e86-cc59308914ff/native/manifest.json",
+      "bytes": 103,
+      "sha256": "54e8e38d154a8a56a070c57a97204071db6118ecd737ae35a2d4811f79a7c520"
+    },
+    {
+      "kind": "initial packet README snapshot before audit backlink",
+      "source": "/home/jnlngx10/phd-research/repos/project_aura/artifacts/live-streaming-2026-10-17/README.md",
+      "preserved_path": "/home/jnlngx10/.local/share/project-aura/audit-archives/2026-10-17-live-streaming-reliability/initial-packet-README.md",
+      "bytes": 4371,
+      "sha256": "00e27522144db76c66d27e60e1f173b565bc6bd6cb53f7ec0cb818fa59c484d4"
+    },
+    {
+      "kind": "initial validation artifact; retained in place",
+      "source": "/home/jnlngx10/phd-research/repos/project_aura/artifacts/live-streaming-2026-10-17/capture-transport-r01/python-events.jsonl",
+      "preserved_path": "/home/jnlngx10/phd-research/repos/project_aura/artifacts/live-streaming-2026-10-17/capture-transport-r01/python-events.jsonl",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "kind": "initial validation artifact; retained in place",
+      "source": "/home/jnlngx10/phd-research/repos/project_aura/artifacts/live-streaming-2026-10-17/capture-transport-r01/report.json",
+      "preserved_path": "/home/jnlngx10/phd-research/repos/project_aura/artifacts/live-streaming-2026-10-17/capture-transport-r01/report.json",
+      "bytes": 750,
+      "sha256": "8a7fd96f76b699c3a44ad739d051fb23ae63eabac9657eb03952d18f7d778fa1"
+    },
+    {
+      "kind": "initial validation artifact; retained in place",
+      "source": "/home/jnlngx10/phd-research/repos/project_aura/artifacts/live-streaming-2026-10-17/capture-transport-r01/rust-events.jsonl",
+      "preserved_path": "/home/jnlngx10/phd-research/repos/project_aura/artifacts/live-streaming-2026-10-17/capture-transport-r01/rust-events.jsonl",
+      "bytes": 1418,
+      "sha256": "76bb391103c8cc1c2abbf16f766a5534e093befdcd740d4d10642579fe36337d"
+    },
+    {
+      "kind": "initial validation artifact; retained in place",
+      "source": "/home/jnlngx10/phd-research/repos/project_aura/artifacts/live-streaming-2026-10-17/capture-transport-r02/python-events.jsonl",
+      "preserved_path": "/home/jnlngx10/phd-research/repos/project_aura/artifacts/live-streaming-2026-10-17/capture-transport-r02/python-events.jsonl",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "kind": "initial validation artifact; retained in place",
+      "source": "/home/jnlngx10/phd-research/repos/project_aura/artifacts/live-streaming-2026-10-17/capture-transport-r02/report.json",
+      "preserved_path": "/home/jnlngx10/phd-research/repos/project_aura/artifacts/live-streaming-2026-10-17/capture-transport-r02/report.json",
+      "bytes": 748,
+      "sha256": "f0c53a33d1d6d249f9bd5884d01759c7d1a9f447cd599ace3547e8b93ae9fe44"
+    },
+    {
+      "kind": "initial validation artifact; retained in place",
+      "source": "/home/jnlngx10/phd-research/repos/project_aura/artifacts/live-streaming-2026-10-17/capture-transport-r02/rust-events.jsonl",
+      "preserved_path": "/home/jnlngx10/phd-research/repos/project_aura/artifacts/live-streaming-2026-10-17/capture-transport-r02/rust-events.jsonl",
+      "bytes": 1418,
+      "sha256": "2578b2de883dc61cb0fe32e2204f22bbb87ad0dd5a9d37f3214c1d80683eb973"
+    },
+    {
+      "kind": "initial validation artifact; retained in place",
+      "source": "/home/jnlngx10/phd-research/repos/project_aura/artifacts/live-streaming-2026-10-17/gpu-availability-r01/capture-events.jsonl",
+      "preserved_path": "/home/jnlngx10/phd-research/repos/project_aura/artifacts/live-streaming-2026-10-17/gpu-availability-r01/capture-events.jsonl",
+      "bytes": 3473,
+      "sha256": "cdf6e50527ef4026182ad62c925178ea3f2678008d19a3837f0c68e5e5cf0f88"
+    },
+    {
+      "kind": "initial validation artifact; retained in place",
+      "source": "/home/jnlngx10/phd-research/repos/project_aura/artifacts/live-streaming-2026-10-17/gpu-availability-r01/errors.jsonl",
+      "preserved_path": "/home/jnlngx10/phd-research/repos/project_aura/artifacts/live-streaming-2026-10-17/gpu-availability-r01/errors.jsonl",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "kind": "initial validation artifact; retained in place",
+      "source": "/home/jnlngx10/phd-research/repos/project_aura/artifacts/live-streaming-2026-10-17/gpu-availability-r01/events.jsonl",
+      "preserved_path": "/home/jnlngx10/phd-research/repos/project_aura/artifacts/live-streaming-2026-10-17/gpu-availability-r01/events.jsonl",
+      "bytes": 35960,
+      "sha256": "d8786456523b8041153afbeb3c26fe7b9a2d69d3496b597385ef00e30cfa7aa7"
+    },
+    {
+      "kind": "initial validation artifact; retained in place",
+      "source": "/home/jnlngx10/phd-research/repos/project_aura/artifacts/live-streaming-2026-10-17/gpu-availability-r01/input.pcm",
+      "preserved_path": "/home/jnlngx10/phd-research/repos/project_aura/artifacts/live-streaming-2026-10-17/gpu-availability-r01/input.pcm",
+      "bytes": 238080,
+      "sha256": "b0c535dedfac1c478fe3e52b001e692d57451ca012e33e77ef252c87724d832c"
+    },
+    {
+      "kind": "initial validation artifact; retained in place",
+      "source": "/home/jnlngx10/phd-research/repos/project_aura/artifacts/live-streaming-2026-10-17/gpu-availability-r01/input.wav",
+      "preserved_path": "/home/jnlngx10/phd-research/repos/project_aura/artifacts/live-streaming-2026-10-17/gpu-availability-r01/input.wav",
+      "bytes": 237998,
+      "sha256": "89d95142df38e13a911800ee38bb7b0b68e7dc61944aac9173b9e97ad376f213"
+    },
+    {
+      "kind": "initial validation artifact; retained in place",
+      "source": "/home/jnlngx10/phd-research/repos/project_aura/artifacts/live-streaming-2026-10-17/gpu-availability-r01/receipt.json",
+      "preserved_path": "/home/jnlngx10/phd-research/repos/project_aura/artifacts/live-streaming-2026-10-17/gpu-availability-r01/receipt.json",
+      "bytes": 4559,
+      "sha256": "748d10395efaa1eecba7a56f424f2ea0135f080787c3ac674a479f62febe6d35"
+    },
+    {
+      "kind": "initial validation artifact; retained in place",
+      "source": "/home/jnlngx10/phd-research/repos/project_aura/artifacts/live-streaming-2026-10-17/gpu-availability-r01/recording.m4a",
+      "preserved_path": "/home/jnlngx10/phd-research/repos/project_aura/artifacts/live-streaming-2026-10-17/gpu-availability-r01/recording.m4a",
+      "bytes": 70480,
+      "sha256": "186c38f1405a0090175ecea356d5c24ad57d1dde48f2bdd7744bfa3d1e9fb949"
+    },
+    {
+      "kind": "initial validation artifact; retained in place",
+      "source": "/home/jnlngx10/phd-research/repos/project_aura/artifacts/live-streaming-2026-10-17/gpu-availability-r01/requests.jsonl",
+      "preserved_path": "/home/jnlngx10/phd-research/repos/project_aura/artifacts/live-streaming-2026-10-17/gpu-availability-r01/requests.jsonl",
+      "bytes": 708,
+      "sha256": "73946b340d1633e3a4baeb24b12d6f68c8de4d89c9470ca5d1fd01c0fe2380ac"
+    },
+    {
+      "kind": "initial validation artifact; retained in place",
+      "source": "/home/jnlngx10/phd-research/repos/project_aura/artifacts/live-streaming-2026-10-17/gpu-availability-r01/service.log",
+      "preserved_path": "/home/jnlngx10/phd-research/repos/project_aura/artifacts/live-streaming-2026-10-17/gpu-availability-r01/service.log",
+      "bytes": 256,
+      "sha256": "1735f1ba606ea751121a261f97ed85065505b3723020b9213641effc028a7494"
+    },
+    {
+      "kind": "initial validation artifact; retained in place",
+      "source": "/home/jnlngx10/phd-research/repos/project_aura/artifacts/live-streaming-2026-10-17/gpu-availability-r01/session.json",
+      "preserved_path": "/home/jnlngx10/phd-research/repos/project_aura/artifacts/live-streaming-2026-10-17/gpu-availability-r01/session.json",
+      "bytes": 4025,
+      "sha256": "bd8dec71650a94098259d5d051a5dc89a55acf0572d7b6aacac44fbe61be4d8e"
+    },
+    {
+      "kind": "initial validation artifact; retained in place",
+      "source": "/home/jnlngx10/phd-research/repos/project_aura/artifacts/live-streaming-2026-10-17/gpu-availability-r01/transcript.txt",
+      "preserved_path": "/home/jnlngx10/phd-research/repos/project_aura/artifacts/live-streaming-2026-10-17/gpu-availability-r01/transcript.txt",
+      "bytes": 179,
+      "sha256": "e034ead6ff875c230693ca016583743f8289b25c5b4334a010f9ebd25bd7e3ae"
+    },
+    {
+      "kind": "initial validation artifact; retained in place",
+      "source": "/home/jnlngx10/phd-research/repos/project_aura/artifacts/live-streaming-2026-10-17/gpu-availability-r02/capture-events.jsonl",
+      "preserved_path": "/home/jnlngx10/phd-research/repos/project_aura/artifacts/live-streaming-2026-10-17/gpu-availability-r02/capture-events.jsonl",
+      "bytes": 3470,
+      "sha256": "ce9ece95ac1cb515339391953de380da9fb14f2c93042935c15656320ec01eee"
+    },
+    {
+      "kind": "initial validation artifact; retained in place",
+      "source": "/home/jnlngx10/phd-research/repos/project_aura/artifacts/live-streaming-2026-10-17/gpu-availability-r02/errors.jsonl",
+      "preserved_path": "/home/jnlngx10/phd-research/repos/project_aura/artifacts/live-streaming-2026-10-17/gpu-availability-r02/errors.jsonl",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "kind": "initial validation artifact; retained in place",
+      "source": "/home/jnlngx10/phd-research/repos/project_aura/artifacts/live-streaming-2026-10-17/gpu-availability-r02/events.jsonl",
+      "preserved_path": "/home/jnlngx10/phd-research/repos/project_aura/artifacts/live-streaming-2026-10-17/gpu-availability-r02/events.jsonl",
+      "bytes": 39001,
+      "sha256": "dcfc4e43289c75078240d2dffa8809c4f30670409bd2bb9876a05b50ce60a904"
+    },
+    {
+      "kind": "initial validation artifact; retained in place",
+      "source": "/home/jnlngx10/phd-research/repos/project_aura/artifacts/live-streaming-2026-10-17/gpu-availability-r02/input.pcm",
+      "preserved_path": "/home/jnlngx10/phd-research/repos/project_aura/artifacts/live-streaming-2026-10-17/gpu-availability-r02/input.pcm",
+      "bytes": 238080,
+      "sha256": "b0c535dedfac1c478fe3e52b001e692d57451ca012e33e77ef252c87724d832c"
+    },
+    {
+      "kind": "initial validation artifact; retained in place",
+      "source": "/home/jnlngx10/phd-research/repos/project_aura/artifacts/live-streaming-2026-10-17/gpu-availability-r02/input.wav",
+      "preserved_path": "/home/jnlngx10/phd-research/repos/project_aura/artifacts/live-streaming-2026-10-17/gpu-availability-r02/input.wav",
+      "bytes": 237998,
+      "sha256": "89d95142df38e13a911800ee38bb7b0b68e7dc61944aac9173b9e97ad376f213"
+    },
+    {
+      "kind": "initial validation artifact; retained in place",
+      "source": "/home/jnlngx10/phd-research/repos/project_aura/artifacts/live-streaming-2026-10-17/gpu-availability-r02/receipt.json",
+      "preserved_path": "/home/jnlngx10/phd-research/repos/project_aura/artifacts/live-streaming-2026-10-17/gpu-availability-r02/receipt.json",
+      "bytes": 4823,
+      "sha256": "4993b491d7f32655266e6e68e9f70dbe6de7b58cd9af3ee779d4ecdc00caef58"
+    },
+    {
+      "kind": "initial validation artifact; retained in place",
+      "source": "/home/jnlngx10/phd-research/repos/project_aura/artifacts/live-streaming-2026-10-17/gpu-availability-r02/recording.m4a",
+      "preserved_path": "/home/jnlngx10/phd-research/repos/project_aura/artifacts/live-streaming-2026-10-17/gpu-availability-r02/recording.m4a",
+      "bytes": 70427,
+      "sha256": "b91d6f4f75d92985126c4fcf52f93c78957ccc7fd717373dc615bd996967ba89"
+    },
+    {
+      "kind": "initial validation artifact; retained in place",
+      "source": "/home/jnlngx10/phd-research/repos/project_aura/artifacts/live-streaming-2026-10-17/gpu-availability-r02/requests.jsonl",
+      "preserved_path": "/home/jnlngx10/phd-research/repos/project_aura/artifacts/live-streaming-2026-10-17/gpu-availability-r02/requests.jsonl",
+      "bytes": 708,
+      "sha256": "a98f7f4bb77da14802da4360ce1ca729377a41b3403d6760d57c74c8236c6c5e"
+    },
+    {
+      "kind": "initial validation artifact; retained in place",
+      "source": "/home/jnlngx10/phd-research/repos/project_aura/artifacts/live-streaming-2026-10-17/gpu-availability-r02/service.log",
+      "preserved_path": "/home/jnlngx10/phd-research/repos/project_aura/artifacts/live-streaming-2026-10-17/gpu-availability-r02/service.log",
+      "bytes": 256,
+      "sha256": "bc9d330ecc7ae8ed6007b554ce927b531ee284f7efbc0d4819aee378cbe07a91"
+    },
+    {
+      "kind": "initial validation artifact; retained in place",
+      "source": "/home/jnlngx10/phd-research/repos/project_aura/artifacts/live-streaming-2026-10-17/gpu-availability-r02/session.json",
+      "preserved_path": "/home/jnlngx10/phd-research/repos/project_aura/artifacts/live-streaming-2026-10-17/gpu-availability-r02/session.json",
+      "bytes": 4280,
+      "sha256": "cb368e1b035c62e3394bfd9bdd7ace331dbbc44639266ac0ada2975b06823598"
+    },
+    {
+      "kind": "initial validation artifact; retained in place",
+      "source": "/home/jnlngx10/phd-research/repos/project_aura/artifacts/live-streaming-2026-10-17/gpu-availability-r02/transcript.txt",
+      "preserved_path": "/home/jnlngx10/phd-research/repos/project_aura/artifacts/live-streaming-2026-10-17/gpu-availability-r02/transcript.txt",
+      "bytes": 180,
+      "sha256": "76b939311cca22fec662af0839e020cd3fcbdf8b56ecc00e74ea822ddba0bbe3"
+    },
+    {
+      "kind": "initial validation artifact; retained in place",
+      "source": "/home/jnlngx10/phd-research/repos/project_aura/artifacts/live-streaming-2026-10-17/validation.json",
+      "preserved_path": "/home/jnlngx10/phd-research/repos/project_aura/artifacts/live-streaming-2026-10-17/validation.json",
+      "bytes": 2579,
+      "sha256": "a24102f3653e92c048fbd1383763fef0f717dfc3b89030c6ce53415749b45450"
+    }
+  ]
+}

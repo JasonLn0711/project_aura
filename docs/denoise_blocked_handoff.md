@@ -1,5 +1,7 @@
 # Denoise Blocked Handoff
 
+> Audio-processing update, 2026-10-17: the [RE-USE C4 architecture](architecture/reuse-c4.md) supersedes the selectable enhancement profiles and ClearVoice integration described below. Earlier dated decisions and evaluation evidence are preserved as history.
+
 > September 7, 2026: See the [current transcription update](transcription-front-end-2026-09-07.md) for summary retirement, repaired punctuation, live VAD, and evaluation candidates. The dated evidence below retains its original scope.
 
 Date: 2026-06-23

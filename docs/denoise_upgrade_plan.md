@@ -1,5 +1,7 @@
 # Denoise Upgrade Plan
 
+> Audio-processing update, 2026-10-17: the [RE-USE C4 architecture](architecture/reuse-c4.md) supersedes the selectable enhancement profiles and ClearVoice integration described below. Earlier dated decisions and evaluation evidence are preserved as history.
+
 ## Operating update — 2026-09-08
 
 The requested product default is Light; Off remains selectable. The current

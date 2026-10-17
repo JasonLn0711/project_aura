@@ -1,10 +1,12 @@
 # Shared GUI, terminal, and SSH sessions
 
+> Audio-processing update, 2026-10-17: the [RE-USE C4 architecture](architecture/reuse-c4.md) supersedes the selectable enhancement profiles and ClearVoice integration described below. Earlier dated decisions and evaluation evidence are preserved as history.
+
 AURA now runs one session service per operating-system account. The desktop and
 terminal use `aura.sdk.AuraClient` for the same sessions, settings, revision
 checks, exports, and recording controls. Closing a client detaches it. An
-explicit Stop finalizes the recording. This implementation belongs to the
-Python `project_aura` repository.
+explicit Stop finalizes the recording. The Python service and Rust capture helper belong to the
+`project_aura` repository.
 
 The GUI banner, window title, footer, CLI welcome, and `aura --version` share
 `aura.metadata.__version__`. The repository bump script synchronizes package,
@@ -328,9 +330,10 @@ manual editor text stays in `transcript.txt`.
 
 Client capture retains a local recovery spool as well as the server's accepted
 journal. This costs disk space and preserves audio across a broken connection.
-A disconnected producer leaves an explicit paused/recoverable state; Resume
-opens a fresh capture interval. Historical audio is available for explicit
-refinement rather than being silently replayed into a new live stream.
+The legacy Python producer pauses on disconnect. The Rust producer uses the
+negotiated replay contract below to preserve the current recording across
+network interruptions. Historical completed recordings still require explicit
+recovery or refinement.
 
 ## Data and recovery
 
@@ -679,3 +682,113 @@ future short-recording playback/download acceptance check.
 The [October 13 decision and cleanup receipt](audio-retention-2026-10-13.md) records
 the adopted scope, aggregate reclaimed space, integration choices and deferred
 activation gate.
+
+
+## Linux native capture and reconnect delivery
+
+The Linux CLI and desktop default to Rust capture. The Python service owns
+SQLite sessions, transcript revisions, inference jobs, and exports. One
+supervised Python child owns the GPU model; Rust owns capture and delivery.
+Breeze continues to use CTranslate2's C++/CUDA engine. CPU-only clients never
+load ASR weights. Parakeet's existing CUDA and precision contract is preserved.
+
+### Installation and compatibility
+
+Use `make setup-client` for a dedicated ARM64 or amd64 client checkout and
+`make setup-app` for the application. Both install the native helper. Source
+builds require Rust 1.99.1; `make build-capture check-capture` builds and checks
+it. CI builds Linux binaries on ARM64 and amd64 and attaches checksums. Client
+runtime dependencies are Python's base package, PulseAudio/PipeWire's `pactl`
+and `parec`, and OpenSSH for remote connections. Desktop clients also use the
+`gui` extra. The Python wheel remains separate from the native executable.
+
+`AURA_CAPTURE_BINARY` selects an explicit executable. Otherwise AURA checks
+beside its Python interpreter, PATH, and the checkout's release build. The
+helper's initialization and audio protocol versions are checked before use.
+An older service remains compatible with protocol-v1 clients; Rust recording
+requires the advertised `audio_stream_v2` capability. Select
+`--capture-backend python` explicitly for the legacy producer.
+
+The current GX10 CTranslate2 wheel is a local CUDA 13 build with a checked
+receipt and interpreter-specific shared-library paths. `scripts/setup_gpu_runtime.py`
+checks its hash and backend without inference. `--restore` restores that
+reviewed wheel; `--sync` synchronizes application extras first. These mutations
+require the account's AURA service to be stopped. The wheel alone cannot
+activate another ARM64 host. The normal amd64 server profile retains its CUDA
+libraries. Backend capability checks, model loading, and real inference remain
+separate readiness layers.
+
+### Durable delivery
+
+Capture uses mono PCM16 at 16 kHz, in 480-sample frames. Mixed recording retains
+the existing source balance and headroom rules. The helper opens explicit
+PulseAudio sources, journals complete frames locally, and keeps file handles
+open while forwarding. Credentials reach the helper through a private pipe;
+OpenSSH continues to own remote authentication and host verification.
+
+Protocol-v2 `audio.open` adds `stream_version=2` and a persistent `producer_id`
+to the existing session and track arguments. It returns the current input
+sequence and connection generation. Binary messages contain a little-endian
+64-bit first-frame sequence followed by one to four frames in frame-major,
+then declared-track order. Each track contributes 960 bytes per frame. At most
+32 frames are unacknowledged. Partial packets flush within 120 ms and at
+control boundaries. A cumulative response reports the next durable sequence.
+PCM synchronization precedes committing that cursor. Identical replay is
+acknowledged without appending; conflicting bytes and sequence gaps fail.
+
+`audio.status` accepts captured/sent sequence counters and returns a compact
+state snapshot. `audio.finish` carries `action=pause|stop` and the final
+sequence; every preceding frame must be accepted before finalization. A stale
+connection generation cannot append audio or disconnect its replacement.
+
+The local spool remains under
+`capture_sources/SESSION_ID/native/`, with a private manifest and frame journal.
+An exclusive spool lock prevents competing local helpers. The service owns
+its received track journals and durable cursor. Existing audio-retention
+rules still govern the completed M4A; local source spools remain available
+for recovery and are not silently removed.
+
+### Speech detection and empty transcripts
+
+Live capture uses Silero with a sustained WebRTC speech guard. When Silero
+rejects a frame, 300 ms of continuous WebRTC speech detection above the
+minimum energy gate can open a segment; the 320 ms pre-roll retains its onset.
+Sessions that use the guard report `silero-v6+webrtc-guard`. This fallback can
+admit additional non-speech material and needs separate accuracy evaluation.
+
+After ten seconds without detected speech, the CLI and desktop distinguish
+silent input from received audio that has not reached ASR. Capturing audio and
+reaching `ready` do not establish that a transcript was produced. Empty completed
+sessions can use `/recover SESSION_ID` to re-segment retained M4A audio with
+the current detector. Existing text and completed chunk jobs are preserved.
+
+### Interruptions and controls
+
+During a network outage, capture continues locally and reconnects with capped
+backoff. The supervisor renews SSH forwarding and service credentials when
+needed. A scheduled stop is also enforced by the helper while disconnected.
+An explicit remote Pause or Stop takes effect at the capture device when the
+connection returns; that interval remains in the local spool. Closing the UI
+continues to detach. Sending SIGINT to the helper stops local capture and
+allows pending delivery to finish when connectivity returns.
+
+Source failures or less than 1 GiB of available spool storage stop capture
+with an error and preserve existing audio. Capture, upload, and transcription
+progress remain distinct. A disconnected service reports upload backlog as
+unknown rather than presenting an old counter as current.
+
+Service restart reconciles complete journal frames and re-segments the
+unqueued suffix. Existing jobs and human edits remain intact. Stop intent
+survives a producer disconnect. Deadline handling runs independently of the
+model worker, and a stuck worker is terminated after the configurable safety
+watchdog; its retained audio remains available for recovery.
+
+### Validation
+
+The [October 17 packet](../artifacts/live-streaming-2026-10-17/README.md)
+separates Python/Rust regression checks, synthetic capture/transport resource
+measurements, and real Breeze CUDA availability. The real check uses an
+isolated virtual audio sink with public audio, never the user's microphone or
+system monitor. Physical microphone acceptance and physical amd64-to-DGX
+streaming remain separate target-machine checks. Accuracy, model ranking,
+and ASR latency are not evaluated by this work.

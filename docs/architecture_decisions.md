@@ -1,5 +1,7 @@
 # Architecture Decisions
 
+> Audio-processing update, 2026-10-17: the [RE-USE C4 architecture](architecture/reuse-c4.md) supersedes the selectable enhancement profiles and ClearVoice integration described below. Earlier dated decisions and evaluation evidence are preserved as history.
+
 ## Current shared-session architecture — 2026-09-08
 
 The active implementation is documented in [Shared sessions](shared-sessions-2026-09-08.md).
