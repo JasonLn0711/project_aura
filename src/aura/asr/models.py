@@ -144,18 +144,35 @@ def load_model(key):
         raise ValueError("Unknown ASR model")
     from aura.system.cuda import preload_cuda_runtime_libraries
     ready, detail = preload_cuda_runtime_libraries()
-    if not ready:
-        raise RuntimeError(f"RTX/CUDA activation required: {detail}")
+    import ctranslate2
+    try:
+        # Ask the installed backend: native builds can use CUDA 13, while
+        # the legacy library preloader checks CUDA 12 wheel names.
+        ctranslate2.get_supported_compute_types("cuda")
+    except (RuntimeError, ValueError) as exc:
+        if "not compiled with CUDA" in str(exc):
+            raise RuntimeError(
+                "Breeze requires a CUDA-enabled CTranslate2 build for this platform. "
+                f"The installed CTranslate2 {ctranslate2.__version__} has no CUDA support. "
+                "Install a GPU build matching the host architecture and CUDA toolkit; "
+                "installing CUDA libraries alone cannot enable this CPU-only build. "
+                "CPU fallback is disabled."
+            ) from exc
+        context = f" {detail}" if not ready else ""
+        raise RuntimeError(f"RTX/CUDA activation required: {exc}.{context}") from exc
     from faster_whisper import WhisperModel
     return WhisperModel(MODEL_ID, device="cuda", compute_type="int8", local_files_only=True)
 
 
-def runtime_receipt(key):
+def runtime_receipt(key, model=None):
     from importlib.metadata import version
+    import platform
     if key == PARAKEET:
         return dict(worker_pid=os.getpid(), asr_model=key, model=PARAKEET_ID, revision=PARAKEET_REVISION, device="cuda",
                     compute_type="float32", backend="nemo", backend_version=version("nemo-toolkit"),
                     torch_version=version("torch"), attention="rel_pos_local_attn", attention_context=[128, 128],
                     subsampling_chunking_factor=1, batch_size=1, num_workers=0)
     return dict(worker_pid=os.getpid(), asr_model="breeze", model=MODEL_ID, device="cuda", compute_type="int8",
+                effective_compute_type=getattr(getattr(model, 'model', None), 'compute_type', None),
+                architecture=platform.machine(), ctranslate2_version=version('ctranslate2'),
                 backend="faster-whisper", backend_version=version("faster-whisper"))

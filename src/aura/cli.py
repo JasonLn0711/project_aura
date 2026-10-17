@@ -54,12 +54,15 @@ def parser():
                        "capture": "Run client audio capture"}[command]
         sub = subs.add_parser(command, help=description)
         sub.add_argument("session_id")
+        if command == "capture":
+            sub.add_argument("--capture-backend", choices=("rust", "python"), default="rust" if sys.platform == "linux" else "python")
     for command in ("record", "transcribe", "schedule"):
         sub = subs.add_parser(command, help={"record": "Start recording", "transcribe": "Transcribe an audio file",
                                              "schedule": "Schedule a recording"}[command])
         if command == "transcribe":
             sub.add_argument("path")
         else:
+            sub.add_argument("--capture-backend", choices=("rust", "python"), default="rust" if sys.platform == "linux" else "python")
             sub.add_argument("--source", choices=("microphone", "system", "system_microphone"), default="system_microphone")
             sub.add_argument("--capture-location", choices=("server", "client"), default="server")
             sub.add_argument("--consent", action="store_true", help=argparse.SUPPRESS)
@@ -74,7 +77,7 @@ def parser():
         if command in ("record", "schedule"):
             sub.add_argument("--stop-at", required=command == "schedule", help="Stop capture at an ISO 8601 time with timezone")
         sub.add_argument("--title", default="Meeting")
-        sub.add_argument("--profile", choices=("off", "light", "medium", "far-speaker", "rescue-offline"), default=None)
+        sub.add_argument("--profile", default=None, help="Removed; omit this option to use NVIDIA RE-USE")
         sub.add_argument("--model", choices=MODEL_KEYS, default=None)
         sub.add_argument("--language", choices=("zh", "en", "auto"), default=None)
         sub.add_argument("--hotwords-file", type=Path)
@@ -86,12 +89,14 @@ def parser():
     return p
 
 
-def start_client_capture(session_id, ssh=None):
+def start_client_capture(session_id, ssh=None, backend=None):
     from aura.sdk import connection_file
     command = [sys.executable, "-m", "aura.cli"]
     if ssh:
         command += ["--ssh", ssh]
     command += ["capture", session_id]
+    if backend:
+        command += ["--capture-backend", backend]
     root = connection_file().parent
     root.mkdir(mode=0o700, parents=True, exist_ok=True)
     with (root / "capture.log").open("ab") as log:
@@ -184,7 +189,7 @@ def diagnostics(client, host=None):
     return dict(client_version=__version__, service_version=service_version or "unknown",
                 connection="connected", host=host or client.ssh or "local service",
                 version_status="unknown" if not service_version else "matched" if service_version == __version__ else "mismatch",
-                capabilities={k: capabilities[k] for k in ("model_control", "recover", "asr_models", "protocol", "ffmpeg", "profiles", "capture_format", "single_owner", "deepfilternet", "clearvoice") if k in capabilities},
+                capabilities={k: capabilities[k] for k in ("model_control", "recover", "asr_models", "protocol", "ffmpeg", "profiles", "capture_format", "single_owner", "enhancement_strategy", "enhancement_backends") if k in capabilities},
                 diagnostics=capabilities.get("diagnostics", {}),
                 guidance="Finish active recordings and jobs before restarting an older service. Device capture requires its own check.")
 
@@ -289,7 +294,7 @@ def execute(client, args, *, on_progress=None):
         if args.model is not None:
             options["asr_model"] = args.model
         if args.profile is not None:
-            options["profile"] = args.profile
+            raise ValueError("--profile has been removed. Omit it to use NVIDIA RE-USE.")
         if args.language is not None:
             options["language"] = None if args.language == "auto" else args.language
         if args.hotwords_file:
@@ -302,7 +307,13 @@ def execute(client, args, *, on_progress=None):
                 value = getattr(args, argument)
                 if value is not None:
                     options[option] = value
-            values.update(source=args.source, capture_location=args.capture_location)
+            values.update(source=args.source, capture_location=args.capture_location, capture_backend=args.capture_backend)
+            if args.capture_backend == "rust":
+                if not client.request("capabilities").get("audio_stream_v2"):
+                    raise RuntimeError("The running service lacks Rust capture support. Finish active work, then restart the service from the updated installation.")
+                if args.capture_location == "client":
+                    from aura.native_capture import preflight
+                    preflight(args.source)
         else:
             values["path"] = client.upload(args.path, on_progress=on_progress)
     if command == "schedule":
@@ -310,7 +321,7 @@ def execute(client, args, *, on_progress=None):
     result = client.request(command, values)
     show(result, args.json)
     if command == "record" and args.capture_location == "client":
-        start_client_capture(result["id"], args.ssh)
+        start_client_capture(result["id"], args.ssh, args.capture_backend)
     if command in ("record", "transcribe") and not args.detach:
         return attach(client, result["id"], args.json)
     return result if command in ("record", "transcribe") else 0
@@ -320,7 +331,7 @@ def interactive(client, ssh=None, initial=None, palette='slate'):
     import queue
     import shutil
     from prompt_toolkit import PromptSession
-    from aura.completion import WorkspaceCompleter
+    from aura.completion import WorkspaceCompleter, workspace_key_bindings
     from prompt_toolkit.patch_stdout import patch_stdout
     from prompt_toolkit import print_formatted_text
     from prompt_toolkit.formatted_text import FormattedText
@@ -337,6 +348,7 @@ def interactive(client, ssh=None, initial=None, palette='slate'):
     completer = WorkspaceCompleter(parser(), commands)
     view = TerminalStatus()
     prompt = PromptSession(completer=completer, complete_while_typing=False,
+        key_bindings=workspace_key_bindings(),
         bottom_toolbar=lambda: view.toolbar(*shutil.get_terminal_size()), refresh_interval=.25,
         style=terminal_style(palette), color_depth=terminal_color_depth())
     selected = {"id": None, "text": "", "state": "", "error": ""}
@@ -525,7 +537,10 @@ def main(argv=None):
             from aura.app import main as gui
             return gui()
         if args.command == "capture":
-            from aura.producer import capture
+            if args.capture_backend == "rust":
+                from aura.native_capture import capture
+            else:
+                from aura.producer import capture
             capture(args.session_id, args.ssh)
             return 0
         if args.command is None and not args.json and not (sys.stdin.isatty() and sys.stdout.isatty()):

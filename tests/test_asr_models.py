@@ -8,10 +8,15 @@ from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
 from aura.asr.models import PARAKEET, parakeet_segments
-from aura.session_core import SessionCore, options_for
+from aura.session_core import options_for
+from reuse_fixtures import SessionCore
 
 
 class AsrModelsTests(unittest.TestCase):
+    def setUp(self):
+        from reuse_fixtures import IdentityReuseWorker
+        self.enterContext(patch('aura.audio.reuse.ReuseWorker', IdentityReuseWorker))
+
     def test_model_defaults_preserve_breeze_preferences(self):
         prefs = dict(language="zh", hotwords="AURA", prompt="中文提示", punctuation=True)
         selected = options_for({"asr_model": PARAKEET}, prefs)
@@ -117,7 +122,7 @@ class AsrModelsTests(unittest.TestCase):
     def test_cli_model_reaches_shared_service(self):
         from aura.cli import parser, execute
         client = MagicMock()
-        client.request.return_value = {"id": "test", "state": "starting", "title": "Meeting"}
+        client.request.return_value = {"id": "test", "state": "starting", "title": "Meeting", "audio_stream_v2": True}
         args = parser().parse_args(["record", "--model", PARAKEET, "--detach"])
         with patch("aura.cli.show"):
             execute(client, args)
@@ -155,7 +160,7 @@ class AsrModelsTests(unittest.TestCase):
         order.attach_mock(first, "first")
         factory = MagicMock(side_effect=[first, second])
         order.attach_mock(factory, "factory")
-        with patch("aura.session_core.concurrent.futures.ProcessPoolExecutor", factory):
+        with patch("aura.worker.InferenceWorker", factory):
             core._execute("file", {"options": {}})
             core._execute("file", {"options": {}})
             self.assertEqual(factory.call_count, 1)

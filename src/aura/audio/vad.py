@@ -44,6 +44,10 @@ class SileroStreamVAD:
         self.pending = np.empty(0, dtype=np.float32)
         self.active = False
         self.probability = 0.0
+        import webrtcvad
+        self.secondary = webrtcvad.Vad(3)
+        self.secondary_samples = 0
+        self.guard_used = False
 
     def is_speech(self, pcm: bytes, sample_rate: int) -> bool:
         if sample_rate != SAMPLE_RATE or len(pcm) % 2:
@@ -59,7 +63,17 @@ class SileroStreamVAD:
             self.context = frame[-64:].copy()
             self.probability = float(np.asarray(prediction).reshape(-1)[0])
             self.active = self.probability >= (self.release_threshold if self.active else self.threshold)
-        return self.active
+        # Require sustained independent speech evidence before admitting a
+        # Silero false negative. The 320 ms pre-roll retains this onset.
+        secondary = False
+        if len(samples) in (160, 320, 480):
+            secondary = self.secondary.is_speech(pcm, sample_rate)
+        rms = float(np.sqrt(np.mean(samples ** 2))) if len(samples) else 0.0
+        self.secondary_samples = self.secondary_samples + len(samples) if secondary and rms >= 80 / 32768 else 0
+        guarded = self.secondary_samples >= int(0.3 * SAMPLE_RATE)
+        if guarded and not self.active:
+            self.guard_used = True
+        return self.active or guarded
 
 
 class SpeechIntervals:

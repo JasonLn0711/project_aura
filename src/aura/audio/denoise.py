@@ -1,7 +1,6 @@
 from dataclasses import dataclass
 
 import numpy as np
-import noisereduce as nr
 from pydub import AudioSegment
 
 from aura.config import SAMPLE_RATE
@@ -70,6 +69,7 @@ def reduce_noise_safely(
     n_fft = min(1024, int(audio_np.size))
     hop_length = max(1, n_fft // 4)
 
+    import noisereduce as nr  # Historical evaluation only; not a server dependency.
     return nr.reduce_noise(
         y=audio_np,
         sr=sample_rate,

@@ -1,7 +1,7 @@
 import json
 import tempfile
 import unittest
-from aura.session_core import SessionCore
+from reuse_fixtures import SessionCore
 
 
 class RecordingProgressTests(unittest.TestCase):

@@ -13,15 +13,15 @@ license-files = ["LICENSE"]
 authors = [
   { name = "Jason Chia-Sheng Lin" }
 ]
-dependencies = ["websockets>=15,<16"]
+dependencies = ["websockets>=15,<16", "prompt-toolkit>=3,<4"]
 
 [project.optional-dependencies]
+# Retained for compatibility with existing installation commands.
 cli = ["prompt-toolkit>=3,<4"]
 capture = ["numpy>=2.0", "pyaudio>=0.2.14"]
 gui = ["pyqt6>=6.10", "pyqtgraph>=0.14", "qt-material>=2.17"]
 server = [
   "faster-whisper>=1.2.1",
-  "noisereduce>=3.0.3",
   "numpy>=2.0",
   "nvidia-cublas-cu12==12.8.4.1; platform_system == 'Linux' and platform_machine == 'x86_64'",
   "nvidia-cudnn-cu12==9.19.0.56; platform_system == 'Linux' and platform_machine == 'x86_64'",
@@ -49,6 +49,7 @@ punctuation = [
   "transformers>=4.55",
 ]
 benchmark = [
+  "noisereduce>=3.0.3", # Historical evaluation baselines only.
   "huggingface-hub>=0.34",
   "pyarrow>=18.0",
 ]

@@ -10,7 +10,7 @@ from aura.ui.transcription_tab import TranscriptionTab, safe_recording_suffix, e
 
 def snapshot(**changes):
     return dict(id='test-session', title='Meeting', state='recording', source='microphone', capture_location='server',
-                options={'profile':'light'}, transcript='原始文字', revision=1, **changes)
+                options={'profile':'reuse-v1'}, transcript='原始文字', revision=1, **changes)
 
 
 class UiStateTests(unittest.TestCase):
@@ -53,7 +53,7 @@ class UiStateTests(unittest.TestCase):
         self.assertEqual(self.tab.version_banner.text(), f"AURA v{__version__}")
         self.assertIsInstance(self.tab.text_area, QPlainTextEdit)
         self.assertFalse(hasattr(self.tab, "check_recording_consent"))
-        self.assertEqual(self.tab.profile.currentData(), 'light')
+        self.assertEqual(self.tab.profile.currentData(), 'reuse-v1')
         self.tab.start_recording_session()
         command, args = self.worker.submit.call_args.args
         self.assertEqual(command, 'record')

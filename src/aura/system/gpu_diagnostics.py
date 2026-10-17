@@ -7,7 +7,7 @@ import shutil
 import subprocess
 from dataclasses import dataclass
 
-from aura.system.cuda import preload_cuda_runtime_libraries
+from aura.system.cuda import probe_cuda_backend
 from aura.system.platform import detect_runtime_platform, platform_cuda_guidance
 
 
@@ -127,7 +127,7 @@ def collect_cuda_library_status() -> tuple[tuple[str, bool, str], ...]:
 
 def collect_gpu_diagnostics() -> GpuDiagnostics:
     runtime = detect_runtime_platform()
-    runtime_ready, runtime_detail = preload_cuda_runtime_libraries()
+    runtime_ready, runtime_detail = probe_cuda_backend()
     cuda_libraries = collect_cuda_library_status()
     if runtime_ready:
         cuda_libraries = tuple(

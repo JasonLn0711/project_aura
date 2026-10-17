@@ -21,6 +21,7 @@ class GpuPolicyTests(unittest.TestCase):
 
         with (
             patch("aura.asr.threads.preload_cuda_runtime_libraries", return_value=(False, "missing cublas")),
+            patch("aura.system.cuda.probe_cuda_backend", return_value=(False, "missing cublas")),
             patch("aura.asr.threads.WhisperModel") as whisper_model,
         ):
             loader.run()

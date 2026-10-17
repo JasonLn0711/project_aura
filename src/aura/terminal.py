@@ -193,7 +193,7 @@ class TerminalStatus:
 
     def has_warning(self):
         s = self.session or {}
-        return bool(not self.connected or s.get('error') or s.get('state') in ('failed', 'recoverable') or any(
+        return bool(not self.connected or s.get('error') or s.get('capture_warning') or s.get('state') in ('failed', 'recoverable') or any(
             issue['status'] == 'pending' for issue in s.get('asr_issues', [])))
 
     def lines(self, width=80):
@@ -214,6 +214,19 @@ class TerminalStatus:
         queued = f'{work["queued"]} pending · {work["running"]} processing' if work else 'queue unavailable'
         lines = [('class:heading', f'{face} {state} {pulse} Audio {seconds//60:02d}:{seconds%60:02d}'),
                  ('class:muted', queued)]
+        if s.get('stream') and state in ('recording', 'pausing', 'paused', 'stopping'):
+            if not s.get('producer_connected'):
+                lines.append(('class:error', 'Capture offline · local audio retained · upload backlog unknown'))
+            elif s.get('capture_progress'):
+                progress = s['capture_progress']
+                lines.append(('class:muted', f'Capture {progress["captured_frames"]} frames · Upload {progress["pending_upload_frames"]} pending'))
+        if s.get('enhancement'):
+            enhancement = s['enhancement']
+            offline = enhancement.get('offline_progress')
+            if state == 'exporting' and offline:
+                lines.append(('class:muted', 'Offline RE-USE ' + bar(offline['completed_samples'], offline['total_samples'])))
+            elif state in ('recording', 'pausing', 'paused', 'stopping', 'draining'):
+                lines.append(('class:muted', f"Real-time RE-USE · {enhancement.get('processed_samples', 0)} samples processed · {enhancement.get('backlog_samples', 0)} pending"))
         if self.model_status:
             lines.append(('class:muted', self.model_status))
         if state == 'draining' and work:
@@ -223,6 +236,8 @@ class TerminalStatus:
         gaps = sum(i["status"] == "pending" for i in s.get("asr_issues", []))
         if gaps:
             lines.append(('class:error', f'{gaps} transcription gaps · audio preserved · /inspect · /recover after stop'))
+        if s.get('capture_warning'):
+            lines.append(('class:error', safe_text(s['capture_warning'])))
         if s.get('error'):
             lines.append(('class:error', safe_text(s['error'])))
         if self.graphs and width >= 60:

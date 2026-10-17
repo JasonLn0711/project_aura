@@ -3965,11 +3965,13 @@ name = "project-aura-refactor"
 version = "1.18.0"
 source = { editable = "." }
 dependencies = [
+    { name = "prompt-toolkit" },
     { name = "websockets" },
 ]
 
 [package.optional-dependencies]
 benchmark = [
+    { name = "noisereduce" },
     { name = "huggingface-hub" },
     { name = "pyarrow" },
 ]
@@ -4010,7 +4012,6 @@ punctuation = [
 ]
 server = [
     { name = "faster-whisper" },
-    { name = "noisereduce" },
     { name = "numpy", version = "2.2.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
     { name = "numpy", version = "2.4.4", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
     { name = "nvidia-cublas-cu12", marker = "platform_machine == 'x86_64' and sys_platform == 'linux'" },
@@ -4029,12 +4030,13 @@ requires-dist = [
     { name = "huggingface-hub", marker = "python_full_version >= '3.12' and sys_platform == 'linux' and extra == 'parakeet'", specifier = ">=0.34" },
     { name = "huggingface-hub", marker = "extra == 'benchmark'", specifier = ">=0.34" },
     { name = "nemo-toolkit", extras = ["asr"], marker = "python_full_version >= '3.12' and sys_platform == 'linux' and extra == 'parakeet'", specifier = "==3.0.0" },
-    { name = "noisereduce", marker = "extra == 'server'", specifier = ">=3.0.3" },
+    { name = "noisereduce", marker = "extra == 'benchmark'", specifier = ">=3.0.3" },
     { name = "numpy", marker = "extra == 'capture'", specifier = ">=2.0" },
     { name = "numpy", marker = "extra == 'server'", specifier = ">=2.0" },
     { name = "nvidia-cublas-cu12", marker = "platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'server'", specifier = "==12.8.4.1" },
     { name = "nvidia-cudnn-cu12", marker = "platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'server'", specifier = "==9.19.0.56" },
     { name = "nvidia-npp-cu12", marker = "platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'server'", specifier = "==12.4.1.87" },
+    { name = "prompt-toolkit", specifier = ">=3,<4" },
     { name = "prompt-toolkit", marker = "extra == 'cli'", specifier = ">=3,<4" },
     { name = "pyannote-audio", marker = "extra == 'diarization'", specifier = ">=4.0" },
     { name = "pyarrow", marker = "extra == 'benchmark'", specifier = ">=18.0" },

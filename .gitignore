@@ -52,3 +52,8 @@ artifacts/asr-parakeet-availability/2026-*/
 
 # Owner-local lab vocabulary copied into the checkout for CLI use.
 /hotwords-labsync-*.txt
+
+# Isolated live streaming validation contains account-local service credentials.
+artifacts/live-streaming-*/**/service/
+artifacts/live-streaming-*/**/capture/
+artifacts/live-streaming-*/**/input.pcm

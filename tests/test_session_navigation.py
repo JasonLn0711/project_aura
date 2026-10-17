@@ -9,7 +9,7 @@ from unittest.mock import Mock, patch
 from aura.cli import diagnostics, execute, main, parser
 from aura.metadata import __version__
 from aura.sdk import AuraClient
-from aura.session_core import SessionCore
+from reuse_fixtures import SessionCore
 from aura.terminal import TerminalStatus
 
 

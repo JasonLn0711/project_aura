@@ -88,7 +88,7 @@ def main():
     assert 'Synthetic capture device unavailable' in text and 'Find session>' in text
     assert 'Service version:' in text and 'matched' in text
     assert text.count('測試逐字稿') >= 2, text[-3000:]
-    assert 'parakeet-tdt-0.6b-v2' in text and 'ASR:' in text and 'unloaded' in text and 'selects and preloads' in text
+    assert 'parakeet-tdt-0.6b-v2' in text and 'ASR:' in text and 'unloaded' in text and 'Preload the selected model' in text
     assert proc.returncode==0
     receipt.write_text(text,encoding='utf-8')
     print(f'PTY passed ({args.palette}): one garden welcome, concise ASR status, animation toggle, resize during partial input, searchable resume picker, arrows, cancellation, saved transcript, visible failure, Tab completion without execution, model switching/unload and clean exit; synthetic device/ASR.')
