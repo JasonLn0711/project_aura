@@ -1,0 +1,258 @@
+{
+  "method": "linear boundary interpolation and trapezoidal integral of sampled NVML power; compare with cumulative counter; no correction applied",
+  "interpretation": "Native power and energy readings disagree; root cause and external calibration not established. Physical energy comparisons remain uncalibrated.",
+  "rows": [
+    {
+      "run_id": "RUN-20261017-02-3900-B-r03-first",
+      "arm": "B",
+      "nvml_counter_j": 3077.255,
+      "sampled_power_integral_j": 2349.4555501499067,
+      "counter_to_power_integral_ratio": 1.309773662159157
+    },
+    {
+      "run_id": "RUN-20261017-02-3900-B-r03-resident",
+      "arm": "B",
+      "nvml_counter_j": 3017.122,
+      "sampled_power_integral_j": 2372.732766190769,
+      "counter_to_power_integral_ratio": 1.2715810406427464
+    },
+    {
+      "run_id": "RUN-20261017-02-2100-B-r01-first",
+      "arm": "B",
+      "nvml_counter_j": 3033.67,
+      "sampled_power_integral_j": 2349.1397122758253,
+      "counter_to_power_integral_ratio": 1.2913961584094154
+    },
+    {
+      "run_id": "RUN-20261017-02-2100-B-r01-resident",
+      "arm": "B",
+      "nvml_counter_j": 2881.633,
+      "sampled_power_integral_j": 2373.8221066783767,
+      "counter_to_power_integral_ratio": 1.2139212082880924
+    },
+    {
+      "run_id": "RUN-20261017-02-0300-B-r02-first",
+      "arm": "B",
+      "nvml_counter_j": 3041.635,
+      "sampled_power_integral_j": 2348.18494382541,
+      "counter_to_power_integral_ratio": 1.2953132196840067
+    },
+    {
+      "run_id": "RUN-20261017-02-0300-B-r02-resident",
+      "arm": "B",
+      "nvml_counter_j": 3088.928,
+      "sampled_power_integral_j": 2383.6656963696482,
+      "counter_to_power_integral_ratio": 1.2958729928884216
+    },
+    {
+      "run_id": "RUN-20261017-02-3900-B-r01-first",
+      "arm": "B",
+      "nvml_counter_j": 2948.751,
+      "sampled_power_integral_j": 2346.2399994197312,
+      "counter_to_power_integral_ratio": 1.2567985375448723
+    },
+    {
+      "run_id": "RUN-20261017-02-3900-B-r01-resident",
+      "arm": "B",
+      "nvml_counter_j": 3067.453,
+      "sampled_power_integral_j": 2382.3950641009333,
+      "counter_to_power_integral_ratio": 1.2875500987312503
+    },
+    {
+      "run_id": "RUN-20261017-02-0300-C-r02-v02-first",
+      "arm": "C",
+      "nvml_counter_j": 108.949,
+      "sampled_power_integral_j": 38.10942250590613,
+      "counter_to_power_integral_ratio": 2.85884678475816
+    },
+    {
+      "run_id": "RUN-20261017-02-0300-C-r02-v02-resident",
+      "arm": "C",
+      "nvml_counter_j": 99.55,
+      "sampled_power_integral_j": 53.157575015856594,
+      "counter_to_power_integral_ratio": 1.8727340359357028
+    },
+    {
+      "run_id": "RUN-20261017-02-3900-C-r02-v02-first",
+      "arm": "C",
+      "nvml_counter_j": 90.932,
+      "sampled_power_integral_j": 36.802184755412355,
+      "counter_to_power_integral_ratio": 2.4708315716671407
+    },
+    {
+      "run_id": "RUN-20261017-02-3900-C-r02-v02-resident",
+      "arm": "C",
+      "nvml_counter_j": 79.738,
+      "sampled_power_integral_j": 54.753643817673826,
+      "counter_to_power_integral_ratio": 1.4563049039352065
+    },
+    {
+      "run_id": "RUN-20261017-02-2100-B-r02-first",
+      "arm": "B",
+      "nvml_counter_j": 2884.987,
+      "sampled_power_integral_j": 2353.5423675053803,
+      "counter_to_power_integral_ratio": 1.2258062739095368
+    },
+    {
+      "run_id": "RUN-20261017-02-2100-B-r02-resident",
+      "arm": "B",
+      "nvml_counter_j": 3113.647,
+      "sampled_power_integral_j": 2392.581345949501,
+      "counter_to_power_integral_ratio": 1.3013756064224191
+    },
+    {
+      "run_id": "RUN-20261017-02-3900-C-r01-v02-first",
+      "arm": "C",
+      "nvml_counter_j": 118.873,
+      "sampled_power_integral_j": 36.11741289097924,
+      "counter_to_power_integral_ratio": 3.2912933259870885
+    },
+    {
+      "run_id": "RUN-20261017-02-3900-C-r01-v02-resident",
+      "arm": "C",
+      "nvml_counter_j": 99.437,
+      "sampled_power_integral_j": 53.54196261840143,
+      "counter_to_power_integral_ratio": 1.8571788394963553
+    },
+    {
+      "run_id": "RUN-20261017-02-0300-C-r03-v02-first",
+      "arm": "C",
+      "nvml_counter_j": 105.613,
+      "sampled_power_integral_j": 33.020491092032266,
+      "counter_to_power_integral_ratio": 3.1984079130029675
+    },
+    {
+      "run_id": "RUN-20261017-02-0300-C-r03-v02-resident",
+      "arm": "C",
+      "nvml_counter_j": 85.136,
+      "sampled_power_integral_j": 48.082873971613225,
+      "counter_to_power_integral_ratio": 1.7706096364011414
+    },
+    {
+      "run_id": "RUN-20261017-02-3900-C-r03-v02-first",
+      "arm": "C",
+      "nvml_counter_j": 100.046,
+      "sampled_power_integral_j": 37.81886885612151,
+      "counter_to_power_integral_ratio": 2.645399056767563
+    },
+    {
+      "run_id": "RUN-20261017-02-3900-C-r03-v02-resident",
+      "arm": "C",
+      "nvml_counter_j": 85.999,
+      "sampled_power_integral_j": 56.01337755099393,
+      "counter_to_power_integral_ratio": 1.5353296615921348
+    },
+    {
+      "run_id": "RUN-20261017-02-3900-B-r02-first",
+      "arm": "B",
+      "nvml_counter_j": 3083.268,
+      "sampled_power_integral_j": 2350.756177069339,
+      "counter_to_power_integral_ratio": 1.311606890615034
+    },
+    {
+      "run_id": "RUN-20261017-02-3900-B-r02-resident",
+      "arm": "B",
+      "nvml_counter_j": 2977.913,
+      "sampled_power_integral_j": 2389.2773907463197,
+      "counter_to_power_integral_ratio": 1.2463655377703184
+    },
+    {
+      "run_id": "RUN-20261017-02-2100-C-r03-v02-first",
+      "arm": "C",
+      "nvml_counter_j": 92.869,
+      "sampled_power_integral_j": 37.79593842295333,
+      "counter_to_power_integral_ratio": 2.4571158668096733
+    },
+    {
+      "run_id": "RUN-20261017-02-2100-C-r03-v02-resident",
+      "arm": "C",
+      "nvml_counter_j": 82.981,
+      "sampled_power_integral_j": 52.18277861215198,
+      "counter_to_power_integral_ratio": 1.5901989546542838
+    },
+    {
+      "run_id": "RUN-20261017-02-2100-C-r02-v02-first",
+      "arm": "C",
+      "nvml_counter_j": 85.142,
+      "sampled_power_integral_j": 35.60066622338448,
+      "counter_to_power_integral_ratio": 2.391584457036763
+    },
+    {
+      "run_id": "RUN-20261017-02-2100-C-r02-v02-resident",
+      "arm": "C",
+      "nvml_counter_j": 90.511,
+      "sampled_power_integral_j": 50.09472384721916,
+      "counter_to_power_integral_ratio": 1.8067970646179021
+    },
+    {
+      "run_id": "RUN-20261017-02-0300-B-r03-first",
+      "arm": "B",
+      "nvml_counter_j": 2971.269,
+      "sampled_power_integral_j": 2339.3256821338796,
+      "counter_to_power_integral_ratio": 1.2701390929413796
+    },
+    {
+      "run_id": "RUN-20261017-02-0300-B-r03-resident",
+      "arm": "B",
+      "nvml_counter_j": 3082.389,
+      "sampled_power_integral_j": 2390.2577687863673,
+      "counter_to_power_integral_ratio": 1.2895634271131589
+    },
+    {
+      "run_id": "RUN-20261017-02-0300-C-r01-v02-first",
+      "arm": "C",
+      "nvml_counter_j": 103.008,
+      "sampled_power_integral_j": 38.31090822010663,
+      "counter_to_power_integral_ratio": 2.6887381371433667
+    },
+    {
+      "run_id": "RUN-20261017-02-0300-C-r01-v02-resident",
+      "arm": "C",
+      "nvml_counter_j": 93.367,
+      "sampled_power_integral_j": 56.76836099601132,
+      "counter_to_power_integral_ratio": 1.6447013505737853
+    },
+    {
+      "run_id": "RUN-20261017-02-0300-B-r01-first",
+      "arm": "B",
+      "nvml_counter_j": 3012.96,
+      "sampled_power_integral_j": 2354.5563002094777,
+      "counter_to_power_integral_ratio": 1.2796296269203442
+    },
+    {
+      "run_id": "RUN-20261017-02-0300-B-r01-resident",
+      "arm": "B",
+      "nvml_counter_j": 3054.84,
+      "sampled_power_integral_j": 2382.8764864147033,
+      "counter_to_power_integral_ratio": 1.2819967872511675
+    },
+    {
+      "run_id": "RUN-20261017-02-2100-C-r01-v02-first",
+      "arm": "C",
+      "nvml_counter_j": 112.133,
+      "sampled_power_integral_j": 38.11290051913652,
+      "counter_to_power_integral_ratio": 2.9421271661992225
+    },
+    {
+      "run_id": "RUN-20261017-02-2100-C-r01-v02-resident",
+      "arm": "C",
+      "nvml_counter_j": 91.205,
+      "sampled_power_integral_j": 52.859517065150825,
+      "counter_to_power_integral_ratio": 1.7254224984232698
+    },
+    {
+      "run_id": "RUN-20261017-02-2100-B-r03-first",
+      "arm": "B",
+      "nvml_counter_j": 2975.594,
+      "sampled_power_integral_j": 2337.8303107184643,
+      "counter_to_power_integral_ratio": 1.272801531555786
+    },
+    {
+      "run_id": "RUN-20261017-02-2100-B-r03-resident",
+      "arm": "B",
+      "nvml_counter_j": 2813.998,
+      "sampled_power_integral_j": 2373.735106365859,
+      "counter_to_power_integral_ratio": 1.1854726302245977
+    }
+  ]
+}

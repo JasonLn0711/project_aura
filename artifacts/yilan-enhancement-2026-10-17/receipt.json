@@ -1,0 +1,87 @@
+{
+  "study": "STUDY-YILAN-001",
+  "experiment": "EXP-20261017-02-yilan-telemetry",
+  "dataset": "DATA-YILAN-pilot-v1",
+  "execution_status": "LIVE_FULL_COMPLETED",
+  "runtime_validity": {
+    "A": "valid_baseline",
+    "B": "valid_target_runtime",
+    "C": "valid_target_runtime",
+    "D": "not_run_in_this_experiment"
+  },
+  "gate_outcome": {
+    "formal_output_equivalence": "pass",
+    "telemetry_coverage": "pass",
+    "archive_integrity": "pass",
+    "physical_energy_calibration": "not_evaluated",
+    "ASR": "not_evaluated",
+    "full_recording_enhancement": "not_evaluated"
+  },
+  "counts": {
+    "formal_inferences": 36,
+    "diagnostic_inferences": 4,
+    "excluded_inferences": 4,
+    "failed_workers": 2,
+    "all_completed_inferences": 44
+  },
+  "decision": {
+    "human_selected_arm": "B",
+    "scope": "This recording and reviewed pilot",
+    "new_human_scores": false,
+    "production_default_changed": false,
+    "full_recording_processed": false
+  },
+  "local_evidence_seal": {
+    "files": 373,
+    "bytes": 2409031507,
+    "sha256sums_sha256": "82c92dee8c5d794f4439f5e951ea8f0e627d4e4a11ad0a22d0b658699569218a",
+    "sealed_at": "2026-10-17T14:11:01.524398+00:00"
+  },
+  "archive": {
+    "zip": "/home/jnclaw/Downloads/Claude_Meetup_Yilan_20261017_完整實驗紀錄.zip",
+    "bytes": 2275102931,
+    "members": 530,
+    "sha256": "721ad83b3f97b5288d2314323ec31fa4e64fe5d5e4118e3880192bc911a2a514",
+    "all_member_crc_and_sha256": "pass",
+    "sealed_source_checksum_precheck": "pass",
+    "completed_utc": "2026-10-17T14:21:20.800917+00:00"
+  },
+  "published_aggregate_files": [
+    {
+      "path": "analysis/summary.csv",
+      "sha256": "07b25ea12ae8629ef929ef29a0354133d2a0d7543b00436dcc71b1d63603923a",
+      "source": "local_outputs/denoise_eval/claude-yilan-20261017-telemetry/analysis/summary.csv"
+    },
+    {
+      "path": "analysis/summary.json",
+      "sha256": "c3d058d036294578233f1ae1611788d61b46572c7391e1eca1a7104b4f01bd23",
+      "source": "local_outputs/denoise_eval/claude-yilan-20261017-telemetry/analysis/summary.json"
+    },
+    {
+      "path": "analysis/energy-consistency.json",
+      "sha256": "64e78e9e522284c236694fef2b3ea51340af3df7f71497c0d0169f16acde8b8d",
+      "source": "local_outputs/denoise_eval/claude-yilan-20261017-telemetry/analysis/energy-consistency.json"
+    },
+    {
+      "path": "analysis/figures/comparison.svg",
+      "sha256": "62a14ead8c8b03d3a1436f6b15bd59f4d2aab8959169de71bce3cc007680188d",
+      "source": "local_outputs/denoise_eval/claude-yilan-20261017-telemetry/analysis/figures/comparison.svg"
+    },
+    {
+      "path": "analysis/figures/comparison.png",
+      "sha256": "e0dda43ead9ca40288aa773642a5b3492bccab3379e9e39754f3618d2e8d5f6f",
+      "source": "local_outputs/denoise_eval/claude-yilan-20261017-telemetry/analysis/figures/comparison.png"
+    },
+    {
+      "path": "analysis/figures/telemetry.svg",
+      "sha256": "1046220e2094206e3586d39e63c0ba09f16f925644bbe2e44eb9c58af2e5eeb9",
+      "source": "local_outputs/denoise_eval/claude-yilan-20261017-telemetry/analysis/figures/telemetry.svg"
+    },
+    {
+      "path": "analysis/figures/telemetry.png",
+      "sha256": "f2e23c012f62a8d81137fdc67dcd6c90800f25457ce4e05f7d44b04116a9dc0d",
+      "source": "local_outputs/denoise_eval/claude-yilan-20261017-telemetry/analysis/figures/telemetry.png"
+    }
+  ],
+  "custody": "Audio, model weights, raw telemetry, profiler traces, source quotations and full reports remain in the local sealed evidence and Downloads ZIP. Git stores aggregate evidence and routing only."
+}
