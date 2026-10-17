@@ -1,7 +1,7 @@
 # RE-USE redesign implementation audit
 
-Status: implementation and regression validation completed. No commit, push,
-release bump or publication. The availability packet records account-service
+October 17 status: implementation and regression validation completed before
+source publication. The October 18 handoff below records later Git integration. The availability packet records account-service
 activation separately from isolated validation.
 
 ## Source and ownership
@@ -110,3 +110,19 @@ The separate [Yilan listening experiment](../../yilan-enhancement-2026-10-17.md)
 retains its own source, human decision and full-length listening gate. Its
 research commits are preserved during integration; they do not establish
 ASR accuracy or replace this product availability evidence.
+
+Publication preparation retained implementation commit `b75963a`, documentation
+commit `12bea04`, and merge `a56ea1d`; all four upstream research commits through
+`24becfe` remain ancestors. Two denoise-document conflicts were resolved by
+retaining both the product update and separate listening study. The merged tree
+passed 399 regression tests, nine focused versioning tests and 102 relative-link
+checks. Planning validators passed with 44 grandfathered policy warnings and
+zero new warnings. Upstream generated SVGs contain existing trailing whitespace;
+those evidence files were preserved unchanged. The local delta against upstream
+and both working-tree whitespace checks pass.
+
+Detailed public-test traces remain owner-local and are explicitly ignored;
+aggregate receipts and audit inventories are versioned. Git publication uses
+the existing authenticated GitHub CLI helper per command and the latest
+repository author identity, without changing global Git settings. Planning's
+day/project notes retain the verified push receipt and exact published tips.

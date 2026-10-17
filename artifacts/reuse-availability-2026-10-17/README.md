@@ -54,7 +54,8 @@ sizes and SHA-256 checksums, including failed attempts. Logs were archived under
 `~/.local/share/project-aura/audit-archives/2026-10-17-reuse-redesign/`.
 [Working-tree inventory](working-tree-inventory.json) hashes the final dirty
 working tree, including preserved earlier work. It is not an exact source
-snapshot for earlier runs. No commit, release or publication was performed.
+snapshot for earlier runs. The October 17 validation did not publish source; the linked audit records
+the separately authorized October 18 Git closeout. No release tag was requested.
 
 Account-service activation is recorded separately in [activation.json](activation.json).
 
