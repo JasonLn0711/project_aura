@@ -1,5 +1,14 @@
 # Denoise Upgrade Plan
 
+## Separate listening experiment — 2026-10-17
+
+The [Yilan enhancement record](yilan-enhancement-2026-10-17.md) preserves a
+completed three-clip A/B/C experiment, the adopted RE-USE listening decision,
+and a sealed local archive. It does not execute the ASR preprocessing-effect
+study below or change product defaults. Historical candidate priorities remain
+dated; this recording's human choice is B, with further C/D testing deferred.
+
+
 ## Operating update — 2026-09-08
 
 The requested product default is Light; Off remains selectable. The current

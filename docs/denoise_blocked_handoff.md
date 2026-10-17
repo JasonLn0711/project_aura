@@ -1,5 +1,14 @@
 # Denoise Blocked Handoff
 
+## Separate listening experiment — 2026-10-17
+
+The [Yilan enhancement record](yilan-enhancement-2026-10-17.md) preserves a
+completed three-clip A/B/C experiment, the adopted RE-USE listening decision,
+and a sealed local archive. It does not execute the ASR preprocessing-effect
+study below or change product defaults. Historical candidate priorities remain
+dated; this recording's human choice is B, with further C/D testing deferred.
+
+
 > September 7, 2026: See the [current transcription update](transcription-front-end-2026-09-07.md) for summary retirement, repaired punctuation, live VAD, and evaluation candidates. The dated evidence below retains its original scope.
 
 Date: 2026-06-23
