@@ -3,6 +3,21 @@ import concurrent.futures
 import multiprocessing
 import os
 import threading
+import json
+from pathlib import Path
+
+
+def _export_progress(payload):
+    """Measured export work, never file timestamps or worker heartbeats."""
+    try:
+        directory = Path(payload['directory'])
+        manifest = json.loads((directory / 'session.json').read_text())
+        phase = {'offline': 0, 'encoding': 1, 'committed': 2}.get(manifest.get('enhancement_phase'), 0)
+        samples = int(manifest.get('enhancement_progress', {}).get('completed_samples', 0))
+        encoded = max((p.stat().st_size for p in directory.glob('.*.m4a')), default=0)
+        return phase, samples, encoded
+    except (OSError, ValueError, KeyError, TypeError):
+        return None
 
 
 def _run(pipe):
@@ -41,9 +56,16 @@ class InferenceWorker:
             self.pipe.send((kind, payload))
             import time
             deadline = time.monotonic() + timeout
+            progress = _export_progress(payload) if kind == 'export' else None
             while not self.pipe.poll(.1):
                 if self.closed.is_set() or not self.process.is_alive():
                     raise RuntimeError('Inference worker exited; retained audio can be recovered')
+                if kind == 'export':
+                    current = _export_progress(payload)
+                    if current is not None:
+                        if progress is not None and any(a > b for a, b in zip(current, progress)):
+                            deadline = time.monotonic() + timeout
+                        progress = current
                 if time.monotonic() >= deadline:
                     self.shutdown()
                     raise RuntimeError('Inference safety watchdog expired; retained audio can be recovered')
