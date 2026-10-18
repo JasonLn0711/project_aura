@@ -1,0 +1,44 @@
+{
+  "recorded_at": "2026-10-18T08:13:51.298764+00:00",
+  "phase": "local verification before requested Git publication",
+  "owner": "project_aura",
+  "canonical_closeout": "docs/audit-events/2026-10-18-c4-architecture/audit-event.md",
+  "planning_publication_receipt": "planning-everything-track/weeks/2026-W42/days/2026-10-18.md#aura-c4-2026-10-18",
+  "production_baseline_revision": "7c64a9f0de012dcbfb8398a0b7b3c36ed233a2d5",
+  "original_render_receipt_sha256": "1753a22a9cd804b047980db5e5249e54e2f60a3083f45e1f156feafa3e5556e7",
+  "original_validation_sha256": "04f0e8c567f94187dee820af5210b51e0b64e4360fc96a17bae02d830ab2e6e9",
+  "sealed_input_and_render_hashes_verified": 237,
+  "model_and_production_changes_since_render": false,
+  "publication_test_followup": "Restrict POSIX process-group timeout test to POSIX hosts; application and diagram inputs unchanged.",
+  "test_architecture_sha256": "4283e13a81f9f14d889a8823b6d7cb9a8974819bb86bcefa0dff47015771196d",
+  "regression": {
+    "python_tests_passed": 438,
+    "log_sha256": "577b335cbd41be9e31c9e50421bdf678c49a1c4e6dd8388a5bac8dc805ba9188",
+    "focused_versioning_passed": 9
+  },
+  "browser": {
+    "views_checked": 30,
+    "receipt_sha256": "3dc1ac0400b9ccb91aeae1827cd81e2e2a4baf2b1a9fd2f6661de4d3c5582a7f",
+    "reexecuted_for_publication": false,
+    "reason": "Rendered workspace and input/output hashes match the completed browser validation."
+  },
+  "planning": {
+    "repository_validation": "pass",
+    "grandfathered_warnings": 44,
+    "new_warnings": 0,
+    "knowledge_validation": "pass",
+    "metadata_notes": 181,
+    "catalog_entries": 181
+  },
+  "documentation": {
+    "status": "pass",
+    "markdown_files": 15,
+    "relative_links": 750,
+    "new_failures": 0,
+    "inherited_unavailable_paths_or_anchors": 65,
+    "git_diff_check": "pass"
+  },
+  "ci": "Source publication enables the workflow; actual GitHub status must be observed separately.",
+  "publication": "Requested; this pre-push receipt does not assert a push outcome. See Planning day receipt for actual commits and target verification.",
+  "private_custody": "No audio, transcripts, credentials, model weights, tool downloads or full diagnostic logs are part of this Git packet."
+}
