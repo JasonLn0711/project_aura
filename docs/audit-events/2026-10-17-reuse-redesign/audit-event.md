@@ -1,5 +1,9 @@
 # RE-USE redesign implementation audit
 
+Continuation: [October 18 speech-suppression incident](../2026-10-18-reuse-speech-guard/audit-event.md)
+records the later live guard, bounded recovery, native completion correction and
+remaining review gates. The October 17 counts below remain historical evidence.
+
 October 17 status: implementation and regression validation completed before
 source publication. The October 18 handoff below records later Git integration. The availability packet records account-service
 activation separately from isolated validation.

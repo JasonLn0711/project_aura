@@ -2,6 +2,10 @@
 
 > Audio-processing update, 2026-10-17: the [RE-USE C4 architecture](architecture/reuse-c4.md) supersedes the selectable enhancement profiles and ClearVoice integration described below. Earlier dated decisions and evaluation evidence are preserved as history.
 
+October 18 follow-up: [speech-suppression diagnosis and recovery](audit-events/2026-10-18-reuse-speech-guard/audit-event.md)
+records live-only speech protection, bounded repair and retained-audio completion.
+Offline RE-USE keeps its reference algorithm; Stop remains export-only.
+
 AURA now runs one session service per operating-system account. The desktop and
 terminal use `aura.sdk.AuraClient` for the same sessions, settings, revision
 checks, exports, and recording controls. Closing a client detaches it. An
@@ -641,6 +645,24 @@ full or unique-prefix IDs; `/recover` defaults to the attached session. The GUI
 provides “補轉錄缺段” and a Recovered text export choice. Old services receive a
 restart message through the additive `recover` capability. Restart only after
 active work ends; reopen clients to load updated controls.
+
+Updated RE-USE services also detect source speech that enhancement suppresses,
+including after earlier speech was transcribed successfully. `/inspect` exposes
+`enhancement.health` and source-sample-indexed `enhancement.gaps`. A model-state
+reset can restore new output while the historical gap remains pending. Capture
+and original-audio preservation continue; raw audio is never substituted for
+enhanced ASR input.
+
+After Stop, `/recover SESSION_ID --language zh` scans interior unqueued speech
+as well as the suffix, enhances only those intervals with fresh RE-USE state,
+and queues the resulting enhanced audio. The language override applies to
+recovery jobs only; the recording's original options and existing text remain
+available. `--language en` and `--language auto` are also supported. Clients
+check the additive `recover_language` capability before sending this option.
+Pending enhancement gaps prevent original-audio cleanup even when an M4A has
+been prepared. If the original is unavailable, recovery reports that boundary
+and preserves the existing transcript. Stop does not automatically launch a
+full-recording ASR pass.
 
 Recovery attempts each failed/queued chunk once in source order, keeps successful
 chunks, and records unresolved gaps for another explicit request. Repeating a

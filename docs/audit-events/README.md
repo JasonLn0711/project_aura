@@ -6,6 +6,8 @@
 
 ## Human-readable closeout events
 
+- [2026-10-18: Streaming speech suppression and recovery](2026-10-18-reuse-speech-guard/audit-event.md) — source decisions, live speech protection, bounded repair, native completion and remaining review gates.
+
 - [2026-10-17: NVIDIA RE-USE redesign](2026-10-17-reuse-redesign/audit-event.md) — source decisions, C4 architecture, implementation, failed attempts and availability gates.
 
 - [2026-10-17: Live streaming reliability, DGX runtime, and Linux capture](2026-10-17-live-streaming-reliability/audit-event.md) — implementation, user-reported failures, private log inventory, corrected evidence, and actual Brave validation.
