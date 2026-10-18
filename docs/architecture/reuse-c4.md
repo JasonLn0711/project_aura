@@ -1,5 +1,9 @@
 # AURA RE-USE architecture
 
+Whole-project navigation: [complete C4 model](c4/README.md) covers desktop,
+terminal, capture, service, inference, splitting and evidence retrieval. This
+document owns the detailed RE-USE policy and its measured validation boundaries.
+
 Status: implemented. Both pinned models and five-minute public-audio capture
 have executed successfully on GB10. The [availability packet](../../artifacts/reuse-availability-2026-10-17/README.md)
 records Brave validation and account-service activation separately.

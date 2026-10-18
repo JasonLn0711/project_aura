@@ -1,5 +1,9 @@
 # Shared GUI, terminal, and SSH sessions
 
+See the [complete C4 model](architecture/c4/README.md) for the current process,
+component, data-store and deployment views, including interactive navigation
+and downloadable SVG/PNG diagrams.
+
 > Audio-processing update, 2026-10-17: the [RE-USE C4 architecture](architecture/reuse-c4.md) supersedes the selectable enhancement profiles and ClearVoice integration described below. Earlier dated decisions and evaluation evidence are preserved as history.
 
 October 18 follow-up: [speech-suppression diagnosis and recovery](audit-events/2026-10-18-reuse-speech-guard/audit-event.md)

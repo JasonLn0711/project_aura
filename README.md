@@ -185,6 +185,17 @@ changes only when the corresponding tag is published.
 The codebase keeps testable product logic outside Qt widgets and gives each
 runtime concern one clear owner.
 
+The [complete C4 architecture](docs/architecture/c4/README.md) provides an
+interactive viewer, C1–C4 diagrams, dynamic flows, deployment views and a full
+source ownership map. Run `make architecture-setup architecture-build`, then
+`make architecture-serve` to browse locally. The
+[diagram catalog](docs/architecture/c4/view-catalog.md) also provides SVG/PNG
+exports for documents and presentations.
+
+![AURA C4 system context with operator, audio services and provisioning dependencies](artifacts/architecture-c4/images/C1_Context.svg)
+
+*AURA processes recordings locally; model provisioning and release checks have separate network relationships.*
+
 ```text
 project_aura/
 ├── pyproject.toml                  # package and dependency contract
@@ -217,7 +228,8 @@ project_aura/
 
 - `src/aura/session_core.py` owns shared sessions, persisted preferences, and the job queue.
 - `src/aura/sdk.py` provides the common GUI, CLI, and SSH API.
-- `src/aura/session_runtime.py` owns the single CUDA inference subprocess.
+- `src/aura/session_runtime.py` owns ASR and file/export jobs in the supervised
+  inference subprocess; RE-USE uses separate isolated worker processes.
 - `src/aura/settings.py` retains inspectable defaults for existing utilities.
 - `src/aura/asr/` owns file and live transcription behavior.
 - `src/aura/audio/` owns source discovery, capture, mixing, denoise, export,
@@ -1197,6 +1209,7 @@ project needs its own repository-specific instructions.
 
 | Document | Purpose |
 | --- | --- |
+| [Complete C4 model and interactive architecture](docs/architecture/c4/README.md) | Source-backed C1–C4, dynamic/deployment diagrams, SVG/PNG and reproducible rendering |
 | [`docs/shared-sessions-2026-09-08.md`](docs/shared-sessions-2026-09-08.md) | Shared service, remote capture, CLI operations, and gap recovery |
 | [CLI screenshots, previews and validation](artifacts/cli-garden-preview/README.md) | Original screenshot provenance, slate/sage previews, animation and synthetic terminal checks |
 | [`docs/asr-inference-decision-2026-09-09.md`](docs/asr-inference-decision-2026-09-09.md) | Model/precision decisions, memory interpretation, and optimization gates |

@@ -1,0 +1,47 @@
+@startuml
+!pragma layout smetana
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName DejaVu Sans
+skinparam classBackgroundColor #EDF5F3
+skinparam classBorderColor #42697A
+skinparam ArrowColor #42697A
+hide empty members
+title Code - Transcript review and durable exports
+class "ReviewSegment" as ReviewSegment <<class>> [[https://github.com/JasonLn0711/project_aura/blob/main/src/aura/review.py#L30]] {
+  segment_id
+  start_ms
+  end_ms
+  text
+  speaker
+  state
+  revision
+  asr_logprob
+  review_flags
+}
+class "TranscriptReview" as TranscriptReview <<class>> [[https://github.com/JasonLn0711/project_aura/blob/main/src/aura/review.py#L156]] {
+  edit(segment_id)
+  confirm(segment_id)
+  rename_speaker(current_name, new_name)
+  save(base_path)
+  load(base_path)
+}
+class "export_segments" as export_segments <<function>> [[https://github.com/JasonLn0711/project_aura/blob/main/src/aura/review.py#L305]] {
+  (segments, base_path)
+}
+class "PreparedTranscript" as PreparedTranscript <<class>> [[https://github.com/JasonLn0711/project_aura/blob/main/src/aura/ui/transcript_io.py#L19]] {
+  raw_text
+  punctuated_text
+  corrected_text
+  content_sha256
+  correction_log
+  punctuation_backend
+}
+class "TranscriptSession" as TranscriptSession <<class>> [[https://github.com/JasonLn0711/project_aura/blob/main/src/aura/ui/transcript_io.py#L29]] {
+  directory
+  meeting_id
+}
+TranscriptReview --> ReviewSegment : edits / confirms segments
+TranscriptSession --> PreparedTranscript : prepares transcript identity
+export_segments --> ReviewSegment : exports SRT / VTT / text
+@enduml

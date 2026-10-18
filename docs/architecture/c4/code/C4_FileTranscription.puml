@@ -1,0 +1,39 @@
+@startuml
+!pragma layout smetana
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName DejaVu Sans
+skinparam classBackgroundColor #EDF5F3
+skinparam classBorderColor #42697A
+skinparam ArrowColor #42697A
+hide empty members
+title Code - Imported file transcription
+class "CancellationToken" as CancellationToken <<class>> [[https://github.com/JasonLn0711/project_aura/blob/main/src/aura/asr/file_pipeline.py#L46]] {
+  cancelled
+  request_cancel()
+  raise_if_cancelled()
+}
+class "FileTranscriptionSettings" as FileTranscriptionSettings <<class>> [[https://github.com/JasonLn0711/project_aura/blob/main/src/aura/asr/file_pipeline.py#L58]] {
+  target_dbfs
+  beam_size
+  initial_prompt
+  language
+  meeting_distance_mode
+  enable_denoise
+  denoise_preset
+  diarization
+  hotwords
+}
+class "FileTranscriptionResult" as FileTranscriptionResult <<class>> [[https://github.com/JasonLn0711/project_aura/blob/main/src/aura/asr/file_pipeline.py#L82]] {
+  file_name
+  lines
+  segments
+  cancelled
+}
+class "transcribe_file" as transcribe_file <<function>> [[https://github.com/JasonLn0711/project_aura/blob/main/src/aura/asr/file_pipeline.py#L283]] {
+  (model, file_path, settings, worker_id, cancellation, status_callback, line_callback, diarization_runner)
+}
+transcribe_file --> FileTranscriptionSettings : validated fixed options
+transcribe_file --> CancellationToken : checks cancellation
+transcribe_file --> FileTranscriptionResult : returns text / segments
+@enduml

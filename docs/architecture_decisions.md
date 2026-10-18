@@ -1,5 +1,11 @@
 # Architecture Decisions
 
+The [complete C4 model](architecture/c4/README.md) is the current whole-project
+architecture entry point, with source ownership, interactive navigation and
+static exports. Its [source and publication closeout](audit-events/2026-10-18-c4-architecture/audit-event.md)
+preserves selected decisions, evidence and Planning routing. The RE-USE document below remains the detailed audio-policy
+contract; older dated design sections retain their historical scope.
+
 > Audio-processing update, 2026-10-17: the [RE-USE C4 architecture](architecture/reuse-c4.md) supersedes the selectable enhancement profiles and ClearVoice integration described below. Earlier dated decisions and evaluation evidence are preserved as history.
 
 ## Current shared-session architecture — 2026-09-08
