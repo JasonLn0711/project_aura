@@ -8,11 +8,12 @@ browsing, rebuilding and runtime boundaries; the
 The [source and closeout record](../../docs/audit-events/2026-10-18-c4-architecture/audit-event.md)
 connects the original request, selected decisions, FIRST PRINCIPLE ownership
 and Planning publication receipt. [Publication checks](publication-checks.json)
-verify this recorded render without replacing its original validation status.
-The original manifest's `source_revision` identifies the production baseline
-before the architecture work; `architecture_sources` seals the actual model and
-tool inputs rendered from that working tree. The Planning day receipt identifies
-the later source-publication commits.
+verify the refreshed render and preserve references to the original packet in
+Git. The manifest's `source_revision` identifies the checked-out commit at build
+time; `architecture_sources` seals the actual model and tool inputs rendered from
+that working tree. The Planning day receipt identifies the source-publication
+commits. Browser/publication receipts are produced after rendering and remain
+separate from the rendered-output hash seal.
 
 - `images/`: complete C1–C4, dynamic and deployment images, plus renderer keys.
 - `workspace.json`: parsed Structurizr model with generated layouts and code views.

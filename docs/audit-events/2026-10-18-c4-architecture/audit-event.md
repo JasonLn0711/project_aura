@@ -3,7 +3,8 @@
 **Confirmed:** the English current-implementation architecture is implemented
 and locally validated. [Selected source decisions](source-decisions.md) preserve
 the request and delivery choices. Git publication is recorded separately in
-the Planning day receipt; the original render receipt remains historical.
+the Planning day receipt. Git preserves the original render and its validation;
+the current packet includes the publication follow-up render.
 
 ## FIRST PRINCIPLE routing
 
@@ -49,13 +50,25 @@ checks, and nine focused versioning tests passed. Chromium exercised all 30
 views, zoom, drill-down, quick navigation and foreground-server cleanup with
 zero JavaScript errors and zero nonlocal requests. Agent visual review used
 five contact sheets for all 30 PNG exports and an original-resolution code view.
-This is layout/tool validation rather than human product acceptance.
+This establishes layout/tool validation; human product acceptance has its own gate.
 
-The separate publication checks verify existing input/render hashes and the
-regression log. A publication review limits the POSIX process-group timeout
-test to POSIX hosts, preserving Windows application CI compatibility. The
-architecture tool host contract remains Linux/POSIX. This test guard changes no
-production executable or rendered model.
+The separate publication checks verify input/render hashes and the regression
+log. Publication review limits the POSIX process-group timeout test to POSIX
+hosts, normalizes source/archive paths to forward slashes and compares resolved
+checkout roots consistently, including Windows temporary-directory aliases.
+An existing source-inspection test also exercises an aliased checkout root.
+Post-render browser/publication receipts remain separate from the rendered-output
+hash seal. All views were rebuilt and browser-checked after the tooling changes.
+The architecture tool host contract remains Linux/POSIX; application executables
+and model definitions are unchanged.
+
+The [first architecture workflow](https://github.com/JasonLn0711/project_aura/actions/runs/39110776970)
+and [general CI](https://github.com/JasonLn0711/project_aura/actions/runs/39110777040)
+passed on the initial publication. Windows unit tests already failed at the
+[production baseline](https://github.com/JasonLn0711/project_aura/actions/runs/39105469309).
+The first architecture publication additionally exposed checkout-root handling
+in its new fixtures; the tooling follow-up addresses it. The Planning publication
+receipt records actual follow-up CI outcomes separately.
 
 ## Ownership and validation boundaries
 

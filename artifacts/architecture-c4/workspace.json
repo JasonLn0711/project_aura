@@ -14,7 +14,7 @@
           "id" : "171",
           "instanceId" : 1,
           "properties" : {
-            "structurizr.dsl.identifier" : "d511a342-635f-4381-bc25-55d175af6720"
+            "structurizr.dsl.identifier" : "8e787b05-bf62-4add-a2db-6afa11781e8b"
           },
           "relationships" : [ {
             "description" : "Starts native Linux capture",
@@ -45,7 +45,7 @@
           "id" : "172",
           "instanceId" : 1,
           "properties" : {
-            "structurizr.dsl.identifier" : "d9a5f1a1-b607-4da4-b0ad-d3e89925da73"
+            "structurizr.dsl.identifier" : "015b3e7c-605b-43e6-9a31-01eb1b1c1e9b"
           },
           "relationships" : [ {
             "description" : "Starts native Linux capture",
@@ -76,7 +76,7 @@
           "id" : "173",
           "instanceId" : 1,
           "properties" : {
-            "structurizr.dsl.identifier" : "c0502907-d76b-4a96-a3ba-3535d6becde3"
+            "structurizr.dsl.identifier" : "2d6fb0d4-df11-4479-a64c-bc838d2dc808"
           },
           "relationships" : [ {
             "description" : "Streams durable audio and final sequence",
@@ -100,7 +100,7 @@
           "id" : "176",
           "instanceId" : 1,
           "properties" : {
-            "structurizr.dsl.identifier" : "26073d65-fb6a-42ad-8482-3bb2911901df"
+            "structurizr.dsl.identifier" : "066e3042-fa2f-4236-985e-71f6760014ea"
           },
           "relationships" : [ {
             "description" : "Forwards audio and control acknowledgements",
@@ -124,7 +124,7 @@
           "id" : "178",
           "instanceId" : 1,
           "properties" : {
-            "structurizr.dsl.identifier" : "197f6c67-0b01-43f0-acc9-86e2eaa1da85"
+            "structurizr.dsl.identifier" : "b3171228-915e-4451-be61-ddfa1f124aff"
           },
           "relationships" : [ {
             "description" : "Dispatches ASR and export work",
@@ -169,7 +169,7 @@
           "id" : "183",
           "instanceId" : 1,
           "properties" : {
-            "structurizr.dsl.identifier" : "2177577a-6653-47c2-b1ba-7a1f5daf4e21"
+            "structurizr.dsl.identifier" : "d0ef3dd4-8c56-4a14-8cd5-8e24b54c3a93"
           },
           "relationships" : [ {
             "description" : "Reads compatible saved artifact packages",
@@ -194,7 +194,7 @@
         "instances" : "1",
         "name" : "Account processes",
         "properties" : {
-          "structurizr.dsl.identifier" : "ef64334b-2847-4e7f-92bc-07262185b9ab"
+          "structurizr.dsl.identifier" : "5dd473fd-1e89-4f23-b8c6-6b9f262ecbe0"
         },
         "tags" : "Element,Deployment Node",
         "technology" : "Python / Rust"
@@ -205,7 +205,7 @@
           "id" : "185",
           "instanceId" : 1,
           "properties" : {
-            "structurizr.dsl.identifier" : "f1defd15-4d84-4d8c-88be-6224f9f43d33"
+            "structurizr.dsl.identifier" : "25e5e632-acfa-45cf-98e2-e14a0224187f"
           },
           "relationships" : [ {
             "description" : "Enhances full source for import/export",
@@ -236,7 +236,7 @@
           "id" : "187",
           "instanceId" : 1,
           "properties" : {
-            "structurizr.dsl.identifier" : "64af931f-e261-4ebf-bc3b-221a6fe86e21"
+            "structurizr.dsl.identifier" : "dea36d83-2aef-48de-b0e4-4e08821843b0"
           },
           "relationships" : [ {
             "description" : "Reads original input; produces enhanced scratch",
@@ -261,7 +261,7 @@
         "instances" : "1",
         "name" : "GPU execution",
         "properties" : {
-          "structurizr.dsl.identifier" : "7de8c3a8-594a-48f0-85bc-9bc0bd376c02"
+          "structurizr.dsl.identifier" : "186998a1-d498-4725-8e2d-c7996ac8e5c4"
         },
         "tags" : "Element,Deployment Node",
         "technology" : "NVIDIA GB10 / CUDA 13"
@@ -272,7 +272,7 @@
           "id" : "191",
           "instanceId" : 1,
           "properties" : {
-            "structurizr.dsl.identifier" : "e27c3d91-275a-4bdb-ab9c-366e87e5134a"
+            "structurizr.dsl.identifier" : "8a50e089-0c56-48b7-9701-b790cad15e7e"
           },
           "tags" : "Container Instance"
         }, {
@@ -281,7 +281,7 @@
           "id" : "193",
           "instanceId" : 1,
           "properties" : {
-            "structurizr.dsl.identifier" : "8de40b8d-4a78-4ac5-8a4b-3c4f3d52a2da"
+            "structurizr.dsl.identifier" : "fd8a2466-f1e5-445d-a67b-864d8abe4166"
           },
           "tags" : "Container Instance"
         }, {
@@ -290,7 +290,7 @@
           "id" : "199",
           "instanceId" : 1,
           "properties" : {
-            "structurizr.dsl.identifier" : "589b9d65-0e70-4dac-938b-22ebac5acb52"
+            "structurizr.dsl.identifier" : "a87248d1-e281-4ebe-ad58-71a48286455d"
           },
           "tags" : "Container Instance"
         }, {
@@ -299,7 +299,7 @@
           "id" : "202",
           "instanceId" : 1,
           "properties" : {
-            "structurizr.dsl.identifier" : "04fb699e-ca27-46ab-9fb1-6be848748bb3"
+            "structurizr.dsl.identifier" : "d2553177-b8c3-4413-a61e-ed9ee85865dd"
           },
           "tags" : "Container Instance"
         }, {
@@ -308,7 +308,7 @@
           "id" : "204",
           "instanceId" : 1,
           "properties" : {
-            "structurizr.dsl.identifier" : "929831eb-6350-4ea1-b1ab-d98050794de4"
+            "structurizr.dsl.identifier" : "d4c146d0-9ba3-4d88-b8cd-8154a63743ad"
           },
           "tags" : "Container Instance"
         }, {
@@ -317,7 +317,7 @@
           "id" : "207",
           "instanceId" : 1,
           "properties" : {
-            "structurizr.dsl.identifier" : "393c3b3b-042f-4c2b-b5d2-dea8efe798b2"
+            "structurizr.dsl.identifier" : "3f9890c2-79e9-4831-b07a-1d42c7832e84"
           },
           "tags" : "Container Instance"
         } ],
@@ -327,7 +327,7 @@
         "instances" : "1",
         "name" : "Owner storage",
         "properties" : {
-          "structurizr.dsl.identifier" : "3ad39553-eb18-4fa6-9dc0-f7938704f20a"
+          "structurizr.dsl.identifier" : "81df36a2-2662-412d-8d96-ead7a4862db2"
         },
         "tags" : "Element,Deployment Node",
         "technology" : "Filesystem"
@@ -338,7 +338,7 @@
       "instances" : "1",
       "name" : "Linux workstation",
       "properties" : {
-        "structurizr.dsl.identifier" : "ed816dc0-159a-466c-b454-5e295698eb11"
+        "structurizr.dsl.identifier" : "edd75824-9a16-4a0a-a0fc-6910fb5e7c46"
       },
       "tags" : "Element,Deployment Node",
       "technology" : "Ubuntu / NVIDIA"
@@ -349,7 +349,7 @@
         "id" : "210",
         "instanceId" : 1,
         "properties" : {
-          "structurizr.dsl.identifier" : "cf117efd-e559-4077-ad41-aa9b9f29a041"
+          "structurizr.dsl.identifier" : "0192e139-da18-4e7f-8c16-54e3ea5dec30"
         },
         "relationships" : [ {
           "description" : "Starts native Linux capture",
@@ -373,7 +373,7 @@
         "id" : "211",
         "instanceId" : 1,
         "properties" : {
-          "structurizr.dsl.identifier" : "8c46df17-a9d9-4d4a-aa4b-b71130cac20d"
+          "structurizr.dsl.identifier" : "b31584da-eeb8-4546-a4df-572836049666"
         },
         "relationships" : [ {
           "description" : "Persists original frames before upload",
@@ -397,7 +397,7 @@
         "id" : "213",
         "instanceId" : 1,
         "properties" : {
-          "structurizr.dsl.identifier" : "4b1c9708-e480-4638-abe7-b8dada1a1ac9"
+          "structurizr.dsl.identifier" : "f1b8fc98-5c54-4707-96fc-6a867d2f3706"
         },
         "tags" : "Container Instance"
       } ],
@@ -410,7 +410,7 @@
         "id" : "215",
         "name" : "SSH forwarding",
         "properties" : {
-          "structurizr.dsl.identifier" : "46d16a7c-5575-4f1a-b7bf-d13619b5a107"
+          "structurizr.dsl.identifier" : "8336abb3-2118-45d6-b174-9d8ef4ddf632"
         },
         "tags" : "Element,Infrastructure Node",
         "technology" : "OpenSSH"
@@ -418,7 +418,7 @@
       "instances" : "1",
       "name" : "CPU capture client",
       "properties" : {
-        "structurizr.dsl.identifier" : "a75ad9f8-1763-484e-a0ef-08a3d5c9fe89"
+        "structurizr.dsl.identifier" : "8e04be0d-dd9a-4ef1-b58f-b85c75a0f339"
       },
       "tags" : "Element,Deployment Node",
       "technology" : "Linux ARM64 or amd64"
@@ -429,7 +429,7 @@
         "id" : "217",
         "instanceId" : 1,
         "properties" : {
-          "structurizr.dsl.identifier" : "d29d2526-eb10-483a-9e9a-876e98e37834"
+          "structurizr.dsl.identifier" : "423062a9-96b4-44fd-b451-63a7fa1e4ebf"
         },
         "relationships" : [ {
           "description" : "Dispatches ASR and export work",
@@ -474,7 +474,7 @@
         "id" : "220",
         "instanceId" : 1,
         "properties" : {
-          "structurizr.dsl.identifier" : "7306cfa0-7fae-46af-8781-cb55f20433d9"
+          "structurizr.dsl.identifier" : "17babeb7-14ae-4b63-9c85-5fba7c9afcfc"
         },
         "relationships" : [ {
           "description" : "Enhances full source for import/export",
@@ -505,7 +505,7 @@
         "id" : "222",
         "instanceId" : 1,
         "properties" : {
-          "structurizr.dsl.identifier" : "28e7ea32-fed4-446b-bbb6-4f1bcfc5238e"
+          "structurizr.dsl.identifier" : "0f8f5c37-b2f5-4b48-8ebf-6b9545fa2d8e"
         },
         "relationships" : [ {
           "description" : "Reads original input; produces enhanced scratch",
@@ -529,7 +529,7 @@
         "id" : "225",
         "instanceId" : 1,
         "properties" : {
-          "structurizr.dsl.identifier" : "1c0fcfc0-d321-4928-b1e6-3c43696d135a"
+          "structurizr.dsl.identifier" : "a058e027-35c4-4345-9fa0-55a4bc576293"
         },
         "tags" : "Container Instance"
       }, {
@@ -538,7 +538,7 @@
         "id" : "227",
         "instanceId" : 1,
         "properties" : {
-          "structurizr.dsl.identifier" : "336c9d05-5157-4674-80cf-e290d69fe3ae"
+          "structurizr.dsl.identifier" : "cdb37103-43ec-441d-871d-86a422c39a7e"
         },
         "tags" : "Container Instance"
       }, {
@@ -547,7 +547,7 @@
         "id" : "231",
         "instanceId" : 1,
         "properties" : {
-          "structurizr.dsl.identifier" : "fdfeb7b0-9f7b-44fb-863f-cde033040fd1"
+          "structurizr.dsl.identifier" : "16a1b314-9972-4560-a87b-7689b05bccfe"
         },
         "tags" : "Container Instance"
       }, {
@@ -556,7 +556,7 @@
         "id" : "234",
         "instanceId" : 1,
         "properties" : {
-          "structurizr.dsl.identifier" : "1a3aae13-1698-45fe-b5bb-e4231d10585d"
+          "structurizr.dsl.identifier" : "5c0f720c-4852-4f40-8663-53b6a7ad1f94"
         },
         "tags" : "Container Instance"
       } ],
@@ -566,7 +566,7 @@
       "instances" : "1",
       "name" : "NVIDIA service host",
       "properties" : {
-        "structurizr.dsl.identifier" : "44699735-f274-4cc2-933d-46e6456c8ddb"
+        "structurizr.dsl.identifier" : "cdca14cc-6d5d-46d2-b06d-9e592229ad60"
       },
       "tags" : "Element,Deployment Node",
       "technology" : "Linux / CUDA"
@@ -578,7 +578,7 @@
           "id" : "248",
           "instanceId" : 1,
           "properties" : {
-            "structurizr.dsl.identifier" : "66f01dda-03ea-4479-9a40-9f5d061a21c7"
+            "structurizr.dsl.identifier" : "aa900209-4a2d-46df-91ed-9a09b2c7066f"
           },
           "relationships" : [ {
             "description" : "Reads original input; produces enhanced scratch",
@@ -603,7 +603,7 @@
         "instances" : "1",
         "name" : "RE-USE activation gate",
         "properties" : {
-          "structurizr.dsl.identifier" : "eae1502c-42be-4e59-a221-3d2c039a521b"
+          "structurizr.dsl.identifier" : "2eaee81e-c12f-4578-ae67-9565cbdcf322"
         },
         "tags" : "Element,Deployment Node",
         "technology" : "Pending platform validation"
@@ -614,7 +614,7 @@
         "id" : "237",
         "instanceId" : 1,
         "properties" : {
-          "structurizr.dsl.identifier" : "4fd29df9-d0bb-4a72-8046-d5acd0e20901"
+          "structurizr.dsl.identifier" : "91a5988c-877c-477f-90be-c5a3de2aa473"
         },
         "relationships" : [ {
           "description" : "Controls shared sessions and receives updates",
@@ -638,7 +638,7 @@
         "id" : "238",
         "instanceId" : 1,
         "properties" : {
-          "structurizr.dsl.identifier" : "10dfd751-4d31-4177-b094-fbca8c6fb779"
+          "structurizr.dsl.identifier" : "4ce686ea-ddd3-452c-a7e1-74f1d791e9c5"
         },
         "relationships" : [ {
           "description" : "Starts selected Python producer",
@@ -662,7 +662,7 @@
         "id" : "239",
         "instanceId" : 1,
         "properties" : {
-          "structurizr.dsl.identifier" : "ec13e660-5b52-48b4-b0c9-1f7adbf1256e"
+          "structurizr.dsl.identifier" : "415fed4b-724d-4049-90d5-ef014c2f61d8"
         },
         "relationships" : [ {
           "description" : "Forwards audio and control acknowledgements",
@@ -686,7 +686,7 @@
         "id" : "241",
         "instanceId" : 1,
         "properties" : {
-          "structurizr.dsl.identifier" : "6a6a02e1-f6be-498e-8675-1b0e38c77cad"
+          "structurizr.dsl.identifier" : "e3d33ae6-7945-4354-b464-9ad7f549993f"
         },
         "relationships" : [ {
           "description" : "Dispatches ASR and export work",
@@ -724,7 +724,7 @@
         "id" : "245",
         "instanceId" : 1,
         "properties" : {
-          "structurizr.dsl.identifier" : "dc8d49ba-a0ea-41bb-973f-824285327b1b"
+          "structurizr.dsl.identifier" : "be170aee-6aa9-456e-ade7-c4b9c0785c5f"
         },
         "relationships" : [ {
           "description" : "Enhances full source for import/export",
@@ -755,7 +755,7 @@
         "id" : "251",
         "instanceId" : 1,
         "properties" : {
-          "structurizr.dsl.identifier" : "a7e20828-f6eb-4796-aa70-23f128b9bf47"
+          "structurizr.dsl.identifier" : "d2e573db-eac2-4d6e-a2ca-a0b752004fb2"
         },
         "tags" : "Container Instance"
       }, {
@@ -764,7 +764,7 @@
         "id" : "253",
         "instanceId" : 1,
         "properties" : {
-          "structurizr.dsl.identifier" : "ef2fbadb-2291-44d6-bddd-5437b5a4803b"
+          "structurizr.dsl.identifier" : "aab18ad7-e324-4b9b-bab6-2415f52e9d28"
         },
         "tags" : "Container Instance"
       }, {
@@ -773,7 +773,7 @@
         "id" : "258",
         "instanceId" : 1,
         "properties" : {
-          "structurizr.dsl.identifier" : "594deb3a-80a0-4969-aafb-dc5dcf15cf1a"
+          "structurizr.dsl.identifier" : "c2092403-e194-41f9-aad7-827fc69a6d10"
         },
         "tags" : "Container Instance"
       }, {
@@ -782,7 +782,7 @@
         "id" : "260",
         "instanceId" : 1,
         "properties" : {
-          "structurizr.dsl.identifier" : "cbdc8ef6-0abb-44f9-a2e5-b95579f85f5e"
+          "structurizr.dsl.identifier" : "6df7d3b2-2587-4c60-9b7c-cd3d9a1108f4"
         },
         "tags" : "Container Instance"
       } ],
@@ -792,7 +792,7 @@
       "instances" : "1",
       "name" : "Windows native workstation",
       "properties" : {
-        "structurizr.dsl.identifier" : "44433e9a-9971-4077-a935-8fbebf2364bc"
+        "structurizr.dsl.identifier" : "6bb0def5-a706-4f8c-bdc8-a3e992cea677"
       },
       "tags" : "Element,Deployment Node",
       "technology" : "Windows / NVIDIA RTX"
