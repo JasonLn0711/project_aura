@@ -32,8 +32,10 @@ class ArchitectureTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as name:
             root = Path(name)
             source = self.fixture(root)
-            with patch.multiple(architecture, ROOT=root, SOURCE=source):
-                self.assertEqual(architecture.inspect_sources()['source_files'], 1)
+            # Resolved and aliased checkout roots must retain the same boundary.
+            for checkout in (root, root / 'src/..'):
+                with self.subTest(checkout=checkout), patch.multiple(architecture, ROOT=checkout, SOURCE=source):
+                    self.assertEqual(architecture.inspect_sources()['source_files'], 1)
 
     def test_new_source_requires_explicit_architectural_owner(self):
         with tempfile.TemporaryDirectory() as name:

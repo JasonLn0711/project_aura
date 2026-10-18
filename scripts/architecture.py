@@ -48,7 +48,7 @@ def write_json(path, value):
 
 def source_path(name):
     path = (ROOT / name).resolve()
-    if not path.is_relative_to(ROOT) or not path.is_file():
+    if not path.is_relative_to(ROOT.resolve()) or not path.is_file():
         raise ValueError(f"Source reference is unavailable or outside the repository: {name}")
     return path
 
@@ -85,8 +85,8 @@ def inspect_sources():
     catalog = read_json(SOURCE / 'source-map.json')
     model = (SOURCE / 'model.dsl').read_text()
     owners = set(re.findall(r'(\w+)\s*=\s*component\s', model))
-    actual = {str(p.relative_to(ROOT)) for p in (ROOT / 'src').rglob('*') if p.suffix in ('.py', '.yaml')}
-    actual |= {str(p.relative_to(ROOT)) for p in (ROOT / 'native').glob('*/src/**/*.rs')}
+    actual = {p.relative_to(ROOT).as_posix() for p in (ROOT / 'src').rglob('*') if p.suffix in ('.py', '.yaml')}
+    actual |= {p.relative_to(ROOT).as_posix() for p in (ROOT / 'native').glob('*/src/**/*.rs')}
     mapped = {}
     for row in catalog['sources']:
         name = row['path']
@@ -120,7 +120,7 @@ def inspect_sources():
         for name in prefixes:
             path = ROOT / name
             paths = sorted(p for p in path.rglob('*') if p.is_file() and '__pycache__' not in p.parts) if path.is_dir() else [path]
-            support.extend(dict(path=str(p.relative_to(ROOT)), owner=group) for p in paths if p.is_file())
+            support.extend(dict(path=p.relative_to(ROOT).as_posix(), owner=group) for p in paths if p.is_file())
     return dict(status='pass', source_files=len(mapped), sources=list(mapped.values()), supporting_files=support,
                 notes=catalog['notes'])
 
@@ -270,7 +270,7 @@ def package_output():
     with zipfile.ZipFile(temporary, 'w', zipfile.ZIP_DEFLATED) as bundle:
         for path in sorted(OUTPUT.rglob('*')):
             if path.is_file():
-                bundle.write(path, 'aura-c4/' + str(path.relative_to(OUTPUT)))
+                bundle.write(path, 'aura-c4/' + path.relative_to(OUTPUT).as_posix())
     temporary.replace(archive)
 
 
@@ -345,10 +345,12 @@ def build():
         shutil.copy2(stage / 'workspace.json', OUTPUT / 'workspace.json')
         write_json(OUTPUT / 'source-coverage.json', coverage)
         # Exported site deliberately omits documentation. Keep a source-linked guide alongside it.
-        sources = {str(p.relative_to(ROOT)): digest(p) for p in SOURCE.rglob('*') if p.is_file() and p.suffix in ('.dsl', '.json', '.puml', '.md', '.cjs', '.svg')}
+        sources = {p.relative_to(ROOT).as_posix(): digest(p) for p in SOURCE.rglob('*') if p.is_file() and p.suffix in ('.dsl', '.json', '.puml', '.md', '.cjs', '.svg')}
         sources['scripts/architecture.py'] = digest(Path(__file__))
         source_hashes = {row['path']: digest(ROOT / row['path']) for row in coverage['sources']}
-        outputs = {str(p.relative_to(OUTPUT)): digest(p) for p in OUTPUT.rglob('*') if p.is_file() and p.name not in ('manifest.json', 'README.md', 'validation.json')}
+        # Post-render checks can be refreshed without changing the rendered package.
+        receipts = {'manifest.json', 'README.md', 'validation.json', 'browser-validation.json', 'publication-checks.json'}
+        outputs = {p.relative_to(OUTPUT).as_posix(): digest(p) for p in OUTPUT.rglob('*') if p.is_file() and p.name not in receipts}
         manifest = dict(schema_version=1, status='rendered', source_revision=subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=ROOT, text=True).strip(),
                         view_count=len(expected), view_keys=expected, source_files=coverage['source_files'], code_views=len(views),
                         architecture_sources=sources, application_sources=source_hashes,
