@@ -8,10 +8,12 @@ class IdentityReuseWorker:
     def __init__(self, mode, **kwargs):
         self.mode = mode
         self.receipt = {'backend': 'identity-test-double', 'mode': mode}
-    def push(self, pcm):
+    def push(self, pcm, **kwargs):
         return pcm
     def flush(self):
         return b''
+    def reset(self, *, new_interval=False):
+        pass
     def enhance_file(self, source, target):
         shutil.copyfile(source, target)
         return {'path': str(target), **self.receipt}

@@ -22,7 +22,7 @@ class ReuseSessionTests(unittest.TestCase):
         enhanced = b'\x03\x04' * 480
         seen = []
         class Worker(IdentityReuseWorker):
-            def push(self, pcm):
+            def push(self, pcm, **kwargs):
                 return enhanced
             def enhance_file(self, source, target):
                 with wave.open(str(source), 'rb') as f:
@@ -56,7 +56,7 @@ class ReuseSessionTests(unittest.TestCase):
 
     def test_enhancement_failure_retains_raw_without_asr_fallback(self):
         class FailedWorker(IdentityReuseWorker):
-            def push(self, pcm):
+            def push(self, pcm, **kwargs):
                 raise RuntimeError('Synthetic enhancement failure')
         with tempfile.TemporaryDirectory() as root:
             core = SessionCore(root, executor=fake_inference, enhancement_worker_factory=FailedWorker)
@@ -76,7 +76,7 @@ class ReuseSessionTests(unittest.TestCase):
         from aura.audio.recording_session import RecordingSession
         started, release, dispatched = threading.Event(), threading.Event(), threading.Event()
         class PausedWorker(IdentityReuseWorker):
-            def push(self, pcm):
+            def push(self, pcm, **kwargs):
                 started.set()
                 if not release.wait(3):
                     raise RuntimeError('Test replay watchdog')

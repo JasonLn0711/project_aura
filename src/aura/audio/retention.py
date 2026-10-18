@@ -166,6 +166,8 @@ def complete_recording_m4a(manifest_path: str | Path, output: str | Path, *, per
     manifest_path = Path(manifest_path)
     directory = manifest_path.parent
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    if any(gap['status'] == 'pending' for gap in manifest.get('enhancement_gaps', [])):
+        raise ValueError('Enhancement gaps remain unresolved; original audio retained for recovery')
     manifest["enhancement_phase"] = "committed"
     manifest["audio_tracks"] = {"mixed": str(output.relative_to(directory))}
     manifest["pcm_journals"] = {}

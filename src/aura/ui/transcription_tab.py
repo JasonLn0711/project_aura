@@ -332,7 +332,7 @@ class TranscriptionTab(QWidget):
 
     def render(self, s):
         state = s["state"]
-        self.session_status.setText(f'{s["title"]} · {s["id"]}\n{state} · {s["capture_location"]} / {s["source"]} · {s["options"]["profile"]} · {s["options"].get("asr_model", "breeze")}')
+        self.session_status.setText(f'{s["title"]} · {s["id"]}\n{state} · {s["capture_location"]} / {s["source"]} · {s["options"]["profile"]} · {s["options"].get("asr_model", "breeze")} · language: {s["options"].get("language") or "auto"}')
         if s.get('stream') and state in ('recording', 'pausing', 'paused', 'stopping'):
             progress = s.get('capture_progress', {})
             detail = ('擷取端離線；本機音訊持續保存，上傳佇列尚未同步。' if not s.get('producer_connected') else
@@ -352,6 +352,9 @@ class TranscriptionTab(QWidget):
             self.status_label.setText(f"{gaps} 段待補轉錄；音訊持續保存，停止後可補轉錄缺段。")
         if s.get("capture_warning"):
             self.status_label.setText(s["capture_warning"])
+        from aura.audio.enhancement_health import gap_warning
+        if gap_warning(s):
+            self.status_label.setText(gap_warning(s))
         if s.get("error"):
             self.status_label.setText(s["error"])
 

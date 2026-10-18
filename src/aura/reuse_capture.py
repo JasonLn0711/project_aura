@@ -6,6 +6,7 @@ single transport frame and the model's bounded state are resident in memory.
 import os
 import json
 import threading
+from collections import deque
 
 
 class ReuseCapture:
@@ -25,6 +26,7 @@ class ReuseCapture:
     def _run(self):
         from aura.audio.reuse import ReuseWorker
         from aura.audio.vad import SileroStreamVAD, SpeechIntervals
+        from aura.audio.enhancement_health import EnhancementHealth
         import numpy as np
         core, sid = self.core, self.sid
         directory = core.directory(sid)
@@ -33,6 +35,14 @@ class ReuseCapture:
         cursor = emitted = boundary_index = 0
         buffer = b''
         vad = intervals = None
+        raw_vad = None
+        active_gap = None
+        source_observations = deque()
+        with core.changed:
+            policy = core._get(sid)['enhancement'].get('policy', 'reference-v1')
+        guard = EnhancementHealth()
+        quiet_samples = 0
+        recent_levels = deque(maxlen=334)
         try:
             with core.changed:
                 known = set()
@@ -41,17 +51,24 @@ class ReuseCapture:
                     known.add((payload['start'], payload['end']))
             with output_path.open('wb') as output:
                 def enqueue(s, chunk):
-                    key = (chunk.start_sample, chunk.end_sample)
-                    if key in known:
-                        return
-                    s['last_split'] = dict(reason=chunk.split_reason, start_sample=chunk.start_sample,
-                                           end_sample=chunk.end_sample, terminal=chunk.terminal)
-                    core._job(s, 'chunk', path=str(output_path), start=chunk.start_sample,
-                              end=chunk.end_sample, terminal=chunk.terminal, split_reason=chunk.split_reason)
-                    known.add(key)
+                    from aura.reuse_recovery import uncovered_intervals
+                    covered = known | {(p['start'], p['end']) for p in
+                        (json.loads(r[0]) for r in core.db.execute(
+                            "SELECT payload FROM jobs WHERE session=? AND kind='chunk'", (sid,)))}
+                    for gap in s['enhancement'].get('gaps', []):
+                        if gap.get('live_repair'):
+                            covered.update(tuple(r) for r in gap.get('repair_ranges', []))
+                    for start, end in uncovered_intervals(chunk.end_sample, covered, chunk.start_sample):
+                        s['last_split'] = dict(reason=chunk.split_reason, start_sample=start,
+                                              end_sample=end, terminal=chunk.terminal)
+                        core._job(s, 'chunk', path=str(output_path), start=start,
+                                  end=end, terminal=chunk.terminal, split_reason=chunk.split_reason)
+                        known.add((start, end))
 
                 def accept(pcm):
-                    nonlocal buffer, emitted, vad, intervals
+                    nonlocal buffer, emitted, vad, intervals, raw_vad, quiet_samples, active_gap
+                    reset = False
+                    event = None
                     output.write(pcm)
                     output.flush()
                     os.fsync(output.fileno())
@@ -71,21 +88,66 @@ class ReuseCapture:
                             samples = np.frombuffer(raw, '<i2')
                             speech = vad.is_speech(raw, 16000)
                             rms = float(np.sqrt(np.mean(samples.astype(np.float32) ** 2)))
+                            position, source_rms, source_speech = source_observations.popleft()
+                            if position != emitted:
+                                raise RuntimeError('Source-aligned enhancement evidence is incomplete')
+                            event = guard.observe(480, source_rms, rms, source_speech, speech)
+                            enhancement = s['enhancement']
+                            health = enhancement.setdefault('health', {'status': 'healthy', 'reset_count': 0})
+                            gaps = enhancement.setdefault('gaps', [])
+                            if (not event and not guard.episode and health.get('status') != 'healthy'
+                                    and guard.output_voice >= guard.speech_samples):
+                                # A fresh pause/replay interval proves current
+                                # output health without rewriting an old gap.
+                                health['status'] = 'healthy'
+                            if event:
+                                if event['event'] == 'suppression':
+                                    start = event['start_sample']
+                                    gaps.append(dict(id=f'enhancement-{start}', reason='suppression',
+                                        start_sample=start, end_sample=event['end_sample'], status='pending'))
+                                    active_gap = gaps[-1]
+                                    if policy == 'speech-guard-v1':
+                                        active_gap['live_repair'] = 'waiting'
+                                        active_gap['repair_end_sample'] = event['end_sample']
+                                    health.update(status='recovering', reset_count=health.get('reset_count', 0) + 1,
+                                                  source_rms=event['source_rms'], output_rms=event['output_rms'])
+                                    reset = True
+                                elif event['event'] == 'unresolved':
+                                    health['status'] = 'blocked'
+                                    if active_gap and active_gap.get('live_repair') == 'waiting':
+                                        active_gap['repair_end_sample'] = event['end_sample']
+                                        active_gap['live_repair'] = 'queued'
+                                elif event['event'] == 'restored':
+                                    health['status'] = 'healthy'
+                                    if active_gap:
+                                        active_gap['closed'] = True
+                                        if active_gap.get('live_repair') == 'waiting':
+                                            active_gap['repair_end_sample'] = event['end_sample']
+                                            active_gap['live_repair'] = 'queued'
+                                if active_gap:
+                                    active_gap['end_sample'] = event['end_sample']
+                            if guard.episode and active_gap:
+                                active_gap['end_sample'] = emitted + 480
                             signal = s.setdefault('capture_signal', {'peak_rms': 0.0, 'speech_frames': 0})
                             signal['peak_rms'] = max(signal['peak_rms'], rms)
                             signal['speech_frames'] += int(speech)
-                            if signal['speech_frames']:
+                            recent_levels.append(source_rms)
+                            quiet_samples = 0 if speech else quiet_samples + 480
+                            if speech:
                                 s.pop('capture_warning', None)
-                            elif emitted + 480 >= 160000:
-                                s['capture_warning'] = 'Audio received, but no speech detected; no audio sent to ASR.' if signal['peak_rms'] >= 80 else 'No audible input detected. Check playback and the selected audio source.'
+                            elif quiet_samples >= 160000:
+                                s['capture_warning'] = 'Audio received, but no speech detected; no audio sent to ASR.' if max(recent_levels, default=0) >= 80 else 'No audible input detected. Check playback and the selected audio source.'
                             chunk = intervals.push(samples, speech)
                             emitted += 480
                             if chunk:
                                 enqueue(s, chunk)
                         s['enhancement'].update(processed_samples=emitted, input_samples=cursor,
                                                 backlog_samples=max(0, s['samples'] - cursor))
-                        if emitted % 16320 == 0:
+                        s['enhancement']['diagnostics'] = getattr(self.worker, 'diagnostics', {})
+                        core.changed.notify_all()
+                        if reset or event or emitted % 16320 == 0:
                             core._save(s, progress=True)
+                    return reset
 
                 while not self.closed.is_set():
                     with core.changed:
@@ -108,12 +170,22 @@ class ReuseCapture:
                     if raw:
                         if self.worker is None:
                             factory = core.enhancement_worker_factory or ReuseWorker
-                            self.worker = factory('live', log_path=directory / 'reuse-live.log')
+                            self.worker = factory('live', log_path=directory / 'reuse-live.log', live_policy=policy)
                             with core.changed:
                                 s['enhancement']['runtime'] = self.worker.receipt
-                        pcm = self.worker.push(raw)
+                        if raw_vad is None:
+                            raw_vad = SileroStreamVAD()
+                        values = np.frombuffer(raw, '<i2').astype(np.float32)
+                        source_rms = float(np.sqrt(np.mean(values ** 2)))
+                        source_speech = bool(raw_vad.is_speech(raw.ljust(960, b'\0'), 16000))
+                        source_observations.append((cursor, source_rms, source_speech))
+                        evidence = {'source_speech': source_speech and source_rms >= 80} if policy == 'speech-guard-v1' else {}
+                        pcm = self.worker.push(raw, **evidence)
                         cursor += len(raw) // 2
-                        accept(pcm)
+                        if accept(pcm):
+                            # Reset only model state. The STFT and capture clock
+                            # continue, and erased audio remains a recovery gap.
+                            self.worker.reset()
                     elif boundary:
                         if self.worker:
                             accept(self.worker.flush())
@@ -127,6 +199,12 @@ class ReuseCapture:
                                 if chunk:
                                     enqueue(s, chunk)
                             intervals = vad = None
+                            raw_vad = None
+                            guard = EnhancementHealth()
+                            guard.position = emitted
+                            active_gap = None
+                            quiet_samples = 0
+                            recent_levels.clear()
                             boundary_index += 1
                             state['completed_boundaries'] = boundary_index
                             if boundary['action'] == 'pause' and s['state'] == 'pausing':

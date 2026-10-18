@@ -20,6 +20,8 @@ class ReuseModel:
         import torch
         from safetensors.torch import load_file
         self.torch = torch
+        self.live_policy = 'reference-v1'
+        self.diagnostics = {}
         if not torch.cuda.is_available():
             raise RuntimeError('RE-USE requires a CUDA service host; CPU devices use remote capture')
         repo, revision = REVISIONS[mode]
@@ -55,13 +57,19 @@ class ReuseModel:
             module.__dict__.update(torch=torch, nn=torch.nn, F=F)
             exec(compile(tree, str(self.root / 'online_inference.py'), 'exec'), module.__dict__)
             self.stream = module.StreamingSEMamba(self.model).eval()
-            self.stream.reset(161)
+            self.reset_stream()
         self.receipt = dict(backend=repo, revision=revision, torch=torch.__version__,
                             cuda=torch.version.cuda, device=torch.cuda.get_device_name(0),
                             dtype='float32', sample_rate=16000,
                             ptxas=__import__('os').environ.get('TRITON_PTXAS_PATH', 'triton-bundled'))
 
-    def predict(self, spectrum):
+    def reset_stream(self):
+        if self.mode != 'live':
+            raise ValueError('Only the live RE-USE model has streaming state')
+        with self.torch.inference_mode():
+            self.stream.reset(161)
+
+    def predict(self, spectrum, *, protect_speech=False):
         import numpy as np
         t = self.torch
         with t.inference_mode():
@@ -69,7 +77,15 @@ class ReuseModel:
             mag, phase = self.stream(t.log1p(spec.abs())[None, :, None],
                                      spec.angle()[None, :, None], 8, 0)
             amplitude = t.expm1(mag.relu())
-            if (amplitude == 0).float().mean().item() > .5:
+            zero_fraction = (amplitude == 0).float().mean().item()
+            guarded = self.live_policy == 'speech-guard-v1' and protect_speech
+            muted = zero_fraction > .5 and not guarded
+            for name, increment in dict(frames=1, native_zero_frames=int(zero_fraction == 1),
+                    postfilter_muted_frames=int(muted), protected_frames=int(guarded),
+                    postfilter_erased_nonzero_frames=int(muted and zero_fraction < 1),
+                    protected_nonzero_frames=int(guarded and .5 < zero_fraction < 1)).items():
+                self.diagnostics[name] = self.diagnostics.get(name, 0) + increment
+            if muted:
                 amplitude.zero_()
             result = t.polar(amplitude, phase).flatten().cpu().numpy()
         return np.asarray(result, dtype=np.complex64)

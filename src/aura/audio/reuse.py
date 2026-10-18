@@ -11,7 +11,7 @@ STRATEGY = 'reuse-v1'
 
 
 class ReuseWorker:
-    def __init__(self, mode, *, progress=None, log_path=None):
+    def __init__(self, mode, *, progress=None, log_path=None, live_policy='reference-v1'):
         runtime = Path(os.environ.get('AURA_REUSE_RUNTIME', Path(__file__).resolve().parents[3] / 'runtime'))
         python = runtime / 'reuse-venv/bin/python'
         if not python.is_file():
@@ -29,10 +29,11 @@ class ReuseWorker:
         self.close_lock = threading.Lock()
         self.responses = queue.Queue()
         self.progress = progress
+        self.diagnostics = {}
         self.reader = threading.Thread(target=self._read, daemon=True)
         self.reader.start()
         try:
-            self.receipt = self.call(action='load', mode=mode, root=str(runtime / 'reuse-source'))
+            self.receipt = self.call(action='load', mode=mode, root=str(runtime / 'reuse-source'), live_policy=live_policy)
         except BaseException:
             self.close()
             raise
@@ -63,11 +64,19 @@ class ReuseWorker:
             self.close()
             raise RuntimeError('RE-USE worker unavailable; original audio retained for recovery') from exc
 
-    def push(self, pcm):
-        return base64.b64decode(self.call(action='push', pcm=base64.b64encode(pcm).decode())['pcm'])
+    def push(self, pcm, *, source_speech=None):
+        evidence = {} if source_speech is None else {'source_speech': source_speech}
+        result = self.call(action='push', pcm=base64.b64encode(pcm).decode(), **evidence)
+        self.diagnostics = result.get('diagnostics', {})
+        return base64.b64decode(result['pcm'])
 
     def flush(self):
-        return base64.b64decode(self.call(action='flush')['pcm'])
+        result = self.call(action='flush')
+        self.diagnostics = result.get('diagnostics', {})
+        return base64.b64decode(result['pcm'])
+
+    def reset(self, *, new_interval=False):
+        return self.call(action='reset', new_interval=new_interval)
 
     def enhance_file(self, source, target):
         return self.call(action='file', source=str(source), target=str(target))

@@ -54,6 +54,9 @@ def parser():
                        "capture": "Run client audio capture"}[command]
         sub = subs.add_parser(command, help=description)
         sub.add_argument("session_id")
+        if command == 'recover':
+            sub.add_argument('--language', choices=('zh', 'en', 'auto'), default=None,
+                             help='Override language for recovery jobs only')
         if command == "capture":
             sub.add_argument("--capture-backend", choices=("rust", "python"), default="rust" if sys.platform == "linux" else "python")
     for command in ("record", "transcribe", "schedule"):
@@ -143,7 +146,7 @@ def inspect_session(session, machine=False):
         show(session, True)
     else:
         fields = ("id", "title", "state", "created_at", "updated_at", "source", "capture_location",
-                  "error", "capture_error", "asr_issues", "work", "artifacts", "options", "last_split")
+                  "error", "capture_error", "capture_warning", "enhancement", "asr_issues", "work", "artifacts", "options", "last_split")
         print(safe_text(json.dumps({k: session[k] for k in fields if k in session}, ensure_ascii=False, indent=2)))
 
 
@@ -289,6 +292,10 @@ def execute(client, args, *, on_progress=None):
         values["stop_at"] = args.stop_at
     if hasattr(args, "session_id"):
         values["session_id"] = args.session_id
+    if command == 'recover' and args.language is not None:
+        if not client.request('capabilities').get('recover_language'):
+            raise RuntimeError('This service does not support recovery language overrides; finish active work before restarting it.')
+        values['language'] = None if args.language == 'auto' else args.language
     if command in ("record", "transcribe", "schedule"):
         options = {}
         if args.model is not None:
