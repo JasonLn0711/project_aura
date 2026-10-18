@@ -13,7 +13,61 @@ from aura.native_capture import helper
 from test_shared_sessions import test_server, wait_state
 
 
+def pending_delivery_server(root):
+    from unittest.mock import patch
+    from aura.service import serve
+    from reuse_fixtures import SessionCore
+    from test_shared_sessions import Speech, fake_inference
+    class PendingCore(SessionCore):
+        def _new(self, *args, **kwargs):
+            session = super()._new(*args, **kwargs)
+            session['enhancement']['gaps'].append(dict(id='review', reason='suppression',
+                start_sample=0,end_sample=480,status='pending',review_required_ranges=[[0,480]]))
+            return session
+    with patch('aura.audio.vad.SileroStreamVAD',return_value=Speech()):
+        serve(root,core=PendingCore(root,executor=fake_inference))
+
+
 class NativeCaptureTests(unittest.TestCase):
+    def test_ready_with_review_gaps_exits_successfully_and_retains_spool(self):
+        binary = helper()
+        with tempfile.TemporaryDirectory() as root:
+            root = Path(root)
+            (root/'input.pcm').write_bytes(b'\xe8\x03'*480*100)
+            server = multiprocessing.get_context('spawn').Process(target=pending_delivery_server,args=(str(root/'service'),))
+            server.start()
+            native = None
+            try:
+                path = root/'service/connection.json'
+                deadline = time.monotonic()+10
+                while not path.exists():
+                    if time.monotonic()>deadline: self.fail('Service did not start')
+                    time.sleep(.02)
+                connection=json.loads(path.read_text())
+                with AuraClient(connection) as client:
+                    sid=client.request('record',{'capture_location':'client'})['id']
+                    wait_state(client,sid,'recording')
+                    native=subprocess.Popen([binary],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True)
+                    config=dict(version=1,connection=connection,session_id=sid,directory=str(root/'spool'),sources=[],input_pcm=str(root/'input.pcm'))
+                    out,err=native.communicate(json.dumps(config)+'\n',timeout=15)
+                    self.assertEqual(native.returncode,0,out+err)
+                    session=wait_state(client,sid,'ready')
+                    self.assertFalse(session.get('delivery_committed'))
+                    self.assertEqual(session['samples'],480*100)
+                    self.assertTrue((root/'spool/frames.pcm').exists())
+                    events=[json.loads(line) for line in out.splitlines()]
+                    self.assertTrue(any(e.get('event')=='completed' and e.get('spool_retained') for e in events))
+                    # Completed retained spools can reconnect without uploading twice.
+                    native=subprocess.Popen([binary],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True)
+                    out,err=native.communicate(json.dumps(config)+'\n',timeout=15)
+                    self.assertEqual(native.returncode,0,out+err)
+                    self.assertEqual(client.request('get',{'session_id':sid})['samples'],480*100)
+                    self.assertTrue((root/'spool/frames.pcm').exists())
+            finally:
+                if native and native.poll() is None:
+                    native.kill();native.communicate()
+                server.terminate();server.join(timeout=10)
+
     def test_native_pcm_forwarding_and_service_restart(self):
         try:
             binary = helper()

@@ -280,6 +280,12 @@ fn cleanup_spool(directory: &std::path::Path) -> Result<()> {
     Ok(())
 }
 
+fn delivery_ready(state: &str, requires_commit: bool, committed: bool) -> bool {
+    // A completed export can retain working audio for unresolved review gaps.
+    // Transport completion and permission to remove the spool are separate.
+    !requires_commit || committed || state == "ready"
+}
+
 async fn run(cfg: Init, mut updates: tokio::sync::mpsc::Receiver<Connection>) -> Result<()> {
     if cfg.version != 1 {
         bail!("Unsupported helper initialization version");
@@ -376,10 +382,10 @@ async fn run(cfg: Init, mut updates: tokio::sync::mpsc::Receiver<Connection>) ->
                 event(json!({"event":"completed","durable_sequence":ack})); return Ok(true);
             }
             if matches!(opened["state"].as_str(), Some("ready" | "draining" | "exporting")) && ack == manifest.base_sequence + capture.frames.load(Ordering::Acquire)
-                && (!requires_commit || opened["delivery_committed"].as_bool() == Some(true)) {
+                && delivery_ready(opened["state"].as_str().unwrap_or(""), requires_commit, opened["delivery_committed"].as_bool() == Some(true)) {
                 capture.stop();
-                if requires_commit { cleanup_spool(&cfg.directory)?; }
-                event(json!({"event":"completed","durable_sequence":ack})); return Ok(true);
+                if requires_commit && opened["delivery_committed"].as_bool() == Some(true) { cleanup_spool(&cfg.directory)?; }
+                event(json!({"event":"completed","durable_sequence":ack,"spool_retained":requires_commit && opened["delivery_committed"].as_bool() != Some(true)})); return Ok(true);
             }
             if ack < manifest.base_sequence || ack > manifest.base_sequence + capture.frames.load(Ordering::Acquire) { bail!("Server cursor is outside the local recovery spool"); }
             let mut state = opened["state"].as_str().unwrap_or("failed").to_string();
@@ -402,10 +408,11 @@ async fn run(cfg: Init, mut updates: tokio::sync::mpsc::Receiver<Connection>) ->
                         if let Some(n) = value["input_sequence"].as_u64() { if n < ack || n > sent { bail!("Invalid acknowledgement cursor"); } ack = n; }
                         if let Some(s) = value["state"].as_str() { state = s.to_string(); }
                         if matches!(state.as_str(),"draining"|"exporting"|"ready") && (finishing || state == "ready")
-                            && (!requires_commit || value["delivery_committed"].as_bool() == Some(true)) {
+                            && ack == manifest.base_sequence + capture.frames.load(Ordering::Acquire)
+                            && delivery_ready(&state, requires_commit, value["delivery_committed"].as_bool() == Some(true)) {
                             capture.stop();
-                            if requires_commit { cleanup_spool(&cfg.directory)?; }
-                            event(json!({"event":"completed","durable_sequence":ack})); return Ok(true);
+                            if requires_commit && value["delivery_committed"].as_bool() == Some(true) { cleanup_spool(&cfg.directory)?; }
+                            event(json!({"event":"completed","durable_sequence":ack,"spool_retained":requires_commit && value["delivery_committed"].as_bool() != Some(true)})); return Ok(true);
                         }
                         if state == "paused" || (pause_finishing && state == "recording") { finishing = false; pause_finishing = false; }
                     }
@@ -503,6 +510,14 @@ async fn main() {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn completed_export_can_retain_review_audio() {
+        assert!(delivery_ready("ready", true, false));
+        assert!(!delivery_ready("exporting", true, false));
+        assert!(!delivery_ready("draining", true, false));
+        assert!(delivery_ready("exporting", true, true));
+        assert!(delivery_ready("draining", false, false));
+    }
     #[test]
     fn silence_is_silence() {
         assert_eq!(mix(&[vec![0; FRAME], vec![0; FRAME]]), vec![0; FRAME]);
