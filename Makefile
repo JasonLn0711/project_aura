@@ -54,3 +54,16 @@ endif
 clean:
 	rm -rf build dist *.egg-info src/*.egg-info
 	find . -type d -name __pycache__ -prune -exec rm -rf {} +
+
+.PHONY: architecture-setup architecture-check architecture-build architecture-serve
+architecture-setup:
+	python3 scripts/architecture.py setup
+
+architecture-check:
+	python3 scripts/architecture.py check
+
+architecture-build:
+	python3 scripts/architecture.py build
+
+architecture-serve:
+	python3 scripts/architecture.py serve

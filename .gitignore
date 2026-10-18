@@ -14,6 +14,10 @@ src/*.egg-info/
 temp_transcript.txt
 temp_normalized.wav
 runtime/
+# Rebuildable interactive architecture viewer and redundant code-image formats.
+artifacts/architecture-c4/site/
+docs/architecture/c4/code/*.png
+docs/architecture/c4/code/*.cmapx
 outputs/
 recordings/
 *_session/
