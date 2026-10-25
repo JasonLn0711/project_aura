@@ -121,8 +121,11 @@ preserve `availability_validation`, `LIVE_MINIMUM_COMPLETED` and
 accuracy, denoising quality and latency remain `not_evaluated`. Pending review
 intervals and retained originals remain authoritative.
 
-Windows packaging/diagnostic source and optional Linux Parakeet/diarization are
-shown with their activation boundaries. The current RE-USE runtime uses Linux
+Windows packaging/diagnostic source and optional Linux Parakeet are shown
+with their activation boundaries. Default-on Nemotron runs in an isolated CUDA
+worker; its [operating contract](../../nemotron-diarization.md) and
+[validation packet](../../../artifacts/nemotron/README.md) distinguish the measured
+pre-merge runtime from pending combined RE-USE/Nemotron live acceptance. The current RE-USE runtime uses Linux
 environment paths; a Windows deployment view is not evidence of Windows RE-USE
 availability. Physical amd64, second-host SSH and microphone acceptance retain
 their existing gates. Historical summary-compatible artifacts can be searched;
@@ -140,7 +143,7 @@ exclusive: callers may load the same module into several processes.
 
 The [artifact packet](../../../artifacts/architecture-c4/README.md) owns build and
 browser evidence, source/tool identities and image hashes. AURA owns the model
-and implementation detail. The [Planning day locator](../../../../planning-everything-track/weeks/2026-W42/days/2026-10-18.md#aura-c4-2026-10-18)
+and implementation detail. The [Planning day locator](https://github.com/JasonLn0711/planning-everything-track/blob/main/weeks/2026-W42/days/2026-10-18.md#aura-c4-2026-10-18)
 holds status, capacity and the next maintenance action. This package adds no GPU
 experiment, production restart, public hosting service or release tag.
 

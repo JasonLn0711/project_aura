@@ -38,3 +38,12 @@ The runtime claims still belong to the
 Architecture render success establishes documentation/tool availability only.
 Private audio, transcripts, connection credentials, model weights, downloaded
 binaries and detailed tool logs are not included in this tracked packet.
+
+## October 25 Nemotron integration refresh
+
+The current render includes default-on Nemotron and 77 mapped source files
+across 30 views. The October 18 validation and publication-check JSON files remain
+historical receipts; the current source seal and browser check are in
+`manifest.json` and `browser-validation.json`. The [Nemotron publication checks](../nemotron/README.md#combined-code-checks)
+record combined-code regression and the distinction between measured runtime and
+pending combined RE-USE/Nemotron live acceptance.

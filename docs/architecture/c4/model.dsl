@@ -43,7 +43,7 @@ model {
             asr = component "ASR runtime" "Breeze by default; optional Linux Parakeet. CUDA required." "faster-whisper / CTranslate2 / NeMo"
             filePipeline = component "Imported media pipeline" "Offline RE-USE, normalization, transcription, formatting and optional diarization." "Python / FFmpeg"
             postprocess = component "Transcript postprocessing" "Chinese punctuation, hotwords, conservative glossary correction and speaker assignment." "Python / optional Transformers"
-            diarization = component "Optional diarization" "Explicit imported/refined-file speaker turns and timestamp assignment." "pyannote.audio" "Optional"
+            diarization = component "Nemotron diarization" "Independent stateful worker; default-on live and complete-file speaker turns." "Isolated Transformers / CUDA"
             media = component "Media conversion" "FFmpeg normalization and bounded private scratch files." "Python / FFmpeg"
             exportExecution = component "Export execution" "Prepare offline RE-USE M4A and fully validate it; return delivery to the service." "Python / FFmpeg"
         }
@@ -134,7 +134,8 @@ model {
     filePipeline -> reuseProtocol "Offline enhancement of supplied file" "JSONL / file paths"
     filePipeline -> media "Normalizes enhanced media" "FFmpeg subprocess"
     filePipeline -> asr "Transcribes normalized enhanced audio" "Python / CUDA"
-    filePipeline -> diarization "Optionally assigns speaker turns" "Python / GPU"
+    service -> diarization "Publishes durable original PCM and receives speaker activity" "JSONL / subprocess"
+    filePipeline -> diarization "Assigns speaker turns unless explicitly disabled" "Python / GPU"
     filePipeline -> postprocess "Formats punctuation, glossary and speakers" "Python calls"
     asr -> postprocess "Restores live punctuation and validates context" "Python calls"
     asr -> models "Loads selected cached runtime weights" "Filesystem"

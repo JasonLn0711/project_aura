@@ -45,8 +45,10 @@ Generated from `source-map.json`; one canonical owner per source file.
 | [src/aura/completion.py](../../../src/aura/completion.py) | `terminal` | current |  |
 | [src/aura/config.py](../../../src/aura/config.py) | `scheduling` | current |  |
 | [src/aura/diarization/__init__.py](../../../src/aura/diarization/__init__.py) | `diarization` | current |  |
-| [src/aura/diarization/pyannote_pipeline.py](../../../src/aura/diarization/pyannote_pipeline.py) | `diarization` | current |  |
+| [src/aura/diarization/live.py](../../../src/aura/diarization/live.py) | `diarization` | current | Isolated Nemotron streaming and complete-file runtime. |
+| [src/aura/diarization/nemotron.py](../../../src/aura/diarization/nemotron.py) | `diarization` | current | Isolated Nemotron streaming and complete-file runtime. |
 | [src/aura/diarization/speaker_assignment.py](../../../src/aura/diarization/speaker_assignment.py) | `postprocess` | current |  |
+| [src/aura/diarization/worker.py](../../../src/aura/diarization/worker.py) | `diarization` | current | Isolated Nemotron streaming and complete-file runtime. |
 | [src/aura/evidence_search.py](../../../src/aura/evidence_search.py) | `evidenceIndex` | current |  |
 | [src/aura/metadata.py](../../../src/aura/metadata.py) | `commands` | current |  |
 | [src/aura/native_capture.py](../../../src/aura/native_capture.py) | `nativeLauncher` | current |  |

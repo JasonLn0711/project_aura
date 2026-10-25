@@ -15,7 +15,7 @@ class "LiveRepair" as LiveRepair <<class>> [[https://github.com/JasonLn0711/proj
 class "resolve_live_gaps" as resolve_live_gaps <<function>> [[https://github.com/JasonLn0711/project_aura/blob/main/src/aura/reuse_live_repair.py#L180]] {
   (session)
 }
-class "ReuseRecovery" as ReuseRecovery <<class>> [[https://github.com/JasonLn0711/project_aura/blob/main/src/aura/reuse_recovery.py#L108]] {
+class "ReuseRecovery" as ReuseRecovery <<class>> [[https://github.com/JasonLn0711/project_aura/blob/main/src/aura/reuse_recovery.py#L110]] {
   close()
 }
 class "enhance_source" as enhance_source <<function>> [[https://github.com/JasonLn0711/project_aura/blob/main/src/aura/reuse_recovery.py#L14]] {

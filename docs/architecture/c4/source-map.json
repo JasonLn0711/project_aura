@@ -249,16 +249,28 @@
       "note": ""
     },
     {
-      "path": "src/aura/diarization/pyannote_pipeline.py",
+      "path": "src/aura/diarization/live.py",
       "owner": "diarization",
       "classification": "current",
-      "note": ""
+      "note": "Isolated Nemotron streaming and complete-file runtime."
+    },
+    {
+      "path": "src/aura/diarization/nemotron.py",
+      "owner": "diarization",
+      "classification": "current",
+      "note": "Isolated Nemotron streaming and complete-file runtime."
     },
     {
       "path": "src/aura/diarization/speaker_assignment.py",
       "owner": "postprocess",
       "classification": "current",
       "note": ""
+    },
+    {
+      "path": "src/aura/diarization/worker.py",
+      "owner": "diarization",
+      "classification": "current",
+      "note": "Isolated Nemotron streaming and complete-file runtime."
     },
     {
       "path": "src/aura/evidence_search.py",

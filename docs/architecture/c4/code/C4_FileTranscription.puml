@@ -29,8 +29,9 @@ class "FileTranscriptionResult" as FileTranscriptionResult <<class>> [[https://g
   lines
   segments
   cancelled
+  speaker_turns
 }
-class "transcribe_file" as transcribe_file <<function>> [[https://github.com/JasonLn0711/project_aura/blob/main/src/aura/asr/file_pipeline.py#L283]] {
+class "transcribe_file" as transcribe_file <<function>> [[https://github.com/JasonLn0711/project_aura/blob/main/src/aura/asr/file_pipeline.py#L284]] {
   (model, file_path, settings, worker_id, cancellation, status_callback, line_callback, diarization_runner)
 }
 transcribe_file --> FileTranscriptionSettings : validated fixed options
