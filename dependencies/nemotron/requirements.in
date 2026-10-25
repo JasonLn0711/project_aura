@@ -1,0 +1,4 @@
+torch==2.11.0
+transformers @ https://github.com/huggingface/transformers/archive/50e35cc0ca18ec19b80653690de553e6decf74f5.tar.gz
+numpy==2.2.6
+librosa==0.11.0

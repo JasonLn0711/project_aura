@@ -1,3 +1,4 @@
+from tests.fake_diarization import FakeDiarization
 from pathlib import Path
 import tempfile
 import time
@@ -63,7 +64,7 @@ class RecoveryTests(unittest.TestCase):
                 return dict(text=f'part {start}', start_sample=start, end_sample=payload['end'])
             return fake_inference(kind, payload)
         with tempfile.TemporaryDirectory() as root, patch('aura.audio.vad.SileroStreamVAD', return_value=Speech()):
-            core = SessionCore(root, executor=execute)
+            core = SessionCore(root, executor=execute, diarization_factory=FakeDiarization)
             try:
                 sid = core.request('record', {'options': {'audio_format': 'wav'}})['id']
                 wait_for(core, sid, lambda s: s['state'] == 'recording')
@@ -132,7 +133,7 @@ class RecoveryTests(unittest.TestCase):
                 raise RuntimeError('Synthetic fatal worker error')
             return fake_inference(kind, payload)
         with tempfile.TemporaryDirectory() as root, patch('aura.audio.vad.SileroStreamVAD', return_value=Speech()):
-            core = SessionCore(root, executor=execute)
+            core = SessionCore(root, executor=execute, diarization_factory=FakeDiarization)
             try:
                 sid = core.request('record')['id']
                 wait_for(core, sid, lambda s: s['state'] == 'recording')

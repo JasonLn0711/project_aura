@@ -30,12 +30,9 @@ class AppSettings:
     live_initial_prompt: str | None = DEFAULT_LIVE_PROMPT
     denoise_enabled: bool = True
     denoise_preset: str = "light"
-    speaker_diarization_enabled: bool = False
-    speaker_min_speakers: int = 2
-    speaker_max_speakers: int = 6
+    speaker_diarization_enabled: bool = True
     speaker_diarization_model: str = DIARIZATION_MODEL_ID
     speaker_diarization_device: str = DEVICE
-    speaker_diarization_use_exclusive: bool = True
     chinese_punctuation_enabled: bool = True
     chinese_punctuation_model: str = CHINESE_PUNCTUATION_MODEL_ID
     splitter_target_minutes: int = 40

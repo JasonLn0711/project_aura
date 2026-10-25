@@ -22,7 +22,7 @@ from aura.asr.file_pipeline import (
 from aura.audio.enhancement_backends import EnhancementResult
 from aura.audio.meeting_distance import MEETING_DISTANCE_FAR_SPEAKER, MEETING_DISTANCE_NORMAL
 from aura.config import DEFAULT_PROMPT
-from aura.diarization.pyannote_pipeline import DiarizationDependencyError, DiarizationSettings
+from aura.diarization.nemotron import DiarizationDependencyError, DiarizationSettings
 from aura.diarization.speaker_assignment import SpeakerTurn
 from aura.system import runtime_paths
 
@@ -81,8 +81,8 @@ class FilePipelineTests(unittest.TestCase):
         self.assertEqual(kwargs["initial_prompt"], DEFAULT_PROMPT)
 
     def test_file_transcription_settings_apply_meeting_distance_denoise_floor(self):
-        normal = FileTranscriptionSettings(meeting_distance_mode=MEETING_DISTANCE_NORMAL, denoise_preset="off")
-        far = FileTranscriptionSettings(meeting_distance_mode=MEETING_DISTANCE_FAR_SPEAKER, denoise_preset="light")
+        normal = FileTranscriptionSettings(diarization=DiarizationSettings(enabled=False), meeting_distance_mode=MEETING_DISTANCE_NORMAL, denoise_preset="off")
+        far = FileTranscriptionSettings(diarization=DiarizationSettings(enabled=False), meeting_distance_mode=MEETING_DISTANCE_FAR_SPEAKER, denoise_preset="light")
 
         self.assertEqual(normal.denoise_preset, "light")
         self.assertEqual(far.denoise_preset, "medium")
@@ -106,7 +106,7 @@ class FilePipelineTests(unittest.TestCase):
 
             result = prepare_import_audio(
                 file_path=str(source),
-                settings=FileTranscriptionSettings(target_dbfs=-20.0),
+                settings=FileTranscriptionSettings(diarization=DiarizationSettings(enabled=False), target_dbfs=-20.0),
                 temp_path=target,
             )
 
@@ -134,7 +134,7 @@ class FilePipelineTests(unittest.TestCase):
             ):
                 result = prepare_import_audio(
                     file_path=str(source),
-                    settings=FileTranscriptionSettings(target_dbfs=-20.0, enable_denoise=False, denoise_preset="off"),
+                    settings=FileTranscriptionSettings(diarization=DiarizationSettings(enabled=False), target_dbfs=-20.0, enable_denoise=False, denoise_preset="off"),
                     temp_path=target,
                     status_callback=statuses.append,
                 )
@@ -175,7 +175,7 @@ class FilePipelineTests(unittest.TestCase):
             ):
                 result = prepare_import_audio(
                     file_path=str(source),
-                    settings=FileTranscriptionSettings(
+                    settings=FileTranscriptionSettings(diarization=DiarizationSettings(enabled=False),
                         target_dbfs=-20.0,
                         meeting_distance_mode=MEETING_DISTANCE_FAR_SPEAKER,
                     ),
@@ -204,7 +204,7 @@ class FilePipelineTests(unittest.TestCase):
             with patch("aura.asr.file_pipeline.enhance_import_audio_if_available", side_effect=fake_enhance):
                 result = prepare_import_audio(
                     file_path=str(source),
-                    settings=FileTranscriptionSettings(
+                    settings=FileTranscriptionSettings(diarization=DiarizationSettings(enabled=False),
                         target_dbfs=-20.0,
                         meeting_distance_mode=MEETING_DISTANCE_FAR_SPEAKER,
                     ),
@@ -248,7 +248,7 @@ class FilePipelineTests(unittest.TestCase):
 
                 result = prepare_import_audio(
                     file_path=str(source),
-                    settings=FileTranscriptionSettings(target_dbfs=-20.0),
+                    settings=FileTranscriptionSettings(diarization=DiarizationSettings(enabled=False), target_dbfs=-20.0),
                     temp_path=target,
                 )
 
@@ -264,7 +264,7 @@ class FilePipelineTests(unittest.TestCase):
             with self.assertRaises(FileTranscriptionCancelled):
                 prepare_import_audio(
                     file_path=str(source),
-                    settings=FileTranscriptionSettings(),
+                    settings=FileTranscriptionSettings(diarization=DiarizationSettings(enabled=False)),
                     temp_path=Path(tmpdir) / "prepared.wav",
                     cancellation=token,
                 )
@@ -281,7 +281,7 @@ class FilePipelineTests(unittest.TestCase):
                 result = transcribe_file(
                     model=model,
                     file_path=str(source),
-                    settings=FileTranscriptionSettings(beam_size=7, language="zh"),
+                    settings=FileTranscriptionSettings(diarization=DiarizationSettings(enabled=False), beam_size=7, language="zh"),
                     worker_id="unit",
                     status_callback=statuses.append,
                     line_callback=lines.append,
@@ -311,7 +311,7 @@ class FilePipelineTests(unittest.TestCase):
                 result = transcribe_file(
                     model=model,
                     file_path=str(source),
-                    settings=FileTranscriptionSettings(language=None),
+                    settings=FileTranscriptionSettings(diarization=DiarizationSettings(enabled=False), language=None),
                     worker_id="unit-zh-punc",
                     status_callback=statuses.append,
                     line_callback=lines.append,
@@ -330,8 +330,7 @@ class FilePipelineTests(unittest.TestCase):
 
             def fake_diarization_runner(path, settings):
                 self.assertTrue(Path(path).exists())
-                self.assertEqual(settings.min_speakers, 2)
-                self.assertEqual(settings.max_speakers, 4)
+                self.assertEqual(settings.model_id, "nvidia/Nemotron-3-Diarization")
                 return [SpeakerTurn(start=1.0, end=3.0, speaker="SPEAKER_01")]
 
             with patch.dict(os.environ, {runtime_paths.RUNTIME_DIR_ENV: tmpdir}):
@@ -339,7 +338,7 @@ class FilePipelineTests(unittest.TestCase):
                     model=model,
                     file_path=str(source),
                     settings=FileTranscriptionSettings(
-                        diarization=DiarizationSettings(enabled=True, min_speakers=2, max_speakers=4)
+                        diarization=DiarizationSettings(enabled=True)
                     ),
                     worker_id="unit-diar",
                     line_callback=lines.append,

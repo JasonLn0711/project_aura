@@ -8,7 +8,7 @@ from pathlib import Path
 
 from aura.asr.punctuation import PUNCTUATION_SETUP_GUIDANCE
 from aura.config import DIARIZATION_MODEL_ID
-from aura.diarization.pyannote_pipeline import HF_TOKEN_ENV, HUGGINGFACE_TOKEN_ENV, huggingface_token
+from aura.diarization.nemotron import runtime_python
 from aura.metadata import __version__
 from aura.system.audio_diagnostics import AudioDiagnostics, collect_audio_diagnostics
 from aura.system.gpu_diagnostics import GpuDiagnostics, collect_gpu_diagnostics
@@ -28,29 +28,19 @@ def _module_available(module_name: str) -> bool:
 @dataclass(frozen=True)
 class DiarizationDiagnostics:
     model_id: str = DIARIZATION_MODEL_ID
-    pyannote_available: bool = False
-    torch_available: bool = False
+    runtime_available: bool = False
+    model_available: bool = False
     torch_cuda_available: bool = False
-    token_available: bool = False
+    error: str = ""
 
     @property
     def ready(self) -> bool:
-        return self.pyannote_available and self.torch_available and self.token_available
+        return self.runtime_available and self.model_available and self.torch_cuda_available
 
     @property
     def status_line(self) -> str:
-        missing = []
-        if not self.pyannote_available:
-            missing.append("pyannote.audio")
-        if not self.torch_available:
-            missing.append("torch")
-        if not self.token_available:
-            missing.append(f"{HUGGINGFACE_TOKEN_ENV} or {HF_TOKEN_ENV}")
-        if missing:
-            return "needs setup: " + ", ".join(missing)
-        if self.torch_cuda_available:
-            return "ready with CUDA-capable torch"
-        return "ready; torch is installed but CUDA is not available"
+        return "Nemotron runtime ready; live inference requires validation" if self.ready else (
+            self.error or "needs setup: python3 scripts/setup_nemotron.py")
 
 
 @dataclass(frozen=True)
@@ -107,21 +97,20 @@ class RuntimeDiagnostics:
 
 
 def collect_diarization_diagnostics() -> DiarizationDiagnostics:
-    torch_available = _module_available("torch")
-    torch_cuda_available = False
-    if torch_available:
-        try:
-            import torch
-
-            torch_cuda_available = bool(torch.cuda.is_available())
-        except Exception:
-            torch_cuda_available = False
-    return DiarizationDiagnostics(
-        pyannote_available=_module_available("pyannote.audio"),
-        torch_available=torch_available,
-        torch_cuda_available=torch_cuda_available,
-        token_available=bool(huggingface_token()),
-    )
+    import subprocess
+    import json
+    from aura.diarization.nemotron import MODEL_ID, MODEL_REVISION
+    if not runtime_python().is_file():
+        return DiarizationDiagnostics()
+    probe = ("import json,torch; from transformers import Nemotron3DiarizationForAudioFrameClassification; "
+             "from huggingface_hub import try_to_load_from_cache; "
+             f"p=try_to_load_from_cache({MODEL_ID!r},'model.safetensors',revision={MODEL_REVISION!r}); "
+             "print(json.dumps(dict(runtime_available=True,model_available=isinstance(p,str),torch_cuda_available=torch.cuda.is_available())))")
+    try:
+        result = subprocess.run([str(runtime_python()), '-c', probe], capture_output=True, text=True, timeout=30, check=True)
+        return DiarizationDiagnostics(**json.loads(result.stdout))
+    except (OSError, subprocess.SubprocessError, ValueError) as exc:
+        return DiarizationDiagnostics(error=f"Nemotron environment check failed: {type(exc).__name__}")
 
 
 def collect_punctuation_diagnostics() -> PunctuationDiagnostics:
@@ -307,12 +296,11 @@ def format_runtime_report(diagnostics: RuntimeDiagnostics) -> str:
             f"- transformers import: {'ok' if diagnostics.punctuation.transformers_available else 'missing'}",
             f"- Local model status: {diagnostics.punctuation.status_line}",
             "",
-            "Optional Speaker Diarization",
+            "Speaker Diarization (default on)",
             f"- Model: {diagnostics.diarization.model_id}",
-            f"- pyannote.audio import: {'ok' if diagnostics.diarization.pyannote_available else 'missing'}",
-            f"- torch import: {'ok' if diagnostics.diarization.torch_available else 'missing'}",
-            f"- torch CUDA: {'available' if diagnostics.diarization.torch_cuda_available else 'not available'}",
-            f"- Hugging Face token: {'configured' if diagnostics.diarization.token_available else 'missing'}",
+            f"- Isolated runtime: {'ok' if diagnostics.diarization.runtime_available else 'missing'}",
+            f"- Model cache: {'ok' if diagnostics.diarization.model_available else 'missing'}",
+            f"- CUDA: {'available' if diagnostics.diarization.torch_cuda_available else 'not available'}",
             f"- Diarization status: {diagnostics.diarization.status_line}",
         ]
     )

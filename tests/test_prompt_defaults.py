@@ -37,8 +37,6 @@ class PromptDefaultTests(unittest.TestCase):
             enable_denoise=True,
             denoise_preset="medium",
             enable_speaker_diarization=True,
-            min_speakers=3,
-            max_speakers=5,
         )
 
         self.assertEqual(thread.settings.target_dbfs, -18.0)
@@ -48,8 +46,6 @@ class PromptDefaultTests(unittest.TestCase):
         self.assertTrue(thread.enable_denoise)
         self.assertEqual(thread.settings.denoise_preset, "medium")
         self.assertTrue(thread.settings.diarization.enabled)
-        self.assertEqual(thread.settings.diarization.min_speakers, 3)
-        self.assertEqual(thread.settings.diarization.max_speakers, 5)
 
     def test_live_thread_starts_with_live_default_prompt(self):
         thread = TranscriberThread()

@@ -23,6 +23,19 @@ def recording(directory, *, seconds=0.2):
 
 
 class AudioRetentionTests(unittest.TestCase):
+    def test_unfinished_diarization_prevents_source_deletion(self):
+        from aura.audio.retention import complete_recording_m4a
+        with tempfile.TemporaryDirectory() as root:
+            manifest = recording(root)
+            output = prepare_recording_m4a(manifest)
+            data = json.loads(manifest.read_text())
+            data['diarization'] = {'state': 'failed'}
+            write_session_manifest(manifest, data)
+            with self.assertRaisesRegex(ValueError, 'Diarization is unfinished'):
+                complete_recording_m4a(manifest, output)
+            self.assertTrue((Path(root)/'meeting.wav').exists())
+            self.assertTrue(list(Path(root).rglob('*.pcm')))
+
     def test_preview_is_read_only_and_apply_removes_only_registered_audio(self):
         with tempfile.TemporaryDirectory() as root:
             directory = Path(root)

@@ -150,6 +150,9 @@ class TranscriptionTab(QWidget):
         self.session_status = QLabel("選取工作階段，或開始新錄音。暫停會同時停止收音與新的辨識工作。")
         self.session_status.setWordWrap(True)
         main.addWidget(self.session_status)
+        self.speaker_status = QLabel("Nemotron · 最多 8 位語者")
+        self.speaker_status.setWordWrap(True)
+        main.addWidget(self.speaker_status)
         self.text_area = QPlainTextEdit()
         self.text_area.setAccessibleName("可編輯逐字稿")
         self.text_area.setPlaceholderText("逐字稿會顯示於此；精修結果另存，保留您的編輯。")
@@ -196,7 +199,8 @@ class TranscriptionTab(QWidget):
         form.addRow(self.punctuation)
         self.breeze_language_index = self.language.currentIndex()
         self.asr_model.currentIndexChanged.connect(self.update_model_controls)
-        self.diarization = QCheckBox("匯入／精修時區分說話者")
+        self.diarization = QCheckBox("區分說話者（Nemotron，即時／完整檔案）")
+        self.diarization.setChecked(True)
         form.addRow(self.diarization)
         preferences = QPushButton("儲存為 GUI／CLI 共用預設")
         preferences.clicked.connect(lambda: self.submit("preferences.set", self.options()))
@@ -275,7 +279,10 @@ class TranscriptionTab(QWidget):
             self.show_error("請先儲存逐字稿編輯，再補轉錄缺段。")
             return
         if self.current:
-            self.submit(command, {"session_id": self.current["id"]})
+            values = {"session_id": self.current["id"]}
+            if command == "refine":
+                values["options"] = {"diarization": self.diarization.isChecked()}
+            self.submit(command, values)
 
     def pause_resume(self):
         if self.current:
@@ -324,6 +331,8 @@ class TranscriptionTab(QWidget):
         self.render(self.current)
 
     def render(self, s):
+        from aura.diarization.live import status_text
+        self.speaker_status.setText(status_text(s.get('diarization', {})))
         state = s["state"]
         self.session_status.setText(f'{s["title"]} · {s["id"]}\n{state} · {s["capture_location"]} / {s["source"]} · {s["options"]["profile"]} · {s["options"].get("asr_model", "breeze")}')
         self.btn_pause.setText("繼續" if state == "paused" else "暫停")

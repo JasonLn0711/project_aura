@@ -1,3 +1,4 @@
+from tests.fake_diarization import FakeDiarization
 import contextlib
 import io
 import json
@@ -13,7 +14,7 @@ from aura.session_core import ACTIVE, SessionCore
 class SessionDeleteTests(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
-        self.core = SessionCore(self.tmp.name, executor=lambda *_: {})
+        self.core = SessionCore(self.tmp.name, executor=lambda *_: {}, diarization_factory=FakeDiarization)
         self.s = self.core._new({}, "ready")
         self.sid = self.s["id"]
         self.directory = self.core.directory(self.sid)
@@ -42,7 +43,7 @@ class SessionDeleteTests(unittest.TestCase):
         self.assertEqual(self.core.events(self.sid), [])
         self.assertEqual(self.core.db.execute("SELECT count(*) FROM commands").fetchone()[0], 0)
         self.core.close()
-        self.core = SessionCore(self.tmp.name, executor=lambda *_: {})
+        self.core = SessionCore(self.tmp.name, executor=lambda *_: {}, diarization_factory=FakeDiarization)
         self.assertEqual(self.core.request("sessions"), [])
 
     def test_busy_sessions_and_running_jobs_cannot_be_deleted(self):
@@ -71,7 +72,7 @@ class SessionDeleteTests(unittest.TestCase):
                 self.core.request("delete", dict(session_id=self.sid, confirm=self.sid))
         self.assertEqual(self.s["state"], "deleting")
         self.core.close()
-        self.core = SessionCore(self.tmp.name, executor=lambda *_: self.fail("Deleted jobs must not execute"))
+        self.core = SessionCore(self.tmp.name, executor=lambda *_: self.fail("Deleted jobs must not execute"), diarization_factory=FakeDiarization)
         self.assertEqual(self.core.request("get", dict(session_id=self.sid))["state"], "deleting")
         self.core.request("delete", dict(session_id=self.sid, confirm=self.sid))
         self.assertEqual(self.core.db.execute("SELECT count(*) FROM jobs").fetchone()[0], 0)

@@ -36,18 +36,19 @@ def execute(kind, payload):
     os.environ["AURA_RUNTIME_DIR"] = str(scratch)
     if kind == "file":
         from dataclasses import asdict
-        from aura.diarization.pyannote_pipeline import DiarizationSettings
+        from aura.diarization.nemotron import DiarizationSettings
         settings = FileTranscriptionSettings(
             asr_model=key, target_dbfs=options["target_dbfs"], beam_size=options["beam_size"],
             language=options["language"], initial_prompt=options["prompt"],
             hotwords=options["hotwords"], denoise_preset=options["denoise"],
             meeting_distance_mode=options["distance"],
             chinese_punctuation_enabled=options["punctuation"],
-            diarization=DiarizationSettings(enabled=options["diarization"],
-                min_speakers=options["min_speakers"], max_speakers=options["max_speakers"]),
+            diarization=DiarizationSettings(enabled=options["diarization"]),
         )
         result = transcribe_file(_model, payload["path"], settings, "session")
-        return {"text": "\n".join(result.lines), "segments": [asdict(s) for s in result.segments], "runtime": runtime}
+        return {"text": "\n".join(result.lines), "segments": [asdict(s) for s in result.segments], "runtime": runtime,
+                "diarization": {"state": "completed" if options["diarization"] else "disabled",
+                    "model_id": settings.diarization.model_id}, "speaker_turns": [asdict(t) for t in result.speaker_turns]}
     start, end = payload["start"], payload["end"]
     if Path(payload["path"]).suffix.lower() == ".wav":
         import wave

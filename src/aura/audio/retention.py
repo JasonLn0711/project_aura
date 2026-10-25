@@ -144,6 +144,8 @@ def complete_recording_m4a(manifest_path: str | Path, output: str | Path, *, per
     manifest_path = Path(manifest_path)
     directory = manifest_path.parent
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    if (manifest.get("diarization") or {}).get("state") in ("failed", "loading", "ready", "running", "recovering"):
+        raise ValueError("Diarization is unfinished; preserve source audio for recovery")
     manifest["audio_tracks"] = {"mixed": str(output.relative_to(directory))}
     manifest["pcm_journals"] = {}
     manifest["audio_cleanup_pending"] = plan["remove"]

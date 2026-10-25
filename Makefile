@@ -2,13 +2,18 @@ PYTHON ?= $(UV) run --no-sync python
 PYTHONPATH ?= src
 UV ?= uv
 
-.PHONY: setup-app setup-dev check test compile build bump-version clean
+.PHONY: setup-app setup-dev setup-nemotron check test compile build bump-version clean
 
 setup-app:
 	$(UV) sync --locked --extra cli --extra gui --extra capture --extra server --extra punctuation --inexact
+	$(PYTHON) scripts/setup_nemotron.py
+
+setup-nemotron:
+	$(PYTHON) scripts/setup_nemotron.py
 
 setup-dev:
 	$(UV) sync --locked --all-extras
+	$(PYTHON) scripts/setup_nemotron.py
 
 check: compile test
 

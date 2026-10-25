@@ -56,13 +56,11 @@ class UIStrings:
         "Arms the recording button to start live recording and transcription at the selected wall-clock time."
     )
     schedule_stop_tooltip: str = "Optionally stops the scheduled recording at the selected wall-clock time."
-    speaker_diarization_label: str = "Identify speakers after import transcription"
+    speaker_diarization_label: str = "Identify speakers with Nemotron"
     speaker_diarization_tooltip: str = (
-        "Uses optional pyannote diarization on imported files and labels transcript segments by speaker. "
-        "Requires pyannote.audio and a Hugging Face token."
+        "Identifies up to eight speakers in live recordings and complete files. "
+        "Requires the isolated Nemotron CUDA runtime."
     )
-    speaker_min_label: str = "Min Speakers:"
-    speaker_max_label: str = "Max Speakers:"
     output_policy_label: str = "Session Output:"
     output_policy_same_folder: str = "Same folder as source/recording"
     output_policy_session_folder: str = "Project outputs/transcripts folder"

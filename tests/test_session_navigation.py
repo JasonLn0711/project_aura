@@ -1,3 +1,4 @@
+from tests.fake_diarization import FakeDiarization
 """Navigation exercises saved service state without opening devices or loading models."""
 import contextlib
 import io
@@ -16,7 +17,7 @@ from aura.terminal import TerminalStatus
 class SessionNavigationTests(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
-        self.core = SessionCore(self.tmp.name, executor=lambda *args: {})
+        self.core = SessionCore(self.tmp.name, executor=lambda *args: {}, diarization_factory=FakeDiarization)
         self.client = AuraClient({'url': 'ws://unused', 'token': 'never-displayed'})
         self.client.request = Mock(side_effect=self.core.request)
 

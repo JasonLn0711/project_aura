@@ -71,7 +71,8 @@ def cleanup_service_sessions(root, *, apply=False):
             unresolved = db.execute("SELECT 1 FROM jobs WHERE session=? AND "
                                     "(state IN ('queued','running') OR (kind='chunk' AND state='failed')) LIMIT 1", (sid,)).fetchone()
             if (session["state"] != "ready" or session.get("source_path") or session.get("producer_connected")
-                    or any(i.get("status") == "pending" for i in session.get("asr_issues", [])) or unresolved):
+                    or any(i.get("status") == "pending" for i in session.get("asr_issues", [])) or unresolved
+                    or session.get("diarization", {}).get("state") in ("failed", "loading", "ready", "running", "recovering")):
                 yield dict(status="skipped", session_id=sid, reason="Imported, active, unfinished, or recoverable session")
                 continue
             manifest = root / "sessions" / sid / "session.json"

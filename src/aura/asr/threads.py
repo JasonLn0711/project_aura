@@ -24,7 +24,7 @@ from aura.asr.file_pipeline import (
 from aura.config import SAMPLE_RATE
 from aura.asr.punctuation import restore_chinese_punctuation, default_restorer
 from aura.settings import DEFAULT_SETTINGS
-from aura.diarization.pyannote_pipeline import DiarizationSettings
+from aura.diarization.nemotron import DiarizationSettings
 from aura.system.cuda import is_cuda_runtime_error, preload_cuda_runtime_libraries
 from aura.system.platform import detect_runtime_platform, platform_cuda_guidance
 from aura.system.runtime_paths import append_transcript_backup
@@ -64,8 +64,6 @@ class FileTranscriberThread(QThread):
         enable_denoise=DEFAULT_SETTINGS.denoise_enabled,
         denoise_preset=DEFAULT_SETTINGS.denoise_preset,
         enable_speaker_diarization=DEFAULT_SETTINGS.speaker_diarization_enabled,
-        min_speakers=DEFAULT_SETTINGS.speaker_min_speakers,
-        max_speakers=DEFAULT_SETTINGS.speaker_max_speakers,
         hotwords="",
     ):
         super().__init__()
@@ -83,11 +81,8 @@ class FileTranscriberThread(QThread):
             denoise_preset=resolved_denoise_preset,
             diarization=DiarizationSettings(
                 enabled=enable_speaker_diarization,
-                min_speakers=min_speakers,
-                max_speakers=max_speakers,
                 model_id=DEFAULT_SETTINGS.speaker_diarization_model,
                 device=DEFAULT_SETTINGS.speaker_diarization_device,
-                use_exclusive=DEFAULT_SETTINGS.speaker_diarization_use_exclusive,
             ),
         )
         self.cancellation = CancellationToken()

@@ -54,6 +54,8 @@ def parser():
                        "capture": "Run client audio capture"}[command]
         sub = subs.add_parser(command, help=description)
         sub.add_argument("session_id")
+        if command == "refine":
+            sub.add_argument("--diarization", action=argparse.BooleanOptionalAction, default=None)
     for command in ("record", "transcribe", "schedule"):
         sub = subs.add_parser(command, help={"record": "Start recording", "transcribe": "Transcribe an audio file",
                                              "schedule": "Schedule a recording"}[command])
@@ -78,6 +80,7 @@ def parser():
         sub.add_argument("--model", choices=MODEL_KEYS, default=None)
         sub.add_argument("--language", choices=("zh", "en", "auto"), default=None)
         sub.add_argument("--hotwords-file", type=Path)
+        sub.add_argument("--diarization", action=argparse.BooleanOptionalAction, default=None, help="Identify speakers with Nemotron (default: on)")
         sub.add_argument("--detach", action="store_true")
     export = subs.add_parser("export", help="Export session text or audio")
     export.add_argument("session_id")
@@ -114,6 +117,7 @@ def show(value, machine=False):
 
 def attach(client, sid, machine=False):
     previous = ""
+    previous_speaker = None
     try:
         while True:
             s = client.request("get", {"session_id": sid})
@@ -123,6 +127,12 @@ def attach(client, sid, machine=False):
                 text = s["transcript"]
                 print(safe_text(text[len(previous):] if text.startswith(previous) else text), end="", flush=True)
                 previous = text
+            if not machine and s.get('diarization'):
+                from aura.diarization.live import status_text
+                activity = status_text(s['diarization'])
+                if activity != previous_speaker:
+                    print(activity, file=sys.stderr, flush=True)
+                    previous_speaker = activity
             if s["state"] in ("ready", "failed", "recoverable"):
                 if s.get("error"):
                     print(s["error"], file=sys.stderr)
@@ -138,7 +148,7 @@ def inspect_session(session, machine=False):
         show(session, True)
     else:
         fields = ("id", "title", "state", "created_at", "updated_at", "source", "capture_location",
-                  "error", "capture_error", "asr_issues", "work", "artifacts", "options", "last_split")
+                  "error", "capture_error", "asr_issues", "work", "artifacts", "options", "last_split", "diarization")
         print(safe_text(json.dumps({k: session[k] for k in fields if k in session}, ensure_ascii=False, indent=2)))
 
 
@@ -284,8 +294,12 @@ def execute(client, args, *, on_progress=None):
         values["stop_at"] = args.stop_at
     if hasattr(args, "session_id"):
         values["session_id"] = args.session_id
+    if command == "refine" and args.diarization is not None:
+        values["options"] = {"diarization": args.diarization}
     if command in ("record", "transcribe", "schedule"):
         options = {}
+        if args.diarization is not None:
+            options["diarization"] = args.diarization
         if args.model is not None:
             options["asr_model"] = args.model
         if args.profile is not None:

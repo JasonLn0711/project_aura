@@ -1,1 +1,1 @@
-"""Speaker diarization helpers for imported-file transcription."""
+"""Nemotron speaker activity for live and complete-file transcription."""

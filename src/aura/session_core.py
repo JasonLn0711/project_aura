@@ -33,13 +33,14 @@ def options_for(values=None, preferences=None):
     from aura.config import DEFAULT_LIVE_PROMPT
     from aura.asr.models import MODEL_KEYS, PARAKEET, PARAKEET_DEFAULTS
     result = dict(asr_model="breeze", profile="light", language="zh", beam_size=5, prompt=DEFAULT_LIVE_PROMPT,
-                  hotwords="", punctuation=True, target_dbfs=-20.0, diarization=False,
-                  min_speakers=2, max_speakers=6, audio_format="m4a",
+                  hotwords="", punctuation=True, target_dbfs=-20.0, diarization=True, audio_format="m4a",
                   live_segmentation="adaptive", live_max_segment_len_sec=20.0, live_silence_ms=800)
     values = values or {}
+    if isinstance(values, dict):
+        values = {k: v for k, v in values.items() if k not in ("min_speakers", "max_speakers", "use_exclusive")}
     if not isinstance(values, dict) or set(values) - result.keys():
         raise ValueError("Unknown transcription options")
-    preferences = preferences or {}
+    preferences = {k: v for k, v in (preferences or {}).items() if k in result}
     selected = values.get("asr_model", preferences.get("asr_model", "breeze"))
     if selected not in MODEL_KEYS:
         raise ValueError("Unknown ASR model")
@@ -65,8 +66,6 @@ def options_for(values=None, preferences=None):
         raise ValueError("language must be zh, en, or null for detection")
     if any(type(result[k]) is not bool for k in ("punctuation", "diarization")):
         raise ValueError("Punctuation and diarization must be boolean")
-    if any(type(result[k]) is not int for k in ("min_speakers", "max_speakers")) or not 1 <= result["min_speakers"] <= result["max_speakers"] <= 20:
-        raise ValueError("Invalid speaker range")
     if type(result["target_dbfs"]) not in (float, int) or not -60 <= result["target_dbfs"] <= -1:
         raise ValueError("target_dbfs must be between -60 and -1")
     if result["audio_format"] not in ("m4a", "wav", "mp3"):
@@ -81,7 +80,7 @@ def options_for(values=None, preferences=None):
 
 
 class SessionCore:
-    def __init__(self, root=None, executor=None):
+    def __init__(self, root=None, executor=None, diarization_factory=None):
         self.root = Path(root or default_root()).resolve()
         self.root.mkdir(parents=True, mode=0o700, exist_ok=True)
         from aura.audit import AuditRecorder
@@ -97,13 +96,23 @@ class SessionCore:
             CREATE TABLE IF NOT EXISTS events(seq INTEGER PRIMARY KEY AUTOINCREMENT, session TEXT, data TEXT NOT NULL);
             CREATE TABLE IF NOT EXISTS jobs(id INTEGER PRIMARY KEY, session TEXT NOT NULL, kind TEXT NOT NULL,
                 payload TEXT NOT NULL, state TEXT NOT NULL DEFAULT 'queued');
+            CREATE TABLE IF NOT EXISTS migrations(name TEXT PRIMARY KEY);
             CREATE TABLE IF NOT EXISTS preferences(key TEXT PRIMARY KEY, value TEXT NOT NULL);
             CREATE TABLE IF NOT EXISTS commands(id TEXT PRIMARY KEY, command TEXT NOT NULL, result TEXT NOT NULL);
         """)
         if "progress" not in {r[1] for r in self.db.execute("PRAGMA table_info(events)")}:
             self.db.execute("ALTER TABLE events ADD COLUMN progress INTEGER NOT NULL DEFAULT 0")
         self.db.execute("CREATE INDEX IF NOT EXISTS events_session_progress ON events(session,progress,seq)")
+        if not self.db.execute("SELECT 1 FROM migrations WHERE name='nemotron-default-on'").fetchone():
+            with self.db:
+                self.db.execute("INSERT OR REPLACE INTO preferences VALUES ('diarization', 'true')")
+                self.db.execute("DELETE FROM preferences WHERE key IN ('min_speakers','max_speakers','use_exclusive')")
+                self.db.execute("INSERT INTO migrations VALUES ('nemotron-default-on')")
         self.sessions = {r["id"]: json.loads(r["data"]) for r in self.db.execute("SELECT * FROM sessions")}
+        from aura.diarization.live import LiveDiarization
+        self.diarization_factory = diarization_factory or LiveDiarization
+        self.diarizers = {}
+        self.diarization_starting = set()
         self.recordings = {}
         self.detectors = {}
         self.producers = set()
@@ -125,6 +134,8 @@ class SessionCore:
         self.db.commit()
         self.worker = threading.Thread(target=self._work, name="aura-inference", daemon=True)
         self.worker.start()
+        self.diarization_thread = threading.Thread(target=self._diarization_work, name="aura-diarization", daemon=True)
+        self.diarization_thread.start()
 
     def _save(self, session, event="session.updated", *, progress=False):
         session["updated_at"] = now()
@@ -231,7 +242,8 @@ class SessionCore:
         return dict(deleted=sid)
 
     def _job(self, s, kind, **payload):
-        payload.update(options=s["options"], directory=str(self.directory(s["id"])))
+        payload.setdefault("options", s["options"])
+        payload["directory"] = str(self.directory(s["id"]))
         self.db.execute("INSERT INTO jobs(session,kind,payload) VALUES (?,?,?)", (s["id"], kind, json.dumps(payload)))
         self.db.commit()
         self.changed.notify_all()
@@ -296,7 +308,7 @@ class SessionCore:
         if command == "capabilities":
             import shutil
             from aura.asr.models import capabilities
-            return dict(model_control=True, record_stop_at=True, session_delete=True, recover=True, asr_models=capabilities(), protocol=1, service_version=__version__,
+            return dict(model_control=True, record_stop_at=True, session_delete=True, recover=True, asr_models=capabilities(), diarization={"model": "nvidia/Nemotron-3-Diarization", "default_enabled": True, "streaming": True, "max_speakers": 8}, protocol=1, service_version=__version__,
                         diagnostics={"data_dir": str(self.root), "service_log": str(self.root / "service.log"),
                                      "capture_log": str(self.root / "capture.log")}, ffmpeg=bool(shutil.which("ffmpeg")), profiles=list(PROFILES), capture_format="s16le/16000/mono", single_owner=True,
                         deepfilternet=bool(shutil.which("deep-filter")), clearvoice=bool(os.environ.get("AURA_CLEARVOICE_PYTHON")))
@@ -438,7 +450,7 @@ class SessionCore:
             if s["state"] not in ("ready", "recoverable", "failed") or s.get("source_path"):
                 raise ValueError("Recover requires a stopped, saved recording")
             rows = self.db.execute("SELECT * FROM jobs WHERE session=? AND kind='chunk' AND state IN ('failed','queued') ORDER BY id", (s["id"],)).fetchall()
-            if not rows and s["state"] == "ready":
+            if not rows and s["state"] == "ready" and s.get("diarization", {}).get("state") != "failed":
                 return s
             from aura.audio.recording_session import recover_recording_session
             if s["id"] in self.recordings:
@@ -465,7 +477,12 @@ class SessionCore:
                 if row["state"] == "failed" and not any(i["job_id"] == row["id"] for i in s.get("asr_issues", [])):
                     self._issue(s, row, payload, previous_error or "Previously failed chunk")
                 self.db.execute("UPDATE jobs SET state='queued' WHERE id=?", (row["id"],))
+            previous_diarizer = self.diarizers.pop(s["id"], None)
+            if previous_diarizer:
+                previous_diarizer.close()
             s.update(state="draining", recovery_active=True)
+            if s["options"].get("diarization", False):
+                s["diarization"] = {"state": "recovering", "active": [], "processed_sample": 0}
         elif command == "refine":
             self._available()
             if s.get("audio_removed"):
@@ -479,7 +496,8 @@ class SessionCore:
                 path = str(paths["mixed"])
                 s["artifacts"][paths["mixed"].suffix.lstrip(".")] = path
             s["state"] = "refining"
-            self._job(s, "file", path=path, purpose="refine")
+            refine_options = options_for(args.get("options", {}), self._preferences())
+            self._job(s, "file", path=path, purpose="refine", options=refine_options)
         elif command == "export":
             fmt = args.get("format", "txt")
             if fmt == "txt":
@@ -542,7 +560,8 @@ class SessionCore:
             "audio_path": s.get("source_path") or s["artifacts"].get("m4a") or s["artifacts"].get("wav")})
         manifest.update(title=s["title"], prepared_transcript="prepared_transcript.json",
                         transcript_sha256=prepared.content_sha256, audio_profile=s["options"]["profile"],
-                        asr_model=s["options"].get("asr_model", "breeze"), runtime=s.get("runtime"))
+                        asr_model=s["options"].get("asr_model", "breeze"), runtime=s.get("runtime"),
+                        diarization=s.get("diarization"))
         write_session_manifest(manifest_path, manifest)
 
     def ingest(self, sid, sequence, pcm, tracks):
@@ -602,6 +621,7 @@ class SessionCore:
                 intervals.active, stats["misses"], policy.live_energy_gate_rms, (policy.live_energy_bridge_ms + 29) // 30)
             chunk = intervals.push(samples, speech)
             s["samples"] += CHUNK_SIZE
+            self.changed.notify_all()
             s["input_sequence"] += 1
             if chunk:
                 self._enqueue_chunk(s, chunk)
@@ -727,6 +747,8 @@ class SessionCore:
                 self.db.execute("UPDATE jobs SET state='running' WHERE id=?", (row["id"],))
                 self.db.commit()
             try:
+                if row["kind"] == "load":
+                    self._start_diarization(self.sessions[row["session"]])
                 result = self._execute(row["kind"], json.loads(row["payload"]))
                 with self.changed:
                     s = self.sessions[row["session"]]
@@ -760,13 +782,14 @@ class SessionCore:
                             if not s["edited"]:
                                 s["transcript"] = s["live_text"]
                                 s["revision"] += 1
+                            self._label_live(s)
                             self._write_text(s, "live.txt", s["live_text"])
                         for issue in s.get("asr_issues", []):
                             if issue["job_id"] == row["id"]:
                                 issue["status"] = "resolved"
                     elif row["kind"] == "export":
                         s["artifacts"]["m4a"] = result["path"]
-                        if not any(i["status"] == "pending" for i in s.get("asr_issues", [])):
+                        if not self._pending_audio(s):
                             from aura.audio.retention import complete_recording_m4a
                             def persist_audio(output):
                                 s["artifacts"].pop("wav", None)
@@ -778,6 +801,12 @@ class SessionCore:
                         s["state"] = "ready"
                     else:
                         purpose = json.loads(row["payload"])["purpose"]
+                        if 'diarization' in result:
+                            key = 'refined_diarization' if purpose == 'refine' else 'diarization'
+                            s[key] = result['diarization']
+                            self._write_text(s, key + '.json', json.dumps(result.get('speaker_turns', [])))
+                            if purpose == 'refine' and result['diarization']['state'] == 'completed':
+                                s['diarization'] = dict(result['diarization'], superseded_by='refined_diarization')
                         self._write_text(s, "refined.txt" if purpose == "refine" else "transcript.txt", result["text"])
                         if purpose == "import":
                             if not s["edited"]:
@@ -821,14 +850,19 @@ class SessionCore:
                     self._save(s)
 
     def _finalize(self, s):
+        if s["options"].get("diarization", False) and s.get("diarization", {}).get("state") not in ("completed", "failed"):
+            return
         try:
             rec = self.recordings.pop(s["id"], None)
             if rec:
-                paths = rec.finalize(keep_pcm=any(i["status"] == "pending" for i in s.get("asr_issues", [])))
+                paths = rec.finalize(keep_pcm=self._pending_audio(s))
                 s["artifacts"].update({"wav": str(paths["mixed"])})
             self._write_text(s, "live.txt", s["live_text"])
             self._write_text(s, "transcript.txt", s["transcript"])
             self._write_search_artifacts(s)
+            finished_diarizer = self.diarizers.pop(s["id"], None)
+            if finished_diarizer:
+                finished_diarizer.close()
             s["state"] = "ready"
             if s.pop("recovery_active", False):
                 self._write_text(s, "recovered.txt", s["live_text"])
@@ -844,11 +878,113 @@ class SessionCore:
             s.update(state="failed", error=str(exc))
         self._save(s)
 
+    def _pending_audio(self, s):
+        return (any(i["status"] == "pending" for i in s.get("asr_issues", [])) or
+                (s["options"].get("diarization", False) and s.get("diarization", {}).get("state") != "completed"))
+
+    def _start_diarization(self, s):
+        sid = s["id"]
+        with self.changed:
+            if not s["options"].get("diarization", False) or sid in self.diarizers or sid in self.diarization_starting:
+                return
+            self.diarization_starting.add(sid)
+            s["diarization"] = dict(state='loading', active=[], processed_sample=0)
+            self._save(s, progress=True)
+            source = self.directory(sid) / '.capture/mixed.pcm'
+            media = False
+            if s.get('recovery_active') and not source.is_file():
+                source = Path(s['artifacts'].get('m4a') or s['artifacts']['wav'])
+                media = True
+        try:
+            diarizer = self.diarization_factory(self.directory(sid), source, media=media)
+            with self.changed:
+                self.diarizers[sid] = diarizer
+                s['diarization'] = dict(diarizer.status)
+                s['artifacts']['diarization.jsonl'] = str(diarizer.output)
+                self._save(s, progress=True)
+        except Exception as exc:
+            with self.changed:
+                s['diarization'] = dict(state='failed', active=[], processed_sample=0, error=str(exc))
+                self._save(s)
+            raise
+        finally:
+            with self.changed:
+                self.diarization_starting.discard(sid)
+
+    def _label_live(self, s):
+        from aura.diarization.live import label_segments
+        from aura.asr.file_pipeline import format_timestamp
+        diarizer = self.diarizers.get(s['id'])
+        if not diarizer or s['edited']:
+            return
+        if label_segments(s['segments'], diarizer.turns, diarizer.status['processed_sample'], diarizer.finalized):
+            s['live_text'] = ''.join(
+                f"[{format_timestamp(x['start_ms'] / 1000)}] " +
+                (f"{x['speaker']}: " if x.get('speaker', 'SPEAKER_UNKNOWN') != 'SPEAKER_UNKNOWN' else '') +
+                x['text'] + '\n' for x in s['segments'])
+            s['transcript'] = s['live_text']
+            s['revision'] += 1
+            self._write_text(s, 'live.txt', s['live_text'])
+            return True
+        return False
+
+    def _diarization_work(self):
+        while True:
+            with self.changed:
+                if self.shutdown:
+                    return
+                recover = next((s for s in self.sessions.values() if s.get('recovery_active') and
+                    s['options'].get('diarization', False) and s.get('diarization', {}).get('state') == 'recovering'), None)
+                work = next(((sid, d) for sid, d in self.diarizers.items() if
+                    self.sessions[sid]['state'] in ('recording', 'pausing', 'paused', 'stopping', 'draining') and
+                    self.sessions[sid].get('diarization', {}).get('state') not in ('completed', 'failed')), None)
+                if not work and not recover:
+                    stale = [sid for sid in self.diarizers if self.sessions[sid]['state'] in ('failed', 'recoverable', 'ready', 'cancelled', 'deleting')]
+                    for sid in stale:
+                        self.diarizers.pop(sid).close()
+                    self.changed.wait(.1)
+                    continue
+            if recover:
+                try:
+                    self._start_diarization(recover)
+                except Exception:
+                    pass
+                continue
+            sid, diarizer = work
+            try:
+                with self.changed:
+                    s = self.sessions[sid]
+                    final = s['state'] == 'draining'
+                    if final and sid in self.recordings:
+                        self.recordings[sid].checkpoint()
+                    available = s['samples'] if diarizer.media else (diarizer.source.stat().st_size // 2 if diarizer.source.exists() else 0)
+                event = diarizer.advance(available, final)
+                with self.changed:
+                    if event is None:
+                        self.changed.wait(.05)
+                        continue
+                    s['diarization'] = dict(diarizer.status,
+                        lag_seconds=max(0, (s['samples'] - diarizer.status['processed_sample']) / 16000),
+                        recovering=bool(s.get('recovery_active')))
+                    changed = self._label_live(s)
+                    self._save(s, event='diarization.updated', progress=not changed)
+                    if event['done']:
+                        diarizer.close()
+            except Exception as exc:
+                with self.changed:
+                    self.sessions[sid]['diarization'].update(state='failed', error=str(exc), active=[])
+                    self._save(self.sessions[sid])
+                diarizer.close()
+
     def close(self):
         with self.changed:
             self.shutdown = True
             self.changed.notify_all()
         self.worker.join()
+        self.diarization_thread.join()
+        for diarizer in self.diarizers.values():
+            diarizer.close()
+        self.diarizers.clear()
         if self.pool:
             self.pool.shutdown()
         with self.lock:

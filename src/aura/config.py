@@ -4,7 +4,7 @@ CHUNK_SIZE = int(SAMPLE_RATE * CHUNK_MS / 1000)
 VAD_LEVEL = 3
 
 MODEL_ID = "SoybeanMilk/faster-whisper-Breeze-ASR-25"
-DIARIZATION_MODEL_ID = "pyannote/speaker-diarization-community-1"
+DIARIZATION_MODEL_ID = "nvidia/Nemotron-3-Diarization"
 CHINESE_PUNCTUATION_MODEL_ID = "p208p2002/zh-wiki-punctuation-restore"
 CHINESE_PUNCTUATION_FALLBACK_MODEL_ID = ""
 DEVICE = "cuda"

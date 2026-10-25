@@ -1,3 +1,4 @@
+from tests.fake_diarization import FakeDiarization
 import json
 import tempfile
 import unittest
@@ -7,7 +8,7 @@ from aura.session_core import SessionCore
 class RecordingProgressTests(unittest.TestCase):
     def test_progress_is_bounded_and_durable_evidence_survives(self):
         with tempfile.TemporaryDirectory() as tmp:
-            core=SessionCore(tmp,executor=lambda *args:{})
+            core=SessionCore(tmp,executor=lambda *args:{}, diarization_factory=FakeDiarization)
             try:
                 with core.changed:
                     s=core._new({'title':'test'},'recording');s.update(segments=[{'text':'kept'}],transcript='kept')

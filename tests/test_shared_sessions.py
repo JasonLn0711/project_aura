@@ -1,3 +1,4 @@
+from tests.fake_diarization import FakeDiarization
 import json
 import multiprocessing
 import os
@@ -19,7 +20,7 @@ def fake_inference(kind, payload):
     if kind == "export":
         from aura.session_runtime import execute
         return execute(kind, payload)
-    return {"text": "精修版本", "segments": []}
+    return {"text": "精修版本", "segments": [], "diarization": {"state": "completed"}}
 
 
 class Speech:
@@ -30,7 +31,7 @@ class Speech:
 def test_server(root):
     from aura.service import serve
     with patch("aura.audio.vad.SileroStreamVAD", return_value=Speech()):
-        serve(root, core=SessionCore(root, executor=fake_inference))
+        serve(root, core=SessionCore(root, executor=fake_inference, diarization_factory=FakeDiarization))
 
 
 def wait_state(client, sid, state):
@@ -49,7 +50,7 @@ class SharedSessionTests(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
         self.root = Path(self.tmp.name)
-        self.core = SessionCore(self.root, executor=fake_inference)
+        self.core = SessionCore(self.root, executor=fake_inference, diarization_factory=FakeDiarization)
 
     def tearDown(self):
         self.core.close()
@@ -96,7 +97,7 @@ class SharedSessionTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.core.request("preferences.set", {"beam_size": 0})
         self.core.close()
-        self.core = SessionCore(self.root, executor=fake_inference)
+        self.core = SessionCore(self.root, executor=fake_inference, diarization_factory=FakeDiarization)
         sid = self.record()
         self.assertEqual(self.core.request("get", {"session_id": sid})["options"]["profile"], "off")
 
@@ -160,7 +161,7 @@ class SharedSessionTests(unittest.TestCase):
             stop_at=(start + datetime.timedelta(hours=1)).isoformat(), options=selected))
         self.core.request("preferences.set", dict(live_max_segment_len_sec=30, live_silence_ms=2000))
         self.core.close()
-        self.core = SessionCore(self.root, executor=fake_inference)
+        self.core = SessionCore(self.root, executor=fake_inference, diarization_factory=FakeDiarization)
         saved = self.core.request("get", {"session_id": scheduled["id"]})
         self.assertEqual({key: saved["options"][key] for key in selected}, selected)
 
@@ -304,7 +305,7 @@ class SharedSessionTests(unittest.TestCase):
         with patch("aura.audio.vad.SileroStreamVAD", return_value=Speech()):
             self.core.ingest(sid, 0, bytes(960), ["mixed"])
         self.core.close()
-        self.core = SessionCore(self.root, executor=fake_inference)
+        self.core = SessionCore(self.root, executor=fake_inference, diarization_factory=FakeDiarization)
         s = self.core.request("get", {"session_id": sid})
         self.assertEqual(s["state"], "recoverable")
         self.core.request("refine", {"session_id": sid})

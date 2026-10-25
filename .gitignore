@@ -52,3 +52,6 @@ artifacts/asr-parakeet-availability/2026-*/
 
 # Owner-local lab vocabulary copied into the checkout for CLI use.
 /hotwords-labsync-*.txt
+
+.venv-nemotron/
+local_outputs/nemotron/

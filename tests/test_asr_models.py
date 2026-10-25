@@ -1,3 +1,4 @@
+from tests.fake_diarization import FakeDiarization
 import contextlib
 import io
 import json
@@ -28,7 +29,7 @@ class AsrModelsTests(unittest.TestCase):
 
     def test_saved_model_and_sessions_survive_restart(self):
         with tempfile.TemporaryDirectory() as tmp:
-            core = SessionCore(tmp, executor=lambda *args: {})
+            core = SessionCore(tmp, executor=lambda *args: {}, diarization_factory=FakeDiarization)
             try:
                 core.request("preferences.set", {"hotwords": "AURA"})
                 core.request("preferences.set", {"asr_model": PARAKEET})
@@ -38,7 +39,7 @@ class AsrModelsTests(unittest.TestCase):
                 self.assertEqual(s["options"]["asr_model"], PARAKEET)
             finally:
                 core.close()
-            core = SessionCore(tmp, executor=lambda *args: {})
+            core = SessionCore(tmp, executor=lambda *args: {}, diarization_factory=FakeDiarization)
             try:
                 self.assertEqual(core.sessions[s["id"]]["options"]["asr_model"], PARAKEET)
                 self.assertEqual(core.request("preferences.get")["hotwords"], "AURA")
@@ -56,7 +57,7 @@ class AsrModelsTests(unittest.TestCase):
                 raise RuntimeError("Synthetic model load failure")
             return {"model": PARAKEET, "device": "test-double"}
         with tempfile.TemporaryDirectory() as tmp:
-            core = SessionCore(tmp, executor=load)
+            core = SessionCore(tmp, executor=load, diarization_factory=FakeDiarization)
             try:
                 result = core.request("model.load", {"asr_model": PARAKEET})
                 self.assertEqual(result["state"], "loading")
@@ -91,7 +92,7 @@ class AsrModelsTests(unittest.TestCase):
 
     def test_model_switch_is_blocked_during_existing_work(self):
         with tempfile.TemporaryDirectory() as tmp:
-            core = SessionCore(tmp, executor=lambda *a: {})
+            core = SessionCore(tmp, executor=lambda *a: {}, diarization_factory=FakeDiarization)
             try:
                 with core.lock:
                     session = core._new({}, "paused")

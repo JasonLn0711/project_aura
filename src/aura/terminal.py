@@ -214,6 +214,9 @@ class TerminalStatus:
         queued = f'{work["queued"]} pending · {work["running"]} processing' if work else 'queue unavailable'
         lines = [('class:heading', f'{face} {state} {pulse} Audio {seconds//60:02d}:{seconds%60:02d}'),
                  ('class:muted', queued)]
+        if s.get("diarization"):
+            from aura.diarization.live import status_text
+            lines.append(("class:muted", safe_text(status_text(s["diarization"]))))
         if self.model_status:
             lines.append(('class:muted', self.model_status))
         if state == 'draining' and work:

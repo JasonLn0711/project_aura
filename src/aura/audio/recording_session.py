@@ -9,7 +9,7 @@ from uuid import uuid4
 
 SESSION_STATUSES = {"recording", "finalizing", "ready", "recoverable", "failed"}
 TRACK_NAMES = ("mixed", "system", "microphone")
-FLUSH_INTERVAL_SECONDS = 1.0
+FLUSH_INTERVAL_SECONDS = 0.25
 FSYNC_INTERVAL_SECONDS = 5.0
 
 

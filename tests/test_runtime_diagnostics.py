@@ -82,7 +82,7 @@ class RuntimeDiagnosticsTests(unittest.TestCase):
         self.assertIn("GPU / CUDA", report)
         self.assertIn("Audio / FFmpeg", report)
         self.assertIn("Traditional Chinese Punctuation", report)
-        self.assertIn("Optional Speaker Diarization", report)
+        self.assertIn("Speaker Diarization (default on)", report)
         self.assertIn("ASR model load status: loaded on cuda/int8", report)
         self.assertIn("First Launch Check", report)
         self.assertIn("- CUDA runtime preload: complete", report)
@@ -123,19 +123,18 @@ class RuntimeDiagnosticsTests(unittest.TestCase):
                 gpu=gpu,
                 audio=audio,
                 diarization=DiarizationDiagnostics(
-                    pyannote_available=False,
-                    torch_available=False,
+                    runtime_available=False,
+                    model_available=False,
                     torch_cuda_available=False,
-                    token_available=False,
                 ),
                 asr_model_status="loaded on cuda/int8",
             )
         )
 
-        self.assertIn("- pyannote.audio import: missing", report)
+        self.assertIn("- Isolated runtime: missing", report)
         self.assertIn("- torch import: missing", report)
-        self.assertIn("- Hugging Face token: missing", report)
-        self.assertIn("Diarization status: needs setup: pyannote.audio, torch", report)
+        self.assertIn("- Model cache: missing", report)
+        self.assertIn("Diarization status: needs setup: python3 scripts/setup_nemotron.py", report)
 
     def test_runtime_report_surfaces_punctuation_setup_status(self):
         platform = RuntimePlatform(

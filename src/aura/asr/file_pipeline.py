@@ -16,7 +16,7 @@ from aura.audio.meeting_distance import (
 from aura.audio.normalization import FfmpegUnavailable, normalize_media_to_wav, normalization_cpu_status
 from aura.asr.hotwords import validate_context
 from aura.asr.punctuation import restore_chinese_punctuation, should_restore_traditional_chinese_punctuation
-from aura.diarization.pyannote_pipeline import DiarizationSettings, diarize_audio_file, validate_diarization_runtime
+from aura.diarization.nemotron import DiarizationSettings, diarize_audio_file, validate_diarization_runtime
 from aura.diarization.speaker_assignment import (
     UNKNOWN_SPEAKER,
     TranscriptSegment,
@@ -84,6 +84,7 @@ class FileTranscriptionResult:
     lines: list[str] = field(default_factory=list)
     segments: list[ReviewSegment] = field(default_factory=list)
     cancelled: bool = False
+    speaker_turns: list = field(default_factory=list)
 
 
 def resolve_initial_prompt(prompt, default_prompt=DEFAULT_SETTINGS.file_initial_prompt):
@@ -343,11 +344,12 @@ def transcribe_file(
             if status_callback:
                 status_callback(
                     f"👥 Identifying speakers "
-                    f"({settings.diarization.min_speakers}-{settings.diarization.max_speakers})..."
+                    "(Nemotron, up to 8)..."
                 )
             cancellation.raise_if_cancelled()
             runner = diarization_runner or diarize_audio_file
-            speaker_turns = runner(prepared_path, settings.diarization)
+            speaker_turns = (runner(Path(file_path), settings.diarization) if diarization_runner else
+                             runner(Path(file_path), settings.diarization, cancellation))
             cancellation.raise_if_cancelled()
             labeled_segments = assign_speakers(transcript_segments, speaker_turns)
             formatted_lines = [
@@ -421,6 +423,7 @@ def transcribe_file(
             file_name=file_name,
             lines=lines,
             segments=review_segments,
+            speaker_turns=speaker_turns,
             cancelled=cancellation.cancelled,
         )
     finally:
