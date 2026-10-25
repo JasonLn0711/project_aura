@@ -1,0 +1,275 @@
+[
+  {
+    "key": "C4_DurableSessions",
+    "component": "sessions",
+    "title": "Code - Durable session orchestration",
+    "symbols": {
+      "src/aura/session_core.py": [
+        "SessionCore"
+      ],
+      "src/aura/audio/recording_session.py": [
+        "RecordingSession"
+      ],
+      "src/aura/streaming.py": [
+        "open_stream",
+        "ingest_packet",
+        "finish"
+      ]
+    },
+    "edges": [
+      [
+        "SessionCore",
+        "RecordingSession",
+        "persists frames / finalizes"
+      ],
+      [
+        "open_stream",
+        "SessionCore",
+        "owns producer generation"
+      ],
+      [
+        "ingest_packet",
+        "SessionCore",
+        "commits durable cursor"
+      ],
+      [
+        "finish",
+        "SessionCore",
+        "acknowledges boundary"
+      ]
+    ]
+  },
+  {
+    "key": "C4_NativeTransport",
+    "component": "captureTransport",
+    "title": "Code - Native producer protocol",
+    "symbols": {
+      "native/aura-capture/src/main.rs": [
+        "Connection",
+        "Source",
+        "Init",
+        "Manifest",
+        "Capture"
+      ]
+    },
+    "edges": [
+      [
+        "Init",
+        "Connection",
+        "authenticated connection"
+      ],
+      [
+        "Init",
+        "Source",
+        "configured sources"
+      ],
+      [
+        "Capture",
+        "Manifest",
+        "durable spool coordinates"
+      ],
+      [
+        "Capture",
+        "Connection",
+        "stream / ACK / reconnect"
+      ]
+    ]
+  },
+  {
+    "key": "C4_SpeechProtection",
+    "component": "guard",
+    "title": "Code - Source-speech protection windows",
+    "symbols": {
+      "src/aura/audio/reuse_policy.py": [
+        "SourceSpeechProtection"
+      ]
+    },
+    "edges": []
+  },
+  {
+    "key": "C4_FileTranscription",
+    "component": "filePipeline",
+    "title": "Code - Imported file transcription",
+    "symbols": {
+      "src/aura/asr/file_pipeline.py": [
+        "CancellationToken",
+        "FileTranscriptionSettings",
+        "FileTranscriptionResult",
+        "transcribe_file"
+      ]
+    },
+    "edges": [
+      [
+        "transcribe_file",
+        "FileTranscriptionSettings",
+        "validated fixed options"
+      ],
+      [
+        "transcribe_file",
+        "CancellationToken",
+        "checks cancellation"
+      ],
+      [
+        "transcribe_file",
+        "FileTranscriptionResult",
+        "returns text / segments"
+      ]
+    ]
+  },
+  {
+    "key": "C4_Splitting",
+    "component": "splitter",
+    "title": "Code - Silence-aware media splitting",
+    "symbols": {
+      "src/aura/audio/splitter_pipeline.py": [
+        "SplitterSettings",
+        "SplitDecision",
+        "SplitResult",
+        "split_audio_file",
+        "choose_cut_point"
+      ]
+    },
+    "edges": [
+      [
+        "split_audio_file",
+        "SplitterSettings",
+        "reads configuration"
+      ],
+      [
+        "split_audio_file",
+        "choose_cut_point",
+        "chooses boundary"
+      ],
+      [
+        "choose_cut_point",
+        "SplitDecision",
+        "returns cut decision"
+      ],
+      [
+        "split_audio_file",
+        "SplitResult",
+        "returns output paths"
+      ]
+    ]
+  },
+  {
+    "key": "C4_Evidence",
+    "component": "evidenceIndex",
+    "title": "Code - Evidence indexing and querying",
+    "symbols": {
+      "src/aura/evidence_search.py": [
+        "IndexStats",
+        "EvidenceSearch",
+        "rebuild_evidence_index"
+      ]
+    },
+    "edges": [
+      [
+        "rebuild_evidence_index",
+        "IndexStats",
+        "returns rebuild counts"
+      ],
+      [
+        "EvidenceSearch",
+        "rebuild_evidence_index",
+        "same derived schema; explicit rebuild is separate"
+      ]
+    ]
+  },
+  {
+    "key": "C4_Recovery",
+    "component": "repair",
+    "title": "Code - Bounded live and stopped recovery",
+    "symbols": {
+      "src/aura/reuse_live_repair.py": [
+        "LiveRepair",
+        "resolve_live_gaps"
+      ],
+      "src/aura/reuse_recovery.py": [
+        "ReuseRecovery",
+        "enhance_source",
+        "usable_enhancement",
+        "uncovered_intervals"
+      ]
+    },
+    "edges": [
+      [
+        "LiveRepair",
+        "enhance_source",
+        "fresh-state bounded enhancement"
+      ],
+      [
+        "ReuseRecovery",
+        "enhance_source",
+        "explicit stopped enhancement"
+      ],
+      [
+        "LiveRepair",
+        "usable_enhancement",
+        "enhanced speech gate"
+      ],
+      [
+        "ReuseRecovery",
+        "uncovered_intervals",
+        "preserves submitted jobs"
+      ],
+      [
+        "resolve_live_gaps",
+        "LiveRepair",
+        "resolves only closed completed parents"
+      ]
+    ]
+  },
+  {
+    "key": "C4_Review",
+    "component": "review",
+    "title": "Code - Transcript review and durable exports",
+    "symbols": {
+      "src/aura/review.py": [
+        "ReviewSegment",
+        "TranscriptReview",
+        "export_segments"
+      ],
+      "src/aura/ui/transcript_io.py": [
+        "PreparedTranscript",
+        "TranscriptSession"
+      ]
+    },
+    "edges": [
+      [
+        "TranscriptReview",
+        "ReviewSegment",
+        "edits / confirms segments"
+      ],
+      [
+        "TranscriptSession",
+        "PreparedTranscript",
+        "prepares transcript identity"
+      ],
+      [
+        "export_segments",
+        "ReviewSegment",
+        "exports SRT / VTT / text"
+      ]
+    ]
+  },
+  {
+    "key": "C4_Health",
+    "component": "health",
+    "title": "Code - Suppression health and retained gaps",
+    "symbols": {
+      "src/aura/audio/enhancement_health.py": [
+        "EnhancementHealth",
+        "pending_gaps",
+        "gap_warning"
+      ]
+    },
+    "edges": [
+      [
+        "gap_warning",
+        "pending_gaps",
+        "reports unresolved source ranges"
+      ]
+    ]
+  }
+]

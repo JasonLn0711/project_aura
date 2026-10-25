@@ -14,6 +14,10 @@ src/*.egg-info/
 temp_transcript.txt
 temp_normalized.wav
 runtime/
+# Rebuildable interactive architecture viewer and redundant code-image formats.
+artifacts/architecture-c4/site/
+docs/architecture/c4/code/*.png
+docs/architecture/c4/code/*.cmapx
 outputs/
 recordings/
 *_session/
@@ -55,3 +59,14 @@ artifacts/asr-parakeet-availability/2026-*/
 
 .venv-nemotron/
 local_outputs/nemotron/
+# Isolated live streaming validation contains account-local service credentials.
+artifacts/live-streaming-*/**/service/
+artifacts/live-streaming-*/**/capture/
+artifacts/live-streaming-*/**/input.pcm
+
+# Detailed validation traces stay owner-local; publish aggregate receipts only.
+artifacts/live-streaming-*/**/*events.jsonl
+artifacts/live-streaming-*/**/errors.jsonl
+artifacts/live-streaming-*/**/requests.jsonl
+artifacts/live-streaming-*/**/session.json
+artifacts/live-streaming-*/**/transcript.txt

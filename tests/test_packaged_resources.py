@@ -56,7 +56,7 @@ class PackagedResourcesTests(unittest.TestCase):
                 names = set(archive.namelist())
             self.assertFalse(any(name.startswith(("summary/", "aura/llm/")) for name in names))
             self.assertIn("asr_postprocess/domain_glossary.yaml", names)
-            self.assertIn("aura/audio/run_clearvoice_enhancement.py", names)
+            self.assertIn("aura/audio/reuse_worker.py", names)
 
             run_dir = root / "isolated"
             run_dir.mkdir()
@@ -66,8 +66,8 @@ sys.path.insert(0, sys.argv[1])
 from importlib.resources import files
 from aura.ui.transcript_io import prepare_transcript
 
-assert "ClearVoice" in files("aura.audio").joinpath(
-    "run_clearvoice_enhancement.py"
+assert "RE-USE" in files("aura.audio").joinpath(
+    "reuse_worker.py"
 ).read_text(encoding="utf-8")
 prepared = prepare_transcript(
     "[00:00:01] 志德灣和 iMBS 開會",

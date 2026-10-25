@@ -7,7 +7,7 @@ from types import SimpleNamespace
 from unittest.mock import patch
 
 from aura.asr.models import ASROutputError, ParakeetModel
-from aura.session_core import SessionCore
+from reuse_fixtures import SessionCore
 from test_shared_sessions import Speech, fake_inference
 
 
@@ -31,6 +31,7 @@ class RecoveryTests(unittest.TestCase):
                 return getattr(self, name)
         self.enterContext(patch.dict('sys.modules', {
             'omegaconf': SimpleNamespace(open_dict=lambda _: nullcontext()),
+            'torch': SimpleNamespace(inference_mode=nullcontext),
             'soundfile': None,  # Array input must not require the optional file decoder.
         }))
         class Model:
@@ -118,7 +119,7 @@ class RecoveryTests(unittest.TestCase):
                 out.setframerate(16000)
                 out.writeframes(np.arange(2400, dtype='<i2').tobytes())
             payload = dict(path=str(path), start=480, end=2400, directory=root,
-                           options=options_for({'asr_model': PARAKEET, 'profile': 'off'}))
+                           options=options_for({'asr_model': PARAKEET, 'profile': 'reuse-v1'}))
             with patch.object(session_runtime, '_model', model), patch('aura.asr.models.runtime_receipt', return_value={}), patch('aura.audio.meeting_distance.apply_live_segment_agc', side_effect=lambda a, _: a):
                 result = session_runtime.execute('chunk', payload)
                 self.assertEqual(result['text'], 'recovered')
@@ -146,5 +147,30 @@ class RecoveryTests(unittest.TestCase):
                 self.assertEqual(s['capture_error'], 'Session is not accepting audio')
                 with self.assertRaises(ValueError):
                     core.ingest(sid, 1, b'\0\1' * 480, ['mixed'])
+            finally:
+                core.close()
+
+    def test_empty_completed_m4a_can_be_resegmented_and_recovered(self):
+        from unittest.mock import Mock
+        vad = Mock()
+        vad.is_speech.return_value = False
+        with tempfile.TemporaryDirectory() as root, patch('aura.audio.vad.SileroStreamVAD', return_value=vad):
+            core = SessionCore(root, executor=fake_inference)
+            try:
+                sid = core.request('record')['id']
+                wait_for(core, sid, lambda s: s['state'] == 'recording')
+                for seq in range(12):
+                    core.ingest(sid, seq, b'\0\x10' * 480, ['mixed'])
+                core.request('stop', {'session_id':sid})
+                before = wait_for(core, sid, lambda s: s['state'] == 'ready')
+                self.assertFalse(before['transcript'])
+                self.assertIn('m4a', before['artifacts'])
+                vad.is_speech.return_value = True
+                core.sessions[sid]['options']['profile'] = 'light'  # Explicit legacy recovery fixture.
+                core.request('recover', {'session_id':sid})
+                after = wait_for(core, sid, lambda s: s['state'] == 'ready')
+                self.assertTrue(after['transcript'])
+                self.assertEqual(len(after['segments']), 1)
+                self.assertTrue(Path(after['artifacts']['recovered.txt']).is_file())
             finally:
                 core.close()

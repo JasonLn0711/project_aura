@@ -1,0 +1,89 @@
+{
+  "validation_mode": "availability_validation",
+  "status": "LIVE_MINIMUM_COMPLETED",
+  "audio_source": "user-authorized Brave English dialogue",
+  "accuracy": "not_evaluated",
+  "asr_timing": "not_evaluated",
+  "session_id": "c304906d-1f19-443e-b009-10672aedb241",
+  "live_text_before_stop": true,
+  "max_enhancement_pending_samples_after_warmup": 2400,
+  "brave_routes": [
+    {
+      "application": "Brave",
+      "sink": 47,
+      "corked": false,
+      "mute": false
+    }
+  ],
+  "audio_samples": 4802400,
+  "transcript_characters": 2762,
+  "segments": 42,
+  "delivery_committed": true,
+  "capture_spool_removed": true,
+  "enhancement": {
+    "strategy": "reuse-v1",
+    "input_samples": 4802400,
+    "processed_samples": 4802400,
+    "boundaries": [
+      {
+        "sample": 4802400,
+        "action": "stop"
+      }
+    ],
+    "live_complete": true,
+    "completed_boundaries": 1,
+    "runtime": {
+      "backend": "nvidia/Real-time_RE-USE",
+      "revision": "4c0c186272ca853cd18d832fc5c28777b62f32d1",
+      "torch": "2.9.1+cu130",
+      "cuda": "13.0",
+      "device": "NVIDIA GB10",
+      "dtype": "float32",
+      "sample_rate": 16000,
+      "ptxas": "/usr/local/cuda/bin/ptxas"
+    },
+    "backlog_samples": 0,
+    "phase": "encoding",
+    "offline_progress": {
+      "completed_samples": 4802400,
+      "total_samples": 4802400
+    }
+  },
+  "asr_runtime": {
+    "worker_pid": 1796635,
+    "asr_model": "breeze",
+    "model": "SoybeanMilk/faster-whisper-Breeze-ASR-25",
+    "device": "cuda",
+    "compute_type": "int8",
+    "effective_compute_type": "int8_float16",
+    "architecture": "aarch64",
+    "ctranslate2_version": "4.7.1",
+    "backend": "faster-whisper",
+    "backend_version": "1.2.1"
+  },
+  "jobs_by_kind": {
+    "chunk": 42,
+    "export": 1,
+    "load": 1
+  },
+  "runtime_validity": "valid_target_runtime",
+  "enhancement_backlog_gate": "pass",
+  "run_id": "RUN-brave-r01",
+  "execution_status": "LIVE_MINIMUM_COMPLETED",
+  "gate_outcome": "pass",
+  "decision": "activate_local_account_service",
+  "offline_enhancement": {
+    "backend": "nvidia/RE-USE",
+    "cuda": "13.0",
+    "device": "NVIDIA GB10",
+    "dtype": "float32",
+    "ptxas": "/usr/local/cuda/bin/ptxas",
+    "revision": "0ee310117ef0ae1e652654c821cf140bdcdc8415",
+    "sample_rate": 16000,
+    "torch": "2.9.1+cu130"
+  },
+  "delivery_phase": "committed",
+  "audio_sha256": "3f41ec48efb6299278a054ea7618cd12448177a02dee2943481d89070044a398",
+  "transcript_sha256": "513300b678ab7bed819723ecade61251085ab5d78cfa67b525c4e523b99c3fa2",
+  "working_audio_removed": true
+}

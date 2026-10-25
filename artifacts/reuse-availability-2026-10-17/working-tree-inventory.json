@@ -1,0 +1,349 @@
+{
+  "scope": "Current dirty working tree, including preserved earlier changes; not a per-run source snapshot",
+  "files": [
+    {
+      "path": ".github/workflows/ci.yml",
+      "sha256": "e35473ce2f93f43eb3b76b1476f3bf135d20ecf19941e31e9f05694a24ad659b"
+    },
+    {
+      "path": ".gitignore",
+      "sha256": "f7004b8eb2b51793aad4a71507d206fdb9d0f34db701b92b6073717b3c9aeb50"
+    },
+    {
+      "path": "Makefile",
+      "sha256": "5683899b31eb6f55cd9809c634e9b3093f8e02073a153006a4cf153985e45487"
+    },
+    {
+      "path": "README.md",
+      "sha256": "881b3962d47f7ed61542fc614770c368a25feff23ef6a6facac9d03578df106d"
+    },
+    {
+      "path": "docs/architecture/reuse-c4.md",
+      "sha256": "b353a81bcb7139ac5cebd223947ff2c753b12191de988ed5dfb1ab1ed8cf97c0"
+    },
+    {
+      "path": "docs/architecture_decisions.md",
+      "sha256": "72b3daf0ee80f7dac18d43cabffd75ae224748403c462d1d99c5dd7d6b870088"
+    },
+    {
+      "path": "docs/audit-events/2026-10-17-live-streaming-reliability/audit-event.md",
+      "sha256": "e52f019c193416bc8a925bbaeac4204c05416f115a07b9e193f238b70dcc3176"
+    },
+    {
+      "path": "docs/audit-events/2026-10-17-live-streaming-reliability/code-inventory.json",
+      "sha256": "03863ec7590191c6060a97c56a5ddeee8efbd2067bed257c19a8950564abe04e"
+    },
+    {
+      "path": "docs/audit-events/2026-10-17-live-streaming-reliability/documentation-validation.json",
+      "sha256": "4f1c141d4a7ffc22b9641235c349e15247991dc12796859317b3077d75fdd097"
+    },
+    {
+      "path": "docs/audit-events/2026-10-17-live-streaming-reliability/log-inventory.json",
+      "sha256": "908e6969a890504af38caac5bedbdd448960b0963eb0e67daf741741dba16d1d"
+    },
+    {
+      "path": "docs/audit-events/2026-10-17-live-streaming-reliability/source-reports.md",
+      "sha256": "2ebc156bc3a3739fb715589abf47dbad5178ee91b32d44f9993a5fb08160ec9a"
+    },
+    {
+      "path": "docs/audit-events/2026-10-17-reuse-redesign/audit-event.md",
+      "sha256": "6c73d5bde2d56e9ef84766d3927a1c508b9a2777d3a56758108d5c1f1e6e3bc1"
+    },
+    {
+      "path": "docs/audit-events/2026-10-17-reuse-redesign/source-decisions.md",
+      "sha256": "9e7a9797b46d7f042facb061c35c78542013a6a038427d65e848c5b8067c6721"
+    },
+    {
+      "path": "docs/audit-events/README.md",
+      "sha256": "6957c13aa950cbc48dc3908c9f4067e941518f96afab35191bdc91d802bdb7db"
+    },
+    {
+      "path": "docs/denoise_blocked_handoff.md",
+      "sha256": "3ee5a7eed9d961ab5a8f81aa14646f1ff2a43f4ac7e9263b5178125105d98904"
+    },
+    {
+      "path": "docs/denoise_upgrade_plan.md",
+      "sha256": "7c9ae7c87f287a5976ef2a2c1dacbec21169b40f325577651116f52e03f020dd"
+    },
+    {
+      "path": "docs/shared-sessions-2026-09-08.md",
+      "sha256": "ef84c3fef7eaeae244882fd5d839f792e7a77f01434cc7413eba45c7fc9ae47e"
+    },
+    {
+      "path": "native/aura-capture/.gitignore",
+      "sha256": "306fd52e74fca6746e12acc750f232de15e71da917756a1270d74c91f5eb7368"
+    },
+    {
+      "path": "native/aura-capture/Cargo.lock",
+      "sha256": "720172e741493691ceb27d3a6b67e549492f1ffb27681e734376fc202e3ca854"
+    },
+    {
+      "path": "native/aura-capture/Cargo.toml",
+      "sha256": "985040f3ca9445c6a1a114619229e03193569cc66ba8e36850b90d24c991b0cf"
+    },
+    {
+      "path": "native/aura-capture/src/main.rs",
+      "sha256": "3757eef122902e7a6cadcbbfc500d941f64540815ff5339f64469297fb853841"
+    },
+    {
+      "path": "pyproject.toml",
+      "sha256": "67c6f01f6b3993770bbd17f86517bb6542cfbe6b3debc221a401ba405f0ee431"
+    },
+    {
+      "path": "scripts/check_reuse_runtime.py",
+      "sha256": "d51e2af1fe0dc8ec3749db34541a380cac787ef2a3d4ca30da3273236a4a2fea"
+    },
+    {
+      "path": "scripts/check_shared_session_availability.py",
+      "sha256": "1f611e519057c23f31fb066d54e9fa2b220d72c3afe4db0f9db8e34b3a9c4d57"
+    },
+    {
+      "path": "scripts/check_terminal_pty.py",
+      "sha256": "ad086964ae35b21bb44153cd4a7fe7c5ab722f0a9a48baedfb17e843bfeeaa5a"
+    },
+    {
+      "path": "scripts/evaluate_denoise_backends.py",
+      "sha256": "9337a19d17c0372a43feaf59124a4f86b553fd17fa3b3703966b2b8f88b02bae"
+    },
+    {
+      "path": "scripts/init_denoise_eval_workspace.py",
+      "sha256": "eb29c890112647f208e3bfeb48d2463134248c0b9c9739c6bb7fd9b4983412df"
+    },
+    {
+      "path": "scripts/measure_capture_transport.py",
+      "sha256": "e32c9ca486b22bd0bdbae89ac2ff817066e5c3552364c79b475d8e7df38f133f"
+    },
+    {
+      "path": "scripts/setup_gpu_runtime.py",
+      "sha256": "2d02eda39c53579a80c8e7f10107c03c76877f9dcaee738ee0d5aa10fb14913a"
+    },
+    {
+      "path": "scripts/setup_reuse_runtime.py",
+      "sha256": "1d8e87ec678daa38653f07913f70baaf8cd5851c7f64ef31a6b6fe1eef73c81a"
+    },
+    {
+      "path": "src/aura/asr/file_pipeline.py",
+      "sha256": "5292a86f2ea7ccaa7af97ff3fa2b982463a09dd24fc1d3564ed26246b0f95019"
+    },
+    {
+      "path": "src/aura/asr/models.py",
+      "sha256": "cb8d9b2f6f9db994f20149cd35b0aa5ea4cdadac4d663c69227484e14acf6e68"
+    },
+    {
+      "path": "src/aura/asr/threads.py",
+      "sha256": "c28128f9ac79f97c83b7877a785154e11ace789d1831bf2e77201eedbe882318"
+    },
+    {
+      "path": "src/aura/audio/denoise.py",
+      "sha256": "a18ae0fb33ab129e7a2d9237a7ee0a8b3bf7d8c0f15b192696a732ddb83869ec"
+    },
+    {
+      "path": "src/aura/audio/enhancement_backends.py",
+      "sha256": "2428f4a90ce46262b21320a8ffcb7a1944a3e2cb69171b7c39638f8eacb8b5cb"
+    },
+    {
+      "path": "src/aura/audio/inputs.py",
+      "sha256": "ff846bd99fcefa438e33b2cdf6c8efc076a82425d194715dc488fc78346b4583"
+    },
+    {
+      "path": "src/aura/audio/meeting_distance.py",
+      "sha256": "5778cd1c7493f8d0ebf78fa47356ba444e0e352bda0c50a2f5c39fe78d0cd6ea"
+    },
+    {
+      "path": "src/aura/audio/retention.py",
+      "sha256": "460df4c6897f136e3a91e12f68cbd2db60c856adaf5f3147562bef76eb9d15b6"
+    },
+    {
+      "path": "src/aura/audio/reuse.py",
+      "sha256": "63238581303a63c7d2c77ae3473085188290aa0fbed5f9110b08d75f511d53c8"
+    },
+    {
+      "path": "src/aura/audio/reuse_model.py",
+      "sha256": "f888d7485092d1e009639f55c87ced61663ec8c2bfa01e873702d752430f42fe"
+    },
+    {
+      "path": "src/aura/audio/reuse_offline.py",
+      "sha256": "ae9350bf58c91d04a62c1e5ba997670ef5fdb13e7416786caac14a07f71d9218"
+    },
+    {
+      "path": "src/aura/audio/reuse_stream.py",
+      "sha256": "f95dbe442c85cd175adfc6dd6212eb0d2291850f76a9806813d224099b6c922d"
+    },
+    {
+      "path": "src/aura/audio/reuse_worker.py",
+      "sha256": "1bf463fbafc38c4ea7a9525872fbf0ee62c85113ec504850e5c23811c4941a8b"
+    },
+    {
+      "path": "src/aura/audio/vad.py",
+      "sha256": "755effe36f006608b962f649921e011ffa323e5a10ef8546726bd5cb37550f75"
+    },
+    {
+      "path": "src/aura/cli.py",
+      "sha256": "a5840a00e20d4fb20286b4a8d3aed8d4de6a7f936e68a0c514b4beccc82372c4"
+    },
+    {
+      "path": "src/aura/completion.py",
+      "sha256": "72193b9902c61c30b79612195685e10ac7f33173fdbecb7562afd4c457725a9b"
+    },
+    {
+      "path": "src/aura/native_capture.py",
+      "sha256": "1cc75051db97182e120d70c56d1e2f2a2e1b88ee24a966a530ed0daed0643458"
+    },
+    {
+      "path": "src/aura/reuse_capture.py",
+      "sha256": "5eab9c21db124a2d2b24e9354464607fcd8966c6ce3b1d7e70c17321d44b7dcc"
+    },
+    {
+      "path": "src/aura/sdk.py",
+      "sha256": "677702db043962d24e1d2bc85fe6909912a91e3f96b8f804be9c3ccfc2e22eda"
+    },
+    {
+      "path": "src/aura/service.py",
+      "sha256": "0dcd991f96235bec62546dec05643857cb0392b74a8aa4dfadb9e9add9044271"
+    },
+    {
+      "path": "src/aura/session_core.py",
+      "sha256": "90b1fa532d45f09da9cb8a5cf8f0d8aa1392b467b6b3a199d37734c95c1a2418"
+    },
+    {
+      "path": "src/aura/session_runtime.py",
+      "sha256": "93e6a1797171a6ec5d38276081e0ec2b691fc463511d7bd6c4c8ed4388f70949"
+    },
+    {
+      "path": "src/aura/streaming.py",
+      "sha256": "d28df4d00e4af706046a46839ae2bb573dbc68596014a1860880537b6068786a"
+    },
+    {
+      "path": "src/aura/system/cuda.py",
+      "sha256": "5bf0be65ad580766acd1b9ded13ed017af38394b99a49fcab9f6641b194f4af2"
+    },
+    {
+      "path": "src/aura/system/gpu_diagnostics.py",
+      "sha256": "0179a28ea6377d36308a02ee9cf85935236ae50fa419951d9835b4605369433e"
+    },
+    {
+      "path": "src/aura/terminal.py",
+      "sha256": "cd5f9382d3498937963084715ccf22710ee91ee7fba9d13af643e8752800efa8"
+    },
+    {
+      "path": "src/aura/ui/transcription_tab.py",
+      "sha256": "9cedbcdc2b542171dc11c9b74445d83d576834513eba3c7cd970087a79fc9557"
+    },
+    {
+      "path": "src/aura/worker.py",
+      "sha256": "180f08a0a930af64992873b8d1098a8dbbd47ff781bfda58498ae0863e44cd97"
+    },
+    {
+      "path": "tests/reuse_fixtures.py",
+      "sha256": "3cde9e68bafb9880db3ad6668b9bbcb300f730784166372e7bf94887f4a49b4c"
+    },
+    {
+      "path": "tests/test_asr_models.py",
+      "sha256": "1a24eac9f994d549c5332528eea832158c2411923431b3e2b1d22ab32cd84d8f"
+    },
+    {
+      "path": "tests/test_asr_recovery.py",
+      "sha256": "787f22184e3cba44b84074d8439a0702e48d3eb2b9eb9ad5de3331b5e5aa820d"
+    },
+    {
+      "path": "tests/test_breeze_activation.py",
+      "sha256": "dd1772c4bfd7728c4fcb5de11b6dd945a1fec096f874a0f8e363b0a496759698"
+    },
+    {
+      "path": "tests/test_capture_signal.py",
+      "sha256": "b5459faff15039c4392741d6fe5d8f58f5d154d5304d94455151ab14b60a6c8b"
+    },
+    {
+      "path": "tests/test_completion.py",
+      "sha256": "cb57ccbe105e04bb66f39dd4847d305282a753cdd657d54dc9819ec0429e0735"
+    },
+    {
+      "path": "tests/test_enhancement_backends.py",
+      "sha256": "d65a55f7a68e5783cf284ff4f2f9262ec0231dfdd96b48aa938ea18413462a29"
+    },
+    {
+      "path": "tests/test_evaluate_denoise_backends.py",
+      "sha256": "5ca05e2f3e847ee96df228a14dd056a1741b496e5e017dcaab1590586277e528"
+    },
+    {
+      "path": "tests/test_file_pipeline.py",
+      "sha256": "7c8f111e02f035f3050b779ea03e66245e49f180aa5749a3fb12de9e69a66f8b"
+    },
+    {
+      "path": "tests/test_gpu_policy.py",
+      "sha256": "ca46dbea4c6bcc514e060717420a73da6ba747e8bd64b37aa3961b6e5acefa75"
+    },
+    {
+      "path": "tests/test_meeting_distance.py",
+      "sha256": "26681cc57ff63e5e9c9f078a85756260dab889ef09e997438ce58477d319b2ed"
+    },
+    {
+      "path": "tests/test_native_capture.py",
+      "sha256": "5acbc8534fbee58c6ae6d876d795843d315b777f576d532aff689b665c2c03ad"
+    },
+    {
+      "path": "tests/test_native_sources.py",
+      "sha256": "f08afad9e58328cbf5297fefb2b09cea0e8588de20be2ddc051377945f552bdf"
+    },
+    {
+      "path": "tests/test_packaged_resources.py",
+      "sha256": "4781acff7def2ca73b3bbd56683e70c153dd84681fb215521e3b17093ff90dc5"
+    },
+    {
+      "path": "tests/test_recording_progress.py",
+      "sha256": "611c0d72bd9604bfb542652891af1aca549ca214f9d67a890937591ed9c93f96"
+    },
+    {
+      "path": "tests/test_reuse_sessions.py",
+      "sha256": "1056bc46d0f0d6eb4028a5ddecf74947e9ff82ce7d91577e35a392fe6e10e50a"
+    },
+    {
+      "path": "tests/test_reuse_stream.py",
+      "sha256": "66844500774ca5dd5cc33ede324263234e387845c33ade96aa72ef47562fc3ac"
+    },
+    {
+      "path": "tests/test_reuse_worker.py",
+      "sha256": "627c010bb0a3688f75819040953c80b1fc4a739e91e90ab9cd9ac3f6abd38d75"
+    },
+    {
+      "path": "tests/test_runtime_diagnostics.py",
+      "sha256": "563b4801034b86d6e7ded024184b25475bb1a14b833fae405e0c0c2759fc6eba"
+    },
+    {
+      "path": "tests/test_session_navigation.py",
+      "sha256": "45626c0b95c004f012affeb39ba6dcd49ed89c5de01a7be2f7a42aa5be81bc53"
+    },
+    {
+      "path": "tests/test_session_runtime.py",
+      "sha256": "5e744247343b9db68f3e233f48ff389d451750ac828445b4b4339777d4835710"
+    },
+    {
+      "path": "tests/test_shared_sessions.py",
+      "sha256": "73de3d1ebec1eb729640f44dfa2d1fbd389415d70b5708262f8ff53f51dcd9d5"
+    },
+    {
+      "path": "tests/test_streaming_protocol.py",
+      "sha256": "dce78e53f3f5e38974815b3eca4bf8bcef8528380496bf8336d5dd07250db093"
+    },
+    {
+      "path": "tests/test_streaming_reliability.py",
+      "sha256": "bf4224a597646e52516703a064c55b32749b9f9ddb08be11366b8799ec5cff2e"
+    },
+    {
+      "path": "tests/test_terminal.py",
+      "sha256": "d5fcc808529fac81aa0166d88867143c8bbb95b5a7469e5dd8997fa8534e2c6e"
+    },
+    {
+      "path": "tests/test_ui_state.py",
+      "sha256": "12c067cd8f478078cb96aab556b2fc1b73844aa29ec5d2afb1895b10cb77285e"
+    },
+    {
+      "path": "tests/test_worker_supervision.py",
+      "sha256": "0ec27ca78812114b3d58fdfb808c2174a3c12d516860e0b216a96c1dd74769d7"
+    },
+    {
+      "path": "uv.lock",
+      "sha256": "370aaffa8307081eeb30131e962af715599e663a8c68bdfae61945680d8b6876"
+    }
+  ]
+}

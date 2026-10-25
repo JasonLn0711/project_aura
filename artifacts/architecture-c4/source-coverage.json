@@ -1,0 +1,632 @@
+{
+  "status": "pass",
+  "source_files": 75,
+  "sources": [
+    {
+      "path": "native/aura-capture/src/main.rs",
+      "owner": "captureTransport",
+      "classification": "current",
+      "note": "Capture, transport and completion share one Rust source file; transport is its canonical map owner."
+    },
+    {
+      "path": "src/asr_postprocess/__init__.py",
+      "owner": "postprocess",
+      "classification": "current",
+      "note": ""
+    },
+    {
+      "path": "src/asr_postprocess/domain_glossary.yaml",
+      "owner": "postprocess",
+      "classification": "current",
+      "note": ""
+    },
+    {
+      "path": "src/asr_postprocess/fuzzy_corrector.py",
+      "owner": "postprocess",
+      "classification": "current",
+      "note": ""
+    },
+    {
+      "path": "src/aura/__init__.py",
+      "owner": "commands",
+      "classification": "current",
+      "note": ""
+    },
+    {
+      "path": "src/aura/__main__.py",
+      "owner": "commands",
+      "classification": "current",
+      "note": ""
+    },
+    {
+      "path": "src/aura/app.py",
+      "owner": "guiControl",
+      "classification": "current",
+      "note": ""
+    },
+    {
+      "path": "src/aura/asr/__init__.py",
+      "owner": "asr",
+      "classification": "current",
+      "note": ""
+    },
+    {
+      "path": "src/aura/asr/file_pipeline.py",
+      "owner": "filePipeline",
+      "classification": "current",
+      "note": ""
+    },
+    {
+      "path": "src/aura/asr/hotwords.py",
+      "owner": "postprocess",
+      "classification": "current",
+      "note": ""
+    },
+    {
+      "path": "src/aura/asr/models.py",
+      "owner": "asr",
+      "classification": "current",
+      "note": ""
+    },
+    {
+      "path": "src/aura/asr/punctuation.py",
+      "owner": "postprocess",
+      "classification": "current",
+      "note": ""
+    },
+    {
+      "path": "src/aura/asr/threads.py",
+      "owner": "qtAdapters",
+      "classification": "retained",
+      "note": "Retained Qt ASR adapters; current service inference uses session_runtime.py."
+    },
+    {
+      "path": "src/aura/audio/__init__.py",
+      "owner": "media",
+      "classification": "current",
+      "note": ""
+    },
+    {
+      "path": "src/aura/audio/capture.py",
+      "owner": "qtAdapters",
+      "classification": "retained",
+      "note": "Retained Qt recorder interface; current detached producer reads audio/inputs.py."
+    },
+    {
+      "path": "src/aura/audio/cleanup.py",
+      "owner": "retention",
+      "classification": "current",
+      "note": ""
+    },
+    {
+      "path": "src/aura/audio/denoise.py",
+      "owner": "media",
+      "classification": "evaluation",
+      "note": "Historical noisereduce baseline; current RE-USE path does not select it."
+    },
+    {
+      "path": "src/aura/audio/enhancement_backends.py",
+      "owner": "media",
+      "classification": "current",
+      "note": ""
+    },
+    {
+      "path": "src/aura/audio/enhancement_health.py",
+      "owner": "health",
+      "classification": "current",
+      "note": ""
+    },
+    {
+      "path": "src/aura/audio/export.py",
+      "owner": "retention",
+      "classification": "current",
+      "note": ""
+    },
+    {
+      "path": "src/aura/audio/fastenhancer.py",
+      "owner": "media",
+      "classification": "current",
+      "note": ""
+    },
+    {
+      "path": "src/aura/audio/inputs.py",
+      "owner": "pythonIO",
+      "classification": "current",
+      "note": ""
+    },
+    {
+      "path": "src/aura/audio/meeting_distance.py",
+      "owner": "media",
+      "classification": "compatibility",
+      "note": "Compatibility policy for saved/import settings; current enhancement stays fixed RE-USE."
+    },
+    {
+      "path": "src/aura/audio/normalization.py",
+      "owner": "media",
+      "classification": "current",
+      "note": ""
+    },
+    {
+      "path": "src/aura/audio/recording_session.py",
+      "owner": "sessions",
+      "classification": "current",
+      "note": ""
+    },
+    {
+      "path": "src/aura/audio/retention.py",
+      "owner": "retention",
+      "classification": "current",
+      "note": ""
+    },
+    {
+      "path": "src/aura/audio/reuse.py",
+      "owner": "reuseProtocol",
+      "classification": "current",
+      "note": ""
+    },
+    {
+      "path": "src/aura/audio/reuse_model.py",
+      "owner": "reuseModel",
+      "classification": "current",
+      "note": ""
+    },
+    {
+      "path": "src/aura/audio/reuse_offline.py",
+      "owner": "offline",
+      "classification": "current",
+      "note": ""
+    },
+    {
+      "path": "src/aura/audio/reuse_policy.py",
+      "owner": "guard",
+      "classification": "current",
+      "note": ""
+    },
+    {
+      "path": "src/aura/audio/reuse_stream.py",
+      "owner": "stream",
+      "classification": "current",
+      "note": ""
+    },
+    {
+      "path": "src/aura/audio/reuse_worker.py",
+      "owner": "reuseProtocol",
+      "classification": "current",
+      "note": ""
+    },
+    {
+      "path": "src/aura/audio/splitter.py",
+      "owner": "splitter",
+      "classification": "current",
+      "note": ""
+    },
+    {
+      "path": "src/aura/audio/splitter_pipeline.py",
+      "owner": "splitter",
+      "classification": "current",
+      "note": ""
+    },
+    {
+      "path": "src/aura/audio/vad.py",
+      "owner": "live",
+      "classification": "current",
+      "note": ""
+    },
+    {
+      "path": "src/aura/audio/vad_candidates.py",
+      "owner": "live",
+      "classification": "evaluation",
+      "note": "Explicit evaluation adapters; not a default product VAD."
+    },
+    {
+      "path": "src/aura/audit.py",
+      "owner": "audit",
+      "classification": "current",
+      "note": ""
+    },
+    {
+      "path": "src/aura/cli.py",
+      "owner": "commands",
+      "classification": "current",
+      "note": ""
+    },
+    {
+      "path": "src/aura/completion.py",
+      "owner": "terminal",
+      "classification": "current",
+      "note": ""
+    },
+    {
+      "path": "src/aura/config.py",
+      "owner": "scheduling",
+      "classification": "current",
+      "note": ""
+    },
+    {
+      "path": "src/aura/diarization/__init__.py",
+      "owner": "diarization",
+      "classification": "current",
+      "note": ""
+    },
+    {
+      "path": "src/aura/diarization/pyannote_pipeline.py",
+      "owner": "diarization",
+      "classification": "current",
+      "note": ""
+    },
+    {
+      "path": "src/aura/diarization/speaker_assignment.py",
+      "owner": "postprocess",
+      "classification": "current",
+      "note": ""
+    },
+    {
+      "path": "src/aura/evidence_search.py",
+      "owner": "evidenceIndex",
+      "classification": "current",
+      "note": ""
+    },
+    {
+      "path": "src/aura/metadata.py",
+      "owner": "commands",
+      "classification": "current",
+      "note": ""
+    },
+    {
+      "path": "src/aura/native_capture.py",
+      "owner": "nativeLauncher",
+      "classification": "current",
+      "note": ""
+    },
+    {
+      "path": "src/aura/producer.py",
+      "owner": "pythonIO",
+      "classification": "current",
+      "note": ""
+    },
+    {
+      "path": "src/aura/reuse_capture.py",
+      "owner": "live",
+      "classification": "current",
+      "note": ""
+    },
+    {
+      "path": "src/aura/reuse_live_repair.py",
+      "owner": "repair",
+      "classification": "current",
+      "note": ""
+    },
+    {
+      "path": "src/aura/reuse_recovery.py",
+      "owner": "repair",
+      "classification": "current",
+      "note": ""
+    },
+    {
+      "path": "src/aura/review.py",
+      "owner": "review",
+      "classification": "current",
+      "note": ""
+    },
+    {
+      "path": "src/aura/scheduling.py",
+      "owner": "scheduling",
+      "classification": "current",
+      "note": ""
+    },
+    {
+      "path": "src/aura/sdk.py",
+      "owner": "sdk",
+      "classification": "current",
+      "note": ""
+    },
+    {
+      "path": "src/aura/service.py",
+      "owner": "transport",
+      "classification": "current",
+      "note": ""
+    },
+    {
+      "path": "src/aura/session_core.py",
+      "owner": "sessions",
+      "classification": "current",
+      "note": ""
+    },
+    {
+      "path": "src/aura/session_runtime.py",
+      "owner": "executor",
+      "classification": "current",
+      "note": ""
+    },
+    {
+      "path": "src/aura/settings.py",
+      "owner": "scheduling",
+      "classification": "current",
+      "note": ""
+    },
+    {
+      "path": "src/aura/streaming.py",
+      "owner": "sessions",
+      "classification": "current",
+      "note": ""
+    },
+    {
+      "path": "src/aura/system/__init__.py",
+      "owner": "diagnostics",
+      "classification": "current",
+      "note": ""
+    },
+    {
+      "path": "src/aura/system/audio_diagnostics.py",
+      "owner": "diagnostics",
+      "classification": "current",
+      "note": ""
+    },
+    {
+      "path": "src/aura/system/cuda.py",
+      "owner": "diagnostics",
+      "classification": "current",
+      "note": ""
+    },
+    {
+      "path": "src/aura/system/gpu_diagnostics.py",
+      "owner": "diagnostics",
+      "classification": "current",
+      "note": ""
+    },
+    {
+      "path": "src/aura/system/native_audio.py",
+      "owner": "diagnostics",
+      "classification": "current",
+      "note": ""
+    },
+    {
+      "path": "src/aura/system/platform.py",
+      "owner": "diagnostics",
+      "classification": "current",
+      "note": ""
+    },
+    {
+      "path": "src/aura/system/runtime_paths.py",
+      "owner": "diagnostics",
+      "classification": "current",
+      "note": ""
+    },
+    {
+      "path": "src/aura/system/runtime_report.py",
+      "owner": "diagnostics",
+      "classification": "current",
+      "note": ""
+    },
+    {
+      "path": "src/aura/system/update_checker.py",
+      "owner": "diagnostics",
+      "classification": "current",
+      "note": ""
+    },
+    {
+      "path": "src/aura/terminal.py",
+      "owner": "terminal",
+      "classification": "current",
+      "note": ""
+    },
+    {
+      "path": "src/aura/ui/__init__.py",
+      "owner": "guiControl",
+      "classification": "current",
+      "note": ""
+    },
+    {
+      "path": "src/aura/ui/main_window.py",
+      "owner": "guiControl",
+      "classification": "current",
+      "note": ""
+    },
+    {
+      "path": "src/aura/ui/messages.py",
+      "owner": "guiControl",
+      "classification": "current",
+      "note": ""
+    },
+    {
+      "path": "src/aura/ui/splitter_tab.py",
+      "owner": "splitter",
+      "classification": "current",
+      "note": ""
+    },
+    {
+      "path": "src/aura/ui/transcript_io.py",
+      "owner": "review",
+      "classification": "current",
+      "note": ""
+    },
+    {
+      "path": "src/aura/ui/transcription_tab.py",
+      "owner": "guiControl",
+      "classification": "current",
+      "note": ""
+    },
+    {
+      "path": "src/aura/worker.py",
+      "owner": "scheduler",
+      "classification": "current",
+      "note": ""
+    }
+  ],
+  "supporting_files": [
+    {
+      "path": "scripts/architecture.py",
+      "owner": "provisioning_and_validation"
+    },
+    {
+      "path": "scripts/audit_fuzzy_corrections.py",
+      "owner": "provisioning_and_validation"
+    },
+    {
+      "path": "scripts/benchmark_aura_meetily_asr.py",
+      "owner": "provisioning_and_validation"
+    },
+    {
+      "path": "scripts/build_fuzzy_manual_review.py",
+      "owner": "provisioning_and_validation"
+    },
+    {
+      "path": "scripts/build_windows_portable.ps1",
+      "owner": "provisioning_and_validation"
+    },
+    {
+      "path": "scripts/bump_version.py",
+      "owner": "provisioning_and_validation"
+    },
+    {
+      "path": "scripts/check_denoise_eval_workspace.py",
+      "owner": "provisioning_and_validation"
+    },
+    {
+      "path": "scripts/check_punctuation_runtime.py",
+      "owner": "provisioning_and_validation"
+    },
+    {
+      "path": "scripts/check_reuse_runtime.py",
+      "owner": "provisioning_and_validation"
+    },
+    {
+      "path": "scripts/check_shared_session_availability.py",
+      "owner": "provisioning_and_validation"
+    },
+    {
+      "path": "scripts/check_terminal_pty.py",
+      "owner": "provisioning_and_validation"
+    },
+    {
+      "path": "scripts/check_windows_runtime.ps1",
+      "owner": "provisioning_and_validation"
+    },
+    {
+      "path": "scripts/cleanup_recording_audio.py",
+      "owner": "provisioning_and_validation"
+    },
+    {
+      "path": "scripts/discover_denoise_eval_candidates.py",
+      "owner": "provisioning_and_validation"
+    },
+    {
+      "path": "scripts/evaluate_denoise_backends.py",
+      "owner": "provisioning_and_validation"
+    },
+    {
+      "path": "scripts/gate_denoise_default_promotion.py",
+      "owner": "provisioning_and_validation"
+    },
+    {
+      "path": "scripts/init_denoise_eval_workspace.py",
+      "owner": "provisioning_and_validation"
+    },
+    {
+      "path": "scripts/measure_capture_transport.py",
+      "owner": "provisioning_and_validation"
+    },
+    {
+      "path": "scripts/prepare_common_voice24_benchmark.py",
+      "owner": "provisioning_and_validation"
+    },
+    {
+      "path": "scripts/prepare_denoise_eval_case.py",
+      "owner": "provisioning_and_validation"
+    },
+    {
+      "path": "scripts/prepare_preprocessing_dataset.py",
+      "owner": "provisioning_and_validation"
+    },
+    {
+      "path": "scripts/preview_terminal.py",
+      "owner": "provisioning_and_validation"
+    },
+    {
+      "path": "scripts/run_aura_windows.ps1",
+      "owner": "provisioning_and_validation"
+    },
+    {
+      "path": "scripts/run_preprocessing_study.py",
+      "owner": "provisioning_and_validation"
+    },
+    {
+      "path": "scripts/runtime_report.py",
+      "owner": "provisioning_and_validation"
+    },
+    {
+      "path": "scripts/setup_gpu_runtime.py",
+      "owner": "provisioning_and_validation"
+    },
+    {
+      "path": "scripts/setup_reuse_runtime.py",
+      "owner": "provisioning_and_validation"
+    },
+    {
+      "path": "scripts/summarize_audit_events.py",
+      "owner": "provisioning_and_validation"
+    },
+    {
+      "path": "scripts/windows_asr_artifact_smoke.py",
+      "owner": "provisioning_and_validation"
+    },
+    {
+      "path": "scripts/windows_gpu_smoke.py",
+      "owner": "provisioning_and_validation"
+    },
+    {
+      "path": "pyproject.toml",
+      "owner": "packaging_and_release"
+    },
+    {
+      "path": "uv.lock",
+      "owner": "packaging_and_release"
+    },
+    {
+      "path": "Makefile",
+      "owner": "packaging_and_release"
+    },
+    {
+      "path": "native/aura-capture/Cargo.toml",
+      "owner": "packaging_and_release"
+    },
+    {
+      "path": "native/aura-capture/Cargo.lock",
+      "owner": "packaging_and_release"
+    },
+    {
+      "path": "Start-AURA.ps1",
+      "owner": "packaging_and_release"
+    },
+    {
+      "path": "Check-AURA.ps1",
+      "owner": "packaging_and_release"
+    },
+    {
+      "path": "Start-AURA.bat",
+      "owner": "packaging_and_release"
+    },
+    {
+      "path": "Check-AURA.bat",
+      "owner": "packaging_and_release"
+    },
+    {
+      "path": ".github/workflows/architecture.yml",
+      "owner": "ci"
+    },
+    {
+      "path": ".github/workflows/ci.yml",
+      "owner": "ci"
+    },
+    {
+      "path": ".github/workflows/windows.yml",
+      "owner": "ci"
+    }
+  ],
+  "notes": [
+    "SDK and shared helpers may be used by multiple processes; the map names one canonical owner, not an exclusive runtime location.",
+    "Enhancement health executes in the service; source-speech protection and spectral gating execute in the RE-USE worker. They have distinct C3 owners.",
+    "Evidence CLI reads compatible canonical artifact packages; a successful shared session is not a claim that every historical summary schema is present.",
+    "FFmpeg and OS audio commands are local platform dependencies, not remote application services."
+  ]
+}

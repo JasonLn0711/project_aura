@@ -1,0 +1,28 @@
+{
+  "validation_mode": "synthetic_capture_transport",
+  "runtime_validity": "test_double",
+  "asr_inference": false,
+  "emulated_rtt_ms": 100,
+  "samples_per_frame": 480,
+  "rows": [
+    {
+      "backend": "python",
+      "user_cpu_seconds": 0.8,
+      "system_cpu_seconds": 0.06,
+      "peak_rss_kib": 41240,
+      "input_frames": 100,
+      "accepted_frames": 100,
+      "peak_pending_frames": 82
+    },
+    {
+      "backend": "rust",
+      "user_cpu_seconds": 0.01,
+      "system_cpu_seconds": 0.02,
+      "peak_rss_kib": 2820,
+      "input_frames": 100,
+      "accepted_frames": 100,
+      "peak_pending_frames": 8
+    }
+  ],
+  "limitation": "One controlled workload per backend; excludes ASR performance and physical microphone acceptance."
+}

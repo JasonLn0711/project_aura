@@ -1,0 +1,48 @@
+name: Architecture documentation
+
+on:
+  push:
+    branches: [main, "refactor/**"]
+    paths: ["docs/architecture/**", "scripts/architecture.py", "src/**", "native/**", "Makefile", "README.md", ".github/workflows/architecture.yml"]
+  pull_request:
+    paths: ["docs/architecture/**", "scripts/architecture.py", "src/**", "native/**", "Makefile", "README.md", ".github/workflows/architecture.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  c4:
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+      - uses: actions/cache@v4
+        with:
+          path: |
+            runtime/architecture/downloads
+            runtime/architecture/browser/node_modules
+            ~/.cache/ms-playwright
+          key: c4-arm64-${{ hashFiles('docs/architecture/c4/tools.lock.json', 'docs/architecture/c4/browser/package-lock.json') }}
+      - name: Prepare pinned documentation tools
+        run: python3 scripts/architecture.py setup --json
+      - name: Prepare browser libraries in disposable runner
+        run: sudo node runtime/architecture/browser/node_modules/playwright/cli.js install-deps chromium
+      - name: Check architecture failure and ownership contracts
+        run: python3 -m unittest discover -s tests -p test_architecture.py
+      - name: Build all C4 diagrams and portable viewer
+        run: python3 scripts/architecture.py build --json
+      - name: Validate source coverage and real browser navigation
+        run: python3 scripts/architecture.py check --browser --json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: aura-c4-architecture
+          path: |
+            dist/aura-c4-architecture.zip
+            runtime/architecture/browser-check.json

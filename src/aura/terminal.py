@@ -6,6 +6,7 @@ import re
 import shutil
 import sys
 import time
+from aura.audio.enhancement_health import gap_warning
 
 ANSI = re.compile(r'\x1b\[[0-?]*[ -/]*[@-~]|\x1b\][^\x07]*(?:\x07|\x1b\\)')
 
@@ -193,7 +194,7 @@ class TerminalStatus:
 
     def has_warning(self):
         s = self.session or {}
-        return bool(not self.connected or s.get('error') or s.get('state') in ('failed', 'recoverable') or any(
+        return bool(not self.connected or s.get('error') or s.get('capture_warning') or gap_warning(s) or s.get('state') in ('failed', 'recoverable') or any(
             issue['status'] == 'pending' for issue in s.get('asr_issues', [])))
 
     def lines(self, width=80):
@@ -217,8 +218,28 @@ class TerminalStatus:
         if s.get("diarization"):
             from aura.diarization.live import status_text
             lines.append(("class:muted", safe_text(status_text(s["diarization"]))))
+        if s.get('stream') and state in ('recording', 'pausing', 'paused', 'stopping'):
+            if not s.get('producer_connected'):
+                lines.append(('class:error', 'Capture offline · local audio retained · upload backlog unknown'))
+            elif s.get('capture_progress'):
+                progress = s['capture_progress']
+                lines.append(('class:muted', f'Capture {progress["captured_frames"]} frames · Upload {progress["pending_upload_frames"]} pending'))
+        if s.get('enhancement'):
+            enhancement = s['enhancement']
+            recovery = enhancement.get('recovery_progress')
+            offline = enhancement.get('offline_progress')
+            if enhancement.get('recovery_scanning') and recovery:
+                lines.append(('class:muted', 'Enhancement recovery ' + bar(recovery['completed_samples'], recovery['total_samples'])))
+            elif state == 'exporting' and offline:
+                lines.append(('class:muted', 'Offline RE-USE ' + bar(offline['completed_samples'], offline['total_samples'])))
+            elif state in ('recording', 'pausing', 'paused', 'stopping', 'draining'):
+                lines.append(('class:muted', f"Real-time RE-USE · {enhancement.get('processed_samples', 0)} samples processed · {enhancement.get('backlog_samples', 0)} pending"))
         if self.model_status:
             lines.append(('class:muted', self.model_status))
+        if 'language' in s.get('options', {}):
+            lines.append(('class:muted', 'Recognition language: ' + (s['options']['language'] or 'auto')))
+        if gap_warning(s):
+            lines.append(('class:error', safe_text(gap_warning(s))))
         if state == 'draining' and work:
             total = sum(work.values())
             if total:
@@ -226,6 +247,8 @@ class TerminalStatus:
         gaps = sum(i["status"] == "pending" for i in s.get("asr_issues", []))
         if gaps:
             lines.append(('class:error', f'{gaps} transcription gaps · audio preserved · /inspect · /recover after stop'))
+        if s.get('capture_warning'):
+            lines.append(('class:error', safe_text(s['capture_warning'])))
         if s.get('error'):
             lines.append(('class:error', safe_text(s['error'])))
         if self.graphs and width >= 60:

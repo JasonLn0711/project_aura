@@ -1,0 +1,50 @@
+{
+  "recorded_at": "2026-10-18T06:49:45.834047+00:00",
+  "scope": "publication checks; no new GPU availability experiment",
+  "live_receipt": "validation.json",
+  "live_executable_hashes_checked": 77,
+  "live_executable_hash_mismatches": [],
+  "python_regression": {
+    "status": "pass",
+    "tests": 428,
+    "command": "QT_QPA_PLATFORM=offscreen LD_LIBRARY_PATH=\"$PWD/runtime/test-native/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}\" PYTHONPATH=src runtime/test-venv/bin/python -W error::ResourceWarning -m unittest discover -s tests"
+  },
+  "focused_versioning": {
+    "status": "pass",
+    "tests": 9
+  },
+  "rust": {
+    "fmt": "pass",
+    "clippy": "pass",
+    "unit_tests_passed": 4
+  },
+  "markdown": {
+    "files": 11,
+    "relative_links": 490,
+    "new_failures": 0,
+    "inherited_failures": 65
+  },
+  "planning": {
+    "repository_validation": "pass",
+    "grandfathered_warnings": 44,
+    "new_warnings": 0,
+    "knowledge_validation": "pass",
+    "metadata_notes": 181,
+    "catalog_entries": 181
+  },
+  "diff_check": "pass",
+  "test_fixture_followup": "Read current revision and submit preservation-test edit under the session lock; no production executable changed after live validation.",
+  "earlier_check_attempts": [
+    "Main CLI environment lacks GUI/capture test extras; preserved failed attempt.",
+    "Isolated test environment needs the extracted PortAudio library path; preserved failed attempt."
+  ],
+  "private_check_logs_sha256": {
+    "aura-publication-regression-20261018.log": "731e9866351a65cc2b302ea8e4f7e6f4371fced4d3cc38098ea3297275cc25af",
+    "aura-publication-regression-testenv-20261018.log": "ec1081668366a0eb463bca29807d3e599cc0fcdbead2277759abf261ff9daf9b",
+    "aura-publication-regression-final-20261018.log": "9c5d143001567773e0554fb00923c2fc8b8f8004273807383c3554cbd821241b",
+    "aura-planning-link-check-20261018.json": "a489a142dd98dbd543e530df29084bb5289362712d5d4a7cce1d81ef4166adc6",
+    "planning-aura-repository-20261018.log": "a5b561ef9f2c0e5e912b20d013126e1eb753a6aa7b9d46f9210cd5415ca83a37"
+  },
+  "test_fixture_sha256": "ba418f0f63152289dc8936bd8d363aaf71270a2a0ad8a9627cc9139d45474f00",
+  "publication": "pending Git push; see Planning day receipt for actual publication"
+}

@@ -1,0 +1,65 @@
+{
+  "recorded_at": "2026-10-18T08:26:33.627106+00:00",
+  "phase": "Follow-up local verification before requested Git publication",
+  "owner": "project_aura",
+  "canonical_closeout": "docs/audit-events/2026-10-18-c4-architecture/audit-event.md",
+  "planning_publication_receipt": "planning-everything-track/weeks/2026-W42/days/2026-10-18.md#aura-c4-2026-10-18",
+  "production_baseline_revision": "7c64a9f0de012dcbfb8398a0b7b3c36ed233a2d5",
+  "prior_published_packet_revision": "7c731095bd6a2458d475a0b13d9ae6e16c82b954",
+  "original_render_receipt_sha256": "1753a22a9cd804b047980db5e5249e54e2f60a3083f45e1f156feafa3e5556e7",
+  "original_validation_sha256": "04f0e8c567f94187dee820af5210b51e0b64e4360fc96a17bae02d830ab2e6e9",
+  "refreshed_render_receipt_sha256": "b175b91e04bbdd8c5f272e56a8c27fa336be4dc9abf2c4f55a578bf20e2a1219",
+  "refreshed_validation_sha256": "4178351e6ce6889a0106125cd6260b89815aa67291c782f4ea7e62c8f0588fa2",
+  "sealed_input_and_render_hashes_verified": 237,
+  "model_definition_changes_since_original_render": false,
+  "production_executable_hashes_unchanged": 77,
+  "publication_tooling_followup": "Normalize catalog, support, manifest and ZIP paths to POSIX separators; compare resolved checkout roots; keep post-render receipts outside the render hash seal. Existing source-inspection test covers aliased roots. POSIX-only process-group timeout test retains its host guard.",
+  "tooling_fix_commit": "e820ac2",
+  "test_architecture_sha256": "a01ee35cd7d9fb4e19c1a18fdb3e2a1d4ce715e2dbc7d7c3c52dcb01c532d537",
+  "regression": {
+    "python_tests_passed": 438,
+    "log_sha256": "d66c3e4785a33ab1ee2b0b924800b23fa98dcebb20d86c78718f26c7f907ef64",
+    "focused_versioning_passed": 9
+  },
+  "browser": {
+    "views_checked": 30,
+    "receipt_sha256": "3dc1ac0400b9ccb91aeae1827cd81e2e2a4baf2b1a9fd2f6661de4d3c5582a7f",
+    "reexecuted_for_publication": true
+  },
+  "planning": {
+    "repository_validation": "pass",
+    "grandfathered_warnings": 44,
+    "new_warnings": 0,
+    "knowledge_validation": "pass",
+    "metadata_notes": 181,
+    "catalog_entries": 181
+  },
+  "documentation": {
+    "status": "pass",
+    "markdown_files": 17,
+    "relative_links": 949,
+    "new_failures": 0,
+    "inherited_unavailable_paths_or_anchors": 71,
+    "git_diff_check": "pass",
+    "baseline_scope": "All changed Markdown since AURA 7c64a9f and Planning 75279015, including already published changes."
+  },
+  "ci": {
+    "initial_published_revision": "7c731095bd6a2458d475a0b13d9ae6e16c82b954",
+    "architecture": {
+      "status": "success",
+      "url": "https://github.com/JasonLn0711/project_aura/actions/runs/39110776970"
+    },
+    "general": {
+      "status": "success",
+      "url": "https://github.com/JasonLn0711/project_aura/actions/runs/39110777040"
+    },
+    "windows": {
+      "status": "failure",
+      "run": "https://github.com/JasonLn0711/project_aura/actions/runs/39110777055",
+      "baseline": "https://github.com/JasonLn0711/project_aura/actions/runs/39105469309",
+      "followup": "Resolved-root handling and POSIX catalog paths address the additional architecture fixture failures; actual follow-up CI is recorded in Planning."
+    }
+  },
+  "publication": "Initial four commits published; follow-up local checks do not assert a push outcome. Planning owns actual commit and target verification.",
+  "private_custody": "No audio, transcripts, credentials, model weights, tool downloads or full diagnostic logs are part of this Git packet."
+}

@@ -1,0 +1,17 @@
+{
+  "execution_status": "LIVE_MINIMUM_COMPLETED",
+  "runtime_validity": "valid_target_runtime",
+  "gate_outcome": "pass",
+  "decision": "activate_local_account_service",
+  "validation_mode": "availability_validation",
+  "regression_tests": 399,
+  "versioning_tests": 9,
+  "rust_tests": 3,
+  "accuracy": "not_evaluated",
+  "asr_timing": "not_evaluated",
+  "preprocessing_effect": "not_evaluated",
+  "physical_amd64": "not_evaluated",
+  "physical_microphone": "not_evaluated",
+  "ssh_second_host": "not_evaluated",
+  "publication": "not_requested"
+}

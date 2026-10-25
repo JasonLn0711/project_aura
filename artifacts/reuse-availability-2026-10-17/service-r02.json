@@ -1,0 +1,156 @@
+{
+  "run_id": "RUN-service-r02",
+  "run_date": "2026-10-17T14:40:13.321450+00:00",
+  "architecture": "aarch64",
+  "capture_backend": "rust",
+  "validation_mode": "availability_validation",
+  "status": "LIVE_MINIMUM_COMPLETED",
+  "accuracy": "not_evaluated",
+  "latency": "not_evaluated",
+  "ground_truth_read": false,
+  "model": "breeze",
+  "source_url": "https://dldata-public.s3.us-east-2.amazonaws.com/2086-149220-0033.wav",
+  "runtime_validity": "valid_target_runtime",
+  "functional_result": "available_and_working",
+  "input_sha256": "5fceacff0315d49cb59fcc505bcecf1ed5f2f35c2897b1e65a59f30e5d922150",
+  "decoded_sha256": "89d95142df38e13a911800ee38bb7b0b68e7dc61944aac9173b9e97ad376f213",
+  "health": {
+    "audio_stream_v2": {
+      "packet_frames": 4,
+      "window_frames": 32
+    },
+    "model_control": true,
+    "record_stop_at": true,
+    "session_delete": true,
+    "recover": true,
+    "asr_models": {
+      "breeze": {
+        "model": "SoybeanMilk/faster-whisper-Breeze-ASR-25",
+        "languages": [
+          "zh",
+          "en",
+          "auto"
+        ],
+        "backend": "faster-whisper",
+        "prompt": true,
+        "hotwords": true,
+        "beam_size": true,
+        "chinese_punctuation": true
+      },
+      "parakeet-tdt-0.6b-v2": {
+        "model": "nvidia/parakeet-tdt-0.6b-v2",
+        "revision": "ae9ad07059c7c739ffaf932226a8fe64ae2620b0",
+        "languages": [
+          "en"
+        ],
+        "backend": "nemo",
+        "prompt": false,
+        "hotwords": false,
+        "beam_size": false,
+        "chinese_punctuation": false,
+        "platform_supported": true,
+        "dependencies_installed": false,
+        "checkpoint_cached": false,
+        "runtime_probe": "not_performed",
+        "install": "On the Linux Python 3.12 server: uv sync --locked --extra cli --extra server --extra parakeet --inexact",
+        "download": "On the server: aura models download parakeet-tdt-0.6b-v2"
+      }
+    },
+    "protocol": 1,
+    "service_version": "1.18.0",
+    "ffmpeg": true,
+    "profiles": [
+      "reuse-v1"
+    ],
+    "capture_format": "s16le/16000/mono",
+    "single_owner": true,
+    "enhancement_strategy": "reuse-v1",
+    "enhancement_backends": [
+      "nvidia/Real-time_RE-USE",
+      "nvidia/RE-USE"
+    ]
+  },
+  "preload": {
+    "state": "loaded",
+    "asr_model": "breeze",
+    "runtime": {
+      "worker_pid": 1769499,
+      "asr_model": "breeze",
+      "model": "SoybeanMilk/faster-whisper-Breeze-ASR-25",
+      "device": "cuda",
+      "compute_type": "int8",
+      "effective_compute_type": "int8_float16",
+      "architecture": "aarch64",
+      "ctranslate2_version": "4.7.1",
+      "backend": "faster-whisper",
+      "backend_version": "1.2.1"
+    },
+    "error": null,
+    "default": "breeze",
+    "kept_loaded": true
+  },
+  "options": {
+    "asr_model": "breeze",
+    "audio_format": "m4a",
+    "punctuation": false,
+    "language": "en",
+    "profile": "reuse-v1",
+    "live_max_segment_len_sec": 2
+  },
+  "runtime": {
+    "worker_pid": 1769499,
+    "asr_model": "breeze",
+    "model": "SoybeanMilk/faster-whisper-Breeze-ASR-25",
+    "device": "cuda",
+    "compute_type": "int8",
+    "effective_compute_type": "int8_float16",
+    "architecture": "aarch64",
+    "ctranslate2_version": "4.7.1",
+    "backend": "faster-whisper",
+    "backend_version": "1.2.1"
+  },
+  "source_samples": 118960,
+  "live_text_before_capture_end": true,
+  "capture_path": "virtual_pulse_monitor",
+  "pause_resume": true,
+  "segment_bounds_valid": true,
+  "audio_validation": {
+    "programs": [],
+    "streams": [
+      {
+        "codec_name": "aac",
+        "codec_type": "audio",
+        "sample_rate": "16000",
+        "channels": 1
+      }
+    ],
+    "format": {
+      "duration": "7.620000"
+    }
+  },
+  "capture_frames": 254,
+  "capture_spool_removed": true,
+  "preloaded_worker_reused": true,
+  "unload": {
+    "state": "unloaded",
+    "asr_model": null,
+    "error": null,
+    "default": "breeze",
+    "kept_loaded": false
+  },
+  "unloaded_worker_exited": true,
+  "delivery_format": "m4a",
+  "sessions": 1,
+  "audio_files": 1,
+  "transcript_nonempty": true,
+  "shared_control": true,
+  "exports": true,
+  "session_id": "b030b3d2-1334-4528-a7fd-baf45a50a25a",
+  "physical_microphone_acceptance": "not_evaluated",
+  "ssh_second_host": "not_evaluated",
+  "successful_inference_jobs": 4,
+  "successful_jobs_by_kind": {
+    "file": 0,
+    "chunk": 4
+  }
+}

@@ -63,6 +63,10 @@ class FakeLowConfidenceModel:
 
 
 class FilePipelineTests(unittest.TestCase):
+    def setUp(self):
+        from reuse_fixtures import IdentityReuseWorker
+        self.enterContext(patch('aura.audio.reuse.ReuseWorker', IdentityReuseWorker))
+
     def test_format_segment_uses_hms_timestamp(self):
         segment = SimpleNamespace(start=3661.7, text=" hello")
 
@@ -121,7 +125,7 @@ class FilePipelineTests(unittest.TestCase):
             statuses = []
 
             def fake_normalize_media_to_wav(file_path, temp_path, target_dbfs, progress_callback=None):
-                self.assertEqual(file_path, str(source))
+                self.assertEqual(Path(file_path).name, "prepared_enhanced.wav")
                 self.assertEqual(temp_path, target)
                 self.assertEqual(target_dbfs, -20.0)
                 progress_callback("🔉 Volume normalization pass 2/2: 50%")
@@ -155,7 +159,7 @@ class FilePipelineTests(unittest.TestCase):
                 self.assertEqual(meeting_distance_mode, MEETING_DISTANCE_FAR_SPEAKER)
                 export_silence(Path(output_path))
                 return EnhancementResult(
-                    backend="deepfilternet3",
+                    backend="nvidia/RE-USE",
                     status="ok",
                     output_path=Path(output_path),
                     note="test enhancement",
@@ -171,7 +175,6 @@ class FilePipelineTests(unittest.TestCase):
             with (
                 patch("aura.asr.file_pipeline.enhance_import_audio_if_available", side_effect=fake_enhance),
                 patch("aura.asr.file_pipeline.normalize_media_to_wav", side_effect=fake_normalize_media_to_wav),
-                patch("aura.asr.file_pipeline.reduce_audio_segment_noise") as reduce_noise,
             ):
                 result = prepare_import_audio(
                     file_path=str(source),
@@ -184,37 +187,18 @@ class FilePipelineTests(unittest.TestCase):
                 )
 
             self.assertEqual(result, target)
-            self.assertIn("🎚️ Model-based enhancement completed; skipping fallback noisereduce.", statuses)
-            reduce_noise.assert_not_called()
+            self.assertIn("NVIDIA RE-USE completed; normalizing enhanced audio.", statuses)
 
-    def test_prepare_import_audio_falls_back_to_denoise_when_far_speaker_enhancement_skips(self):
+    def test_prepare_import_audio_rejects_failed_enhancement(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             source = Path(tmpdir) / "input.wav"
-            target = Path(tmpdir) / "prepared.wav"
             export_silence(source)
+            with patch("aura.asr.file_pipeline.enhance_import_audio_if_available", return_value=EnhancementResult(
+                    "nvidia/RE-USE", "failed", None, "unavailable")):
+                with self.assertRaisesRegex(RuntimeError, "original media retained"):
+                    prepare_import_audio(str(source), FileTranscriptionSettings(), Path(tmpdir) / "out.wav")
+            self.assertTrue(source.exists())
 
-            def fake_enhance(input_path, output_path, meeting_distance_mode):
-                return EnhancementResult(
-                    backend="deepfilternet3",
-                    status="skipped",
-                    output_path=None,
-                    note="not installed",
-                )
-
-            with patch("aura.asr.file_pipeline.enhance_import_audio_if_available", side_effect=fake_enhance):
-                result = prepare_import_audio(
-                    file_path=str(source),
-                    settings=FileTranscriptionSettings(diarization=DiarizationSettings(enabled=False),
-                        target_dbfs=-20.0,
-                        meeting_distance_mode=MEETING_DISTANCE_FAR_SPEAKER,
-                    ),
-                    temp_path=target,
-                )
-
-            self.assertEqual(result, target)
-            self.assertTrue(target.exists())
-
-    @unittest.skipUnless(shutil.which("ffmpeg"), "ffmpeg is required for imported media containers")
     def test_prepare_import_audio_accepts_common_audio_video_containers(self):
         container_codecs = {
             "wav": ["-c:a", "pcm_s16le"],

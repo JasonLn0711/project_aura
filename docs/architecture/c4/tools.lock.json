@@ -1,0 +1,67 @@
+{
+  "structurizr": "2026.09.19",
+  "plantuml": "1.2026.2",
+  "java": "21.0.12.1+1 Ubuntu arm64",
+  "graphviz": "2.42.2-9ubuntu0.1 (binary reports 2.43.0)",
+  "platform": "linux-aarch64",
+  "downloads": [
+    {
+      "url": "https://ports.ubuntu.com/ubuntu-ports/pool/main/o/openjdk-21/openjdk-21-jre-headless_21.0.12.1%2b1-1%7e24.04.4_arm64.deb",
+      "name": "openjdk-21-jre-headless_21.0.12.1+1-1~24.04.4_arm64.deb",
+      "sha512": "8c9c794e96871e7b9bf6bc7f0fdcd77123b6fdc544037359a1b638e837be543be7a5cbbb22a77b328d8374425b0c0e7009d4717a06d129210e2e20ef45d2eab1",
+      "sha256": "c727cb036f0818578866deea1dc4ad85ddf0178635c3a606896b4f7ba946c273"
+    },
+    {
+      "url": "https://ports.ubuntu.com/ubuntu-ports/pool/universe/g/graphviz/graphviz_2.42.2-9ubuntu0.1_arm64.deb",
+      "name": "graphviz_2.42.2-9ubuntu0.1_arm64.deb",
+      "sha512": "78c3b4e403acdb05845ef258fd945b973c88bcb342a1e0bbae4a8fcf52dcfa5e9a3cdcfb816031195dd27beaeff865eb29c68fbc92b9156543f96ca5322bc8a2",
+      "sha256": "c1bb70dcb9d8dc7fd4777a3bcfa47da819f54aa5ed27c6f1b71730960cc7a4a3"
+    },
+    {
+      "url": "https://ports.ubuntu.com/ubuntu-ports/pool/universe/g/graphviz/libcdt5_2.42.2-9ubuntu0.1_arm64.deb",
+      "name": "libcdt5_2.42.2-9ubuntu0.1_arm64.deb",
+      "sha512": "21a7f118ff14feba2f287c76da4740d9cec915724076c3789067eabf9b397e1ddeb6ea7b1955c55803d0aab0e51c4d37f2094c6ea014ec445e8c31e36a06c8d2",
+      "sha256": "50a0b3d8685f9ef49e9584e8bc86598c3b0dcba7d6b222f6365eda4e67982b31"
+    },
+    {
+      "url": "https://ports.ubuntu.com/ubuntu-ports/pool/universe/g/graphviz/libcgraph6_2.42.2-9ubuntu0.1_arm64.deb",
+      "name": "libcgraph6_2.42.2-9ubuntu0.1_arm64.deb",
+      "sha512": "2465d5c7a37ad46aa4929474a96844094092dce8d9aec3c6ec07cbdfe39d2403062afa7a61fa1ff1a90f1dff3b323e8b2746bdaf27d5dfc9b0583398de768f72",
+      "sha256": "8ab50916f1851d62269e79b2c27e974ad1a3ec3551cbdc80845ecdb62ab7adcc"
+    },
+    {
+      "url": "https://ports.ubuntu.com/ubuntu-ports/pool/universe/g/graphviz/libgvc6_2.42.2-9ubuntu0.1_arm64.deb",
+      "name": "libgvc6_2.42.2-9ubuntu0.1_arm64.deb",
+      "sha512": "6552da22f2ea8de5b6d55570289b3660aa9a7cc94d03d3b333f1a4026ba0e3f3865dbe7a7e727212efe21c1ef62b44fb824804fb2ad900367d32e0484028dda5",
+      "sha256": "c6461626f1b2f50bd28f01232abeafe8f9b690666c4dcf469dd7dd4523884e07"
+    },
+    {
+      "url": "https://ports.ubuntu.com/ubuntu-ports/pool/universe/g/graphviz/libgvpr2_2.42.2-9ubuntu0.1_arm64.deb",
+      "name": "libgvpr2_2.42.2-9ubuntu0.1_arm64.deb",
+      "sha512": "a57772882664b3cea75a220903e6e84b449c1a58044d3fd4e8e111c5eed7a8663bb94f2ab0fccb4c21a67c9fe649b7588aad615a6eafe300b8fa03a6de611fbe",
+      "sha256": "f4167177a7ae65aa1b9f8330128989d07de5ddcef2a23d5d1276d7f7a0c63117"
+    },
+    {
+      "url": "https://ports.ubuntu.com/ubuntu-ports/pool/universe/g/graphviz/liblab-gamut1_2.42.2-9ubuntu0.1_arm64.deb",
+      "name": "liblab-gamut1_2.42.2-9ubuntu0.1_arm64.deb",
+      "sha512": "133a72aff0e0d089a367efea64325cf38df70402865090e940a6b0ab62ca66796c05c234800c5a317748e9b2cff3250563a7c36e924e02434335a30b254c57eb",
+      "sha256": "d75c009c09ecb1af6b836f445f471d5124a45fbc3b890e5b601858c14ca9c910"
+    },
+    {
+      "url": "https://ports.ubuntu.com/ubuntu-ports/pool/universe/g/graphviz/libpathplan4_2.42.2-9ubuntu0.1_arm64.deb",
+      "name": "libpathplan4_2.42.2-9ubuntu0.1_arm64.deb",
+      "sha512": "906cf8ed4af7cfab2d18a6766272d93e6b1c9fe2d5c8ca53ebaba2d4abf57ad52e62b684ed1311c933ca41f71a7f84db54810ae58c82db2b24908b87026b156f",
+      "sha256": "d25357e4019f401179e88cb89d2d4aa0f927aa2d2102b4857ac900224c885c68"
+    },
+    {
+      "url": "https://download.structurizr.com/structurizr-2026.09.19-playwright.war",
+      "name": "structurizr.war",
+      "sha256": "7b717f14d7dfcbfffa26b9a52d570351375eaea29c8c9b7bd2e0f071a8077d90"
+    },
+    {
+      "url": "https://repo.maven.apache.org/maven2/net/sourceforge/plantuml/plantuml/1.2026.2/plantuml-1.2026.2.jar",
+      "name": "plantuml.jar",
+      "sha256": "7a3eacbccd08311f14b107b1254e179adc1f81fa8bd52bbaf563a37f00ea026f"
+    }
+  ]
+}

@@ -1,0 +1,149 @@
+{
+  "status": "validated",
+  "scope": "Architecture model, rendering, source coverage and local browser behavior; no new ASR experiment.",
+  "views": 30,
+  "source_files": 75,
+  "code_views": 9,
+  "structurizr_validation": "pass",
+  "source_coverage": "pass",
+  "python_full_regression": {
+    "passed": 438,
+    "log_sha256": "d66c3e4785a33ab1ee2b0b924800b23fa98dcebb20d86c78718f26c7f907ef64"
+  },
+  "architecture_contract_tests": {
+    "passed": 10,
+    "included_in_full_suite": true
+  },
+  "versioning_tests": {
+    "passed": 9
+  },
+  "browser": {
+    "status": "pass",
+    "views_checked": 30,
+    "view_keys": [
+      "C1_Context",
+      "C2_Containers",
+      "C3_Desktop",
+      "C3_Terminal",
+      "C3_NativeCapture",
+      "C3_PythonCapture",
+      "C3_Service",
+      "C3_Inference",
+      "C3_Enhancement",
+      "C3_Evidence",
+      "DYN_LiveCapture",
+      "DYN_SpeechRepair",
+      "DYN_StopExport",
+      "DYN_PauseReconnect",
+      "DYN_StoppedRecovery",
+      "DYN_ImportRefine",
+      "DYN_ReviewSearch",
+      "DYN_Splitting",
+      "DEP_LocalGB10",
+      "DEP_SSHClient",
+      "DEP_WindowsGated",
+      "C4_DurableSessions",
+      "C4_NativeTransport",
+      "C4_SpeechProtection",
+      "C4_FileTranscription",
+      "C4_Splitting",
+      "C4_Evidence",
+      "C4_Recovery",
+      "C4_Review",
+      "C4_Health"
+    ],
+    "zoom": "pass",
+    "drilldown": "pass",
+    "navigation": "pass",
+    "external_requests": [],
+    "javascript_errors": [],
+    "browser": "151.0.7922.34",
+    "foreground_server_cleanup": "pass"
+  },
+  "browser_receipt_sha256": "3dc1ac0400b9ccb91aeae1827cd81e2e2a4baf2b1a9fd2f6661de4d3c5582a7f",
+  "visual_review": {
+    "mode": "Agent layout review of all 30 PNG exports using five contact sheets; selected code diagram inspected at original resolution.",
+    "reviewed_views": [
+      "C1_Context",
+      "C2_Containers",
+      "C3_Desktop",
+      "C3_Terminal",
+      "C3_NativeCapture",
+      "C3_PythonCapture",
+      "C3_Service",
+      "C3_Inference",
+      "C3_Enhancement",
+      "C3_Evidence",
+      "DYN_LiveCapture",
+      "DYN_SpeechRepair",
+      "DYN_StopExport",
+      "DYN_PauseReconnect",
+      "DYN_StoppedRecovery",
+      "DYN_ImportRefine",
+      "DYN_ReviewSearch",
+      "DYN_Splitting",
+      "DEP_LocalGB10",
+      "DEP_SSHClient",
+      "DEP_WindowsGated",
+      "C4_DurableSessions",
+      "C4_NativeTransport",
+      "C4_SpeechProtection",
+      "C4_FileTranscription",
+      "C4_Splitting",
+      "C4_Evidence",
+      "C4_Recovery",
+      "C4_Review",
+      "C4_Health"
+    ],
+    "interpretation": "Export layout and navigation review; not human product or ASR quality acceptance.",
+    "reference_revision": "7c731095bd6a2458d475a0b13d9ae6e16c82b954",
+    "reexecuted_for_tooling_followup": false,
+    "reason": "The prior all-view layout review remains historical; model/code definitions are unchanged. Fresh exports passed browser checks for all 30 views."
+  },
+  "documentation": {
+    "status": "pass",
+    "markdown_files": 17,
+    "relative_links": 949,
+    "new_failures": 0,
+    "inherited_unavailable_paths_or_anchors": 71,
+    "git_diff_check": "pass",
+    "baseline_scope": "All changed Markdown since AURA 7c64a9f and Planning 75279015, including already published changes."
+  },
+  "planning": {
+    "repository_validation": "pass",
+    "grandfathered_warnings": 44,
+    "new_warnings": 0,
+    "knowledge_validation": "pass",
+    "metadata_notes": 181,
+    "catalog_entries": 181
+  },
+  "production_executable_hashes_unchanged": 77,
+  "ci": {
+    "initial_published_revision": "7c731095bd6a2458d475a0b13d9ae6e16c82b954",
+    "architecture": {
+      "status": "success",
+      "url": "https://github.com/JasonLn0711/project_aura/actions/runs/39110776970"
+    },
+    "general": {
+      "status": "success",
+      "url": "https://github.com/JasonLn0711/project_aura/actions/runs/39110777040"
+    },
+    "windows": {
+      "status": "failure",
+      "run": "https://github.com/JasonLn0711/project_aura/actions/runs/39110777055",
+      "baseline": "https://github.com/JasonLn0711/project_aura/actions/runs/39105469309",
+      "followup": "Resolved-root handling and POSIX catalog paths address the additional architecture fixture failures; actual follow-up CI is recorded in Planning."
+    }
+  },
+  "git_publication": {
+    "original_packet": "Published to remote main at 7c731095bd6a2458d475a0b13d9ae6e16c82b954",
+    "followup": "Locally verified; actual publication and follow-up CI are recorded in the Planning day receipt."
+  },
+  "archive": {
+    "path": "dist/aura-c4-architecture.zip",
+    "crc": "pass",
+    "required_image_pairs": 30
+  },
+  "recorded_at": "2026-10-18T08:26:33.626836+00:00",
+  "render_manifest_sha256": "b175b91e04bbdd8c5f272e56a8c27fa336be4dc9abf2c4f55a578bf20e2a1219"
+}

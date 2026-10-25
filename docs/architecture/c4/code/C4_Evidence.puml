@@ -1,0 +1,28 @@
+@startuml
+!pragma layout smetana
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName DejaVu Sans
+skinparam classBackgroundColor #EDF5F3
+skinparam classBorderColor #42697A
+skinparam ArrowColor #42697A
+hide empty members
+title Code - Evidence indexing and querying
+class "IndexStats" as IndexStats <<class>> [[https://github.com/JasonLn0711/project_aura/blob/main/src/aura/evidence_search.py#L13]] {
+  meeting_count
+  segment_count
+  action_count
+}
+class "EvidenceSearch" as EvidenceSearch <<class>> [[https://github.com/JasonLn0711/project_aura/blob/main/src/aura/evidence_search.py#L426]] {
+  close()
+  search_segments(query, limit)
+  search_meetings(query, limit)
+  open_audio_span(meeting_id, start_ms, end_ms, track)
+  get_confirmed_actions(meeting_id)
+}
+class "rebuild_evidence_index" as rebuild_evidence_index <<function>> [[https://github.com/JasonLn0711/project_aura/blob/main/src/aura/evidence_search.py#L174]] {
+  (artifact_root, index_path)
+}
+rebuild_evidence_index --> IndexStats : returns rebuild counts
+EvidenceSearch --> rebuild_evidence_index : same derived schema; explicit rebuild is separate
+@enduml

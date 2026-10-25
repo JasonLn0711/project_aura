@@ -1,0 +1,285 @@
+{
+  "base_commit": "b880d588bdd752395fb8598cab216c4b1a27cf47",
+  "publication": "not_committed_or_published",
+  "attribution": "Combined working tree includes preserved preexisting changes; this snapshot does not attribute every diff line to the task.",
+  "files": [
+    {
+      "path": ".github/workflows/ci.yml",
+      "sha256": "07b02e9266f2ebd9586dfd322d069f61bd2f1ce8784131afec64f7ed003058c6",
+      "bytes": 2444,
+      "private_snapshot": "/home/jnlngx10/.local/share/project-aura/audit-archives/2026-10-17-live-streaming-reliability/working-tree/.github/workflows/ci.yml"
+    },
+    {
+      "path": ".gitignore",
+      "sha256": "f7004b8eb2b51793aad4a71507d206fdb9d0f34db701b92b6073717b3c9aeb50",
+      "bytes": 1150,
+      "private_snapshot": "/home/jnlngx10/.local/share/project-aura/audit-archives/2026-10-17-live-streaming-reliability/working-tree/.gitignore"
+    },
+    {
+      "path": "Makefile",
+      "sha256": "5683899b31eb6f55cd9809c634e9b3093f8e02073a153006a4cf153985e45487",
+      "bytes": 1683,
+      "private_snapshot": "/home/jnlngx10/.local/share/project-aura/audit-archives/2026-10-17-live-streaming-reliability/working-tree/Makefile"
+    },
+    {
+      "path": "README.md",
+      "sha256": "243a3b2a918e8043667b4aa0502d9cb206ea50c31554c915a6772603006291b9",
+      "bytes": 58181,
+      "private_snapshot": "/home/jnlngx10/.local/share/project-aura/audit-archives/2026-10-17-live-streaming-reliability/working-tree/README.md"
+    },
+    {
+      "path": "docs/shared-sessions-2026-09-08.md",
+      "sha256": "0c574d25e7c61aa255b6cce5813ffdf9d8b6737b57c303133d1a2488ebf07b8d",
+      "bytes": 44732,
+      "private_snapshot": "/home/jnlngx10/.local/share/project-aura/audit-archives/2026-10-17-live-streaming-reliability/working-tree/docs/shared-sessions-2026-09-08.md"
+    },
+    {
+      "path": "native/aura-capture/.gitignore",
+      "sha256": "306fd52e74fca6746e12acc750f232de15e71da917756a1270d74c91f5eb7368",
+      "bytes": 9,
+      "private_snapshot": "/home/jnlngx10/.local/share/project-aura/audit-archives/2026-10-17-live-streaming-reliability/working-tree/native/aura-capture/.gitignore"
+    },
+    {
+      "path": "native/aura-capture/Cargo.lock",
+      "sha256": "720172e741493691ceb27d3a6b67e549492f1ffb27681e734376fc202e3ca854",
+      "bytes": 14238,
+      "private_snapshot": "/home/jnlngx10/.local/share/project-aura/audit-archives/2026-10-17-live-streaming-reliability/working-tree/native/aura-capture/Cargo.lock"
+    },
+    {
+      "path": "native/aura-capture/Cargo.toml",
+      "sha256": "985040f3ca9445c6a1a114619229e03193569cc66ba8e36850b90d24c991b0cf",
+      "bytes": 474,
+      "private_snapshot": "/home/jnlngx10/.local/share/project-aura/audit-archives/2026-10-17-live-streaming-reliability/working-tree/native/aura-capture/Cargo.toml"
+    },
+    {
+      "path": "native/aura-capture/src/main.rs",
+      "sha256": "79187f2eeebda199e12c5da33309be52f62d62a54dbe37e6e1429f6f6fc12a0e",
+      "bytes": 21194,
+      "private_snapshot": "/home/jnlngx10/.local/share/project-aura/audit-archives/2026-10-17-live-streaming-reliability/working-tree/native/aura-capture/src/main.rs"
+    },
+    {
+      "path": "pyproject.toml",
+      "sha256": "1709771bb84679ed7b5fcad5acda790e592690c4d4cb95c4a28269e9e97bc74c",
+      "bytes": 2717,
+      "private_snapshot": "/home/jnlngx10/.local/share/project-aura/audit-archives/2026-10-17-live-streaming-reliability/working-tree/pyproject.toml"
+    },
+    {
+      "path": "scripts/check_shared_session_availability.py",
+      "sha256": "9778d36d758f98f8f3b80942f31a62f987c314bb0f22c47566119c98b8198d8b",
+      "bytes": 15797,
+      "private_snapshot": "/home/jnlngx10/.local/share/project-aura/audit-archives/2026-10-17-live-streaming-reliability/working-tree/scripts/check_shared_session_availability.py"
+    },
+    {
+      "path": "scripts/check_terminal_pty.py",
+      "sha256": "ad086964ae35b21bb44153cd4a7fe7c5ab722f0a9a48baedfb17e843bfeeaa5a",
+      "bytes": 6261,
+      "private_snapshot": "/home/jnlngx10/.local/share/project-aura/audit-archives/2026-10-17-live-streaming-reliability/working-tree/scripts/check_terminal_pty.py"
+    },
+    {
+      "path": "scripts/measure_capture_transport.py",
+      "sha256": "e32c9ca486b22bd0bdbae89ac2ff817066e5c3552364c79b475d8e7df38f133f",
+      "bytes": 8423,
+      "private_snapshot": "/home/jnlngx10/.local/share/project-aura/audit-archives/2026-10-17-live-streaming-reliability/working-tree/scripts/measure_capture_transport.py"
+    },
+    {
+      "path": "scripts/setup_gpu_runtime.py",
+      "sha256": "2d02eda39c53579a80c8e7f10107c03c76877f9dcaee738ee0d5aa10fb14913a",
+      "bytes": 3429,
+      "private_snapshot": "/home/jnlngx10/.local/share/project-aura/audit-archives/2026-10-17-live-streaming-reliability/working-tree/scripts/setup_gpu_runtime.py"
+    },
+    {
+      "path": "src/aura/asr/models.py",
+      "sha256": "cb8d9b2f6f9db994f20149cd35b0aa5ea4cdadac4d663c69227484e14acf6e68",
+      "bytes": 8991,
+      "private_snapshot": "/home/jnlngx10/.local/share/project-aura/audit-archives/2026-10-17-live-streaming-reliability/working-tree/src/aura/asr/models.py"
+    },
+    {
+      "path": "src/aura/asr/threads.py",
+      "sha256": "c28128f9ac79f97c83b7877a785154e11ace789d1831bf2e77201eedbe882318",
+      "bytes": 13832,
+      "private_snapshot": "/home/jnlngx10/.local/share/project-aura/audit-archives/2026-10-17-live-streaming-reliability/working-tree/src/aura/asr/threads.py"
+    },
+    {
+      "path": "src/aura/audio/inputs.py",
+      "sha256": "ff846bd99fcefa438e33b2cdf6c8efc076a82425d194715dc488fc78346b4583",
+      "bytes": 12589,
+      "private_snapshot": "/home/jnlngx10/.local/share/project-aura/audit-archives/2026-10-17-live-streaming-reliability/working-tree/src/aura/audio/inputs.py"
+    },
+    {
+      "path": "src/aura/audio/vad.py",
+      "sha256": "755effe36f006608b962f649921e011ffa323e5a10ef8546726bd5cb37550f75",
+      "bytes": 6550,
+      "private_snapshot": "/home/jnlngx10/.local/share/project-aura/audit-archives/2026-10-17-live-streaming-reliability/working-tree/src/aura/audio/vad.py"
+    },
+    {
+      "path": "src/aura/cli.py",
+      "sha256": "3b636a34bd12f3b1c037936fad2902aa3e1617e95374527d9174b73643e824dd",
+      "bytes": 30303,
+      "private_snapshot": "/home/jnlngx10/.local/share/project-aura/audit-archives/2026-10-17-live-streaming-reliability/working-tree/src/aura/cli.py"
+    },
+    {
+      "path": "src/aura/completion.py",
+      "sha256": "72193b9902c61c30b79612195685e10ac7f33173fdbecb7562afd4c457725a9b",
+      "bytes": 5906,
+      "private_snapshot": "/home/jnlngx10/.local/share/project-aura/audit-archives/2026-10-17-live-streaming-reliability/working-tree/src/aura/completion.py"
+    },
+    {
+      "path": "src/aura/native_capture.py",
+      "sha256": "1cc75051db97182e120d70c56d1e2f2a2e1b88ee24a966a530ed0daed0643458",
+      "bytes": 5885,
+      "private_snapshot": "/home/jnlngx10/.local/share/project-aura/audit-archives/2026-10-17-live-streaming-reliability/working-tree/src/aura/native_capture.py"
+    },
+    {
+      "path": "src/aura/sdk.py",
+      "sha256": "677702db043962d24e1d2bc85fe6909912a91e3f96b8f804be9c3ccfc2e22eda",
+      "bytes": 9714,
+      "private_snapshot": "/home/jnlngx10/.local/share/project-aura/audit-archives/2026-10-17-live-streaming-reliability/working-tree/src/aura/sdk.py"
+    },
+    {
+      "path": "src/aura/service.py",
+      "sha256": "0dcd991f96235bec62546dec05643857cb0392b74a8aa4dfadb9e9add9044271",
+      "bytes": 12029,
+      "private_snapshot": "/home/jnlngx10/.local/share/project-aura/audit-archives/2026-10-17-live-streaming-reliability/working-tree/src/aura/service.py"
+    },
+    {
+      "path": "src/aura/session_core.py",
+      "sha256": "718dd1bfbde068d9b36c5b488191d5db10754fd7fb31634682f52c9851646a62",
+      "bytes": 54436,
+      "private_snapshot": "/home/jnlngx10/.local/share/project-aura/audit-archives/2026-10-17-live-streaming-reliability/working-tree/src/aura/session_core.py"
+    },
+    {
+      "path": "src/aura/session_runtime.py",
+      "sha256": "b753f9e5c802de8b5dfee8ac7f645e4e3fecb1375680f712929ed21a0852180d",
+      "bytes": 5362,
+      "private_snapshot": "/home/jnlngx10/.local/share/project-aura/audit-archives/2026-10-17-live-streaming-reliability/working-tree/src/aura/session_runtime.py"
+    },
+    {
+      "path": "src/aura/streaming.py",
+      "sha256": "82e5456daa4669066fa7ab1cafb6f0777e49cc62320923a589c53b9f23b1df90",
+      "bytes": 5645,
+      "private_snapshot": "/home/jnlngx10/.local/share/project-aura/audit-archives/2026-10-17-live-streaming-reliability/working-tree/src/aura/streaming.py"
+    },
+    {
+      "path": "src/aura/system/cuda.py",
+      "sha256": "5bf0be65ad580766acd1b9ded13ed017af38394b99a49fcab9f6641b194f4af2",
+      "bytes": 4457,
+      "private_snapshot": "/home/jnlngx10/.local/share/project-aura/audit-archives/2026-10-17-live-streaming-reliability/working-tree/src/aura/system/cuda.py"
+    },
+    {
+      "path": "src/aura/system/gpu_diagnostics.py",
+      "sha256": "0179a28ea6377d36308a02ee9cf85935236ae50fa419951d9835b4605369433e",
+      "bytes": 4907,
+      "private_snapshot": "/home/jnlngx10/.local/share/project-aura/audit-archives/2026-10-17-live-streaming-reliability/working-tree/src/aura/system/gpu_diagnostics.py"
+    },
+    {
+      "path": "src/aura/terminal.py",
+      "sha256": "11f336f2c365c2eb238a2a0366187af8981e818f0935bff78478d89c176907d2",
+      "bytes": 15488,
+      "private_snapshot": "/home/jnlngx10/.local/share/project-aura/audit-archives/2026-10-17-live-streaming-reliability/working-tree/src/aura/terminal.py"
+    },
+    {
+      "path": "src/aura/ui/transcription_tab.py",
+      "sha256": "b726fcd9fbc623a06e5f042f9d66721976a0fb098c75e5c859543981f67c83f9",
+      "bytes": 21929,
+      "private_snapshot": "/home/jnlngx10/.local/share/project-aura/audit-archives/2026-10-17-live-streaming-reliability/working-tree/src/aura/ui/transcription_tab.py"
+    },
+    {
+      "path": "src/aura/worker.py",
+      "sha256": "180f08a0a930af64992873b8d1098a8dbbd47ff781bfda58498ae0863e44cd97",
+      "bytes": 2698,
+      "private_snapshot": "/home/jnlngx10/.local/share/project-aura/audit-archives/2026-10-17-live-streaming-reliability/working-tree/src/aura/worker.py"
+    },
+    {
+      "path": "tests/test_asr_models.py",
+      "sha256": "b62530361b24d329766e29b333bd4a97f58df38b4c1ad79cd14cdc4b2609be32",
+      "bytes": 10990,
+      "private_snapshot": "/home/jnlngx10/.local/share/project-aura/audit-archives/2026-10-17-live-streaming-reliability/working-tree/tests/test_asr_models.py"
+    },
+    {
+      "path": "tests/test_asr_recovery.py",
+      "sha256": "bb6e996e89984821b1e7f9d6e1d1dd57d6e22bff1c7a1572a283c0348a0b7bfb",
+      "bytes": 9325,
+      "private_snapshot": "/home/jnlngx10/.local/share/project-aura/audit-archives/2026-10-17-live-streaming-reliability/working-tree/tests/test_asr_recovery.py"
+    },
+    {
+      "path": "tests/test_breeze_activation.py",
+      "sha256": "dd1772c4bfd7728c4fcb5de11b6dd945a1fec096f874a0f8e363b0a496759698",
+      "bytes": 2036,
+      "private_snapshot": "/home/jnlngx10/.local/share/project-aura/audit-archives/2026-10-17-live-streaming-reliability/working-tree/tests/test_breeze_activation.py"
+    },
+    {
+      "path": "tests/test_capture_signal.py",
+      "sha256": "98d370d3d4941a5bd775df52fc12af2249c55f41c56bc296aaf77ea1eff5e8ed",
+      "bytes": 2928,
+      "private_snapshot": "/home/jnlngx10/.local/share/project-aura/audit-archives/2026-10-17-live-streaming-reliability/working-tree/tests/test_capture_signal.py"
+    },
+    {
+      "path": "tests/test_completion.py",
+      "sha256": "cb57ccbe105e04bb66f39dd4847d305282a753cdd657d54dc9819ec0429e0735",
+      "bytes": 5747,
+      "private_snapshot": "/home/jnlngx10/.local/share/project-aura/audit-archives/2026-10-17-live-streaming-reliability/working-tree/tests/test_completion.py"
+    },
+    {
+      "path": "tests/test_gpu_policy.py",
+      "sha256": "ca46dbea4c6bcc514e060717420a73da6ba747e8bd64b37aa3961b6e5acefa75",
+      "bytes": 1972,
+      "private_snapshot": "/home/jnlngx10/.local/share/project-aura/audit-archives/2026-10-17-live-streaming-reliability/working-tree/tests/test_gpu_policy.py"
+    },
+    {
+      "path": "tests/test_native_capture.py",
+      "sha256": "91b11bf6c9a30c39f49178144312cac91c555cddb05493c0c06955b94b7eea6b",
+      "bytes": 4077,
+      "private_snapshot": "/home/jnlngx10/.local/share/project-aura/audit-archives/2026-10-17-live-streaming-reliability/working-tree/tests/test_native_capture.py"
+    },
+    {
+      "path": "tests/test_native_sources.py",
+      "sha256": "c8373bf7a095eeab2d54ade1d26f9213f3e25518300a51003a760bb2c21cbee2",
+      "bytes": 2596,
+      "private_snapshot": "/home/jnlngx10/.local/share/project-aura/audit-archives/2026-10-17-live-streaming-reliability/working-tree/tests/test_native_sources.py"
+    },
+    {
+      "path": "tests/test_runtime_diagnostics.py",
+      "sha256": "563b4801034b86d6e7ded024184b25475bb1a14b833fae405e0c0c2759fc6eba",
+      "bytes": 12343,
+      "private_snapshot": "/home/jnlngx10/.local/share/project-aura/audit-archives/2026-10-17-live-streaming-reliability/working-tree/tests/test_runtime_diagnostics.py"
+    },
+    {
+      "path": "tests/test_session_runtime.py",
+      "sha256": "5e744247343b9db68f3e233f48ff389d451750ac828445b4b4339777d4835710",
+      "bytes": 1264,
+      "private_snapshot": "/home/jnlngx10/.local/share/project-aura/audit-archives/2026-10-17-live-streaming-reliability/working-tree/tests/test_session_runtime.py"
+    },
+    {
+      "path": "tests/test_streaming_protocol.py",
+      "sha256": "f61ea747a610d704e96789e55fab4a94c5e4e885dd632edc94f6330bd79a9a19",
+      "bytes": 3531,
+      "private_snapshot": "/home/jnlngx10/.local/share/project-aura/audit-archives/2026-10-17-live-streaming-reliability/working-tree/tests/test_streaming_protocol.py"
+    },
+    {
+      "path": "tests/test_streaming_reliability.py",
+      "sha256": "013d27e74969e97d9fc1269698455f5e93e92dcc8d1ec95305e0952d4c2d1d43",
+      "bytes": 2656,
+      "private_snapshot": "/home/jnlngx10/.local/share/project-aura/audit-archives/2026-10-17-live-streaming-reliability/working-tree/tests/test_streaming_reliability.py"
+    },
+    {
+      "path": "tests/test_terminal.py",
+      "sha256": "d5fcc808529fac81aa0166d88867143c8bbb95b5a7469e5dd8997fa8534e2c6e",
+      "bytes": 11384,
+      "private_snapshot": "/home/jnlngx10/.local/share/project-aura/audit-archives/2026-10-17-live-streaming-reliability/working-tree/tests/test_terminal.py"
+    },
+    {
+      "path": "tests/test_worker_supervision.py",
+      "sha256": "88e529e5d4d75ddf741f278e6f1ba622a8c5608b8f1964969deef4f1027f65a6",
+      "bytes": 2024,
+      "private_snapshot": "/home/jnlngx10/.local/share/project-aura/audit-archives/2026-10-17-live-streaming-reliability/working-tree/tests/test_worker_supervision.py"
+    },
+    {
+      "path": "uv.lock",
+      "sha256": "f72600af49fb8921cc5e22e67887e6550c11e43dace6f591747063d8f80763c9",
+      "bytes": 1276294,
+      "private_snapshot": "/home/jnlngx10/.local/share/project-aura/audit-archives/2026-10-17-live-streaming-reliability/working-tree/uv.lock"
+    }
+  ],
+  "tracked_diff_snapshot": "/home/jnlngx10/.local/share/project-aura/audit-archives/2026-10-17-live-streaming-reliability/working-tree.patch",
+  "tracked_diff_sha256": "c3046ff598f7f72dc2506c7bc1619e9fc8d4c816b03a69d8b2d331aa56d59e23"
+}

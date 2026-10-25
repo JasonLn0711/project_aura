@@ -3,8 +3,36 @@ import argparse
 import re
 import shlex
 
-from prompt_toolkit.completion import Completer, Completion, PathCompleter
+from prompt_toolkit.completion import (Completer, Completion, PathCompleter,
+                                       CompleteEvent, get_common_complete_suffix)
 from prompt_toolkit.document import Document
+from prompt_toolkit.key_binding import KeyBindings
+
+
+def workspace_key_bindings():
+    """Commit local Tab completions before a queued Enter can submit the buffer."""
+    bindings = KeyBindings()
+
+    @bindings.add("tab")
+    def complete(event):
+        buffer = event.current_buffer
+        if buffer.complete_state:
+            buffer.complete_next()
+            return
+        if buffer.completer is None:
+            return
+        completions = list(buffer.completer.get_completions(
+            buffer.document, CompleteEvent(completion_requested=True)))
+        if len(completions) == 1:
+            buffer.apply_completion(completions[0])
+        else:
+            suffix = get_common_complete_suffix(buffer.document, completions)
+            if suffix:
+                buffer.insert_text(suffix)
+            elif completions:
+                buffer.start_completion(select_first=False)
+
+    return bindings
 
 
 class WorkspaceCompleter(Completer):

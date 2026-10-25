@@ -1,9 +1,7 @@
 """Single-owner session core: durable audio, serialized commands, bounded inference."""
-import concurrent.futures
 import datetime
 import json
 import math
-import multiprocessing
 import os
 from pathlib import Path
 import sqlite3
@@ -13,11 +11,8 @@ import uuid
 from aura.metadata import __version__
 from aura.audio.recording_session import RecordingSession, write_session_manifest
 
-PROFILES = {
-    "off": ("off", "off"), "light": ("light", "normal"),
-    "medium": ("medium", "off"), "far-speaker": ("medium", "far-speaker"),
-    "rescue-offline": ("medium", "rescue-offline"),
-}
+PROFILES = {"reuse-v1": ("off", "off")}
+
 ACTIVE = {"starting", "recording", "pausing", "paused", "stopping", "draining", "importing", "refining", "exporting"}
 
 
@@ -32,7 +27,7 @@ def default_root():
 def options_for(values=None, preferences=None):
     from aura.config import DEFAULT_LIVE_PROMPT
     from aura.asr.models import MODEL_KEYS, PARAKEET, PARAKEET_DEFAULTS
-    result = dict(asr_model="breeze", profile="light", language="zh", beam_size=5, prompt=DEFAULT_LIVE_PROMPT,
+    result = dict(asr_model="breeze", profile="reuse-v1", language="zh", beam_size=5, prompt=DEFAULT_LIVE_PROMPT,
                   hotwords="", punctuation=True, target_dbfs=-20.0, diarization=True, audio_format="m4a",
                   live_segmentation="adaptive", live_max_segment_len_sec=20.0, live_silence_ms=800)
     values = values or {}
@@ -45,6 +40,7 @@ def options_for(values=None, preferences=None):
     if selected not in MODEL_KEYS:
         raise ValueError("Unknown ASR model")
     result.update(preferences)
+    result["profile"] = "reuse-v1"
     if selected == PARAKEET:
         result.update(PARAKEET_DEFAULTS)
         for key, expected in PARAKEET_DEFAULTS.items():
@@ -52,7 +48,7 @@ def options_for(values=None, preferences=None):
                 raise ValueError(f"Parakeet requires {key}={expected!r}; use Breeze for Whisper controls or Chinese.")
     result.update(values)
     if result["profile"] not in PROFILES:
-        raise ValueError("Unknown audio profile")
+        raise ValueError("Audio profiles have been removed. Omit --profile; AURA uses NVIDIA RE-USE.")
     if result["live_segmentation"] not in ("adaptive", "fixed"):
         raise ValueError("live_segmentation must be adaptive or fixed")
     maximum = result["live_max_segment_len_sec"]
@@ -80,7 +76,11 @@ def options_for(values=None, preferences=None):
 
 
 class SessionCore:
-    def __init__(self, root=None, executor=None, diarization_factory=None):
+    def __init__(self, root=None, executor=None, enhancement_worker_factory=None, diarization_factory=None):
+        from aura.audio.reuse_policy import POLICIES, SPEECH_GUARD
+        self.live_enhancement_policy = os.environ.get('AURA_LIVE_ENHANCEMENT_POLICY', SPEECH_GUARD)
+        if self.live_enhancement_policy not in POLICIES:
+            raise ValueError('Unsupported AURA_LIVE_ENHANCEMENT_POLICY')
         self.root = Path(root or default_root()).resolve()
         self.root.mkdir(parents=True, mode=0o700, exist_ok=True)
         from aura.audit import AuditRecorder
@@ -99,6 +99,7 @@ class SessionCore:
             CREATE TABLE IF NOT EXISTS migrations(name TEXT PRIMARY KEY);
             CREATE TABLE IF NOT EXISTS preferences(key TEXT PRIMARY KEY, value TEXT NOT NULL);
             CREATE TABLE IF NOT EXISTS commands(id TEXT PRIMARY KEY, command TEXT NOT NULL, result TEXT NOT NULL);
+            CREATE TABLE IF NOT EXISTS stream_cursors(session TEXT PRIMARY KEY, next_sequence INTEGER NOT NULL);
         """)
         if "progress" not in {r[1] for r in self.db.execute("PRAGMA table_info(events)")}:
             self.db.execute("ALTER TABLE events ADD COLUMN progress INTEGER NOT NULL DEFAULT 0")
@@ -113,9 +114,17 @@ class SessionCore:
         self.diarization_factory = diarization_factory or LiveDiarization
         self.diarizers = {}
         self.diarization_starting = set()
+        for cursor in self.db.execute('SELECT * FROM stream_cursors'):
+            s = self.sessions.get(cursor['session'])
+            if s and s.get('stream'):
+                s.update(input_sequence=cursor['next_sequence'], samples=cursor['next_sequence'] * 480)
+                s['stream']['durable_sequence'] = cursor['next_sequence']
         self.recordings = {}
         self.detectors = {}
         self.producers = set()
+        self.enhancers = {}
+        self.recoveries = {}
+        self.enhancement_worker_factory = enhancement_worker_factory
         self.pool = None
         self.pool_model = None
         self.model_control = None
@@ -124,9 +133,13 @@ class SessionCore:
         self.execute_override = executor
         self.last_event_revision = {}
         self.shutdown = False
+        from aura.reuse_live_repair import LiveRepair
+        self.live_repair = LiveRepair(self)
         for s in self.sessions.values():
             s["options"]["audio_format"] = "m4a"
             if s["state"] in ACTIVE:
+                s["interrupted_state"] = s["state"]
+                s["producer_connected"] = False
                 s["state"] = "recoverable"
                 s["error"] = "Service restarted; preserved audio is ready for recovery"
                 self._save(s)
@@ -136,6 +149,17 @@ class SessionCore:
         self.worker.start()
         self.diarization_thread = threading.Thread(target=self._diarization_work, name="aura-diarization", daemon=True)
         self.diarization_thread.start()
+        self.scheduler = threading.Thread(target=self._schedule, name="aura-scheduler", daemon=True)
+        self.scheduler.start()
+        self.live_repair.start()
+
+    def _schedule(self):
+        with self.changed:
+            while not self.shutdown:
+                for s in list(self.sessions.values()):
+                    if s["state"] in ("recording", "paused") and s.get("stop_at", "9999") <= now():
+                        self._request("stop", {"session_id": s["id"]})
+                self.changed.wait(.1)
 
     def _save(self, session, event="session.updated", *, progress=False):
         session["updated_at"] = now()
@@ -192,7 +216,12 @@ class SessionCore:
         session = dict(id=sid, title=title, state=state, created_at=now(), options=options,
                        transcript="", live_text="", revision=0, edited=False, samples=0, input_sequence=0,
                        pauses=[], artifacts={}, segments=[], error=None, source=args.get("source", "system_microphone"),
-                       capture_location=args.get("capture_location", "server"), producer_connected=False)
+                       capture_location=args.get("capture_location", "server"),
+                       capture_backend=args.get("capture_backend", "python"), producer_connected=False)
+        session["enhancement"] = dict(strategy="reuse-v1", input_samples=0, processed_samples=0,
+                                      policy=self.live_enhancement_policy,
+                                      boundaries=[], live_complete=False,
+                                      health=dict(status="healthy", reset_count=0), gaps=[])
         self.sessions[sid] = session
         self.directory(sid).mkdir(mode=0o700, parents=True)
         self._save(session)
@@ -231,7 +260,7 @@ class SessionCore:
         if directory.exists():
             shutil.rmtree(directory)
         with self.db:
-            for table in ("events", "jobs"):
+            for table in ("events", "jobs", "stream_cursors"):
                 self.db.execute(f"DELETE FROM {table} WHERE session=?", (sid,))
             self.db.execute("DELETE FROM commands WHERE instr(command, ?) > 0 OR instr(result, ?) > 0", (sid, sid))
             self.db.execute("DELETE FROM sessions WHERE id=?", (sid,))
@@ -242,8 +271,10 @@ class SessionCore:
         return dict(deleted=sid)
 
     def _job(self, s, kind, **payload):
-        payload.setdefault("options", s["options"])
-        payload["directory"] = str(self.directory(s["id"]))
+        options = dict(payload.get("options", s["options"]))
+        if kind == 'chunk' and s.get('recovery_active') and 'recovery_language' in s:
+            options['language'] = s['recovery_language']
+        payload.update(options=options, directory=str(self.directory(s["id"])))
         self.db.execute("INSERT INTO jobs(session,kind,payload) VALUES (?,?,?)", (s["id"], kind, json.dumps(payload)))
         self.db.commit()
         self.changed.notify_all()
@@ -275,6 +306,12 @@ class SessionCore:
         values = {r[0]: json.loads(r[1]) for r in self.db.execute("SELECT key,value FROM preferences")}
         if "audio_format" in values:
             values["audio_format"] = "m4a"
+        if values.get("profile") not in (None, "reuse-v1"):
+            previous = values["profile"]
+            values["profile"] = "reuse-v1"
+            self.db.execute("INSERT OR REPLACE INTO preferences VALUES (?,?)", ("profile", json.dumps("reuse-v1")))
+            self.db.commit()
+            self.preference_migration = f"Audio profile {previous} migrated to NVIDIA RE-USE."
         return values
 
     def _request(self, command, args):
@@ -308,10 +345,10 @@ class SessionCore:
         if command == "capabilities":
             import shutil
             from aura.asr.models import capabilities
-            return dict(model_control=True, record_stop_at=True, session_delete=True, recover=True, asr_models=capabilities(), diarization={"model": "nvidia/Nemotron-3-Diarization", "default_enabled": True, "streaming": True, "max_speakers": 8}, protocol=1, service_version=__version__,
+            return dict(audio_stream_v2=dict(packet_frames=4, window_frames=32), model_control=True, record_stop_at=True, session_delete=True, recover=True, enhancement_recovery=True, recover_language=True, live_enhancement_guard=True, asr_models=capabilities(), diarization={"model": "nvidia/Nemotron-3-Diarization", "default_enabled": True, "streaming": True, "max_speakers": 8}, protocol=1, service_version=__version__,
                         diagnostics={"data_dir": str(self.root), "service_log": str(self.root / "service.log"),
                                      "capture_log": str(self.root / "capture.log")}, ffmpeg=bool(shutil.which("ffmpeg")), profiles=list(PROFILES), capture_format="s16le/16000/mono", single_owner=True,
-                        deepfilternet=bool(shutil.which("deep-filter")), clearvoice=bool(os.environ.get("AURA_CLEARVOICE_PYTHON")))
+                        enhancement_strategy="reuse-v1", enhancement_backends=["nvidia/Real-time_RE-USE", "nvidia/RE-USE"])
         if command == "sessions":
             if args.get("summary"):
                 from aura.sdk import session_summary, session_order
@@ -319,12 +356,28 @@ class SessionCore:
             return list(reversed(list(self.sessions.values())))
         if command == "get":
             s = self._get(args["session_id"])
+            s.setdefault('enhancement', {})['live_repair_work'] = dict(
+                active=self.live_repair.active_session == s['id'], paused=self.live_repair.paused and self.live_repair.active_session == s['id'],
+                queued=sum(g.get('live_repair') == 'queued' for g in s['enhancement'].get('gaps', [])))
             s["backlog"] = self.db.execute("SELECT count(*) FROM jobs WHERE session=? AND state IN ('queued','running')", (s["id"],)).fetchone()[0]
             counts = dict(self.db.execute("SELECT state,count(*) FROM jobs WHERE session=? AND kind='chunk' GROUP BY state", (s["id"],)).fetchall())
             s["work"] = {k: counts.get(k, 0) for k in ("queued", "running", "done", "failed")}
+            if s["state"] == "exporting" and s["options"].get("profile") == "reuse-v1":
+                manifest_path = self.directory(s["id"]) / "session.json"
+                if manifest_path.exists():
+                    manifest = json.loads(manifest_path.read_text())
+                    s["enhancement"].update(phase=manifest.get("enhancement_phase", "pending"),
+                                             offline_progress=manifest.get("enhancement_progress"))
             return s
         if command in ("delete.preview", "delete"):
             return self._delete_session(args, preview=command == "delete.preview")
+        if command in ("record", "schedule"):
+            backend = args.get("capture_backend", "python")
+            if backend not in ("rust", "python"):
+                raise ValueError("Unknown capture backend")
+            if backend == "rust" and args.get("capture_location", "server") == "server":
+                from aura.native_capture import preflight
+                preflight(args.get("source", "system_microphone"))
         if command == "record":
             self._available()
             if args.get("source", "system_microphone") not in ("microphone", "system", "system_microphone"):
@@ -364,7 +417,7 @@ class SessionCore:
             return s
         if command == "transcribe":
             self._model_available()
-            if any(s["state"] in ACTIVE - {"importing", "refining", "exporting"} for s in self.sessions.values()):
+            if any(s["state"] in ACTIVE for s in self.sessions.values()):
                 raise ValueError("Finish the active recording before importing media")
             path = Path(args["path"]).resolve()
             if not path.is_file():
@@ -396,7 +449,7 @@ class SessionCore:
             if s["state"] not in ("recording", "pausing", "paused"):
                 raise ValueError("Pause requires a recording session")
             if s["state"] == "recording":
-                s["state"] = "pausing" if s["producer_connected"] else "paused"
+                s["state"] = "pausing" if s["producer_connected"] or s.get('stream') else "paused"
                 s["pauses"].append(dict(started_at=now(), sample=s["samples"]))
                 if s["state"] == "paused":
                     self._flush(s, "pause")
@@ -406,7 +459,7 @@ class SessionCore:
             self._flush(s, "pause")
             s["capture_paused_ack"] = True
             running = self.db.execute("SELECT count(*) FROM jobs WHERE session=? AND state='running'", (s["id"],)).fetchone()[0]
-            if not running:
+            if not running and s["options"].get("profile") != "reuse-v1":
                 s["state"] = "paused"
         elif command == "resume":
             if s["state"] != "paused":
@@ -425,7 +478,7 @@ class SessionCore:
                 return s
             if s["state"] not in ("recording", "paused", "pausing", "starting"):
                 raise ValueError("Stop requires an active recording")
-            s["state"] = "stopping" if s["producer_connected"] else "draining"
+            s["state"] = "stopping" if s["producer_connected"] or s.get("stream") else "draining"
             if s["state"] == "draining":
                 self._flush(s, "stop")
         elif command == "producer.stopped":
@@ -449,8 +502,54 @@ class SessionCore:
                 raise ValueError("Audio was discarded by its owner; recovery is unavailable")
             if s["state"] not in ("ready", "recoverable", "failed") or s.get("source_path"):
                 raise ValueError("Recover requires a stopped, saved recording")
+            if 'language' in args:
+                s['recovery_language'] = options_for({'language': args['language']}, s['options'])['language']
+            if s["options"].get("profile") == "reuse-v1":
+                if self.db.execute("SELECT count(*) FROM jobs WHERE session=? AND state='running'", (s["id"],)).fetchone()[0]:
+                    raise ValueError("A retained job is still stopping; retry recovery after it finishes")
+                source = self.directory(s['id']) / '.capture/mixed.pcm'
+                if s['enhancement'].get('live_complete') and source.is_file():
+                    from aura.reuse_recovery import start_recovery
+                    return start_recovery(self, s, source)
+                if s["enhancement"].get("live_complete"):
+                    from aura.audio.enhancement_health import pending_gaps
+                    if pending_gaps(s):
+                        raise ValueError('Original audio required to recover enhancement gaps is unavailable; preserve the recording source')
+                    pending = self.db.execute("SELECT count(*) FROM jobs WHERE session=? AND kind='chunk' AND state='failed'", (s["id"],)).fetchone()[0]
+                    if pending:
+                        self._recovery_job_options(s)
+                        self.db.execute("UPDATE jobs SET state='queued' WHERE session=? AND kind='chunk' AND state='failed'", (s["id"],))
+                        s.update(state="draining", error=None, recovery_active=True)
+                        self._save(s)
+                        return s
+                    exports = self.db.execute("SELECT count(*) FROM jobs WHERE session=? AND kind='export' AND state='failed'", (s["id"],)).fetchone()[0]
+                    if not exports:
+                        if s["options"].get("diarization") and s.get("diarization", {}).get("state") != "completed":
+                            s.update(state="draining", recovery_active=True)
+                            s["diarization"] = dict(state="recovering", active=[], processed_sample=0)
+                            self._save(s)
+                        return s
+                    self.db.execute("UPDATE jobs SET state='queued' WHERE session=? AND kind='export' AND state='failed'", (s["id"],))
+                    s.update(state="exporting", error=None)
+                else:
+                    previous = self.enhancers.pop(s["id"], None)
+                    if previous and previous.thread.is_alive():
+                        raise ValueError("Enhancement is still stopping; retry recovery shortly")
+                    s.update(state="draining", error=None)
+                    s['recovery_active'] = True
+                    if s['options'].get('diarization') and s.get('diarization', {}).get('state') != 'completed':
+                        s['diarization'] = dict(state='recovering', active=[], processed_sample=0)
+                    manifest_path = self.directory(s["id"]) / "session.json"
+                    if s["id"] not in self.recordings and manifest_path.exists():
+                        self.recordings[s["id"]] = RecordingSession(self.directory(s["id"]), json.loads(manifest_path.read_text()))
+                    s["enhancement"].pop("error", None)
+                    self.db.execute("UPDATE jobs SET state='queued' WHERE session=? AND kind='chunk' AND state='failed'", (s["id"],))
+                    self._recovery_job_options(s)
+                    self._flush(s, "stop")
+                self._save(s)
+                return s
             rows = self.db.execute("SELECT * FROM jobs WHERE session=? AND kind='chunk' AND state IN ('failed','queued') ORDER BY id", (s["id"],)).fetchall()
-            if not rows and s["state"] == "ready" and s.get("diarization", {}).get("state") != "failed":
+            if not rows and s["state"] == "ready" and s["transcript"].strip() and s.get("diarization", {}).get("state") != "failed":
                 return s
             from aura.audio.recording_session import recover_recording_session
             if s["id"] in self.recordings:
@@ -461,6 +560,8 @@ class SessionCore:
                 paths = {"mixed": Path(s["artifacts"]["m4a"])}
             else:
                 paths = recover_recording_session(self.directory(s["id"]) / "session.json", keep_pcm=True)
+            self._recover_unqueued_audio(s, paths["mixed"])
+            rows = self.db.execute("SELECT * FROM jobs WHERE session=? AND kind='chunk' AND state IN ('failed','queued') ORDER BY id", (s["id"],)).fetchall()
             s["artifacts"][paths["mixed"].suffix.lstrip(".")] = str(paths["mixed"])
             previous_error = s.get("error")
             if not s.get("asr_issues"):
@@ -525,6 +626,14 @@ class SessionCore:
         self._save(s)
         return s
 
+    def _recovery_job_options(self, s):
+        if 'recovery_language' not in s:
+            return
+        for row in self.db.execute("SELECT id,payload FROM jobs WHERE session=? AND kind='chunk' AND state IN ('failed','queued')", (s['id'],)).fetchall():
+            payload = json.loads(row['payload'])
+            payload['options']['language'] = s['recovery_language']
+            self.db.execute('UPDATE jobs SET payload=? WHERE id=?', (json.dumps(payload), row['id']))
+
     def _issue(self, s, row, payload, error):
         issues = s.setdefault("asr_issues", [])
         issue = next((i for i in issues if i["job_id"] == row["id"]), None)
@@ -533,6 +642,58 @@ class SessionCore:
                          end_sample=payload["end"], error=str(error)[:2000])
             issues.append(issue)
         issue.update(status="pending", last_error=str(error)[:2000])
+
+    def _recover_unqueued_audio(self, s, path):
+        """Re-segment the durable suffix which never became a chunk job."""
+        import wave
+        import numpy as np
+        from aura.audio.vad import SileroStreamVAD, SpeechIntervals
+        from aura.config import CHUNK_SIZE
+        path = Path(path)
+        if path.suffix == ".m4a":
+            import subprocess
+            decoded = self.directory(s["id"]) / "recovery-input.wav"
+            subprocess.run(["ffmpeg", "-v", "error", "-y", "-i", str(path),
+                            "-ac", "1", "-ar", "16000", "-c:a", "pcm_s16le", str(decoded)], check=True)
+            path = decoded
+        if path.suffix not in (".wav", ".pcm"):
+            raise ValueError("Unsupported retained audio for recovery")
+        ends = [json.loads(r[0])["end"] for r in self.db.execute(
+            "SELECT payload FROM jobs WHERE session=? AND kind='chunk'", (s["id"],))]
+        start = max(ends, default=0)
+        is_pcm = path.suffix == ".pcm"
+        with (path.open("rb") if is_pcm else wave.open(str(path))) as audio:
+            if not is_pcm and (audio.getnchannels(), audio.getsampwidth(), audio.getframerate()) != (1, 2, 16000):
+                raise ValueError("Recovery audio must be mono PCM16 at 16 kHz")
+            total = path.stat().st_size // 2 if is_pcm else audio.getnframes()
+            s["samples"] = total
+            s["input_sequence"] = total // CHUNK_SIZE
+            if start >= total:
+                return
+            try:
+                vad = SileroStreamVAD()
+            except Exception:
+                import webrtcvad
+                vad = webrtcvad.Vad(3)
+            intervals = SpeechIntervals(CHUNK_SIZE,
+                max_seconds=s["options"].get("live_max_segment_len_sec", 12),
+                silence_ms=s["options"].get("live_silence_ms", 800),
+                segmentation=s["options"].get("live_segmentation", "fixed"))
+            intervals.position = start
+            if is_pcm:
+                audio.seek(start * 2)
+            else:
+                audio.setpos(start)
+            def enqueue(chunk):
+                if chunk is not None and chunk.start_sample < total:
+                    self._job(s, "chunk", path=str(path), start=chunk.start_sample,
+                        end=min(chunk.end_sample, total), terminal=chunk.terminal,
+                        split_reason="recovery")
+            read = (lambda: audio.read(CHUNK_SIZE * 2)) if is_pcm else (lambda: audio.readframes(CHUNK_SIZE))
+            while raw := read():
+                raw = raw.ljust(CHUNK_SIZE * 2, b"\0")
+                enqueue(intervals.push(np.frombuffer(raw, dtype="<i2"), vad.is_speech(raw, 16000)))
+            enqueue(intervals.finish("stop"))
 
     def _write_text(self, s, name, text):
         path = self.directory(s["id"]) / name
@@ -561,7 +722,10 @@ class SessionCore:
         manifest.update(title=s["title"], prepared_transcript="prepared_transcript.json",
                         transcript_sha256=prepared.content_sha256, audio_profile=s["options"]["profile"],
                         asr_model=s["options"].get("asr_model", "breeze"), runtime=s.get("runtime"),
-                        diarization=s.get("diarization"))
+                        diarization=s.get("diarization"),
+
+                        live_enhancement_policy=s.get('enhancement', {}).get('policy', 'reference-v1'),
+                        enhancement_gaps=s.get('enhancement', {}).get('gaps', []))
         write_session_manifest(manifest_path, manifest)
 
     def ingest(self, sid, sequence, pcm, tracks):
@@ -570,7 +734,7 @@ class SessionCore:
         from aura.config import SAMPLE_RATE, CHUNK_SIZE
         with self.lock:
             s = self._get(sid)
-            if s["state"] not in ("recording", "pausing", "stopping"):
+            if s["state"] not in ("recording", "pausing", "stopping") or (s["state"] == "pausing" and s.get("capture_paused_ack")):
                 raise ValueError("Session is not accepting audio")
             if sequence != s["input_sequence"]:
                 raise ValueError("Audio sequence mismatch; reconnect using the session snapshot")
@@ -586,6 +750,16 @@ class SessionCore:
             data = {track: pcm[i * CHUNK_SIZE * 2:(i + 1) * CHUNK_SIZE * 2] for i, track in enumerate(tracks)}
             rec = self.recordings[sid]
             rec.append_pcm(data)
+            if s["options"].get("profile") == "reuse-v1":
+                rec.checkpoint()
+                s["samples"] += CHUNK_SIZE
+                s["input_sequence"] += 1
+                samples = np.frombuffer(data["mixed"], dtype="<i2").astype(np.float32)
+                s["audio_level"] = min(1.0, float(np.sqrt(np.mean(samples ** 2))) / 32768)
+                self._start_enhancer(s)
+                if s["input_sequence"] % 34 == 0:
+                    self._save(s, progress=True)
+                return {"state": s["state"], "input_sequence": s["input_sequence"]}
             if sid not in self.detectors:
                 try:
                     vad = SileroStreamVAD()
@@ -610,6 +784,8 @@ class SessionCore:
                 self.detectors[sid] = (vad, intervals, stats)
                 s.update(vad_backend="webrtc-fallback", warning=str(exc))
                 speech = vad.is_speech(data["mixed"], SAMPLE_RATE)
+            if getattr(vad, "guard_used", False) is True:
+                s["vad_backend"] = "silero-v6+webrtc-guard"
             stats["misses"] = 0 if speech else stats["misses"] + 1
             from aura.audio.meeting_distance import meeting_distance_policy_for
             from aura.audio.vad import should_treat_frame_as_speech
@@ -619,6 +795,17 @@ class SessionCore:
             s["audio_level"] = min(1.0, rms / 32768)
             speech = should_treat_frame_as_speech(speech, rms,
                 intervals.active, stats["misses"], policy.live_energy_gate_rms, (policy.live_energy_bridge_ms + 29) // 30)
+            signal = s.setdefault("capture_signal", {"peak_rms": 0.0, "speech_frames": 0})
+            signal["peak_rms"] = max(signal["peak_rms"], rms)
+            signal["speech_frames"] += int(speech)
+            if signal["speech_frames"]:
+                s.pop("capture_warning", None)
+            elif s["samples"] + CHUNK_SIZE >= SAMPLE_RATE * 10:
+                s["capture_warning"] = (
+                    "Audio received, but no speech detected; no audio sent to ASR."
+                    if signal["peak_rms"] >= 80 else
+                    "No audible input detected. Check playback, mute, and the selected audio source."
+                )
             chunk = intervals.push(samples, speech)
             s["samples"] += CHUNK_SIZE
             self.changed.notify_all()
@@ -638,22 +825,44 @@ class SessionCore:
                   start=chunk.start_sample, end=chunk.end_sample, terminal=chunk.terminal,
                   split_reason=chunk.split_reason)
 
+    def _start_enhancer(self, s):
+        if s["id"] not in self.enhancers:
+            s["enhancement"].update(input_samples=0, processed_samples=0, completed_boundaries=0, live_complete=False)
+            from aura.reuse_capture import ReuseCapture
+            self.enhancers[s["id"]] = ReuseCapture(self, s["id"])
+
     def _flush(self, s, reason="flush"):
+        if s["options"].get("profile") == "reuse-v1":
+            enhancement = s["enhancement"]
+            boundary = dict(sample=s["samples"], action="stop" if reason == "stop" else "pause")
+            if not enhancement["boundaries"] or enhancement["boundaries"][-1] != boundary:
+                enhancement["boundaries"].append(boundary)
+            self._start_enhancer(s)
+            return
         detector = self.detectors.pop(s["id"], None)
         if detector:
             chunk = detector[1].finish(reason)
             if chunk:
                 self._enqueue_chunk(s, chunk)
 
-    def disconnected(self, sid):
+    def disconnected(self, sid, generation=None):
         with self.lock:
-            self.producers.discard(sid)
+            if self.shutdown:
+                return
             s = self._get(sid)
+            if generation is not None and s.get("stream", {}).get("generation") != generation:
+                return
+            self.producers.discard(sid)
             s["producer_connected"] = False
+            if s.get("stream") and s["state"] in ("recording", "pausing", "paused", "stopping"):
+                s["warning"] = "Capture disconnected; waiting for durable audio replay"
+                self._save(s)
+                return
             if s["state"] in ("recording", "pausing", "stopping"):
                 self._flush(s)
-                s["state"] = "paused"
-                s["warning"] = "Capture producer disconnected; resume explicitly"
+                stopping = s["state"] == "stopping"
+                s["state"] = "draining" if stopping else "paused"
+                s["warning"] = "Capture producer disconnected; accepted audio is draining" if stopping else "Capture producer disconnected; resume explicitly"
             self._save(s)
 
     def events(self, sid=None, after=0):
@@ -672,7 +881,8 @@ class SessionCore:
         if kind != "export":
             self.pool_model = model_key
         if self.pool is None:
-            self.pool = concurrent.futures.ProcessPoolExecutor(max_workers=1, mp_context=multiprocessing.get_context("spawn"))
+            from aura.worker import InferenceWorker
+            self.pool = InferenceWorker()
         from aura.session_runtime import execute
         return self.pool.submit(execute, kind, payload).result()
 
@@ -703,6 +913,17 @@ class SessionCore:
             with self.changed:
                 self.changed.notify_all()
 
+    def _enhanced_job_ready(self, row):
+        session = self.sessions[row["session"]]
+        if row["kind"] != "chunk" or session["options"].get("profile") != "reuse-v1":
+            return True
+        # A restarted consumer truncates and deterministically regenerates its
+        # journal. Do not let retained ASR jobs read an incomplete replay prefix.
+        payload = json.loads(row['payload'])
+        if payload.get('enhancement_gap_id'):
+            return True  # Recovery flushes and fsyncs the exact range before enqueue.
+        return payload["end"] <= session["enhancement"].get("processed_samples", 0)
+
     def _work(self):
         while True:
             with self.changed:
@@ -731,7 +952,8 @@ class SessionCore:
                     if s["state"] in ("recording", "paused") and s.get("stop_at", "9999") <= now():
                         self._request("stop", {"session_id": s["id"]})
                 row = next((r for r in self.db.execute("SELECT * FROM jobs WHERE state='queued' ORDER BY id")
-                    if self.sessions[r["session"]]["state"] not in ("paused", "pausing", "recoverable", "failed", "deleting")), None)
+                    if self.sessions[r["session"]]["state"] not in ("paused", "pausing", "recoverable", "failed", "deleting")
+                    and self._enhanced_job_ready(r)), None)
                 if not row:
                     for s in self.sessions.values():
                         if s["state"] == "draining":
@@ -763,7 +985,12 @@ class SessionCore:
                             s["state"] = "recording"
                     elif row["kind"] == "chunk":
                         text = result["text"].strip()
+                        payload = json.loads(row['payload'])
+                        if payload.get('enhancement_gap_id') and not text:
+                            from aura.asr.models import ASROutputError
+                            raise ASROutputError('Recovered speech produced no ASR text; original audio retained')
                         if text:
+                            s.pop("capture_warning", None)
                             from aura.asr.file_pipeline import format_timestamp
                             from dataclasses import asdict
                             from aura.review import ReviewSegment
@@ -771,7 +998,8 @@ class SessionCore:
                                 f'live-{result["start_sample"]}', round(result["start_sample"] / 16),
                                 round(result["end_sample"] / 16), text))
                             segments = s.setdefault("segments", [])
-                            if s.get("recovery_active"):
+                            if (s.get("recovery_active") or payload.get('enhancement_gap_id') or
+                                    any(g['reason'] == 'live_repair' for g in s.get('enhancement', {}).get('gaps', []))):
                                 segments[:] = [x for x in segments if x["segment_id"] != segment["segment_id"]]
                                 segments.append(segment)
                                 segments.sort(key=lambda x: x["start_ms"])
@@ -784,17 +1012,24 @@ class SessionCore:
                                 s["revision"] += 1
                             self._label_live(s)
                             self._write_text(s, "live.txt", s["live_text"])
+                        for gap in s.get('enhancement', {}).get('gaps', []):
+                            if gap['id'] == payload.get('enhancement_gap_id'):
+                                gap['status'] = 'resolved'
+                        from aura.reuse_live_repair import resolve_live_gaps
+                        resolve_live_gaps(s)
                         for issue in s.get("asr_issues", []):
                             if issue["job_id"] == row["id"]:
                                 issue["status"] = "resolved"
                     elif row["kind"] == "export":
                         s["artifacts"]["m4a"] = result["path"]
-                        if not self._pending_audio(s):
+                        from aura.audio.enhancement_health import pending_gaps
+                        if not pending_gaps(s) and not self._pending_audio(s):
                             from aura.audio.retention import complete_recording_m4a
                             def persist_audio(output):
                                 s["artifacts"].pop("wav", None)
                                 s["artifacts"].pop("mp3", None)
                                 s["artifacts"]["m4a"] = str(output)
+                                s["delivery_committed"] = True
                                 self._save(s)
                             complete_recording_m4a(self.directory(s["id"]) / "session.json",
                                                    result["path"], persist=persist_audio)
@@ -852,10 +1087,21 @@ class SessionCore:
     def _finalize(self, s):
         if s["options"].get("diarization", False) and s.get("diarization", {}).get("state") not in ("completed", "failed"):
             return
+        if s.get('enhancement', {}).get('recovery_scanning'):
+            return
+        if self.live_repair.active_session == s['id']:
+            return
+        if s["options"].get("profile") == "reuse-v1" and not s["enhancement"].get("live_complete"):
+            return
         try:
+            from aura.reuse_recovery import resolve_scanned_gaps
+            resolve_scanned_gaps(s)
             rec = self.recordings.pop(s["id"], None)
             if rec:
-                paths = rec.finalize(keep_pcm=self._pending_audio(s))
+                if s["options"].get("profile") == "reuse-v1":
+                    rec.manifest["enhancement_strategy"] = "reuse-v1"
+                    rec.manifest.setdefault("audio_cleanup_pending", []).append(".capture/enhanced.pcm")
+                paths = rec.finalize(keep_pcm=True)
                 s["artifacts"].update({"wav": str(paths["mixed"])})
             self._write_text(s, "live.txt", s["live_text"])
             self._write_text(s, "transcript.txt", s["transcript"])
@@ -933,7 +1179,7 @@ class SessionCore:
             with self.changed:
                 if self.shutdown:
                     return
-                recover = next((s for s in self.sessions.values() if s.get('recovery_active') and
+                recover = next((s for s in self.sessions.values() if s['state'] in ('recording', 'pausing', 'paused', 'stopping', 'draining') and
                     s['options'].get('diarization', False) and s.get('diarization', {}).get('state') == 'recovering'), None)
                 work = next(((sid, d) for sid, d in self.diarizers.items() if
                     self.sessions[sid]['state'] in ('recording', 'pausing', 'paused', 'stopping', 'draining') and
@@ -980,16 +1226,23 @@ class SessionCore:
         with self.changed:
             self.shutdown = True
             self.changed.notify_all()
-        self.worker.join()
         self.diarization_thread.join()
         for diarizer in self.diarizers.values():
             diarizer.close()
         self.diarizers.clear()
+        self.live_repair.close()
+        for enhancer in self.enhancers.values():
+            enhancer.close()
+        for recovery in self.recoveries.values():
+            recovery.close()
         if self.pool:
             self.pool.shutdown()
+        self.worker.join()
+        self.scheduler.join()
         with self.lock:
             for sid, rec in self.recordings.items():
                 rec._close()
+                self.sessions[sid]["interrupted_state"] = self.sessions[sid]["state"]
                 self.sessions[sid]["state"] = "recoverable"
                 self._save(self.sessions[sid])
             self.db.close()

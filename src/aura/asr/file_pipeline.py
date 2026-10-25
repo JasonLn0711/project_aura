@@ -6,7 +6,7 @@ from typing import Callable
 
 from pydub import AudioSegment
 
-from aura.audio.denoise import OFF_DENOISE_PRESET, normalize_denoise_preset, reduce_audio_segment_noise
+from aura.audio.denoise import OFF_DENOISE_PRESET, normalize_denoise_preset
 from aura.audio.enhancement_backends import enhance_import_audio_if_available
 from aura.audio.meeting_distance import (
     DEFAULT_MEETING_DISTANCE_MODE,
@@ -210,14 +210,7 @@ def prepare_import_audio(
         if status_callback:
             status_callback(f"🔊 Preparing {file_name} for transcription...")
         cancellation.raise_if_cancelled()
-        policy = meeting_distance_policy_for(settings.meeting_distance_mode)
-        if status_callback and settings.meeting_distance_mode != DEFAULT_MEETING_DISTANCE_MODE:
-            status_callback(
-                f"🎚️ Meeting distance mode `{policy.mode}` selected "
-                f"({policy.enhancement_backend}; {policy.backend_role})."
-            )
         source_path = Path(file_path)
-        denoise_preset = settings.denoise_preset
         enhanced_path = temp_path.with_name(f"{temp_path.stem}_enhanced.wav")
         enhancement = enhance_import_audio_if_available(
             input_path=source_path,
@@ -229,38 +222,27 @@ def prepare_import_audio(
                 f"🎚️ Import enhancement {enhancement.backend}: {enhancement.status} "
                 f"({enhancement.note})."
             )
-        if enhancement.succeeded:
-            source_path = enhancement.output_path
-            denoise_preset = OFF_DENOISE_PRESET
+        if not enhancement.succeeded:
+            raise RuntimeError(f"Offline RE-USE failed: {enhancement.note}; original media retained")
+        source_path = enhancement.output_path
+        if status_callback:
+            status_callback("NVIDIA RE-USE completed; normalizing enhanced audio.")
+            status_callback(f"🔉 Fast-normalizing volume for {file_name} with FFmpeg...")
+            status_callback(f"🧮 {normalization_cpu_status()}")
+        try:
+            result = normalize_media_to_wav(
+                str(source_path), temp_path, settings.target_dbfs,
+                progress_callback=status_callback,
+                **({"speech_format": True} if settings.asr_model == "parakeet-tdt-0.6b-v2" else {}),
+            )
+            cancellation.raise_if_cancelled()
+            return result
+        except (FfmpegUnavailable, RuntimeError):
             if status_callback:
-                status_callback("🎚️ Model-based enhancement completed; skipping fallback noisereduce.")
-
-        if denoise_preset == OFF_DENOISE_PRESET:
-            if status_callback:
-                status_callback(f"🔉 Fast-normalizing volume for {file_name} with FFmpeg...")
-                status_callback(f"🧮 {normalization_cpu_status()}")
-            try:
-                result = normalize_media_to_wav(
-                    str(source_path),
-                    temp_path,
-                    settings.target_dbfs,
-                    progress_callback=status_callback,
-                    **({"speech_format": True} if settings.asr_model == "parakeet-tdt-0.6b-v2" else {}),
-                )
-                cancellation.raise_if_cancelled()
-                return result
-            except (FfmpegUnavailable, RuntimeError):
-                if status_callback:
-                    status_callback(f"🔉 FFmpeg fast normalization unavailable; using Python path for {file_name}...")
+                status_callback(f"🔉 FFmpeg normalization unavailable; normalizing enhanced audio in Python for {file_name}...")
 
         with open(source_path, "rb") as source:
             audio = AudioSegment.from_file(source)
-
-        if denoise_preset != OFF_DENOISE_PRESET:
-            if status_callback:
-                status_callback(f"🧹 Applying {denoise_preset} denoise to {file_name}...")
-            cancellation.raise_if_cancelled()
-            audio = reduce_audio_segment_noise(audio, preset=denoise_preset)
 
         if status_callback:
             status_callback(f"🔉 Normalizing volume for {file_name}...")

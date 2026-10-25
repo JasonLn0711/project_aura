@@ -28,7 +28,7 @@ class RuntimeDiagnosticsTests(unittest.TestCase):
 
     def test_collect_gpu_diagnostics_respects_preloaded_runtime_status(self):
         with (
-            patch("aura.system.gpu_diagnostics.preload_cuda_runtime_libraries", return_value=(True, "bundled")),
+            patch("aura.system.gpu_diagnostics.probe_cuda_backend", return_value=(True, "bundled")),
             patch(
                 "aura.system.gpu_diagnostics.collect_cuda_library_status",
                 return_value=(("CUDA runtime", False, "not found"),),
