@@ -309,8 +309,9 @@ scripts retain the desktop entry point and dependencies.
 
 - `session_core.py`: SQLite WAL sessions, persistent job queue, settings,
   ordered events, revision checks, scheduling, and lifecycle state.
-- `session_runtime.py`: one spawned CUDA worker, reusing the existing ASR,
-  punctuation, enhancement, diarization, and export functions.
+- `session_runtime.py`: one spawned ASR worker, reusing punctuation, enhancement,
+  file transcription, and export functions. Nemotron live diarization has its own
+  isolated worker and event sequence; see [its operating contract](nemotron-diarization.md).
 - `service.py`: account lock, authenticated WebSocket transport, uploads,
   downloads, and capture-helper launch.
 - `sdk.py`: shared request, event subscription, audio streaming, file transfer,

@@ -170,7 +170,7 @@ changes only when the corresponding tag is published.
 | Traditional Chinese punctuation | Restores punctuation during ASR, with protected terms and a visible rule fallback |
 | Hotwords | Saves a local editable vocabulary list and imports UTF-8 text; combined prompt and hotwords are validated before ASR |
 | Transcript editor | Supports ordinary text editing and export with concurrent-edit protection during refinement |
-| Speaker diarization | Adds optional imported-file speaker labels through `pyannote.audio` |
+| Speaker diarization | Identifies up to eight speakers with Nemotron in live recordings and complete files; enabled by default |
 | Evidence search | Rebuilds a local SQLite FTS5 index for meetings, segments, and confirmed actions |
 | Audio preparation | Provides FFmpeg normalization, bounded denoise presets, level protection, and progress telemetry |
 | Meeting-distance modes | Offers `off`, `normal`, `far-speaker`, and `rescue-offline` policies with explicit activation paths |
@@ -196,7 +196,7 @@ project_aura/
 │   ├── aura/
 │   │   ├── asr/                    # transcription and punctuation services
 │   │   ├── audio/                  # capture, denoise, export, and splitting
-│   │   ├── diarization/            # optional speaker labeling
+│   │   ├── diarization/            # live and file speaker labeling
 │   │   ├── system/                 # CUDA, paths, diagnostics, and updates
 │   │   ├── ui/                     # PyQt6 widgets and interaction wiring
 │   │   ├── audit.py                # content-free local audit events
@@ -370,6 +370,7 @@ CI, and release builds.
 
 ```bash
 uv sync --locked --extra cli --extra gui --extra capture --extra server --extra punctuation
+python3 scripts/setup_nemotron.py
 uv run --no-sync aura gui
 ```
 
@@ -395,15 +396,22 @@ installations and user model files are left under their owner's control.
 
 ### Speaker diarization
 
+Nemotron 3 diarization is enabled by default. Install its isolated Python 3.12
+CUDA runtime and pinned model before starting a recording:
+
 ```bash
-uv sync --locked --extra cli --extra gui --extra capture --extra server --extra punctuation --extra diarization
-export HUGGINGFACE_TOKEN=hf_your_token_here
+python3 scripts/setup_nemotron.py
+uv run --no-sync aura doctor
 ```
 
-Accept the Hugging Face terms for
-`pyannote/speaker-diarization-community-1`, then provide
-`HUGGINGFACE_TOKEN`, `HF_TOKEN`, or an `AURA_HF_TOKEN_FILE` path through the
-local secret environment.
+The setup script leaves ASR and punctuation dependencies in the main environment.
+Model weights are cached locally; audio stays on the server. Public model access
+worked without a token during setup. An optional `HF_TOKEN` can authenticate Hub
+downloads; it is not a diarization readiness requirement.
+
+Use `--no-diarization` for an ASR-only recording or import. See the
+[Nemotron operating contract](docs/nemotron-diarization.md) for defaults,
+recovery, dependencies, and validation boundaries.
 
 ## Configuration Defaults
 
@@ -424,7 +432,7 @@ local secret environment.
 | Recording delivery format | `M4A / AAC-LC 96k` |
 | Meeting distance mode | `normal` through the Light profile |
 | Denoise preset | `light` |
-| Speaker diarization | Operator-activated; imported media; `2-6` speakers |
+| Speaker diarization | Enabled; `nvidia/Nemotron-3-Diarization`; up to `8` speakers |
 | Traditional Chinese punctuation | Active |
 | Splitter target | `40 minutes` |
 | Splitter tolerance | `5 minutes` |
@@ -437,8 +445,8 @@ local secret environment.
 | `AURA_AUDIT_DIR` | Local audit-event directory |
 | `AURA_AUDIT_ENABLED` | Audit-event activation control |
 | `AURA_AUDIT_RETENTION_DAYS` | Local audit retention period; default `90` days |
-| `HUGGINGFACE_TOKEN` / `HF_TOKEN` | Speaker-diarization model access |
-| `AURA_HF_TOKEN_FILE` | Local file path that supplies the diarization token |
+| `HF_TOKEN` | Optional authenticated model downloads |
+| `AURA_NEMOTRON_PYTHON` | Interpreter for the isolated Nemotron environment |
 | `AURA_CLEARVOICE_PYTHON` | Python runtime for the separately activated ClearVoice evaluation path |
 
 The default transient runtime directory is:
@@ -616,18 +624,24 @@ selection, exact token budgets, and saved-preference behavior.
 
 ### Speaker diarization
 
-Speaker diarization is an imported-media capability. The pipeline:
+Nemotron identifies anonymous speaker activity independently of the ASR queue.
+During recording, the service reads the continuously saved mixed PCM, maintains
+speaker cache across chunks, and publishes activity before ASR finishes a phrase.
+Overlapping speakers can be active together. Transcript segments receive the
+speaker with greatest time overlap; multi-speaker segments are flagged for review.
 
-1. prepares the source audio;
-2. runs Breeze ASR;
-3. runs `pyannote/speaker-diarization-community-1`;
-4. maps each transcript segment to the speaker turn with the greatest timestamp
-   overlap;
-5. emits labels such as `SPEAKER_00` and `SPEAKER_01`;
-6. writes speaker labels into the editable transcript.
+Complete files use the same stateful engine with incremental FFmpeg decoding.
+Speaker intervals and labeled segments are saved alongside the transcript.
+Human-edited text and confirmed labels remain under operator control.
 
-Equal minimum and maximum speaker counts activate an exact speaker count.
-Different values activate the configured speaker range.
+New sessions default to diarization on. The first upgrade migrates shared
+preferences once; subsequent explicit choices persist. Old transcript artifacts
+remain unchanged. `aura refine SESSION --no-diarization` explicitly requests an
+ASR-only refinement. Speaker identities are local to each inference session;
+matching channel numbers across recordings do not establish a person's identity.
+
+The [validation packet](artifacts/nemotron/README.md) separates implemented
+behavior, real execution, latency acceptance, and physical microphone acceptance.
 
 ### Summary retirement
 
@@ -756,7 +770,8 @@ denoise/VAD study awaits acoustic reference review. See the
 
 | Evidence layer | Result |
 | --- | --- |
-| Regression suite | September 10 CLI operations checkpoint: 345 passing tests; see the [validation record](artifacts/cli-recording-2026-09-10/README.md#cli-operations-closeout) |
+| Regression suite | October 25 Nemotron integration: 362 passing tests; see the [validation packet](artifacts/nemotron/README.md) |
+| Nemotron runtime | Complete-file and original-speed 82.94-minute streaming checks passed; speaker-update p95 1.252 seconds |
 | Terminal interaction | Synthetic Linux PTY checks passed for slate and sage; includes resize, completion, session navigation, model controls, and detach/exit |
 | Product screenshots | User-provided v1.18.0 welcome and recording views; [source records](artifacts/cli-garden-preview/README.md#user-provided-screenshots) preserve image provenance |
 | AURA ASR live minimum | 10 real CUDA/int8 transcriptions over five public Common Voice 24 zh-TW clips |
@@ -860,7 +875,7 @@ The regression suite covers:
 - mixed-M4A retention, legacy codec helpers, normalization, limiter behavior,
   FFmpeg progress, and retryable audio cleanup;
 - punctuation, glossary correction, correction logs, and artifact naming;
-- speaker diarization timestamps and speaker-count policy;
+- speaker diarization timestamps, default migration, and streaming continuity;
 - plain text editing, hotwords, concurrent-edit protection, and summary-free packaging;
 - denoise presets, meeting-distance modes, and evaluation gates;
 - scheduled recording calculations;
@@ -988,11 +1003,13 @@ Torch/torchvision pair and a real cached-model check that fails on rule fallback
 
 ### Speaker diarization activation
 
-- Install the `diarization` extra.
-- Accept the model terms for
-  `pyannote/speaker-diarization-community-1`.
-- Provide `HUGGINGFACE_TOKEN`, `HF_TOKEN`, or `AURA_HF_TOKEN_FILE`.
-- Run Runtime Diagnostics to confirm token and model readiness.
+- Run `python3 scripts/setup_nemotron.py` and check `aura doctor`.
+- Resolve missing runtime, model cache, or CUDA errors before recording, or
+  explicitly select `--no-diarization`.
+- During recording, a diarization failure leaves audio and ASR running and marks
+  speaker analysis as failed. Use recovery after stopping to retry from saved audio.
+- Catch-up status means speaker activity is delayed; it is not a current-speaker
+  assertion. Preserve pending audio until analysis completes.
 
 ### Long media and output size
 
