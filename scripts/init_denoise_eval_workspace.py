@@ -49,7 +49,7 @@ python scripts/prepare_denoise_eval_case.py \\
   --rare-term MossFormer
 python scripts/evaluate_denoise_backends.py \\
   --input-dir {workspace} \\
-  --backends off,noisereduce-light,noisereduce-medium,deepfilternet3,wpe \\
+  --backends off,noisereduce-light,noisereduce-medium,deepfilternet3,clearvoice,wpe \\
   --model SoybeanMilk/faster-whisper-Breeze-ASR-25 \\
   --activate-preprocessing-effect \\
   --output reports/denoise_eval_YYYYMMDD.md

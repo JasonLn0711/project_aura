@@ -1,7 +1,5 @@
 # Denoise Blocked Handoff
 
-> Audio-processing update, 2026-10-17: the [RE-USE C4 architecture](architecture/reuse-c4.md) supersedes the selectable enhancement profiles and ClearVoice integration described below. Earlier dated decisions and evaluation evidence are preserved as history.
-
 ## Separate listening experiment — 2026-10-17
 
 The [Yilan enhancement record](yilan-enhancement-2026-10-17.md) preserves a

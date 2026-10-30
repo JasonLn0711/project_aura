@@ -1,4 +1,3 @@
-import asyncio
 import shlex
 import tempfile
 import unittest
@@ -9,33 +8,7 @@ from prompt_toolkit.document import Document
 from prompt_toolkit.buffer import Buffer
 
 from aura.cli import parser
-from aura.completion import WorkspaceCompleter, workspace_key_bindings
-
-
-class CompletionInputTests(unittest.IsolatedAsyncioTestCase):
-    async def submit(self, text):
-        from prompt_toolkit import PromptSession
-        from prompt_toolkit.input.defaults import create_pipe_input
-        from prompt_toolkit.output import DummyOutput
-        with create_pipe_input() as pipe:
-            prompt = PromptSession(input=pipe, output=DummyOutput(),
-                completer=WorkspaceCompleter(parser(), ["/model", "/record"]),
-                complete_while_typing=False, key_bindings=workspace_key_bindings())
-            task = asyncio.create_task(prompt.prompt_async())
-            pipe.send_text(text)
-            return await asyncio.wait_for(task, 2)
-
-    async def test_tab_then_enter_in_same_input_batch_submits_completed_model(self):
-        self.assertEqual(await self.submit("/model bre\t\r"), "/model breeze")
-
-    async def test_command_and_option_completion_before_immediate_enter(self):
-        self.assertEqual(await self.submit("/mo\t bre\t\r"), "/model breeze")
-        self.assertEqual(await self.submit("/record --model para\t\r"),
-                         "/record --model parakeet-tdt-0.6b-v2")
-
-    async def test_typed_text_and_unknown_choices_are_preserved(self):
-        self.assertEqual(await self.submit("/model breeze\r"), "/model breeze")
-        self.assertEqual(await self.submit("/model unknown\t\r"), "/model unknown")
+from aura.completion import WorkspaceCompleter
 
 
 class CompletionTests(unittest.TestCase):

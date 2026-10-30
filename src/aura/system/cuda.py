@@ -127,16 +127,3 @@ def is_cuda_runtime_error(error_msg):
         "dll",
     )
     return any(needle in lowered for needle in needles)
-
-
-def probe_cuda_backend():
-    """Probe the installed backend, including native CUDA 13 builds, without loading weights."""
-    libraries, detail = preload_cuda_runtime_libraries()
-    try:
-        import ctranslate2
-        types = ctranslate2.get_supported_compute_types('cuda')
-        if not types:
-            return False, 'The installed CTranslate2 backend reports no CUDA compute types'
-        return True, f'CTranslate2 {ctranslate2.__version__}: CUDA compute types {", ".join(sorted(types))}'
-    except (ImportError, RuntimeError, ValueError) as exc:
-        return False, f'{exc}' + (f'; {detail}' if not libraries else '')

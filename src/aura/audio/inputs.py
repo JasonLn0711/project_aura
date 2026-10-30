@@ -4,6 +4,7 @@ import shutil
 import subprocess
 from dataclasses import dataclass
 import numpy as np
+import pyaudio
 from aura.config import (SAMPLE_RATE, CHUNK_SIZE, CHUNK_MS, LIVE_CAPTURE_MICROPHONE,
                          LIVE_CAPTURE_SYSTEM, LIVE_CAPTURE_SYSTEM_MICROPHONE)
 from aura.system.native_audio import no_alsa_err, suppress_native_stderr
@@ -323,7 +324,6 @@ class PulseCaptureReader:
 
 class PyAudioCaptureReader:
     def __init__(self, pa, stream, channels):
-        import pyaudio
         self.pa = pa
         self.stream = stream
         self.channels = channels
@@ -369,7 +369,6 @@ def open_audio_reader(mode):
         return reader
     if mode != LIVE_CAPTURE_MICROPHONE:
         raise RuntimeError("System audio capture requires PulseAudio/PipeWire on this host")
-    import pyaudio
     with no_alsa_err(), suppress_native_stderr():
         pa = pyaudio.PyAudio()
         try:

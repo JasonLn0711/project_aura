@@ -5,7 +5,6 @@ import os
 from pathlib import Path
 import queue
 import re
-import sys
 import tempfile
 import time
 
@@ -70,13 +69,6 @@ class ServiceWorker(QThread):
                         elif command == "download":
                             result = str(client.download(args["session_id"], args["format"], args["destination"]))
                         else:
-                            if command in ("record", "schedule") and sys.platform == "linux":
-                                args = {**args, "capture_backend": "rust"}
-                                if not client.request("capabilities").get("audio_stream_v2"):
-                                    raise RuntimeError("The running service lacks Rust capture support. Finish active work, then restart the service from the updated installation.")
-                                if args.get("capture_location") == "client":
-                                    from aura.native_capture import preflight
-                                    preflight(args.get("source", "system_microphone"))
                             if command == "recover" and not client.request("capabilities").get("recover"):
                                 raise RuntimeError("服務尚未支援補轉錄；完成活動工作後請重啟服務與應用程式。")
                             result = client.request(command, args)
@@ -177,8 +169,9 @@ class TranscriptionTab(QWidget):
         advanced = QGroupBox("進階設定")
         form = QFormLayout(advanced)
         self.profile = QComboBox()
-        self.profile.addItem("NVIDIA RE-USE（即時／離線）", "reuse-v1")
-        self.profile.setEnabled(False)
+        for label, value in (("輕度降噪（預設）", "light"), ("降噪關閉", "off"), ("中度降噪", "medium"),
+                             ("遠距說話者：中度降噪與音量支援", "far-speaker"), ("離線救援（匯入專用）", "rescue-offline")):
+            self.profile.addItem(label, value)
         form.addRow("音訊設定", self.profile)
         self.asr_model = QComboBox()
         self.asr_model.addItem("Breeze（預設，中文／英文）", "breeze")
@@ -341,12 +334,7 @@ class TranscriptionTab(QWidget):
         from aura.diarization.live import status_text
         self.speaker_status.setText(status_text(s.get('diarization', {})))
         state = s["state"]
-        self.session_status.setText(f'{s["title"]} · {s["id"]}\n{state} · {s["capture_location"]} / {s["source"]} · {s["options"]["profile"]} · {s["options"].get("asr_model", "breeze")} · language: {s["options"].get("language") or "auto"}')
-        if s.get('stream') and state in ('recording', 'pausing', 'paused', 'stopping'):
-            progress = s.get('capture_progress', {})
-            detail = ('擷取端離線；本機音訊持續保存，上傳佇列尚未同步。' if not s.get('producer_connected') else
-                      f'已擷取 {progress.get("captured_frames", 0)} 幀；待上傳 {progress.get("pending_upload_frames", 0)} 幀。')
-            self.session_status.setText(self.session_status.text() + '\n' + detail)
+        self.session_status.setText(f'{s["title"]} · {s["id"]}\n{state} · {s["capture_location"]} / {s["source"]} · {s["options"]["profile"]} · {s["options"].get("asr_model", "breeze")}')
         self.btn_pause.setText("繼續" if state == "paused" else "暫停")
         self.btn_pause.setEnabled(state in ("recording", "paused"))
         self.btn_stop.setEnabled(state in ("starting", "recording", "pausing", "paused", "scheduled"))
@@ -359,11 +347,6 @@ class TranscriptionTab(QWidget):
         gaps = sum(i["status"] == "pending" for i in s.get("asr_issues", []))
         if gaps:
             self.status_label.setText(f"{gaps} 段待補轉錄；音訊持續保存，停止後可補轉錄缺段。")
-        if s.get("capture_warning"):
-            self.status_label.setText(s["capture_warning"])
-        from aura.audio.enhancement_health import gap_warning
-        if gap_warning(s):
-            self.status_label.setText(gap_warning(s))
         if s.get("error"):
             self.status_label.setText(s["error"])
 

@@ -10,7 +10,6 @@ import sys
 import threading
 import time
 import uuid
-from websockets.exceptions import ConnectionClosed
 
 
 SUMMARY_FIELDS = ("id", "title", "state", "created_at", "updated_at", "source", "capture_location", "error")
@@ -141,12 +140,9 @@ class AuraClient:
             try:
                 self.socket.send(json.dumps(message))
                 return self._result(self.socket)
-            except (TimeoutError, OSError, ConnectionClosed):
-                failed, self.socket = self.socket, None
-                try:
-                    failed.close()
-                except (OSError, ConnectionClosed):
-                    pass
+            except (TimeoutError, OSError):
+                self.socket.close()
+                self.socket = None
                 raise
 
     def subscribe(self, session_id=None, after=0):

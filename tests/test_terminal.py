@@ -63,7 +63,7 @@ class TerminalTests(unittest.TestCase):
             execute(client, args)
         client.request.assert_called_once_with("capabilities")
         client.reset_mock()
-        client.request.return_value = {"record_stop_at": True, "audio_stream_v2": True}
+        client.request.return_value = {"record_stop_at": True}
         with patch("aura.cli.show"):
             execute(client, args)
         self.assertEqual(client.request.call_args.args[0], "record")

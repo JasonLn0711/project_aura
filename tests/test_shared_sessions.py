@@ -8,7 +8,7 @@ import time
 import unittest
 from unittest.mock import Mock, patch
 
-from reuse_fixtures import SessionCore
+from aura.session_core import SessionCore
 from aura.sdk import AuraClient
 
 
@@ -93,13 +93,13 @@ class SharedSessionTests(unittest.TestCase):
         self.core.pool.shutdown.assert_not_called()
 
     def test_shared_preferences_validate_and_survive_restart(self):
-        self.core.request("preferences.set", {"profile": "reuse-v1", "hotwords": "AURA"})
+        self.core.request("preferences.set", {"profile": "off", "hotwords": "AURA"})
         with self.assertRaises(ValueError):
             self.core.request("preferences.set", {"beam_size": 0})
         self.core.close()
         self.core = SessionCore(self.root, executor=fake_inference, diarization_factory=FakeDiarization)
         sid = self.record()
-        self.assertEqual(self.core.request("get", {"session_id": sid})["options"]["profile"], "reuse-v1")
+        self.assertEqual(self.core.request("get", {"session_id": sid})["options"]["profile"], "off")
 
     def test_legacy_audio_preferences_select_m4a(self):
         for fmt in ("wav", "mp3"):
@@ -171,8 +171,6 @@ class SharedSessionTests(unittest.TestCase):
             self.core.sessions[sid]["options"].pop(key)
         with patch("aura.audio.vad.SileroStreamVAD", return_value=Speech()):
             self.core.ingest(sid, 0, bytes(960), ["mixed"])
-        from test_asr_recovery import wait_for
-        wait_for(self.core, sid, lambda item: item["enhancement"]["processed_samples"] == 480)
         interval = self.core.detectors[sid][1]
         self.assertEqual((interval.segmentation, interval.max_samples, interval.silence_limit),
                          ("fixed", 12 * 16000, 12800))
@@ -182,21 +180,16 @@ class SharedSessionTests(unittest.TestCase):
         self.core.request("producer.open", {"session_id": sid})
         with patch("aura.audio.vad.SileroStreamVAD", return_value=Speech()):
             self.core.ingest(sid, 0, bytes(960), ["mixed"])
-            from test_asr_recovery import wait_for
-            wait_for(self.core, sid, lambda item: item["enhancement"]["processed_samples"] == 480)
             self.assertEqual(self.core.detectors[sid][1].segmentation, "adaptive")
             self.core.request("pause", {"session_id": sid})
             s = self.core.request("producer.paused", {"session_id": sid})
-            s = wait_for(self.core, sid, lambda item: item.get("last_split", {}).get("reason") == "pause")
             self.assertEqual(s["last_split"], dict(reason="pause", start_sample=0,
                                                  end_sample=480, terminal=True))
-            wait_state(self.core, sid, "paused")
             wait_state(self.core, sid, "paused")
             self.core.request("resume", {"session_id": sid})
             self.core.ingest(sid, 1, bytes(960), ["mixed"])
             self.core.request("stop", {"session_id": sid})
             s = self.core.request("producer.stopped", {"session_id": sid})
-            s = wait_for(self.core, sid, lambda item: item.get("last_split", {}).get("reason") == "stop")
             self.assertEqual(s["last_split"], dict(reason="stop", start_sample=480,
                                                  end_sample=960, terminal=True))
         wait_state(self.core, sid, "ready")
@@ -216,7 +209,6 @@ class SharedSessionTests(unittest.TestCase):
                 self.core.ingest(sid, 4, bytes(960), ["mixed"])
             s = self.core.request("get", {"session_id": sid})
             self.core.request("edit", dict(session_id=sid, revision=s["revision"], text="使用者的文字\n  保留空白"))
-            wait_state(self.core, sid, "paused")
             self.core.request("resume", {"session_id": sid})
             self.core.ingest(sid, 4, bytes(960), ["mixed"])
         self.core.request("stop", {"session_id": sid})
@@ -342,7 +334,7 @@ class TransportTests(unittest.TestCase):
                     gui.send_audio(sid, 0, bytes(960))
                     cli.request("pause", {"session_id": sid})
                     gui.request("producer.paused", {"session_id": sid})
-                    wait_state(cli, sid, "paused")
+                    self.assertEqual(cli.request("get", {"session_id": sid})["state"], "paused")
                     cli.request("stop", {"session_id": sid})
                     gui.request("producer.stopped", {"session_id": sid})
                     wait_state(cli, sid, "ready")

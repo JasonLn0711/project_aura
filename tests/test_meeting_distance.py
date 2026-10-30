@@ -43,7 +43,7 @@ class MeetingDistancePolicyTests(unittest.TestCase):
 
         self.assertTrue(policy.import_supported)
         self.assertFalse(policy.live_supported)
-        self.assertEqual(policy.enhancement_backend, "retired-offline-profile")
+        self.assertEqual(policy.enhancement_backend, "clearvoice-mossformer-candidate")
 
     def test_live_segment_agc_boosts_quiet_far_speaker_segment_with_limit(self):
         policy = meeting_distance_policy_for(MEETING_DISTANCE_FAR_SPEAKER)

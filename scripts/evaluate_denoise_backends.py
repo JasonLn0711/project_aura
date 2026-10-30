@@ -10,6 +10,7 @@ from pathlib import Path
 from pydub import AudioSegment
 
 from aura.audio.denoise import reduce_audio_segment_noise
+from aura.audio.enhancement_backends import enhance_import_audio_if_available
 from aura.audio.meeting_distance import (
     MEETING_DISTANCE_FAR_SPEAKER,
     MEETING_DISTANCE_NORMAL,
@@ -24,6 +25,7 @@ SUPPORTED_BACKENDS = (
     "noisereduce-light",
     "noisereduce-medium",
     "deepfilternet3",
+    "clearvoice",
     "wpe",
     "fastenhancer-b",
     "dpdfnet2",
@@ -168,7 +170,7 @@ def meeting_distance_mode_for_backend(backend: str) -> str:
         return MEETING_DISTANCE_NORMAL
     if backend in {"noisereduce-medium", "deepfilternet3"}:
         return MEETING_DISTANCE_FAR_SPEAKER
-    if backend in {"wpe", "fastenhancer-b", "dpdfnet2"}:
+    if backend in {"clearvoice", "wpe", "fastenhancer-b", "dpdfnet2"}:
         return MEETING_DISTANCE_RESCUE_OFFLINE
     raise ValueError(f"Unsupported backend: {backend}")
 
@@ -186,7 +188,18 @@ def process_noisereduce(case: EvalCase, output_path: Path, preset: str) -> str:
 
 
 def process_deepfilternet(case: EvalCase, output_path: Path) -> str:
-    raise RuntimeError("The legacy product enhancement backend is retired; historical results remain readable")
+    result = enhance_import_audio_if_available(case.input_path, output_path, MEETING_DISTANCE_FAR_SPEAKER)
+    if not result.succeeded:
+        raise RuntimeError(result.note)
+    return result.note
+
+
+def process_clearvoice(case: EvalCase, output_path: Path) -> str:
+    result = enhance_import_audio_if_available(case.input_path, output_path, MEETING_DISTANCE_RESCUE_OFFLINE)
+    if not result.succeeded:
+        raise RuntimeError(result.note)
+    return result.note
+
 
 def process_wpe(_case: EvalCase, _output_path: Path) -> str:
     try:
@@ -239,6 +252,8 @@ def process_backend(case: EvalCase, backend: str, output_path: Path) -> str:
         return process_noisereduce(case, output_path, "medium")
     if backend == "deepfilternet3":
         return process_deepfilternet(case, output_path)
+    if backend == "clearvoice":
+        return process_clearvoice(case, output_path)
     if backend in {"fastenhancer-b", "dpdfnet2"}:
         return process_neural_candidate(case, backend, output_path)
     if backend == "wpe":

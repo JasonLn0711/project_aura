@@ -115,34 +115,12 @@ def prepare_recording_m4a(manifest_path: str | Path, target_dbfs: float = -20.0)
     plan = recording_audio_plan(manifest_path)
     source, output = Path(plan["source"]), Path(plan["output"])
     if output.exists():
-        manifest = json.loads(Path(manifest_path).read_text())
-        if manifest.get("enhancement_strategy") == "reuse-v1" and not manifest.get("offline_enhancement"):
-            raise RuntimeError("Existing M4A has no offline RE-USE receipt; original audio retained")
         # Preserve an invalid existing export and all sources for explicit diagnosis.
         validate_m4a(output, source)
         return output
-    manifest_path = Path(manifest_path)
-    manifest = json.loads(manifest_path.read_text())
-    enhanced = None
-    encoding_source = source
-    if manifest.get("enhancement_strategy") == "reuse-v1":
-        from aura.audio.reuse import ReuseWorker
-        enhanced = source.with_name(".reuse-offline.wav")
-        manifest["enhancement_phase"] = "offline"
-        write_session_manifest(manifest_path, manifest)
-        def progress(value):
-            manifest["enhancement_progress"] = value
-            write_session_manifest(manifest_path, manifest)
-        with ReuseWorker("offline", progress=progress, log_path=source.parent / "reuse-offline.log") as worker:
-            receipt = worker.enhance_file(source, enhanced)
-        manifest["offline_enhancement"] = receipt
-        manifest["enhancement_phase"] = "encoding"
-        manifest.setdefault("audio_cleanup_pending", []).append(enhanced.name)
-        write_session_manifest(manifest_path, manifest)
-        encoding_source = enhanced
     temporary = output.with_name(f".{output.stem}.{uuid.uuid4().hex}.m4a")
     try:
-        normalize_wav_to_recording_audio(encoding_source, target_dbfs, "m4a", remove_source=False, output_path=temporary)
+        normalize_wav_to_recording_audio(source, target_dbfs, "m4a", remove_source=False, output_path=temporary)
         validate_m4a(temporary, source)
         with temporary.open("rb") as audio:
             os.fsync(audio.fileno())
@@ -168,9 +146,6 @@ def complete_recording_m4a(manifest_path: str | Path, output: str | Path, *, per
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
     if (manifest.get("diarization") or {}).get("state") in ("failed", "loading", "ready", "running", "recovering"):
         raise ValueError("Diarization is unfinished; preserve source audio for recovery")
-    if any(gap['status'] == 'pending' for gap in manifest.get('enhancement_gaps', [])):
-        raise ValueError('Enhancement gaps remain unresolved; original audio retained for recovery')
-    manifest["enhancement_phase"] = "committed"
     manifest["audio_tracks"] = {"mixed": str(output.relative_to(directory))}
     manifest["pcm_journals"] = {}
     manifest["audio_cleanup_pending"] = plan["remove"]

@@ -172,7 +172,7 @@ changes only when the corresponding tag is published.
 | Transcript editor | Supports ordinary text editing and export with concurrent-edit protection during refinement |
 | Speaker diarization | Identifies up to eight speakers with Nemotron in live recordings and complete files; enabled by default |
 | Evidence search | Rebuilds a local SQLite FTS5 index for meetings, segments, and confirmed actions |
-| Audio preparation | Uses NVIDIA Real-time RE-USE for live audio and offline RE-USE before M4A export, with normalization and progress telemetry |
+| Audio preparation | Provides FFmpeg normalization, bounded denoise presets, level protection, and progress telemetry |
 | Meeting-distance modes | Offers `off`, `normal`, `far-speaker`, and `rescue-offline` policies with explicit activation paths |
 | Track Splitter | Finds natural pause points around a target duration and exports ordered media chunks |
 | Runtime Diagnostics | Reports GPU, CUDA, ASR model, FFmpeg, audio device, disk capacity, and output-path readiness |
@@ -184,17 +184,6 @@ changes only when the corresponding tag is published.
 
 The codebase keeps testable product logic outside Qt widgets and gives each
 runtime concern one clear owner.
-
-The [complete C4 architecture](docs/architecture/c4/README.md) provides an
-interactive viewer, C1–C4 diagrams, dynamic flows, deployment views and a full
-source ownership map. Run `make architecture-setup architecture-build`, then
-`make architecture-serve` to browse locally. The
-[diagram catalog](docs/architecture/c4/view-catalog.md) also provides SVG/PNG
-exports for documents and presentations.
-
-![AURA C4 system context with operator, audio services and provisioning dependencies](artifacts/architecture-c4/images/C1_Context.svg)
-
-*AURA processes recordings locally; model provisioning and release checks have separate network relationships.*
 
 ```text
 project_aura/
@@ -228,8 +217,7 @@ project_aura/
 
 - `src/aura/session_core.py` owns shared sessions, persisted preferences, and the job queue.
 - `src/aura/sdk.py` provides the common GUI, CLI, and SSH API.
-- `src/aura/session_runtime.py` owns ASR and file/export jobs in the supervised
-  inference subprocess; RE-USE uses separate isolated worker processes.
+- `src/aura/session_runtime.py` owns the single CUDA inference subprocess.
 - `src/aura/settings.py` retains inspectable defaults for existing utilities.
 - `src/aura/asr/` owns file and live transcription behavior.
 - `src/aura/audio/` owns source discovery, capture, mixing, denoise, export,
@@ -353,16 +341,16 @@ The Track Splitter workflow:
 
 - Ubuntu 22.04 or 24.04 desktop
 - Python 3.10 or newer
-- NVIDIA GPU with an activated CUDA runtime on the inference server; ARM64 and amd64 clients can run without a GPU
+- NVIDIA RTX GPU with an activated CUDA runtime
 - PulseAudio or PipeWire with PulseAudio compatibility
 - FFmpeg, PortAudio development headers, and Python development headers
-- `uv` for the repository Make targets; Rust 1.99.1 for building the Linux capture helper
+- `uv` for the repository Make targets
 
 Install system packages:
 
 ```bash
 sudo apt-get update
-sudo apt-get install -y ffmpeg pulseaudio-utils portaudio19-dev python3-dev
+sudo apt-get install -y ffmpeg portaudio19-dev python3-dev
 ```
 
 ### Standard application environment
@@ -378,63 +366,13 @@ uv run --no-sync aura gui
 `pyproject.toml` and `uv.lock` form the dependency contract for local setup,
 CI, and release builds.
 
-### Linux capture clients and DGX servers
-
-Linux recording uses the Rust `aura-capture` helper for source capture, mixing,
-local audio spooling, and pipelined delivery. ASR remains on the NVIDIA GPU
-server. CPU-only ARM64 and amd64 clients need the base Python package,
-`pulseaudio-utils`, OpenSSH, and the helper; they do not need model weights,
-CUDA, Torch, or faster-whisper.
-
-```bash
-make setup-client
-uv run --no-sync aura --ssh gpu-host record --capture-location client --source microphone
-```
-
-`make setup-client` installs the base client profile. Use it in a client
-checkout; it does not preserve an inference server's optional dependencies.
-Build the helper with Rust 1.99.1, or install the matching Linux CI binary and
-verify its supplied checksum. `make install-capture` builds it and installs it
-beside the current checkout's Python interpreter. The explicit
-`--capture-backend python` option retains the legacy capture path.
-
-On the current GX10, `make setup-app` recognizes the local CUDA 13 build receipt
-and restores its reviewed CTranslate2 wheel after dependency synchronization.
-Finish active work and stop the service before changing its environment.
-Check the existing build without changing it with:
-
-```bash
-uv run --no-sync python scripts/setup_gpu_runtime.py
-```
-
-The GX10 wheel depends on this checkout's native shared library and RPATH; it
-is not a portable ARM64 distribution. Other GPU servers need a CUDA-enabled
-CTranslate2 build matching their host. See the
-[native streaming contract](docs/shared-sessions-2026-09-08.md#linux-native-capture-and-reconnect-delivery)
-for delivery, recovery, installation, and compatibility details.
-
 ### Direct uv setup
-
-The base package includes the interactive CLI. From the repository directory,
-install its dependencies and open the workspace with:
-
-```bash
-uv run aura
-```
-
-For the desktop, local capture, inference, and Chinese punctuation, install the
-application extras:
 
 ```bash
 uv sync --locked --extra cli --extra gui --extra capture --extra server --extra punctuation
 python3 scripts/setup_nemotron.py
-make install-capture
 uv run --no-sync aura gui
 ```
-
-The `cli` extra remains supported for existing installation commands. After
-installing application extras, use `uv run --no-sync aura` to open the CLI with
-that environment.
 
 The package exposes three entry points:
 
@@ -493,7 +431,7 @@ recovery, dependencies, and validation boundaries.
 | Live energy gate | `1000.0 RMS` |
 | Recording delivery format | `M4A / AAC-LC 96k` |
 | Meeting distance mode | `normal` through the Light profile |
-| Audio enhancement | Fixed `reuse-v1`: NVIDIA Real-time RE-USE / offline RE-USE |
+| Denoise preset | `light` |
 | Speaker diarization | Enabled; `nvidia/Nemotron-3-Diarization`; up to `8` speakers |
 | Traditional Chinese punctuation | Active |
 | Splitter target | `40 minutes` |
@@ -503,15 +441,13 @@ recovery, dependencies, and validation boundaries.
 
 | Variable | Purpose |
 | --- | --- |
-| `AURA_CAPTURE_BINARY` | Explicit path to the Linux Rust capture helper |
-| `AURA_WORKER_WATCHDOG_SECONDS` | GPU worker safety watchdog, default `300`; not an ASR latency metric |
 | `AURA_RUNTIME_DIR` | Location for transient normalized WAV files and live transcript backup |
 | `AURA_AUDIT_DIR` | Local audit-event directory |
 | `AURA_AUDIT_ENABLED` | Audit-event activation control |
 | `AURA_AUDIT_RETENTION_DAYS` | Local audit retention period; default `90` days |
 | `HF_TOKEN` | Optional authenticated model downloads |
 | `AURA_NEMOTRON_PYTHON` | Interpreter for the isolated Nemotron environment |
-| `AURA_REUSE_RUNTIME` | Root containing the isolated `reuse-venv` and pinned `reuse-source` snapshots on the CUDA host |
+| `AURA_CLEARVOICE_PYTHON` | Python runtime for the separately activated ClearVoice evaluation path |
 
 The default transient runtime directory is:
 
@@ -713,30 +649,28 @@ New transcripts contain no generated summary. Dedicated LLM code, prompts,
 dependencies, UI controls, and summary evaluation runners have been removed.
 Historical reports remain dated evidence of the former implementation.
 
-### NVIDIA RE-USE audio processing
+### Denoise and meeting-distance modes
 
-New sessions use the fixed `reuse-v1` strategy. Real-time RE-USE enhances the
-persisted capture stream before VAD and live ASR. After Stop, offline RE-USE
-processes the complete original recording, including nonspeech, before volume
-normalization and 16 kHz mono AAC/M4A export. Stop drains pending live ASR;
-it does not run another full ASR pass. Live transcripts and edits are preserved.
+The shared audio profiles combine denoise and meeting-distance settings. Light
+is the requested default, with Off retained for direct input. The underlying
+meeting-distance policies are:
 
-ClearVoice and the previous selectable enhancement backends are retired from
-product operation. Existing profile preferences migrate to RE-USE. Explicit
-legacy `--profile` values receive an instruction to omit the removed option.
-Historical evaluation documents retain their original evidence and dates.
+- `off`: direct capture and preparation;
+- `normal`: lightweight meeting-room preparation;
+- `far-speaker`: stronger VAD bridging, bounded segment gain, and the medium
+  preparation floor;
+- `rescue-offline`: an imported-media evaluation path for ClearVoice or
+  ClearerVoice.
 
-Provision RE-USE separately on the NVIDIA service host with
-`python3 scripts/setup_reuse_runtime.py`. This leaves the custom CTranslate2
-ASR environment intact. CPU-only ARM64 and amd64 clients retain capture,
-transport and control support. NVIDIA's RE-USE models use a noncommercial
-license; the adopted deployment scope is personal research.
+The built-in denoise presets are `off`, `light`, and `medium`. Short buffers use
+adaptive FFT and hop sizes. Silent buffers remain intact. DeepFilterNet3 and
+ClearVoice stay in separate environments so the primary NumPy 2 application
+contract remains stable.
 
-Enhancement failures preserve original audio for recovery. Successful delivery
-requires M4A validation and an atomic manifest commit before working audio is
-removed. Model availability, streaming acceptance and production activation are
-separate checks; see the [C4 architecture and activation gates](docs/architecture/reuse-c4.md)
-and [GB10 availability evidence](artifacts/reuse-availability-2026-10-17/README.md).
+Light is a user-selected operating default. Promotion of a different backend
+begins with a fixed, acoustically reviewed far-field
+corpus and measured transcript quality. See
+[`docs/denoise_upgrade_plan.md`](docs/denoise_upgrade_plan.md).
 
 ### Runtime diagnostics and local audit
 
@@ -827,15 +761,6 @@ connections.
 ## Validation and Evidence
 
 ### Current evidence summary
-
-The [October 17 native streaming packet](artifacts/live-streaming-2026-10-17/README.md)
-records successful Rust capture through a virtual audio monitor into Breeze
-CUDA/int8 on the ARM64 GB10, live text before capture ends, pause/resume,
-source-frame preservation, and validated M4A export. A separate synthetic
-100 ms transport workload compares capture CPU, memory, and upload backlog.
-ASR accuracy and latency remain `not_evaluated`. Linux ARM64/amd64 CI is
-configured; physical amd64-to-DGX and microphone acceptance remain pending.
-
 
 The [2026-09-08 shared-service packet](artifacts/shared-session-availability-2026-09-08/)
 records two successful public-audio CUDA availability checks, with shared
@@ -952,7 +877,7 @@ The regression suite covers:
 - punctuation, glossary correction, correction logs, and artifact naming;
 - speaker diarization timestamps, default migration, and streaming continuity;
 - plain text editing, hotwords, concurrent-edit protection, and summary-free packaging;
-- RE-USE streaming, offline delivery, source retention, and activation gates;
+- denoise presets, meeting-distance modes, and evaluation gates;
 - scheduled recording calculations;
 - Track Splitter selection, ordering, export, and progress;
 - audit redaction, integrity, retention, reporting, and workflow analysis;
@@ -1098,9 +1023,7 @@ Torch/torchvision pair and a real cached-model check that fails on rule fallback
 
 #### How do I start the CLI, and what does `uv run --no-sync aura` mean?
 
-For a first launch from the repository directory, run `uv run aura`; the base
-package includes the terminal dependencies. Once your application environment
-is installed, run:
+Run this command from the repository directory:
 
 ```bash
 uv run --no-sync aura
@@ -1226,7 +1149,6 @@ project needs its own repository-specific instructions.
 
 | Document | Purpose |
 | --- | --- |
-| [Complete C4 model and interactive architecture](docs/architecture/c4/README.md) | Source-backed C1–C4, dynamic/deployment diagrams, SVG/PNG and reproducible rendering |
 | [`docs/shared-sessions-2026-09-08.md`](docs/shared-sessions-2026-09-08.md) | Shared service, remote capture, CLI operations, and gap recovery |
 | [CLI screenshots, previews and validation](artifacts/cli-garden-preview/README.md) | Original screenshot provenance, slate/sage previews, animation and synthetic terminal checks |
 | [`docs/asr-inference-decision-2026-09-09.md`](docs/asr-inference-decision-2026-09-09.md) | Model/precision decisions, memory interpretation, and optimization gates |

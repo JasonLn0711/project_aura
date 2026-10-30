@@ -42,8 +42,6 @@ def serve(root=None, port=0, core=None):
     token = secrets.token_urlsafe(32)
     core = core or SessionCore(root)
     stop = threading.Event()
-    peers = set()
-    peer_condition = threading.Condition()
     connection = None
 
     def auth(conn, request):
@@ -53,19 +51,13 @@ def serve(root=None, port=0, core=None):
 
     def producer(s):
         with (root / "capture.log").open("ab") as log:
-            subprocess.Popen([sys.executable, "-m", "aura.cli", "capture", s["id"], "--capture-backend", s.get("capture_backend", "python")],
+            subprocess.Popen([sys.executable, "-m", "aura.cli", "capture", s["id"]],
                 stdin=subprocess.DEVNULL, stdout=log, stderr=log, start_new_session=True,
                 env={**os.environ, "AURA_DATA_DIR": str(root)})
 
     def handler(ws):
-        from websockets.exceptions import ConnectionClosed
         sid = None
         tracks = None
-        generation = None
-        with peer_condition:
-            if stop.is_set():
-                return
-            peers.add(ws)
         try:
             for message in ws:
                 request_id = None
@@ -73,11 +65,7 @@ def serve(root=None, port=0, core=None):
                     if isinstance(message, bytes):
                         if sid is None or len(message) < 8:
                             raise ValueError("Open an audio stream before sending PCM")
-                        if generation:
-                            from aura.streaming import ingest_packet
-                            result = ingest_packet(core, sid, generation, struct.unpack("<Q", message[:8])[0], message[8:], tracks)
-                        else:
-                            result = core.ingest(sid, struct.unpack("<Q", message[:8])[0], message[8:], tracks)
+                        result = core.ingest(sid, struct.unpack("<Q", message[:8])[0], message[8:], tracks)
                     else:
                         req = json.loads(message)
                         if not isinstance(req, dict) or req.get("version") != 1:
@@ -141,35 +129,13 @@ def serve(root=None, port=0, core=None):
                                     if result.get("temporary"):
                                         Path(result["path"]).unlink(missing_ok=True)
                             result = {"complete": True}
-                        elif command == "audio.status":
-                            from aura.streaming import snapshot, validate_owner
-                            with core.changed:
-                                s = core._get(sid)
-                                validate_owner(s, generation)
-                                if 'captured_sequence' in args:
-                                    captured, sent = args['captured_sequence'], args.get('sent_sequence')
-                                    if type(captured) is not int or type(sent) is not int or not s['input_sequence'] <= sent <= captured:
-                                        raise ValueError('Invalid capture progress')
-                                    s['capture_progress'] = dict(captured_frames=captured, sent_frames=sent,
-                                        durable_frames=s['input_sequence'], pending_upload_frames=captured-s['input_sequence'])
-                                result = snapshot(s)
-                        elif command == "audio.finish":
-                            from aura.streaming import finish
-                            result = finish(core, sid, generation, args['sequence'], args['action'])
                         elif command == "audio.open":
                             tracks = args["tracks"]
                             if not isinstance(tracks, list) or not tracks or any(t not in ("mixed", "microphone", "system") for t in tracks) or len(set(tracks)) != len(tracks) or "mixed" not in tracks:
                                 raise ValueError("Invalid audio tracks")
                             if sid is not None:
                                 raise ValueError("This connection already owns a producer")
-                            if args.get('stream_version', 1) == 2:
-                                from aura.streaming import open_stream
-                                result = open_stream(core, args['session_id'], args['producer_id'], tracks)
-                                generation = result['stream']['generation']
-                            elif args.get('stream_version', 1) == 1:
-                                result = core.request("producer.open", {"session_id": args["session_id"]})
-                            else:
-                                raise ValueError('Unsupported audio stream version')
+                            result = core.request("producer.open", {"session_id": args["session_id"]})
                             sid = args["session_id"]
                         else:
                             if command.startswith("producer.") and command not in ("producer.paused", "producer.stopped"):
@@ -178,18 +144,11 @@ def serve(root=None, port=0, core=None):
                     ws.send(json.dumps({"id": request_id, "result": result}))
                 except (ValueError, KeyError, TypeError, RuntimeError, OSError) as exc:
                     ws.send(json.dumps({"id": request_id, "error": str(exc)}))
-        except ConnectionClosed:
-            pass  # A lost transport is reconciled by producer ownership below.
         finally:
-            try:
-                if sid:
-                    core.disconnected(sid, generation)
-            finally:
-                with peer_condition:
-                    peers.discard(ws)
-                    peer_condition.notify_all()
+            if sid:
+                core.disconnected(sid)
 
-    with websocket_serve(handler, "127.0.0.1", port, process_request=auth, max_size=16 * 1024 * 1024, max_queue=2, close_timeout=1) as server:
+    with websocket_serve(handler, "127.0.0.1", port, process_request=auth, max_size=16 * 1024 * 1024, max_queue=2) as server:
         connection = dict(url=f"ws://127.0.0.1:{server.socket.getsockname()[1]}", token=token, pid=os.getpid(), protocol=1)
         path = root / "connection.json"
         tmp = path.with_suffix(".tmp")
@@ -217,12 +176,6 @@ def serve(root=None, port=0, core=None):
             server.serve_forever()
         finally:
             stop.set()
-            with peer_condition:
-                connections = list(peers)
-            for ws in connections:
-                ws.close(code=1001, reason='Service shutting down; retain capture spool')
-            with peer_condition:
-                peer_condition.wait_for(lambda: not peers, timeout=5)
             core.close()
             path.unlink(missing_ok=True)
             lockfile.close()

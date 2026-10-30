@@ -3,26 +3,10 @@ import os
 from pathlib import Path
 
 _model = None
-_runtime = None
 
 
 def execute(kind, payload):
-    try:
-        return _execute(kind, payload)
-    except ModuleNotFoundError as exc:
-        if exc.name not in {"pydub", "numpy", "faster_whisper", "noisereduce", "yaml",
-                            "rapidfuzz", "requests", "webrtcvad"}:
-            raise
-        raise RuntimeError(
-            f"Local inference requires the server dependencies. Import detail: {exc}. "
-            "In the AURA repository on the service host, run: "
-            "uv sync --locked --extra server --inexact. "
-            "Then launch with: uv run --no-sync aura and retry the command."
-        ) from exc
-
-
-def _execute(kind, payload):
-    global _model, _runtime
+    global _model
     if kind == "export":
         from aura.audio.retention import prepare_recording_m4a
         options = payload["options"]
@@ -31,6 +15,8 @@ def _execute(kind, payload):
     from aura.config import SAMPLE_RATE
     from aura.asr.file_pipeline import FileTranscriptionSettings, transcribe_file, build_transcribe_kwargs
     from aura.asr.punctuation import restore_chinese_punctuation
+    from aura.audio.denoise import reduce_noise_safely
+    from aura.audio.meeting_distance import meeting_distance_policy_for, apply_live_segment_agc
     import numpy as np
 
     from aura.asr.models import load_model, runtime_receipt, PARAKEET
@@ -38,8 +24,7 @@ def _execute(kind, payload):
     key = options.get("asr_model", "breeze")
     if _model is None:
         _model = load_model(key)
-        _runtime = runtime_receipt(key, _model)
-    runtime = _runtime
+    runtime = runtime_receipt(key)
     if kind == "load":
         from aura.asr.hotwords import validate_context
         if hasattr(_model, "hf_tokenizer"):
@@ -87,6 +72,8 @@ def _execute(kind, payload):
     if len(raw) != (end - start) * 2:
         raise RuntimeError("The durable audio interval is incomplete")
     samples = np.frombuffer(raw, dtype="<i2").astype(np.float32) / 32768
+    samples = reduce_noise_safely(samples, SAMPLE_RATE, options["denoise"])
+    samples = apply_live_segment_agc(samples, meeting_distance_policy_for(options["distance"]))
     if key == PARAKEET:
         text = _model.transcribe_chunk(samples, language=options["language"])
         return {"text": text, "start_sample": start, "end_sample": end, "runtime": runtime}

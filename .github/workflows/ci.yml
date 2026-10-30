@@ -9,10 +9,7 @@ on:
 
 jobs:
   test:
-    strategy:
-      matrix:
-        runner: [ubuntu-24.04, ubuntu-24.04-arm]
-    runs-on: ${{ matrix.runner }}
+    runs-on: ubuntu-latest
 
     steps:
       - name: Check out repository
@@ -34,46 +31,16 @@ jobs:
             libxcb-xinerama0 \
             libxkbcommon-x11-0 \
             portaudio19-dev \
-            pulseaudio-utils \
             python3-dev
-
-      - name: Set up Rust
-        uses: dtolnay/rust-toolchain@1.99.1
-        with:
-          components: rustfmt, clippy
-
-      - name: Build and check native capture
-        run: make build-capture check-capture CARGO=cargo
-
-      - name: Package native helper
-        run: |
-          mkdir -p dist
-          cp native/aura-capture/target/release/aura-capture dist/
-          cd dist
-          sha256sum aura-capture > SHA256SUMS
-
-      - uses: actions/upload-artifact@v4
-        with:
-          name: aura-capture-${{ matrix.runner }}
-          path: dist/
 
       - name: Set up uv
         uses: astral-sh/setup-uv@v6
         with:
           version: "0.11.6"
 
-      - name: Install base package
-        run: uv sync --python 3.12 --locked
-
-      - name: Check base CLI dependencies
+      - name: Install package
         run: |
-          uv run --no-sync python -m unittest discover -s tests -p 'test_terminal.py'
-          uv run --no-sync python -m unittest discover -s tests -p 'test_completion.py'
-          uv run --no-sync python -c "import sys; import aura.native_capture; import aura.audio.reuse; assert not any(m in sys.modules for m in ('torch', 'numpy', 'faster_whisper', 'PyQt6'))"
-
-      - name: Install application extras
-        run: |
-          uv sync --python 3.12 --locked --extra cli --extra gui --extra capture --extra server --extra punctuation --extra benchmark
+          uv sync --python 3.12 --locked --extra cli --extra gui --extra capture --extra server --extra punctuation
 
       - name: Compile source
         run: uv run --no-sync python -m compileall src tests

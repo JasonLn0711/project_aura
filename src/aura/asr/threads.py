@@ -169,9 +169,6 @@ class ModelLoaderThread(QThread):
                 )
 
             runtime_ready, runtime_source = preload_cuda_runtime_libraries()
-            if not runtime_ready:
-                from aura.system.cuda import probe_cuda_backend
-                runtime_ready, runtime_source = probe_cuda_backend()
             if runtime_ready:
                 self.runtime_note = f"CUDA runtime source: {runtime_source}"
             else:

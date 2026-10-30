@@ -54,7 +54,7 @@ class EvaluateDenoiseBackendsTests(unittest.TestCase):
         self.assertEqual(meeting_distance_mode_for_backend("off"), "off")
         self.assertEqual(meeting_distance_mode_for_backend("noisereduce-light"), "normal")
         self.assertEqual(meeting_distance_mode_for_backend("deepfilternet3"), "far-speaker")
-        self.assertEqual(meeting_distance_mode_for_backend("wpe"), "rescue-offline")
+        self.assertEqual(meeting_distance_mode_for_backend("clearvoice"), "rescue-offline")
 
     def test_evaluate_off_backend_processes_without_transcription(self):
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -114,7 +114,7 @@ class EvaluateDenoiseBackendsTests(unittest.TestCase):
             ),
             BackendResult(
                 category="far_room",
-                backend="wpe",
+                backend="clearvoice",
                 meeting_distance_mode="rescue-offline",
                 status="skipped",
                 input_path="input.wav",
@@ -128,7 +128,7 @@ class EvaluateDenoiseBackendsTests(unittest.TestCase):
         self.assertEqual(recommendations[0].recommended_backend, "deepfilternet3")
         self.assertEqual(recommendations[0].recommended_mode, "far-speaker")
         self.assertEqual(recommendations[0].compared_backends, ["off", "deepfilternet3"])
-        self.assertEqual(recommendations[0].skipped_backends, ["wpe"])
+        self.assertEqual(recommendations[0].skipped_backends, ["clearvoice"])
         self.assertIn("WER 0.2500", recommendations[0].reason)
 
     def test_recommend_backends_requires_reference_backed_metrics(self):
