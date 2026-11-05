@@ -222,6 +222,36 @@ report connection and dependency metadata; physical device capture and model
 inference have their own validation paths. The lab PC's reported zero-audio
 failure can be inspected by its saved ID before selecting a device-specific fix.
 
+## Saved capture source — November 5
+
+CLI `record` and `schedule` use the service's saved `capture_source` preference
+when `--source` is omitted. Existing installations without that preference keep
+`system_microphone`. An explicit `--source system`, `--source microphone` or
+`--source system_microphone` overrides the preference. SDK operators can set it
+through `preferences.set` with `{"capture_source": "system"}`; invalid values
+are rejected. The GUI independently restores and saves its source dropdown on
+the presenting computer.
+
+GX10's November 5 repair saved `system` for the service and GUI because the
+requested operating scope uses desktop audio only. The HDMI monitor was detected
+and exercised with real playback, recording, transcription and M4A export.
+For an interactive local session, `/record` now uses that saved choice; explicit
+`/record --source system` remains available. Start desktop playback to supply
+audio; an idle or suspended monitor is not evidence of a missing device.
+
+An idle ASR `unloaded` status supports automatic loading on recording/import.
+Use `/model load` to preload and `/model unload` to release the worker after
+active work finishes. `/doctor` includes diarization metadata and interpreter
+availability; `runtime_probe=not_performed` keeps this dependency check distinct
+from live inference. Python device capture reports missing PortAudio when that
+backend is opened, while the Pulse path can load independently.
+
+The [source and repair event](audit-events/2026-11-05-system-audio-repair/audit-event.md)
+and [availability packet](../artifacts/asr-repair-2026-11-05/README.md) connect
+operating behavior to measured functional evidence, repository test conditions
+and the Planning publication receipt. Microphone, second-host, quality and
+timing acceptance retain separate gates.
+
 ## Find and open output files
 
 In the interactive workspace, `/files` lists the selected session's output

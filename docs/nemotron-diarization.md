@@ -1,5 +1,11 @@
 # Nemotron diarization operating contract
 
+The [November 5 GX10 repair](audit-events/2026-11-05-system-audio-repair/audit-event.md)
+restored the isolated environment and validated this runtime alongside Breeze,
+RE-USE and actual HDMI system-audio capture. The [dated availability packet](../artifacts/asr-repair-2026-11-05/README.md)
+adds short functional evidence; historical full-duration results retain their
+original scope. Microphone, second-host and quality acceptance remain separate.
+
 AURA owns the implementation and local validation evidence. The constrained
 resources are GPU memory shared with ASR and the full-duration replay window.
 Private audio, timestamps, transcripts, and model output stay in the owner-local

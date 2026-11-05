@@ -1,0 +1,87 @@
+{
+  "run_date": "2026-11-05",
+  "host": "GX10 / NVIDIA GB10 / Linux aarch64",
+  "model": "SoybeanMilk/faster-whisper-Breeze-ASR-25",
+  "backend": "faster-whisper 1.2.1 / native CTranslate2 4.7.1 / CUDA",
+  "compute_type": "int8",
+  "effective_compute_type": "int8_float16",
+  "validation_mode": "availability_validation",
+  "records": [
+    {
+      "id": "direct-import",
+      "receipt_sha256": "e1acbaec9d3f8a4d05a3015dd5c6fbcc1f521b97cf0681dffc778c4732d9f159",
+      "validation_mode": "availability_validation",
+      "status": "LIVE_MINIMUM_COMPLETED",
+      "runtime_validity": "valid_target_runtime",
+      "functional_result": "available_and_working",
+      "segments": 1,
+      "accuracy": "not_evaluated",
+      "latency": "not_evaluated"
+    },
+    {
+      "id": "combined-01",
+      "receipt_sha256": "52831ae67e3d1ad4233f2ec12dd5eb393b9d74062da42f08798df22c396ff69a",
+      "validation_mode": "availability_validation",
+      "status": "LIVE_MINIMUM_COMPLETED",
+      "runtime_validity": "valid_target_runtime",
+      "functional_result": "available_and_working",
+      "capture_backend": "rust",
+      "audio_files": 1,
+      "successful_jobs_by_kind": {
+        "file": 2,
+        "chunk": 2
+      },
+      "preloaded_worker_reused": true,
+      "unloaded_worker_exited": true,
+      "segment_bounds_valid": true,
+      "transcript_nonempty": true,
+      "exports": true,
+      "refinement_available": true,
+      "edits_preserved": true,
+      "accuracy": "not_evaluated",
+      "latency": "not_evaluated"
+    },
+    {
+      "id": "hdmi-01",
+      "receipt_sha256": "48d340b50d5b02d55cdcd49ee702fd2e81cf46e2b0be120a91598e52903851e2",
+      "validation_mode": "availability_validation",
+      "status": "LIVE_MINIMUM_COMPLETED",
+      "runtime_validity": "valid_target_runtime",
+      "functional_result": "available_and_working",
+      "source": "default HDMI monitor",
+      "capture_backend": "rust",
+      "segments": 1,
+      "audio_files": 1,
+      "transcript_nonempty": true,
+      "accuracy": "not_evaluated",
+      "latency": "not_evaluated"
+    },
+    {
+      "id": "hdmi-default-02",
+      "receipt_sha256": "7d0d1de3179db65f8a326e134a01d85bead9bb714e876ba465f54f7f239d4fd6",
+      "validation_mode": "availability_validation",
+      "status": "LIVE_MINIMUM_COMPLETED",
+      "runtime_validity": "valid_target_runtime",
+      "functional_result": "available_and_working",
+      "source": "default HDMI monitor",
+      "capture_backend": "rust",
+      "segments": 1,
+      "audio_files": 1,
+      "transcript_nonempty": true,
+      "accuracy": "not_evaluated",
+      "latency": "not_evaluated"
+    }
+  ],
+  "regression": {
+    "supported_path_passed": 451,
+    "full_discovery_total": 453,
+    "full_discovery_passed": 451,
+    "full_discovery_failures": 1,
+    "full_discovery_errors": 1,
+    "condition": "Pre-existing untracked raw-ASR draft expects a different pipeline; preserved outside publication scope."
+  },
+  "accuracy": "not_evaluated",
+  "latency": "not_evaluated",
+  "physical_microphone": "outside_requested_scope",
+  "long_session_acceptance": "not_evaluated"
+}
