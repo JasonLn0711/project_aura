@@ -32,6 +32,17 @@ class UiStateTests(unittest.TestCase):
         self.patch.stop()
         self.settings_patch.stop()
 
+    def test_capture_source_is_restored_and_saved(self):
+        self.tab.saved_settings.value.side_effect = lambda key, default='': 'system' if key == 'capture_source' else default
+        other = TranscriptionTab(audit=MagicMock())
+        try:
+            self.assertEqual(other.combo_source.currentData(), 'system')
+            other.combo_source.setCurrentIndex(other.combo_source.findData('microphone'))
+            other.saved_settings.setValue.assert_called_with('capture_source', 'microphone')
+        finally:
+            other.stop_threads()
+            other.deleteLater()
+
     def test_parakeet_controls_preserve_breeze_vocabulary(self):
         self.tab.hotwords.setPlainText("AURA")
         self.tab.prompt_input.setText("中文提示")

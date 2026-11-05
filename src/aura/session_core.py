@@ -335,7 +335,9 @@ class SessionCore:
             return self._preferences()
         if command == "preferences.set":
             values = {**self._preferences(), **args}
-            options_for(args, self._preferences())
+            if 'capture_source' in args and args['capture_source'] not in ('system', 'microphone', 'system_microphone'):
+                raise ValueError('Unknown capture source')
+            options_for({k: v for k, v in args.items() if k != 'capture_source'}, self._preferences())
             if "audio_format" in args:
                 args = {**args, "audio_format": "m4a"}
                 values["audio_format"] = "m4a"
@@ -345,7 +347,10 @@ class SessionCore:
         if command == "capabilities":
             import shutil
             from aura.asr.models import capabilities
-            return dict(audio_stream_v2=dict(packet_frames=4, window_frames=32), model_control=True, record_stop_at=True, session_delete=True, recover=True, enhancement_recovery=True, recover_language=True, live_enhancement_guard=True, asr_models=capabilities(), diarization={"model": "nvidia/Nemotron-3-Diarization", "default_enabled": True, "streaming": True, "max_speakers": 8}, protocol=1, service_version=__version__,
+            from aura.diarization.nemotron import runtime_python
+            return dict(audio_stream_v2=dict(packet_frames=4, window_frames=32), model_control=True, record_stop_at=True, session_delete=True, recover=True, enhancement_recovery=True, recover_language=True, live_enhancement_guard=True, asr_models=capabilities(), diarization={"model": "nvidia/Nemotron-3-Diarization", "default_enabled": True, "streaming": True, "max_speakers": 8,
+                        "interpreter_available": runtime_python().is_file(), "runtime_probe": "not_performed",
+                        "install": "python3 scripts/setup_nemotron.py"}, protocol=1, service_version=__version__,
                         diagnostics={"data_dir": str(self.root), "service_log": str(self.root / "service.log"),
                                      "capture_log": str(self.root / "capture.log")}, ffmpeg=bool(shutil.which("ffmpeg")), profiles=list(PROFILES), capture_format="s16le/16000/mono", single_owner=True,
                         enhancement_strategy="reuse-v1", enhancement_backends=["nvidia/Real-time_RE-USE", "nvidia/RE-USE"])
@@ -372,6 +377,7 @@ class SessionCore:
         if command in ("delete.preview", "delete"):
             return self._delete_session(args, preview=command == "delete.preview")
         if command in ("record", "schedule"):
+            args = {"source": self._preferences().get('capture_source', 'system_microphone'), **args}
             backend = args.get("capture_backend", "python")
             if backend not in ("rust", "python"):
                 raise ValueError("Unknown capture backend")

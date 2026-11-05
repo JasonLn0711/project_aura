@@ -68,7 +68,8 @@ def parser():
             sub.add_argument("path")
         else:
             sub.add_argument("--capture-backend", choices=("rust", "python"), default="rust" if sys.platform == "linux" else "python")
-            sub.add_argument("--source", choices=("microphone", "system", "system_microphone"), default="system_microphone")
+            sub.add_argument("--source", choices=("microphone", "system", "system_microphone"), default=None,
+                             help="Audio source (default: saved service capture source)")
             sub.add_argument("--capture-location", choices=("server", "client"), default="server")
             sub.add_argument("--consent", action="store_true", help=argparse.SUPPRESS)
             sub.add_argument("--segmentation", choices=("adaptive", "fixed"), default=None,
@@ -202,7 +203,7 @@ def diagnostics(client, host=None):
     return dict(client_version=__version__, service_version=service_version or "unknown",
                 connection="connected", host=host or client.ssh or "local service",
                 version_status="unknown" if not service_version else "matched" if service_version == __version__ else "mismatch",
-                capabilities={k: capabilities[k] for k in ("model_control", "recover", "asr_models", "protocol", "ffmpeg", "profiles", "capture_format", "single_owner", "enhancement_strategy", "enhancement_backends") if k in capabilities},
+                capabilities={k: capabilities[k] for k in ("model_control", "recover", "asr_models", "diarization", "protocol", "ffmpeg", "profiles", "capture_format", "single_owner", "enhancement_strategy", "enhancement_backends") if k in capabilities},
                 diagnostics=capabilities.get("diagnostics", {}),
                 guidance="Finish active recordings and jobs before restarting an older service. Device capture requires its own check.")
 
@@ -328,13 +329,14 @@ def execute(client, args, *, on_progress=None):
                 value = getattr(args, argument)
                 if value is not None:
                     options[option] = value
-            values.update(source=args.source, capture_location=args.capture_location, capture_backend=args.capture_backend)
+            selected_source = args.source or client.request('preferences.get').get('capture_source', 'system_microphone')
+            values.update(source=selected_source, capture_location=args.capture_location, capture_backend=args.capture_backend)
             if args.capture_backend == "rust":
                 if not client.request("capabilities").get("audio_stream_v2"):
                     raise RuntimeError("The running service lacks Rust capture support. Finish active work, then restart the service from the updated installation.")
                 if args.capture_location == "client":
                     from aura.native_capture import preflight
-                    preflight(args.source)
+                    preflight(selected_source)
         else:
             values["path"] = client.upload(args.path, on_progress=on_progress)
     if command == "schedule":

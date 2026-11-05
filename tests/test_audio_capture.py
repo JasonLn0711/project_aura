@@ -2,7 +2,9 @@ import json
 import tempfile
 import unittest
 import wave
+from unittest.mock import patch
 from pathlib import Path
+from types import SimpleNamespace
 
 import numpy as np
 
@@ -27,6 +29,14 @@ from aura.audio.capture import (
 )
 from aura.audio.meeting_distance import MEETING_DISTANCE_FAR_SPEAKER
 from aura.config import CHUNK_MS, LIVE_CAPTURE_MICROPHONE, LIVE_CAPTURE_SYSTEM, LIVE_CAPTURE_SYSTEM_MICROPHONE
+
+
+class OptionalPortAudioTests(unittest.TestCase):
+    def test_missing_portaudio_is_reported_at_device_capture(self):
+        recorder = AudioRecorderThread('recording', transcriber_thread=SimpleNamespace())
+        with patch.dict('sys.modules', {'pyaudio': None}):
+            with self.assertRaisesRegex(RuntimeError, 'PortAudio.*libportaudio'):
+                recorder._open_pyaudio_reader()
 
 
 PACTL_SOURCES = """\

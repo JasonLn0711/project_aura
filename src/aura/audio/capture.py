@@ -5,7 +5,6 @@ from dataclasses import dataclass
 from pathlib import Path
 
 import numpy as np
-import pyaudio
 import webrtcvad
 from aura.audio.vad import SileroStreamVAD, SpeechIntervals
 from PyQt6.QtCore import QThread, pyqtSignal
@@ -106,6 +105,14 @@ class AudioRecorderThread(QThread):
         return reader
 
     def _open_pyaudio_reader(self):
+        try:
+            import pyaudio
+        except (ImportError, OSError) as exc:
+            raise RuntimeError(
+                'Python device capture requires PyAudio and PortAudio. '
+                'On Debian/Ubuntu install libportaudio2, then retry capture. '
+                f'Import detail: {exc}'
+            ) from exc
         with no_alsa_err(), suppress_native_stderr():
             pa = pyaudio.PyAudio()
             target_device_index = None

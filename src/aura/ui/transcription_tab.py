@@ -125,7 +125,11 @@ class TranscriptionTab(QWidget):
         self.combo_source = QComboBox()
         for label, value in (("麥克風", "microphone"), ("系統音訊", "system"), ("系統＋麥克風", "system_microphone")):
             self.combo_source.addItem(label, value)
-        self.combo_source.setCurrentIndex(2)
+        saved_source = self.saved_settings.value('capture_source', 'system_microphone')
+        source_index = self.combo_source.findData(saved_source)
+        self.combo_source.setCurrentIndex(source_index if source_index >= 0 else 2)
+        self.combo_source.currentIndexChanged.connect(
+            lambda _: self.saved_settings.setValue('capture_source', self.combo_source.currentData()))
         self.combo_location = QComboBox()
         self.combo_location.addItem("服務主機收音", "server")
         self.combo_location.addItem("這台電腦收音", "client")

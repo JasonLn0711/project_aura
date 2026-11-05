@@ -6,6 +6,26 @@ from aura.native_capture import sources
 
 
 class NativeSourceTests(unittest.TestCase):
+    def test_saved_system_source_is_used_after_service_restart(self):
+        import tempfile
+        from reuse_fixtures import SessionCore
+        with tempfile.TemporaryDirectory() as root:
+            core = SessionCore(root, executor=lambda *args: {})
+            try:
+                core.request('preferences.set', {'capture_source': 'system'})
+                with self.assertRaisesRegex(ValueError, 'capture source'):
+                    core.request('preferences.set', {'capture_source': 'invalid'})
+            finally:
+                core.close()
+            core = SessionCore(root, executor=lambda *args: {})
+            try:
+                with patch('aura.native_capture.preflight') as check:
+                    session = core.request('record', {'capture_backend': 'rust'})
+                    check.assert_called_once_with('system')
+                    self.assertEqual(session['source'], 'system')
+            finally:
+                core.close()
+
     def pactl(self, rows, default_source='hdmi.monitor', default_sink='hdmi'):
         def run(command, **kwargs):
             if command[-1] == 'sources':
