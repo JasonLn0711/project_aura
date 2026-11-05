@@ -79,6 +79,15 @@ commit as a merge ancestor while retaining today's tested implementation.
 The earlier snapshot remains recoverable by commit ID. No force push, release
 tag, model weights, private recordings or runtime credentials are included.
 
+Publication verified on November 5: repair `22cbca7`, preserved source
+`066004c`, evidence/operator docs `dd6cf75`, and history-preserving merge
+`27beec3` were pushed to `origin/main`. Fetch confirmed `HEAD...origin/main`
+divergence `0 0`. The merge tree matches its first parent and retains remote
+`9a912ca` as an ancestor, so it adds history without changing the tested tree.
+This receipt is a subsequent documentation-only commit; the
+[Planning day receipt](https://github.com/JasonLn0711/planning-everything-track/blob/main/weeks/2026-W45/days/2026-11-05.md#aura-system-audio-publication-2026-11-05)
+records the cross-repository publication result. No release tag was created.
+
 ## Connections and next action
 
 - [Operator guide](../../shared-sessions-2026-09-08.md#saved-capture-source--november-5): source defaults, overrides and model lifecycle.

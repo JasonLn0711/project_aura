@@ -39,6 +39,11 @@ failure and one error in the preserved untracked raw-ASR draft. The
 explains the contract conflict. Full draft-inclusive discovery is not green.
 Compilation and `git diff --check` passed.
 
+The repair, source, evidence and history integration were published as
+`22cbca7`, `066004c`, `dd6cf75` and `27beec3`; the
+[audit receipt](../../docs/audit-events/2026-11-05-system-audio-repair/audit-event.md#publication-source-selection)
+records the fetched remote comparison and source-selection boundary.
+
 ## Decision and next gate
 
 Production runtime remains Breeze with RE-USE and default-on Nemotron. GX10's
