@@ -66,7 +66,13 @@ and `tests/test_reuse_sessions.py`. It was preserved without publishing or
 silently activating a different preprocessing architecture. Full discovery is
 therefore **not green** in this host's draft-inclusive worktree.
 
-Compilation and `git diff --check` passed. No ASR accuracy, timing, model ranking,
+Compilation and `git diff --check` passed.
+
+Clean publication verification: an isolated detached checkout of `eab58d1`
+passed all **445 tests** under unfiltered discovery with ResourceWarnings
+treated as errors. The checkout was clean and contained no untracked drafts.
+This is the published-tree result; the 451/453 counts above describe the
+original host worktree and are retained with their separate scope. No ASR accuracy, timing, model ranking,
 long-session acceptance or microphone result is claimed.
 
 ## Publication source selection

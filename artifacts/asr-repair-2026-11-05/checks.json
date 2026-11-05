@@ -78,7 +78,15 @@
     "full_discovery_passed": 451,
     "full_discovery_failures": 1,
     "full_discovery_errors": 1,
-    "condition": "Pre-existing untracked raw-ASR draft expects a different pipeline; preserved outside publication scope."
+    "condition": "Pre-existing untracked raw-ASR draft expects a different pipeline; preserved outside publication scope.",
+    "clean_published_tree": {
+      "commit": "eab58d1",
+      "tests_passed": 445,
+      "resource_warnings": "errors",
+      "command": "QT_QPA_PLATFORM=offscreen PYTHONPATH=src:tests:. .venv/bin/python -W error::ResourceWarning -m unittest discover -s tests -q",
+      "log_sha256": "d05502e20fff18d62e8c83444304d46619f73031101e3b98e3211616103ddf78",
+      "checkout": "isolated detached worktree; no untracked drafts"
+    }
   },
   "accuracy": "not_evaluated",
   "latency": "not_evaluated",

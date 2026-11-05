@@ -39,6 +39,12 @@ failure and one error in the preserved untracked raw-ASR draft. The
 explains the contract conflict. Full draft-inclusive discovery is not green.
 Compilation and `git diff --check` passed.
 
+Clean publication verification: an isolated detached checkout of `eab58d1`
+passed all **445 tests** under unfiltered discovery with ResourceWarnings
+treated as errors. The checkout was clean and contained no untracked drafts.
+This is the published-tree result; the 451/453 counts above describe the
+original host worktree and are retained with their separate scope.
+
 The repair, source, evidence and history integration were published as
 `22cbca7`, `066004c`, `dd6cf75` and `27beec3`; the
 [audit receipt](../../docs/audit-events/2026-11-05-system-audio-repair/audit-event.md#publication-source-selection)
