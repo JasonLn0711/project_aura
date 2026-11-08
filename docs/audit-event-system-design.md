@@ -315,3 +315,22 @@ Recorder 對敏感 key 執行集中 redaction，並限制字串長度與巢狀�
 - 用經授權的真實操作 session 檢查事件 coverage、漏記、重複記錄與 UI 負擔。
 - 將現有 status-bar 狀態升級為動態 audit-health（持續檢查寫入、磁碟與權限），並加入受控刪除與 support-bundle preview。
 - 發布版 onboarding 若啟用跨裝置或對外 analytics，先完成明確同意、資料處理告知與撤回路徑。
+
+## Shared verification boundary and timestamp reuse — 2026-11-08
+
+Aura owns audit recording, privacy sanitization, Python-compatible canonical
+hashes, session chain integrity and workflow anomaly policy. The
+[kairos-rust-tools ownership ledger](https://github.com/JasonLn0711/kairos-rust-tools/blob/main/docs/rule-ownership.md)
+tracks this boundary; generic static checks do not replace the runtime audit.
+The summarizer remains a native adapter to the same implementation.
+
+`_window_signals` now retains parsed timestamps within one invocation instead
+of parsing them again during sorting and sliding-window comparisons. The
+inclusive time boundary, invalid-timestamp filtering, group order and first
+threshold signal remain unchanged. A subsequent invocation observes changed
+events. Eight audit tests pass, including an unsorted inclusive-boundary and
+fresh-invocation regression. Two hundred deterministic synthetic old/new
+window comparisons passed (seed 81108); a five-event threshold fixture reduced
+parser calls from 19 to 5. This operation count is not an elapsed-time, memory,
+energy or LLM-token saving measurement. No private audit files or model runtime
+were accessed for these checks.
