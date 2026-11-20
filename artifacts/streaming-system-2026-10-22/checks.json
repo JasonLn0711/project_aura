@@ -1,0 +1,32 @@
+{
+  "python_full_regression": {
+    "passed": 449,
+    "log_sha256": "7b7ebc7eb9e335fabac1dc1ca6e7b4019dd6e3c63ef7c276755a8bc0d08bde22"
+  },
+  "focused_versioning": {
+    "passed": 9
+  },
+  "rust": {
+    "tests_passed": 4,
+    "clippy": "pass",
+    "format": "pass"
+  },
+  "architecture_build": {
+    "status": "pass",
+    "views": 30,
+    "source_files": 77,
+    "viewer": "artifacts/architecture-c4/site/index.html",
+    "archive": "dist/aura-c4-architecture.zip"
+  },
+  "architecture_check": {
+    "status": "pass",
+    "source_files": 77,
+    "code_views": 9,
+    "browser": "pass"
+  },
+  "readme_and_changed_document_relative_paths": {
+    "checked": 84,
+    "missing": 0
+  },
+  "note": "Regression and architecture workloads began after full-run capture and live ASR drain, during offline export. No production activation or publication."
+}

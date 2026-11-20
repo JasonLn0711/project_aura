@@ -1,0 +1,722 @@
+{
+  "study_id": "STUDY-AURA-STREAMING-001",
+  "experiment_id": "EXP-20261022-01-streaming-system",
+  "dataset_id": "DATA-AURA-PRIVATE-STREAMING-v1",
+  "evaluation_id": "EVAL-20261022-01-source-endpoint-display",
+  "execution_status": "LIVE_FULL_COMPLETED",
+  "runtime_validity": "valid_target_runtime",
+  "gate_outcome": "fail",
+  "accuracy": "not_evaluated",
+  "denoising_quality": "not_evaluated",
+  "decision": {
+    "production_default": "legacy-v1",
+    "operational_fallback": "legacy-v1",
+    "research_candidates": [
+      "stream-v2-layer8-fp32",
+      "stream-v2-layer6-fp32"
+    ],
+    "blocked_candidate": "stream-v2-layer8-bf16",
+    "soak": "not_started_prior_gate_failed",
+    "next_gate": "Fix signal availability and inference/dispatch headroom; repeat full-system acceptance before soak and activation. Model-setting changes require separately reviewed quality validation."
+  },
+  "live_counts": [
+    {
+      "variant": "legacy-v1",
+      "runtime_validity": "valid_baseline",
+      "completed_runs": 1,
+      "primary_generated_audio_files": 1
+    },
+    {
+      "variant": "stream-v2-layer8-fp32",
+      "runtime_validity": "valid_target_runtime",
+      "completed_runs": 4,
+      "primary_generated_audio_files": 6
+    },
+    {
+      "variant": "stream-v2-layer6-fp32",
+      "runtime_validity": "valid_target_runtime",
+      "completed_runs": 1,
+      "primary_generated_audio_files": 1
+    },
+    {
+      "variant": "stream-v2-layer8-bf16",
+      "runtime_validity": "blocked_runtime",
+      "completed_runs": 0,
+      "primary_generated_audio_files": 0,
+      "blocked_attempts": 1
+    }
+  ],
+  "audio_count_definition": "Primary enhanced PCM plus delivered M4A; excludes original/input copies, intermediate offline WAV and repair audio.",
+  "runs": [
+    {
+      "study_id": "STUDY-AURA-STREAMING-001",
+      "experiment_id": "EXP-20261022-01-streaming-system",
+      "run_id": "paired-r01",
+      "validation_mode": "enhancement_streaming_validation",
+      "execution_status": "LIVE_FULL_COMPLETED",
+      "runtime_validity": "valid_target_runtime",
+      "gate_outcome": "pass",
+      "source_sha256": "66d999e8f6a26da2327a52da9e5e9727f14ba4b1447cd7cbca47094841175b37",
+      "source_samples": 960000,
+      "accuracy": "not_evaluated",
+      "denoising_quality": "not_evaluated",
+      "length_equal": true,
+      "max_pcm16_difference": 0,
+      "diagnostics_equal": true,
+      "code_sha256": {
+        "src/aura/audio/reuse.py": "3ec5b03786708d2c71178a7c2495a4c93a51f95fa80568c9860a6ae35c95acb3",
+        "src/aura/audio/reuse_model.py": "30cf68df62ad25b311a3a1eb56c966d5a4693fbf11199ad1d18b54e8b19a79a3",
+        "src/aura/audio/reuse_offline.py": "ae9350bf58c91d04a62c1e5ba997670ef5fdb13e7416786caac14a07f71d9218",
+        "src/aura/audio/reuse_policy.py": "4f046699628ae2195ea10f9015c53aa58ae098d012e88e40b8c43b81bfd07ef8",
+        "src/aura/audio/reuse_stream.py": "307503f5266c89395ba4e8911c65e47ce11e862864bea74b6305a664ff7f7721",
+        "src/aura/audio/reuse_worker.py": "5328f54eb261d7fa88f8088f371e484e196284d609347e6b55d67a41816b165e"
+      },
+      "runs": [
+        {
+          "implementation": "legacy-v1",
+          "runtime": {
+            "backend": "nvidia/Real-time_RE-USE",
+            "revision": "4c0c186272ca853cd18d832fc5c28777b62f32d1",
+            "torch": "2.9.1+cu130",
+            "cuda": "13.0",
+            "device": "NVIDIA GB10",
+            "dtype": "float32",
+            "sample_rate": 16000,
+            "ptxas": "/usr/local/cuda/bin/ptxas",
+            "live_policy": "speech-guard-v1",
+            "implementation": "legacy-v1",
+            "worker_protocol": 2,
+            "exit_layer": 8,
+            "look_ahead": 0
+          },
+          "runtime_validity": "valid_baseline",
+          "enhancement_seconds": 70.89891224200255,
+          "output_samples": 960000,
+          "output_sha256": "a2c69442a2461d0cf6b13b6b3e86d14f61bcc195a1b2dfedb43171a541494f9a",
+          "diagnostics": {
+            "frames": 3002,
+            "native_zero_frames": 0,
+            "postfilter_muted_frames": 497,
+            "protected_frames": 2471,
+            "postfilter_erased_nonzero_frames": 497,
+            "protected_nonzero_frames": 2040
+          },
+          "output_before_source_eof": true
+        },
+        {
+          "implementation": "stream-v2",
+          "runtime": {
+            "backend": "nvidia/Real-time_RE-USE",
+            "revision": "4c0c186272ca853cd18d832fc5c28777b62f32d1",
+            "torch": "2.9.1+cu130",
+            "cuda": "13.0",
+            "device": "NVIDIA GB10",
+            "dtype": "float32",
+            "sample_rate": 16000,
+            "ptxas": "/usr/local/cuda/bin/ptxas",
+            "live_policy": "speech-guard-v1",
+            "implementation": "stream-v2",
+            "worker_protocol": 2,
+            "exit_layer": 8,
+            "look_ahead": 0
+          },
+          "runtime_validity": "valid_target_runtime",
+          "enhancement_seconds": 43.835578480007825,
+          "output_samples": 960000,
+          "output_sha256": "a2c69442a2461d0cf6b13b6b3e86d14f61bcc195a1b2dfedb43171a541494f9a",
+          "diagnostics": {
+            "frames": 3002,
+            "native_zero_frames": 0,
+            "postfilter_muted_frames": 497,
+            "protected_frames": 2471,
+            "postfilter_erased_nonzero_frames": 497,
+            "protected_nonzero_frames": 2040
+          },
+          "output_before_source_eof": true
+        }
+      ],
+      "canonical_id": "RUN-20261022-01-paired-r01",
+      "private_receipt_sha256": "aa720fab5bb001644f9d183c661df5601c7083f75a335f9b220628d36aeae9f9"
+    },
+    {
+      "study_id": "STUDY-AURA-STREAMING-001",
+      "experiment_id": "EXP-20261022-01-streaming-system",
+      "run_id": "system-short-r01",
+      "validation_mode": "streaming_system_validation",
+      "execution_status": "LIVE_FULL_COMPLETED",
+      "runtime_validity": "valid_target_runtime",
+      "gate_outcome": "fail",
+      "source_sha256": "e17b42a80974bae41d1cbc108930b84c8c7fc56f347faa20f9ba828fb1d63f4f",
+      "input_sha256": "66d999e8f6a26da2327a52da9e5e9727f14ba4b1447cd7cbca47094841175b37",
+      "source_samples": 960000,
+      "accuracy": "not_evaluated",
+      "denoising_quality": "not_evaluated",
+      "asr_model_comparison": "not_evaluated",
+      "implementation": "stream-v2",
+      "repeated_source": false,
+      "endpoint_definition": "source_silero_v6_rms80_silence800ms_v1",
+      "client_surface": "CLI stdout and offscreen Qt widget, production client paths",
+      "startup_seconds": 20.946152267002617,
+      "enhancement_lag": {
+        "p95_seconds": 2.25,
+        "max_seconds": 2.49
+      },
+      "delivered_m4a": true,
+      "code_sha256": {
+        "src/aura/__init__.py": "96dbe38d3e8ff5c1876c7079e05957161c75422bdd76d2fcbf835ab1ab4aeb04",
+        "src/aura/__main__.py": "f83d6fbc5852cde3cce8890f4014bb38098120cc9e28f9ad157a43c6e273d1f3",
+        "src/aura/app.py": "61c81c7f00718a66331ff57b24ebc2f728d7c99264f04b5f812a4111199cd50b",
+        "src/aura/asr/__init__.py": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+        "src/aura/asr/file_pipeline.py": "5292a86f2ea7ccaa7af97ff3fa2b982463a09dd24fc1d3564ed26246b0f95019",
+        "src/aura/asr/hotwords.py": "5b8776e1705aeee58fd1a11f71aea9d36045da87ebd1fc4f8a96ea46cefeaa09",
+        "src/aura/asr/models.py": "cb8d9b2f6f9db994f20149cd35b0aa5ea4cdadac4d663c69227484e14acf6e68",
+        "src/aura/asr/punctuation.py": "29f0a3fd9f02b53156baa7a399baee11a5ec323c88ce637a11d0e68f24b47527",
+        "src/aura/asr/threads.py": "c28128f9ac79f97c83b7877a785154e11ace789d1831bf2e77201eedbe882318",
+        "src/aura/audio/__init__.py": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+        "src/aura/audio/capture.py": "e49c027f340720c9e87a96986ddd9aba32229e48f891b236eb777ee799be8d24",
+        "src/aura/audio/cleanup.py": "f331328f050e54efaf120177ad8c0c3fa9643e5f8d5f44be9722fe6d997627dd",
+        "src/aura/audio/denoise.py": "a18ae0fb33ab129e7a2d9237a7ee0a8b3bf7d8c0f15b192696a732ddb83869ec",
+        "src/aura/audio/enhanced_journal.py": "d5f845735690d18adb795a254630fe8dc4b230fd6b871fea01a20738fb9f0545",
+        "src/aura/audio/enhancement_backends.py": "2428f4a90ce46262b21320a8ffcb7a1944a3e2cb69171b7c39638f8eacb8b5cb",
+        "src/aura/audio/enhancement_health.py": "a31b2fcd2e2aa4646532833340c0d9d782efa6a2756feb8fd83a2a343870636a",
+        "src/aura/audio/export.py": "fab7f1a6959a60039e531aa1167cd8e689288706522ac8ff9eeb6443ba8ac245",
+        "src/aura/audio/fastenhancer.py": "d06c93c6a2ddf822aa36a4e3fadce7b99aa3b3781c0f61290c835252f4dcebe6",
+        "src/aura/audio/inputs.py": "ff846bd99fcefa438e33b2cdf6c8efc076a82425d194715dc488fc78346b4583",
+        "src/aura/audio/meeting_distance.py": "5778cd1c7493f8d0ebf78fa47356ba444e0e352bda0c50a2f5c39fe78d0cd6ea",
+        "src/aura/audio/normalization.py": "77222874fe787f1b8ebdfa972cc817219a3fd69b225c706a942f54a942d27fd2",
+        "src/aura/audio/recording_session.py": "065e6136206415d3ac555e8867262d48bbbefcbd57f4645941b7c334f15a8e29",
+        "src/aura/audio/retention.py": "e63a8d580d916ca1edd7bc7615b334b9ab807ca19535c30ca53f516b7ea3eb09",
+        "src/aura/audio/reuse.py": "3ec5b03786708d2c71178a7c2495a4c93a51f95fa80568c9860a6ae35c95acb3",
+        "src/aura/audio/reuse_model.py": "30cf68df62ad25b311a3a1eb56c966d5a4693fbf11199ad1d18b54e8b19a79a3",
+        "src/aura/audio/reuse_offline.py": "ae9350bf58c91d04a62c1e5ba997670ef5fdb13e7416786caac14a07f71d9218",
+        "src/aura/audio/reuse_policy.py": "4f046699628ae2195ea10f9015c53aa58ae098d012e88e40b8c43b81bfd07ef8",
+        "src/aura/audio/reuse_stream.py": "307503f5266c89395ba4e8911c65e47ce11e862864bea74b6305a664ff7f7721",
+        "src/aura/audio/reuse_worker.py": "5328f54eb261d7fa88f8088f371e484e196284d609347e6b55d67a41816b165e",
+        "src/aura/audio/splitter.py": "eba529576f1bae5e2f42ffe53454671a41d8f732a43864e8ccc118c6f034e0eb",
+        "src/aura/audio/splitter_pipeline.py": "c5cf4d4183c50da40aecfa97e6184355cfb1715d87f1846b0eab46b0fa633e5b",
+        "src/aura/audio/vad.py": "755effe36f006608b962f649921e011ffa323e5a10ef8546726bd5cb37550f75",
+        "src/aura/audio/vad_candidates.py": "675a3f4946218b91c2e86e84c7cec772ad0ad9627c0db1568f65c42a8ed1f53f",
+        "src/aura/audit.py": "5f1ff0de5731b9247c4d68fa0ec4207ce0d64830345e4bf9134cb9a1e2309e6e",
+        "src/aura/cli.py": "091a5ba1e9165407d0e536926fc53fda3c9556e4e3d9338ce8496e4b1bf909a6",
+        "src/aura/completion.py": "72193b9902c61c30b79612195685e10ac7f33173fdbecb7562afd4c457725a9b",
+        "src/aura/config.py": "083c53a542325bdc99b5a834c2ba2e49ee500fb8dca65e02f2c630faecfe5a61",
+        "src/aura/diarization/__init__.py": "813055a2019f1f73016edf69f4ce9925dc3ee0b0a56562c1eb87901eca84fe15",
+        "src/aura/diarization/pyannote_pipeline.py": "f896de4f5e34b944ceeabdcecfefb666bf3606a6f2cd2450393f7ad302bff243",
+        "src/aura/diarization/speaker_assignment.py": "289124ed63d84ddf1693470cc84dc4194bc3ba8a77f1b148ea5392a5894ed5bc",
+        "src/aura/evidence_search.py": "78936191a5c32cd6949763d8ed6d9232e7bf029038ed3ce3094bb494c3e56e47",
+        "src/aura/metadata.py": "5ecf7db2a71919a00bc2a54a5e3f859813790d6d12dcae56a971f833fcaddf9d",
+        "src/aura/native_capture.py": "1cc75051db97182e120d70c56d1e2f2a2e1b88ee24a966a530ed0daed0643458",
+        "src/aura/producer.py": "8870b37e11dc278cfc595ca23f36fd28f89a540776d5f5f596ba21ce4d8eeb3a",
+        "src/aura/reuse_capture.py": "9a5166a7e2be98cbb56f6ab36aeee6f95cf6607a53922d1d5eaa202932646014",
+        "src/aura/reuse_live_repair.py": "639b09fd6346bcd2faf1be2f9d1a699d3002a9acdad301c38c56d6f87e051636",
+        "src/aura/reuse_recovery.py": "46ac57cd5533e3acda7c12952c4a56e2c69d716cc0fffb6ce051cbec10938672",
+        "src/aura/review.py": "874e81b58b789725930fb9adc5dfbd2c550ef27467fac37d5e7cec2d2d38e5d2",
+        "src/aura/scheduling.py": "5fd58cc93315299616592280399dcbfc678cff552270dbaebb37be0cb3d8bca1",
+        "src/aura/sdk.py": "677702db043962d24e1d2bc85fe6909912a91e3f96b8f804be9c3ccfc2e22eda",
+        "src/aura/service.py": "0dcd991f96235bec62546dec05643857cb0392b74a8aa4dfadb9e9add9044271",
+        "src/aura/session_core.py": "cf7feb7b2ab9f365144e2b24b66003dde5d27baa52dca240e32f0d2559dfb8c7",
+        "src/aura/session_runtime.py": "93e6a1797171a6ec5d38276081e0ec2b691fc463511d7bd6c4c8ed4388f70949",
+        "src/aura/settings.py": "f6ebeeb74c681e30ce1771fd8989d71a8e6531fb5b969cb13b231b991649755d",
+        "src/aura/streaming.py": "d28df4d00e4af706046a46839ae2bb573dbc68596014a1860880537b6068786a",
+        "src/aura/streaming_metrics.py": "17ee7205a000f18b92e9a1fe9b6d2a16350921aca9a93f2db823dbdc10415d72",
+        "src/aura/system/__init__.py": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+        "src/aura/system/audio_diagnostics.py": "7310378acb0871d2aedc6696fe62f0db13203458872b6fd90addea0b01f9d88f",
+        "src/aura/system/cuda.py": "5bf0be65ad580766acd1b9ded13ed017af38394b99a49fcab9f6641b194f4af2",
+        "src/aura/system/gpu_diagnostics.py": "0179a28ea6377d36308a02ee9cf85935236ae50fa419951d9835b4605369433e",
+        "src/aura/system/native_audio.py": "cf4c4170b6318b0da2009c35581f6cd15c09088747d24d63ad06012d222c0922",
+        "src/aura/system/platform.py": "9ff6b9876fd7a7eb3e9bfd816c0273b0f69772344ae67c8f5186525678097183",
+        "src/aura/system/runtime_paths.py": "efb7179180ccbd8d8a8b3fb65b02f6177972ec30af3f69b281fc9835ac51f67b",
+        "src/aura/system/runtime_report.py": "5710f76dffd72be3e96dd365756896bbf88cbe15db088c68f8bc6b9e5d593265",
+        "src/aura/system/update_checker.py": "9439a4035f4ff11b0bb8203c943cb43b7c7d5a8d219e3a113503bdc6cc1b7954",
+        "src/aura/terminal.py": "162c612c4eb12a40d6fbe78491052a5564c7d86c6350a4ccafdb80e05a75f381",
+        "src/aura/ui/__init__.py": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+        "src/aura/ui/main_window.py": "60c5517ddf87640fbbf50440b39c36da3243a4a9ff5da66d792b35efa922a915",
+        "src/aura/ui/messages.py": "66bc8a36a1f1a8d6cd0426ea788904a3ef8fd25c09d9a4815a81e88704c5bf6b",
+        "src/aura/ui/splitter_tab.py": "4ece5999856748a4df7ad82092973215c2590350d781f0884a587ffc559d8c43",
+        "src/aura/ui/transcript_io.py": "8de0ae059634dcc138ff5b7ea80a1dcbe85ad573b559c837e5cc55593d7f16cc",
+        "src/aura/ui/transcription_tab.py": "2bf6054d40d80b86916e6e83caa5b3c6bf6ba8d4e7638fa4ac6ada35953c4640",
+        "src/aura/worker.py": "ebc928cd8a5abb172aa48792852bdd14b506c26c50ecb945db25268335bf2bdb"
+      },
+      "capture_sha256": "4386b2c8914e4dd22383c07c5a7168d8fc648e12dc85d13b03321d2c79d82615",
+      "options": {
+        "asr_model": "breeze",
+        "language": "zh",
+        "beam_size": 5,
+        "punctuation": true,
+        "live_max_segment_len_sec": 8,
+        "live_silence_ms": 800,
+        "live_segmentation": "adaptive"
+      },
+      "canonical_id": "RUN-20261022-02-system-short-r01",
+      "private_receipt_sha256": "413a6ecda284bcffdb55eb96fbdb4453ccc76050583c2afaf5a8470149dea5f0",
+      "views": {
+        "cli": {
+          "endpoints": 12,
+          "missing": 11,
+          "within_five_seconds": 0,
+          "p95_seconds": null,
+          "pass_gate": false
+        },
+        "gui": {
+          "endpoints": 12,
+          "missing": 11,
+          "within_five_seconds": 0,
+          "p95_seconds": null,
+          "pass_gate": false
+        }
+      },
+      "enhancement_summary": {
+        "health": {
+          "status": "blocked",
+          "reset_count": 2,
+          "source_rms": 1613.4013787370416,
+          "output_rms": 7.483272790228431
+        },
+        "diagnostics": {
+          "frames": 3002,
+          "native_zero_frames": 0,
+          "postfilter_muted_frames": 464,
+          "protected_frames": 2471,
+          "postfilter_erased_nonzero_frames": 464,
+          "protected_nonzero_frames": 1701
+        },
+        "runtime": {
+          "backend": "nvidia/Real-time_RE-USE",
+          "revision": "4c0c186272ca853cd18d832fc5c28777b62f32d1",
+          "torch": "2.9.1+cu130",
+          "cuda": "13.0",
+          "device": "NVIDIA GB10",
+          "dtype": "float32",
+          "sample_rate": 16000,
+          "ptxas": "/usr/local/cuda/bin/ptxas",
+          "live_policy": "speech-guard-v1",
+          "implementation": "stream-v2",
+          "worker_protocol": 2,
+          "exit_layer": 8,
+          "look_ahead": 0
+        },
+        "processed_samples": 960000,
+        "durable_samples": 960000,
+        "live_complete": true,
+        "intervals": 3,
+        "pending_intervals": 3
+      },
+      "consumer_stages": {
+        "source_read": {
+          "calls": 501,
+          "seconds": 0.0637410149211064,
+          "max_seconds": 0.001441985004930757
+        },
+        "source_vad": {
+          "calls": 501,
+          "seconds": 2.366993823001394,
+          "max_seconds": 0.012759154997183941
+        },
+        "worker_roundtrip": {
+          "calls": 501,
+          "seconds": 55.380881200995645,
+          "max_seconds": 0.4982554479938699
+        },
+        "enhanced_write": {
+          "calls": 502,
+          "seconds": 0.2349730048154015,
+          "max_seconds": 0.004874148013186641
+        },
+        "enhanced_vad": {
+          "calls": 502,
+          "seconds": 2.2820666371262632,
+          "max_seconds": 0.01297341899771709
+        },
+        "enhanced_fsync": {
+          "calls": 58,
+          "seconds": 0.1400074409903027,
+          "max_seconds": 0.004485796001972631
+        }
+      },
+      "asr_runtime": {
+        "asr_model": "breeze",
+        "model": "SoybeanMilk/faster-whisper-Breeze-ASR-25",
+        "device": "cuda",
+        "compute_type": "int8",
+        "effective_compute_type": "int8_float16",
+        "architecture": "aarch64",
+        "ctranslate2_version": "4.7.1",
+        "backend": "faster-whisper",
+        "backend_version": "1.2.1"
+      }
+    },
+    {
+      "study_id": "STUDY-AURA-STREAMING-001",
+      "experiment_id": "EXP-20261022-01-streaming-system",
+      "run_id": "profile-r01",
+      "validation_mode": "enhancement_streaming_validation",
+      "execution_status": "LIVE_FULL_COMPLETED",
+      "runtime_validity": "valid_target_runtime",
+      "gate_outcome": "not_evaluated",
+      "source_sha256": "e452ba9175f9969e773ebe9b13c7cd29bcb393e7877a321457ec6b1d2525ccb7",
+      "source_samples": 19200,
+      "accuracy": "not_evaluated",
+      "denoising_quality": "not_evaluated",
+      "signal": {
+        "source_voice_frames": 37,
+        "suppressed_source_voice_frames": 1,
+        "definition": "30ms_source_vad_rms80_output_below8_and1percent"
+      },
+      "production_activation": "diagnostic_only",
+      "code_sha256": {
+        "src/aura/audio/reuse.py": "3cfd015817fb927ae1f6f5c49298e135a08383b6e3c88a4e42e284b218765971",
+        "src/aura/audio/reuse_model.py": "b9f08033b61a13e8441770238716891a1a96f110ff0feee55651e60caea96b5b",
+        "src/aura/audio/reuse_offline.py": "ae9350bf58c91d04a62c1e5ba997670ef5fdb13e7416786caac14a07f71d9218",
+        "src/aura/audio/reuse_policy.py": "4f046699628ae2195ea10f9015c53aa58ae098d012e88e40b8c43b81bfd07ef8",
+        "src/aura/audio/reuse_stream.py": "307503f5266c89395ba4e8911c65e47ce11e862864bea74b6305a664ff7f7721",
+        "src/aura/audio/reuse_worker.py": "526a8f1de2b4a3aaf068ccbe21c7a3fdea525e30ffd240ecb15e8b14983b3fe1"
+      },
+      "runs": [
+        {
+          "implementation": "stream-v2",
+          "runtime": {
+            "backend": "nvidia/Real-time_RE-USE",
+            "revision": "4c0c186272ca853cd18d832fc5c28777b62f32d1",
+            "torch": "2.9.1+cu130",
+            "cuda": "13.0",
+            "device": "NVIDIA GB10",
+            "dtype": "float32",
+            "sample_rate": 16000,
+            "ptxas": "/usr/local/cuda/bin/ptxas",
+            "live_policy": "speech-guard-v1",
+            "implementation": "stream-v2",
+            "worker_protocol": 2,
+            "exit_layer": 8,
+            "look_ahead": 0
+          },
+          "runtime_validity": "valid_target_runtime",
+          "enhancement_seconds": 1.707886926989886,
+          "profiled": true,
+          "candidate": null,
+          "output_samples": 19200,
+          "output_sha256": "427efacaf76f45fb0c35c2e36bb19e7b14ecfee36a0261990e95fbfcd779fa63",
+          "diagnostics": {
+            "frames": 62,
+            "native_zero_frames": 0,
+            "postfilter_muted_frames": 0,
+            "protected_frames": 57,
+            "postfilter_erased_nonzero_frames": 0,
+            "protected_nonzero_frames": 0
+          },
+          "output_before_source_eof": true
+        }
+      ],
+      "canonical_id": "RUN-20261022-03-profile-r01",
+      "private_receipt_sha256": "944b220b87bcc2b752c29db3b1c127a5adeba9437d63e11fce8e623740e35a5b"
+    },
+    {
+      "study_id": "STUDY-AURA-STREAMING-001",
+      "experiment_id": "EXP-20261022-01-streaming-system",
+      "run_id": "system-full-r01",
+      "validation_mode": "streaming_system_validation",
+      "execution_status": "LIVE_FULL_COMPLETED",
+      "runtime_validity": "valid_target_runtime",
+      "gate_outcome": "fail",
+      "source_sha256": "e17b42a80974bae41d1cbc108930b84c8c7fc56f347faa20f9ba828fb1d63f4f",
+      "input_sha256": "e17b42a80974bae41d1cbc108930b84c8c7fc56f347faa20f9ba828fb1d63f4f",
+      "source_samples": 14882880,
+      "accuracy": "not_evaluated",
+      "denoising_quality": "not_evaluated",
+      "asr_model_comparison": "not_evaluated",
+      "implementation": "stream-v2",
+      "repeated_source": false,
+      "endpoint_definition": "source_silero_v6_rms80_silence800ms_v1",
+      "client_surface": "CLI stdout and offscreen Qt widget, production client paths",
+      "startup_seconds": 16.193217579988413,
+      "enhancement_lag": {
+        "p95_seconds": 19.86,
+        "max_seconds": 20.91
+      },
+      "delivered_m4a": true,
+      "code_sha256": {
+        "src/aura/__init__.py": "96dbe38d3e8ff5c1876c7079e05957161c75422bdd76d2fcbf835ab1ab4aeb04",
+        "src/aura/__main__.py": "f83d6fbc5852cde3cce8890f4014bb38098120cc9e28f9ad157a43c6e273d1f3",
+        "src/aura/app.py": "61c81c7f00718a66331ff57b24ebc2f728d7c99264f04b5f812a4111199cd50b",
+        "src/aura/asr/__init__.py": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+        "src/aura/asr/file_pipeline.py": "5292a86f2ea7ccaa7af97ff3fa2b982463a09dd24fc1d3564ed26246b0f95019",
+        "src/aura/asr/hotwords.py": "5b8776e1705aeee58fd1a11f71aea9d36045da87ebd1fc4f8a96ea46cefeaa09",
+        "src/aura/asr/models.py": "cb8d9b2f6f9db994f20149cd35b0aa5ea4cdadac4d663c69227484e14acf6e68",
+        "src/aura/asr/punctuation.py": "29f0a3fd9f02b53156baa7a399baee11a5ec323c88ce637a11d0e68f24b47527",
+        "src/aura/asr/threads.py": "c28128f9ac79f97c83b7877a785154e11ace789d1831bf2e77201eedbe882318",
+        "src/aura/audio/__init__.py": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+        "src/aura/audio/capture.py": "e49c027f340720c9e87a96986ddd9aba32229e48f891b236eb777ee799be8d24",
+        "src/aura/audio/cleanup.py": "f331328f050e54efaf120177ad8c0c3fa9643e5f8d5f44be9722fe6d997627dd",
+        "src/aura/audio/denoise.py": "a18ae0fb33ab129e7a2d9237a7ee0a8b3bf7d8c0f15b192696a732ddb83869ec",
+        "src/aura/audio/enhanced_journal.py": "d5f845735690d18adb795a254630fe8dc4b230fd6b871fea01a20738fb9f0545",
+        "src/aura/audio/enhancement_backends.py": "2428f4a90ce46262b21320a8ffcb7a1944a3e2cb69171b7c39638f8eacb8b5cb",
+        "src/aura/audio/enhancement_health.py": "a31b2fcd2e2aa4646532833340c0d9d782efa6a2756feb8fd83a2a343870636a",
+        "src/aura/audio/export.py": "fab7f1a6959a60039e531aa1167cd8e689288706522ac8ff9eeb6443ba8ac245",
+        "src/aura/audio/fastenhancer.py": "d06c93c6a2ddf822aa36a4e3fadce7b99aa3b3781c0f61290c835252f4dcebe6",
+        "src/aura/audio/inputs.py": "ff846bd99fcefa438e33b2cdf6c8efc076a82425d194715dc488fc78346b4583",
+        "src/aura/audio/meeting_distance.py": "5778cd1c7493f8d0ebf78fa47356ba444e0e352bda0c50a2f5c39fe78d0cd6ea",
+        "src/aura/audio/normalization.py": "77222874fe787f1b8ebdfa972cc817219a3fd69b225c706a942f54a942d27fd2",
+        "src/aura/audio/recording_session.py": "065e6136206415d3ac555e8867262d48bbbefcbd57f4645941b7c334f15a8e29",
+        "src/aura/audio/retention.py": "e63a8d580d916ca1edd7bc7615b334b9ab807ca19535c30ca53f516b7ea3eb09",
+        "src/aura/audio/reuse.py": "3cfd015817fb927ae1f6f5c49298e135a08383b6e3c88a4e42e284b218765971",
+        "src/aura/audio/reuse_model.py": "b9f08033b61a13e8441770238716891a1a96f110ff0feee55651e60caea96b5b",
+        "src/aura/audio/reuse_offline.py": "ae9350bf58c91d04a62c1e5ba997670ef5fdb13e7416786caac14a07f71d9218",
+        "src/aura/audio/reuse_policy.py": "4f046699628ae2195ea10f9015c53aa58ae098d012e88e40b8c43b81bfd07ef8",
+        "src/aura/audio/reuse_stream.py": "307503f5266c89395ba4e8911c65e47ce11e862864bea74b6305a664ff7f7721",
+        "src/aura/audio/reuse_worker.py": "526a8f1de2b4a3aaf068ccbe21c7a3fdea525e30ffd240ecb15e8b14983b3fe1",
+        "src/aura/audio/splitter.py": "eba529576f1bae5e2f42ffe53454671a41d8f732a43864e8ccc118c6f034e0eb",
+        "src/aura/audio/splitter_pipeline.py": "c5cf4d4183c50da40aecfa97e6184355cfb1715d87f1846b0eab46b0fa633e5b",
+        "src/aura/audio/vad.py": "755effe36f006608b962f649921e011ffa323e5a10ef8546726bd5cb37550f75",
+        "src/aura/audio/vad_candidates.py": "675a3f4946218b91c2e86e84c7cec772ad0ad9627c0db1568f65c42a8ed1f53f",
+        "src/aura/audit.py": "5f1ff0de5731b9247c4d68fa0ec4207ce0d64830345e4bf9134cb9a1e2309e6e",
+        "src/aura/cli.py": "091a5ba1e9165407d0e536926fc53fda3c9556e4e3d9338ce8496e4b1bf909a6",
+        "src/aura/completion.py": "72193b9902c61c30b79612195685e10ac7f33173fdbecb7562afd4c457725a9b",
+        "src/aura/config.py": "083c53a542325bdc99b5a834c2ba2e49ee500fb8dca65e02f2c630faecfe5a61",
+        "src/aura/diarization/__init__.py": "813055a2019f1f73016edf69f4ce9925dc3ee0b0a56562c1eb87901eca84fe15",
+        "src/aura/diarization/pyannote_pipeline.py": "f896de4f5e34b944ceeabdcecfefb666bf3606a6f2cd2450393f7ad302bff243",
+        "src/aura/diarization/speaker_assignment.py": "289124ed63d84ddf1693470cc84dc4194bc3ba8a77f1b148ea5392a5894ed5bc",
+        "src/aura/evidence_search.py": "78936191a5c32cd6949763d8ed6d9232e7bf029038ed3ce3094bb494c3e56e47",
+        "src/aura/metadata.py": "5ecf7db2a71919a00bc2a54a5e3f859813790d6d12dcae56a971f833fcaddf9d",
+        "src/aura/native_capture.py": "1cc75051db97182e120d70c56d1e2f2a2e1b88ee24a966a530ed0daed0643458",
+        "src/aura/producer.py": "8870b37e11dc278cfc595ca23f36fd28f89a540776d5f5f596ba21ce4d8eeb3a",
+        "src/aura/reuse_capture.py": "360a27b88e4cc8d805d432195811b41673e866d550046702085a74ce485790b3",
+        "src/aura/reuse_live_repair.py": "639b09fd6346bcd2faf1be2f9d1a699d3002a9acdad301c38c56d6f87e051636",
+        "src/aura/reuse_recovery.py": "46ac57cd5533e3acda7c12952c4a56e2c69d716cc0fffb6ce051cbec10938672",
+        "src/aura/review.py": "874e81b58b789725930fb9adc5dfbd2c550ef27467fac37d5e7cec2d2d38e5d2",
+        "src/aura/scheduling.py": "5fd58cc93315299616592280399dcbfc678cff552270dbaebb37be0cb3d8bca1",
+        "src/aura/sdk.py": "677702db043962d24e1d2bc85fe6909912a91e3f96b8f804be9c3ccfc2e22eda",
+        "src/aura/service.py": "0dcd991f96235bec62546dec05643857cb0392b74a8aa4dfadb9e9add9044271",
+        "src/aura/session_core.py": "d89d78f1832279b89f9f58a34904b7483a4c429c060504996e28925a8b1996c0",
+        "src/aura/session_runtime.py": "93e6a1797171a6ec5d38276081e0ec2b691fc463511d7bd6c4c8ed4388f70949",
+        "src/aura/settings.py": "f6ebeeb74c681e30ce1771fd8989d71a8e6531fb5b969cb13b231b991649755d",
+        "src/aura/streaming.py": "1b74279d224bca5f0f1c50d1eb65f7ece9d5c5c6e1b34030405381122ef3c3a5",
+        "src/aura/streaming_metrics.py": "e397031a5bb419cd668414bf59789468362daf63080e57880a3b9e4de22a542d",
+        "src/aura/system/__init__.py": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+        "src/aura/system/audio_diagnostics.py": "7310378acb0871d2aedc6696fe62f0db13203458872b6fd90addea0b01f9d88f",
+        "src/aura/system/cuda.py": "5bf0be65ad580766acd1b9ded13ed017af38394b99a49fcab9f6641b194f4af2",
+        "src/aura/system/gpu_diagnostics.py": "0179a28ea6377d36308a02ee9cf85935236ae50fa419951d9835b4605369433e",
+        "src/aura/system/native_audio.py": "cf4c4170b6318b0da2009c35581f6cd15c09088747d24d63ad06012d222c0922",
+        "src/aura/system/platform.py": "9ff6b9876fd7a7eb3e9bfd816c0273b0f69772344ae67c8f5186525678097183",
+        "src/aura/system/runtime_paths.py": "efb7179180ccbd8d8a8b3fb65b02f6177972ec30af3f69b281fc9835ac51f67b",
+        "src/aura/system/runtime_report.py": "5710f76dffd72be3e96dd365756896bbf88cbe15db088c68f8bc6b9e5d593265",
+        "src/aura/system/update_checker.py": "9439a4035f4ff11b0bb8203c943cb43b7c7d5a8d219e3a113503bdc6cc1b7954",
+        "src/aura/terminal.py": "162c612c4eb12a40d6fbe78491052a5564c7d86c6350a4ccafdb80e05a75f381",
+        "src/aura/ui/__init__.py": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+        "src/aura/ui/main_window.py": "60c5517ddf87640fbbf50440b39c36da3243a4a9ff5da66d792b35efa922a915",
+        "src/aura/ui/messages.py": "66bc8a36a1f1a8d6cd0426ea788904a3ef8fd25c09d9a4815a81e88704c5bf6b",
+        "src/aura/ui/splitter_tab.py": "4ece5999856748a4df7ad82092973215c2590350d781f0884a587ffc559d8c43",
+        "src/aura/ui/transcript_io.py": "8de0ae059634dcc138ff5b7ea80a1dcbe85ad573b559c837e5cc55593d7f16cc",
+        "src/aura/ui/transcription_tab.py": "2bf6054d40d80b86916e6e83caa5b3c6bf6ba8d4e7638fa4ac6ada35953c4640",
+        "src/aura/worker.py": "ebc928cd8a5abb172aa48792852bdd14b506c26c50ecb945db25268335bf2bdb"
+      },
+      "capture_sha256": "4386b2c8914e4dd22383c07c5a7168d8fc648e12dc85d13b03321d2c79d82615",
+      "options": {
+        "asr_model": "breeze",
+        "language": "zh",
+        "beam_size": 5,
+        "punctuation": true,
+        "live_max_segment_len_sec": 8,
+        "live_silence_ms": 800,
+        "live_segmentation": "adaptive"
+      },
+      "canonical_id": "RUN-20261022-04-system-full-r01",
+      "private_receipt_sha256": "f17ebac70495ca5f70db3b9e535f08cc7991bfac1b08c93681f57626e38a5c45",
+      "views": {
+        "cli": {
+          "endpoints": 78,
+          "missing": 38,
+          "within_five_seconds": 2,
+          "p95_seconds": null,
+          "pass_gate": false
+        },
+        "gui": {
+          "endpoints": 78,
+          "missing": 38,
+          "within_five_seconds": 2,
+          "p95_seconds": null,
+          "pass_gate": false
+        }
+      },
+      "enhancement_summary": {
+        "health": {
+          "status": "healthy",
+          "reset_count": 33,
+          "source_rms": 2031.652377179202,
+          "output_rms": 5.236741263137909
+        },
+        "diagnostics": {
+          "frames": 46511,
+          "native_zero_frames": 0,
+          "postfilter_muted_frames": 4015,
+          "protected_frames": 40493,
+          "postfilter_erased_nonzero_frames": 4015,
+          "protected_nonzero_frames": 12241
+        },
+        "runtime": {
+          "backend": "nvidia/Real-time_RE-USE",
+          "revision": "4c0c186272ca853cd18d832fc5c28777b62f32d1",
+          "torch": "2.9.1+cu130",
+          "cuda": "13.0",
+          "device": "NVIDIA GB10",
+          "dtype": "float32",
+          "sample_rate": 16000,
+          "ptxas": "/usr/local/cuda/bin/ptxas",
+          "live_policy": "speech-guard-v1",
+          "implementation": "stream-v2",
+          "worker_protocol": 2,
+          "exit_layer": 8,
+          "look_ahead": 0
+        },
+        "processed_samples": 14882880,
+        "durable_samples": 14882880,
+        "live_complete": true,
+        "intervals": 37,
+        "pending_intervals": 34
+      },
+      "consumer_stages": {
+        "core_lock_wait": {
+          "calls": 15635,
+          "seconds": 1.832874019324663,
+          "max_seconds": 0.019252637997851707
+        },
+        "core_lock_held": {
+          "calls": 15634,
+          "seconds": 7.902465920749819,
+          "max_seconds": 0.019193732005078346
+        },
+        "source_read": {
+          "calls": 7753,
+          "seconds": 0.9899182058288716,
+          "max_seconds": 0.002912441996159032
+        },
+        "source_vad": {
+          "calls": 7753,
+          "seconds": 31.19569359293382,
+          "max_seconds": 0.027413791001890786
+        },
+        "worker_roundtrip": {
+          "calls": 7753,
+          "seconds": 851.2101003732096,
+          "max_seconds": 0.562059528005193
+        },
+        "enhanced_write": {
+          "calls": 7754,
+          "seconds": 3.431020642296062,
+          "max_seconds": 0.011061308992793784
+        },
+        "enhanced_vad": {
+          "calls": 7754,
+          "seconds": 30.58323675833526,
+          "max_seconds": 0.024032620000070892
+        },
+        "enhanced_fsync": {
+          "calls": 924,
+          "seconds": 2.3272869650973007,
+          "max_seconds": 0.010783197998534888
+        }
+      },
+      "asr_runtime": {
+        "asr_model": "breeze",
+        "model": "SoybeanMilk/faster-whisper-Breeze-ASR-25",
+        "device": "cuda",
+        "compute_type": "int8",
+        "effective_compute_type": "int8_float16",
+        "architecture": "aarch64",
+        "ctranslate2_version": "4.7.1",
+        "backend": "faster-whisper",
+        "backend_version": "1.2.1"
+      }
+    },
+    {
+      "study_id": "STUDY-AURA-STREAMING-001",
+      "experiment_id": "EXP-20261022-01-streaming-system",
+      "run_id": "candidate-layer6-fp32-r01",
+      "validation_mode": "enhancement_streaming_validation",
+      "execution_status": "LIVE_FULL_COMPLETED",
+      "runtime_validity": "valid_target_runtime",
+      "gate_outcome": "not_evaluated",
+      "source_sha256": "66d999e8f6a26da2327a52da9e5e9727f14ba4b1447cd7cbca47094841175b37",
+      "source_samples": 960000,
+      "accuracy": "not_evaluated",
+      "denoising_quality": "not_evaluated",
+      "signal": {
+        "source_voice_frames": 1251,
+        "suppressed_source_voice_frames": 961,
+        "definition": "30ms_source_vad_rms80_output_below8_and1percent"
+      },
+      "production_activation": "held_for_quality_validation",
+      "code_sha256": {
+        "src/aura/audio/reuse.py": "3cfd015817fb927ae1f6f5c49298e135a08383b6e3c88a4e42e284b218765971",
+        "src/aura/audio/reuse_model.py": "b9f08033b61a13e8441770238716891a1a96f110ff0feee55651e60caea96b5b",
+        "src/aura/audio/reuse_offline.py": "ae9350bf58c91d04a62c1e5ba997670ef5fdb13e7416786caac14a07f71d9218",
+        "src/aura/audio/reuse_policy.py": "4f046699628ae2195ea10f9015c53aa58ae098d012e88e40b8c43b81bfd07ef8",
+        "src/aura/audio/reuse_stream.py": "307503f5266c89395ba4e8911c65e47ce11e862864bea74b6305a664ff7f7721",
+        "src/aura/audio/reuse_worker.py": "526a8f1de2b4a3aaf068ccbe21c7a3fdea525e30ffd240ecb15e8b14983b3fe1"
+      },
+      "runs": [
+        {
+          "implementation": "stream-v2",
+          "runtime": {
+            "backend": "nvidia/Real-time_RE-USE",
+            "revision": "4c0c186272ca853cd18d832fc5c28777b62f32d1",
+            "torch": "2.9.1+cu130",
+            "cuda": "13.0",
+            "device": "NVIDIA GB10",
+            "dtype": "float32",
+            "sample_rate": 16000,
+            "ptxas": "/usr/local/cuda/bin/ptxas",
+            "candidate": "layer6-fp32",
+            "exit_layer": 6,
+            "compute_precision": "float32",
+            "quality": "not_evaluated",
+            "live_policy": "speech-guard-v1",
+            "implementation": "stream-v2",
+            "worker_protocol": 2,
+            "look_ahead": 0
+          },
+          "runtime_validity": "valid_target_runtime",
+          "enhancement_seconds": 39.14045315000112,
+          "profiled": false,
+          "candidate": "layer6-fp32",
+          "output_samples": 960000,
+          "output_sha256": "f15a9a6c590ade6f8c5c05efb6fadb80fbfe11d88a18dc2ca6f2c218032c9713",
+          "diagnostics": {
+            "frames": 3002,
+            "native_zero_frames": 0,
+            "postfilter_muted_frames": 0,
+            "protected_frames": 2471,
+            "postfilter_erased_nonzero_frames": 0,
+            "protected_nonzero_frames": 0
+          },
+          "output_before_source_eof": true
+        }
+      ],
+      "canonical_id": "RUN-20261022-05-candidate-layer6-fp32-r01",
+      "private_receipt_sha256": "fee4109a7f5a2fe5fb73e02c1f7584a4c4a3b1f5ee28a22a0a0ebb48e1666e91"
+    },
+    {
+      "study_id": "STUDY-AURA-STREAMING-001",
+      "experiment_id": "EXP-20261022-01-streaming-system",
+      "run_id": "candidate-layer8-bf16-r01",
+      "validation_mode": "enhancement_streaming_validation",
+      "execution_status": "BLOCKED_UNRESOLVED",
+      "runtime_validity": "blocked_runtime",
+      "gate_outcome": "fail",
+      "source_sha256": "66d999e8f6a26da2327a52da9e5e9727f14ba4b1447cd7cbca47094841175b37",
+      "source_samples": 960000,
+      "accuracy": "not_evaluated",
+      "denoising_quality": "not_evaluated",
+      "error": "Expected conv_state.scalar_type() == input_type to be true, but got false.  (Could this error message be improved?  If so, please report an enhancement request to PyTorch.)",
+      "code_sha256": {
+        "src/aura/audio/reuse.py": "3cfd015817fb927ae1f6f5c49298e135a08383b6e3c88a4e42e284b218765971",
+        "src/aura/audio/reuse_model.py": "b9f08033b61a13e8441770238716891a1a96f110ff0feee55651e60caea96b5b",
+        "src/aura/audio/reuse_offline.py": "ae9350bf58c91d04a62c1e5ba997670ef5fdb13e7416786caac14a07f71d9218",
+        "src/aura/audio/reuse_policy.py": "4f046699628ae2195ea10f9015c53aa58ae098d012e88e40b8c43b81bfd07ef8",
+        "src/aura/audio/reuse_stream.py": "307503f5266c89395ba4e8911c65e47ce11e862864bea74b6305a664ff7f7721",
+        "src/aura/audio/reuse_worker.py": "526a8f1de2b4a3aaf068ccbe21c7a3fdea525e30ffd240ecb15e8b14983b3fe1"
+      },
+      "runs": [],
+      "canonical_id": "ATT-20261022-06-candidate-layer8-bf16-r01",
+      "private_receipt_sha256": "0240125328110ef02513cc2c52c085093409b84df1f2cf2c7616bab6aae4be88"
+    }
+  ]
+}
