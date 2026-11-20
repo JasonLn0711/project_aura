@@ -507,6 +507,10 @@
       "owner": "provisioning_and_validation"
     },
     {
+      "path": "scripts/check_streaming_system.py",
+      "owner": "provisioning_and_validation"
+    },
+    {
       "path": "scripts/check_terminal_pty.py",
       "owner": "provisioning_and_validation"
     },
@@ -576,6 +580,10 @@
     },
     {
       "path": "scripts/setup_reuse_runtime.py",
+      "owner": "provisioning_and_validation"
+    },
+    {
+      "path": "scripts/streaming_display_probe.py",
       "owner": "provisioning_and_validation"
     },
     {
