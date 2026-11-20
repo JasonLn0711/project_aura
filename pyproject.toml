@@ -79,3 +79,7 @@ explicit = true
 [tool.pytest.ini_options]
 pythonpath = ["src", "."]
 testpaths = ["tests"]
+
+[tool.uv]
+# Share immutable cache payloads; replace packages with uv rather than editing them in place.
+link-mode = "hardlink"
