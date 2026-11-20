@@ -23,6 +23,7 @@ Generated from `source-map.json`; one canonical owner per source file.
 | [src/aura/audio/denoise.py](../../../src/aura/audio/denoise.py) | `media` | evaluation | Historical noisereduce baseline; current RE-USE path does not select it. |
 | [src/aura/audio/enhancement_backends.py](../../../src/aura/audio/enhancement_backends.py) | `media` | current |  |
 | [src/aura/audio/enhancement_health.py](../../../src/aura/audio/enhancement_health.py) | `health` | current |  |
+| [src/aura/audio/enhanced_journal.py](../../../src/aura/audio/enhanced_journal.py) | `media` | evaluation | Evaluation helper for durability checkpoints; not wired into live capture. |
 | [src/aura/audio/export.py](../../../src/aura/audio/export.py) | `retention` | current |  |
 | [src/aura/audio/fastenhancer.py](../../../src/aura/audio/fastenhancer.py) | `media` | current |  |
 | [src/aura/audio/inputs.py](../../../src/aura/audio/inputs.py) | `pythonIO` | current |  |
@@ -64,6 +65,7 @@ Generated from `source-map.json`; one canonical owner per source file.
 | [src/aura/session_runtime.py](../../../src/aura/session_runtime.py) | `executor` | current |  |
 | [src/aura/settings.py](../../../src/aura/settings.py) | `scheduling` | current |  |
 | [src/aura/streaming.py](../../../src/aura/streaming.py) | `sessions` | current |  |
+| [src/aura/streaming_metrics.py](../../../src/aura/streaming_metrics.py) | `diagnostics` | evaluation | Evaluation timing and delivery-state helpers; not wired into production polling. |
 | [src/aura/system/__init__.py](../../../src/aura/system/__init__.py) | `diagnostics` | current |  |
 | [src/aura/system/audio_diagnostics.py](../../../src/aura/system/audio_diagnostics.py) | `diagnostics` | current |  |
 | [src/aura/system/cuda.py](../../../src/aura/system/cuda.py) | `diagnostics` | current |  |

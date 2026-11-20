@@ -117,6 +117,12 @@
       "note": ""
     },
     {
+      "path": "src/aura/audio/enhanced_journal.py",
+      "owner": "media",
+      "classification": "evaluation",
+      "note": "Evaluation helper for durability checkpoints; not wired into live capture."
+    },
+    {
       "path": "src/aura/audio/export.py",
       "owner": "retention",
       "classification": "current",
@@ -361,6 +367,12 @@
       "owner": "sessions",
       "classification": "current",
       "note": ""
+    },
+    {
+      "path": "src/aura/streaming_metrics.py",
+      "owner": "diagnostics",
+      "classification": "evaluation",
+      "note": "Evaluation timing and delivery-state helpers; not wired into production polling."
     },
     {
       "path": "src/aura/system/__init__.py",
