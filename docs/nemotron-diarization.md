@@ -122,3 +122,18 @@ Connections: [runtime evidence](../artifacts/nemotron/README.md) ↔
 [C4 source ownership](architecture/c4/source-map.md) ↔
 [Planning project](https://github.com/JasonLn0711/planning-everything-track/blob/main/data/projects/2026-05-project-aura-refactor.md#aura-nemotron-2026-10-25) ↔
 [October 25 day note](https://github.com/JasonLn0711/planning-everything-track/blob/main/weeks/2026-W43/days/2026-10-25.md#aura-nemotron-2026-10-25).
+
+### Automated acceptance exit status — 2026-11-08
+
+The validation CLI exits 1 when the completed stream report has
+`gate_outcome: fail` (p95 exceeds the existing three-second gate). A passing
+stream gate or completed file-mode run exits 0; runtime exceptions remain
+failures. Report fields and the existing latency calculation are unchanged.
+Previously the CLI ignored the returned report and exited 0 even for a failed
+stream gate. Two synthetic CLI tests cover fail/pass/file results and propagated
+runtime failure, without opening audio or starting a service/model. They do not
+establish current model availability or latency performance.
+
+This native transport acceptance remains owned by Aura; see the
+[shared-tool ownership registry](https://github.com/JasonLn0711/kairos-rust-tools/blob/main/docs/rule-ownership.md)
+for the boundary between reusable static verification and real runtime gates.

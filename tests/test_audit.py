@@ -2,6 +2,7 @@ import datetime as dt
 import os
 import tempfile
 import unittest
+from unittest.mock import patch
 from pathlib import Path
 
 from aura.audit import (
@@ -11,9 +12,27 @@ from aura.audit import (
     verify_audit_integrity,
     write_audit_report,
 )
+from aura import audit
 
 
 class AuditTests(unittest.TestCase):
+    def test_window_timestamps_are_local_and_preserve_inclusive_boundary(self):
+        events = [
+            {"occurred_at": "2026-11-08T00:02:00+00:00"},
+            {"occurred_at": "2026-11-08T00:00:00+00:00"},
+            {"occurred_at": "invalid"},
+            {"occurred_at": "2026-11-08T00:01:00+00:00"},
+        ]
+        kwargs = dict(threshold=3, window_seconds=120,
+                      predicate=lambda event: True, group_key=lambda event: ("s",),
+                      kind="test")
+        with patch.object(audit, "_parse_timestamp", wraps=audit._parse_timestamp) as parse:
+            self.assertEqual(audit._window_signals(events, **kwargs),
+                             [{"kind": "test", "group": ["s"], "count": 3}])
+            self.assertEqual(parse.call_count, 4)
+        events[0]["occurred_at"] = "2026-11-08T00:02:01+00:00"
+        self.assertEqual(audit._window_signals(events, **kwargs), [])
+
     def test_recorder_redacts_sensitive_details_and_builds_valid_chain(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             recorder = AuditRecorder(tmpdir, session_id="session-1", retention_days=0)

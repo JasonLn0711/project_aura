@@ -356,19 +356,20 @@ def _window_signals(
     group_key,
     kind: str,
 ) -> list[dict]:
-    grouped: dict[tuple, list[dict]] = defaultdict(list)
+    grouped: dict[tuple, list[dt.datetime]] = defaultdict(list)
     for event in events:
-        if predicate(event) and _parse_timestamp(event) is not None:
-            grouped[group_key(event)].append(event)
+        if predicate(event):
+            timestamp = _parse_timestamp(event)
+            if timestamp is not None:
+                grouped[group_key(event)].append(timestamp)
     signals: list[dict] = []
     for key, grouped_events in grouped.items():
-        ordered = sorted(grouped_events, key=lambda event: _parse_timestamp(event) or dt.datetime.min)
+        ordered = sorted(grouped_events)
         start = 0
-        for end, event in enumerate(ordered):
-            end_time = _parse_timestamp(event)
+        for end, end_time in enumerate(ordered):
             while start < end:
-                start_time = _parse_timestamp(ordered[start])
-                if start_time and end_time and (end_time - start_time).total_seconds() > window_seconds:
+                start_time = ordered[start]
+                if (end_time - start_time).total_seconds() > window_seconds:
                     start += 1
                 else:
                     break

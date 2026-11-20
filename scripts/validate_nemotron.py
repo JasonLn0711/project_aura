@@ -174,8 +174,9 @@ def main():
     p.add_argument('output',type=Path)
     p.add_argument('--mode',choices=['file','stream'],required=True)
     args=p.parse_args()
-    run(args.source.resolve(),args.output.resolve(),args.mode)
+    report = run(args.source.resolve(),args.output.resolve(),args.mode)
+    return 1 if report.get('gate_outcome') == 'fail' else 0
 
 
 if __name__=='__main__':
-    main()
+    raise SystemExit(main())
