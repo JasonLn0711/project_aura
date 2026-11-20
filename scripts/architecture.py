@@ -189,16 +189,21 @@ def setup(offline=False):
         versions[key] = [re.sub(r'^.*? -- ', '', line) for line in lines]
     browser = CACHE / 'browser'
     browser_package = browser / 'node_modules/playwright/package.json'
-    if not browser_package.exists() or read_json(browser_package)['version'] != '1.62.0':
-        if offline:
-            raise RuntimeError('Browser test dependencies are not cached; run setup with network access first')
-        if not shutil.which('npm'):
-            raise RuntimeError('Architecture browser checks require Node.js 20+ and npm; the AURA runtime is unchanged')
+    source_lock = SOURCE / 'browser/pnpm-lock.yaml'
+    cached_lock = browser / 'pnpm-lock.yaml'
+    if (not browser_package.exists() or read_json(browser_package)['version'] != '1.62.0'
+            or not (browser / 'node_modules/.modules.yaml').exists()
+            or not cached_lock.exists() or digest(cached_lock) != digest(source_lock)):
+        if not shutil.which('pnpm'):
+            raise RuntimeError('Architecture browser checks require Node.js 22+ and pnpm 12.15.0; the AURA runtime is unchanged')
         browser.mkdir(exist_ok=True)
-        for name in ('package.json', 'package-lock.json'):
+        for name in ('package.json', 'pnpm-lock.yaml'):
             shutil.copy2(SOURCE / 'browser' / name, browser / name)
-        progress('install isolated pinned Playwright browser-test dependency')
-        run(['npm', 'ci', '--prefix', browser, '--ignore-scripts', '--no-audit', '--no-fund'], 'browser-setup')
+        progress('install isolated pinned Playwright browser-test dependency from the pnpm store')
+        command = ['pnpm', '--dir', browser, 'install', '--frozen-lockfile', '--ignore-scripts']
+        if offline:
+            command.append('--offline')
+        run(command, 'browser-setup')
     browser_path = run(['node', '-e', "console.log(require('./runtime/architecture/browser/node_modules/playwright').chromium.executablePath())"], 'browser-path')
     if not Path(browser_path.read_text().strip()).is_file():
         if offline:

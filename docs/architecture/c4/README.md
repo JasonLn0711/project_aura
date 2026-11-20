@@ -55,8 +55,8 @@ python3 scripts/architecture.py setup --offline --json
 21 and Graphviz packages into ignored `runtime/architecture`; it changes no
 system packages or AURA environments. Other Linux platforms use an installed
 Java 21+ and Graphviz, optionally selected with `ARCHITECTURE_JAVA` and
-`ARCHITECTURE_DOT`. Node.js 20+ and npm provide an isolated, lockfile-pinned
-Playwright test dependency. Chromium is installed in the normal Playwright tool
+`ARCHITECTURE_DOT`. Node.js 22+ and pnpm 12.15.0 provide an isolated, lockfile-pinned
+Playwright test dependency backed by the shared pnpm store. Chromium is installed in the normal Playwright tool
 cache on first setup if absent. The first setup needs network access; subsequent
 builds reuse these tools. Missing libraries produce diagnostics rather than an
 automatic system-package install. CI provisions Chromium's OS dependencies in

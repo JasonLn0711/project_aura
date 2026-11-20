@@ -20,16 +20,21 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 12.15.0
       - uses: actions/setup-node@v4
         with:
           node-version: "24"
+          cache: pnpm
+          cache-dependency-path: docs/architecture/c4/browser/pnpm-lock.yaml
       - uses: actions/cache@v4
         with:
           path: |
             runtime/architecture/downloads
             runtime/architecture/browser/node_modules
             ~/.cache/ms-playwright
-          key: c4-arm64-${{ hashFiles('docs/architecture/c4/tools.lock.json', 'docs/architecture/c4/browser/package-lock.json') }}
+          key: c4-arm64-${{ hashFiles('docs/architecture/c4/tools.lock.json', 'docs/architecture/c4/browser/pnpm-lock.yaml') }}
       - name: Prepare pinned documentation tools
         run: python3 scripts/architecture.py setup --json
       - name: Prepare browser libraries in disposable runner

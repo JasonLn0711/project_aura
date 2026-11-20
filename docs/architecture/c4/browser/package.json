@@ -2,5 +2,6 @@
   "dependencies": {
     "playwright": "1.62.0"
   },
-  "private": true
+  "private": true,
+  "packageManager": "pnpm@12.15.0"
 }
