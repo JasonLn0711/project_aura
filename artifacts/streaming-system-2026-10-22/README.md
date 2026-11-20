@@ -174,3 +174,7 @@ enhancement probes accept `--candidate layer6-fp32` or `--candidate layer8-bf16`
 they do not change service settings. Profile probes use `--profile` and should
 remain short. Run GPU probes sequentially and keep regression suites outside
 system acceptance intervals.
+
+## Archived worktree drafts
+
+The paired enhancement probe and raw-live tests are retained here as historical worktree files. The probe requires worker interfaces absent from this checkout. The raw-live tests fail against the current session contract because the enhancement status lacks `live_enabled` and recovery does not retain raw-live ASR. Syntax was checked. Reproduction needs the matching runtime revision and an approved source.
