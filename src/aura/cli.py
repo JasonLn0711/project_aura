@@ -1,5 +1,7 @@
 """Interactive and scriptable frontends for the shared AURA SDK."""
 import argparse
+import difflib
+import re
 import json
 import os
 from pathlib import Path, PurePosixPath, PureWindowsPath
@@ -124,6 +126,21 @@ def show(value, machine=False):
         print(json.dumps(value, ensure_ascii=False, indent=2))
 
 
+def transcript_delta(previous, current):
+    """Print new or revised text without replaying speaker-only revisions."""
+    if current.startswith(previous):
+        return current[len(previous):]
+    before = previous.splitlines(keepends=True)
+    after = current.splitlines(keepends=True)
+    def content(line):
+        return re.sub(r"^(\[\d+:\d+:\d+\] )SPEAKER_[A-Za-z0-9_]+: ", r"\1", line)
+    matcher = difflib.SequenceMatcher(
+        a=[content(line) for line in before],
+        b=[content(line) for line in after], autojunk=False)
+    return "".join("".join(after[j:k]) for tag, _, _, j, k in matcher.get_opcodes()
+                   if tag in ("insert", "replace"))
+
+
 def attach(client, sid, machine=False):
     previous = ""
     previous_speaker = None
@@ -134,7 +151,9 @@ def attach(client, sid, machine=False):
                 show(s, True)
             elif s["transcript"] != previous:
                 text = s["transcript"]
-                print(safe_text(text[len(previous):] if text.startswith(previous) else text), end="", flush=True)
+                delta = transcript_delta(previous, text)
+                if delta:
+                    print(safe_text(delta), end="", flush=True)
                 previous = text
             if not machine and s.get('diarization'):
                 from aura.diarization.live import status_text
@@ -419,7 +438,9 @@ def interactive(client, ssh=None, initial=None, palette='slate'):
                     selected['error'] = s.get('error') or ''
                     if s['transcript'] != selected['text']:
                         text = s['transcript']
-                        print(safe_text(text[len(selected['text']):] if text.startswith(selected['text']) else text))
+                        delta = transcript_delta(selected['text'], text)
+                        if delta:
+                            print(safe_text(delta), end='' if delta.endswith('\n') else '\n')
                         selected['text'] = text
                 except Exception as exc:
                     if str(exc) == "Unknown session":
